@@ -5,6 +5,7 @@ import { LocationForm } from "@/app/components/LocationForm";
 import { ResultsMap } from "@/app/components/ResultsMap";
 import { VenueCard } from "@/app/components/VenueCard";
 import type { ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory } from "@/lib/types";
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 
 const initialForm: SearchHalfwayRequest = {
@@ -78,8 +79,16 @@ export default function HomePage() {
       <div className="mx-auto max-w-7xl">
         <header className="grid gap-6 py-6 lg:grid-cols-[1fr_420px] lg:items-end">
           <div>
-            <div className="mb-4 inline-flex rounded-full border border-moss/20 bg-white/70 px-3 py-1 text-sm font-bold text-moss">
-              Meet Me Half Way
+            <div className="mb-5 inline-flex items-center gap-3 rounded-full border border-moss/20 bg-white/80 py-1.5 pl-1.5 pr-4 text-sm font-bold text-moss shadow-soft">
+              <Image
+                src="/meet-me-half-way-logo.png"
+                alt="Meet Me Half Way logo"
+                width={42}
+                height={42}
+                priority
+                className="size-10 rounded-full object-cover"
+              />
+              <span>Meet Me Half Way</span>
             </div>
             <h1 className="max-w-3xl text-4xl font-black tracking-tight text-ink sm:text-5xl lg:text-6xl">
               Find the fairest place to meet.

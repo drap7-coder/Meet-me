@@ -35,7 +35,8 @@ export async function geocodeAddress(input: string): Promise<GeocodedLocation> {
 
   const data = await response.json();
   if (data.status !== "OK" || !data.results?.[0]) {
-    throw new Error(`Could not geocode "${trimmed}".`);
+    const detail = typeof data.error_message === "string" ? ` ${data.error_message}` : "";
+    throw new Error(`Could not geocode "${trimmed}".${detail}`);
   }
 
   const result = data.results[0];

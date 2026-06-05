@@ -6,8 +6,8 @@ export const metadata: Metadata = {
   description: "Find the perfect place between you.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
   icons: {
-    icon: "/icon?brand=halfway-v2",
-    apple: "/apple-icon?brand=halfway-v2"
+    icon: "/meet-me-logo-v3.png",
+    apple: "/meet-me-logo-v3.png"
   },
   openGraph: {
     title: "Meet Me Halfway",
@@ -15,9 +15,9 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/opengraph-image?brand=halfway-v2",
-        width: 1200,
-        height: 630,
+        url: "/meet-me-logo-v3.png",
+        width: 1254,
+        height: 1254,
         alt: "Meet Me Halfway"
       }
     ]
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Meet Me Halfway",
     description: "Find the perfect place between you.",
-    images: ["/opengraph-image?brand=halfway-v2"]
+    images: ["/meet-me-logo-v3.png"]
   }
 };
 

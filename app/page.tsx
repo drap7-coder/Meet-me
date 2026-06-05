@@ -214,14 +214,11 @@ export default function HomePage() {
 
 function LogoMark() {
   return (
-    <div className="inline-flex items-center gap-3">
-      <div className="relative h-10 w-10 rounded-lg bg-ink shadow-soft">
-        <div className="absolute left-2 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-white" />
-        <div className="absolute right-2 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-white" />
-        <div className="absolute left-1/2 top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#0071E3] ring-4 ring-white/20" />
-      </div>
-      <span className="text-lg font-black tracking-tight text-ink">Meet Me Halfway</span>
-    </div>
+    <img
+      src="/meet-me-logo-v3.png"
+      alt="Meet Me Halfway"
+      className="h-14 w-auto max-w-[180px] object-contain object-left sm:h-16 sm:max-w-[220px]"
+    />
   );
 }
 

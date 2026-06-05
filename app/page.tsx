@@ -4,7 +4,7 @@ import { EmptyState } from "@/app/components/EmptyState";
 import { LocationForm } from "@/app/components/LocationForm";
 import { ResultsMap } from "@/app/components/ResultsMap";
 import { VenueCard } from "@/app/components/VenueCard";
-import type { ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory } from "@/lib/types";
+import type { LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory } from "@/lib/types";
 import { useEffect, useMemo, useState } from "react";
 
 const initialForm: SearchHalfwayRequest = {
@@ -37,6 +37,16 @@ export default function HomePage() {
   const resultCountLabel = useMemo(() => {
     if (!results) return "";
     return `${results.venues.length} place${results.venues.length === 1 ? "" : "s"} that could work`;
+  }, [results]);
+
+  const resultContext = useMemo(() => {
+    if (!results) return null;
+    return {
+      originALabel: shortLocationLabel(results.originA.formattedAddress),
+      originBLabel: shortLocationLabel(results.originB.formattedAddress),
+      closestVenueId: findClosestVenueId(results.venues, results.midpoint),
+      shortestCombinedVenueId: findShortestCombinedVenueId(results.venues)
+    };
   }, [results]);
 
   async function submitSearch() {
@@ -161,7 +171,16 @@ export default function HomePage() {
               {results.venues.length ? (
                 <div className="grid gap-4">
                   {results.venues.map((venue, index) => (
-                    <VenueCard key={venue.id} venue={venue} rank={index + 1} onShare={shareVenue} />
+                    <VenueCard
+                      key={venue.id}
+                      venue={venue}
+                      rank={index + 1}
+                      originALabel={resultContext?.originALabel ?? "Person A"}
+                      originBLabel={resultContext?.originBLabel ?? "Person B"}
+                      isClosestToHalfway={venue.id === resultContext?.closestVenueId}
+                      isShortestCombined={venue.id === resultContext?.shortestCombinedVenueId}
+                      onShare={shareVenue}
+                    />
                   ))}
                 </div>
               ) : (
@@ -319,4 +338,32 @@ function formatMinutes(value: number | null) {
   const hours = Math.floor(value / 60);
   const minutes = value % 60;
   return minutes ? `${hours}h ${minutes}m` : `${hours}h`;
+}
+
+function shortLocationLabel(address: string) {
+  return address.split(",")[0]?.trim() || "Person";
+}
+
+function findClosestVenueId(venues: ScoredVenue[], midpoint: LatLng) {
+  return venues.reduce<{ id: string; distance: number } | null>((closest, venue) => {
+    const distance = distanceBetween(venue.location, midpoint);
+    if (!closest || distance < closest.distance) return { id: venue.id, distance };
+    return closest;
+  }, null)?.id;
+}
+
+function findShortestCombinedVenueId(venues: ScoredVenue[]) {
+  return venues.reduce<{ id: string; total: number } | null>((shortest, venue) => {
+    if (typeof venue.totalTravelMinutes !== "number") return shortest;
+    if (!shortest || venue.totalTravelMinutes < shortest.total) {
+      return { id: venue.id, total: venue.totalTravelMinutes };
+    }
+    return shortest;
+  }, null)?.id;
+}
+
+function distanceBetween(a: LatLng, b: LatLng) {
+  const lat = a.lat - b.lat;
+  const lng = a.lng - b.lng;
+  return Math.sqrt(lat * lat + lng * lng);
 }

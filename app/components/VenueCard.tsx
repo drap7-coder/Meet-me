@@ -69,7 +69,7 @@ export function VenueCard({
         <span className="text-slate">Total time: {formatMinutes(venue.totalTravelMinutes)}</span>
       </div>
 
-      <details className="group mt-4 rounded-lg border border-line bg-paper">
+      <details className="group mt-4 rounded-lg border border-line bg-mint">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-bold text-ink">
           <span>Why this match?</span>
           <span className="text-lg leading-none text-slate transition group-open:rotate-45">+</span>
@@ -87,7 +87,7 @@ export function VenueCard({
           href={venue.googleMapsUri}
           target="_blank"
           rel="noreferrer"
-          className="rounded-lg border border-line bg-paper px-3 py-2.5 text-center text-sm font-bold text-ink transition hover:border-clay hover:text-clay"
+          className="rounded-lg border border-line bg-mint px-3 py-2.5 text-center text-sm font-bold text-ink transition hover:border-clay hover:text-clay"
         >
           Open in Maps
         </a>

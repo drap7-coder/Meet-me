@@ -11,11 +11,11 @@ const config: Config = {
         ink: "#111111",
         slate: "#6F6F6F",
         moss: "#111111",
-        mint: "#F7F5F0",
-        paper: "#FFFFFF",
+        mint: "#FFFFFF",
+        paper: "#F3EEE5",
         clay: "#1F5EFF",
-        sky: "#F2EEE7",
-        line: "#E8E3DA"
+        sky: "#EBE3D6",
+        line: "#DED5C8"
       },
       boxShadow: {
         soft: "0 16px 44px rgba(17, 17, 17, 0.08)",

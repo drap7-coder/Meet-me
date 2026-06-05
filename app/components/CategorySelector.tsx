@@ -19,7 +19,7 @@ export function CategorySelector({ value, onChange }: Props) {
           className={`rounded-lg border px-3 py-2.5 text-center text-sm font-bold transition ${
             value === category.id
               ? "border-clay bg-clay text-white shadow-glow"
-              : "border-line bg-paper text-ink hover:border-clay/40 hover:bg-sky"
+              : "border-line bg-mint text-ink hover:border-clay/40 hover:bg-sky"
           }`}
         >
           {category.label}

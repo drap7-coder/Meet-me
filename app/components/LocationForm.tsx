@@ -62,7 +62,7 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
             value={form.customQuery ?? ""}
             onChange={(event) => update("customQuery", event.target.value)}
             placeholder="e.g. ramen, pickleball, live jazz"
-            className="h-11 rounded-lg border border-line bg-paper px-4 text-base outline-none transition focus:border-clay focus:ring-4 focus:ring-clay/10 sm:h-12"
+            className="h-11 rounded-lg border border-line bg-mint px-4 text-base outline-none transition focus:border-clay focus:ring-4 focus:ring-clay/10 sm:h-12"
           />
         </label>
       ) : null}
@@ -151,13 +151,13 @@ function LocationInput({
           }}
           onFocus={() => setOpen(true)}
           placeholder={placeholder}
-          className="h-11 rounded-lg border border-line bg-paper px-4 text-base outline-none transition focus:border-clay focus:ring-4 focus:ring-clay/10 sm:h-12"
+          className="h-11 rounded-lg border border-line bg-mint px-4 text-base outline-none transition focus:border-clay focus:ring-4 focus:ring-clay/10 sm:h-12"
         />
       </label>
       {placeId ? <p className="text-xs font-semibold text-clay">Location selected</p> : null}
       {status ? <p className="text-xs font-semibold text-slate">{status}</p> : null}
       {open && suggestions.length ? (
-        <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-lg border border-line bg-paper shadow-soft">
+        <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-lg border border-line bg-mint shadow-soft">
           {suggestions.map((suggestion) => (
             <button
               key={suggestion.placeId}

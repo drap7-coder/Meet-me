@@ -31,14 +31,14 @@ export function VenueCard({
   });
 
   return (
-    <article className="rounded-lg border border-line bg-white p-5 shadow-soft sm:p-6">
+    <article className="rounded-lg border border-line bg-paper p-5 shadow-soft sm:p-6">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <span className="inline-flex rounded-full bg-[#0071E3] px-3 py-1 text-xs font-bold text-white">
+            <span className="inline-flex rounded-lg bg-clay px-3 py-1 text-xs font-bold text-white">
               {match.badge}
             </span>
-            <span className="inline-flex rounded-full bg-sky px-3 py-1 text-xs font-bold text-slate">Spot {rank}</span>
+            <span className="inline-flex rounded-lg border border-line bg-sky px-3 py-1 text-xs font-bold text-slate">Spot {rank}</span>
           </div>
           <h3 className="text-xl font-black leading-tight text-ink">{venue.name}</h3>
           <p className="mt-1 text-sm font-semibold text-slate">{venue.category}</p>
@@ -57,7 +57,7 @@ export function VenueCard({
 
       <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
         <span
-          className={`rounded-full px-2.5 py-1 font-semibold ${
+          className={`rounded-lg px-2.5 py-1 font-semibold ${
             venue.openNow === true
               ? "bg-sky text-ink"
               : venue.openNow === false
@@ -70,7 +70,7 @@ export function VenueCard({
         <span className="text-slate">Total time: {formatMinutes(venue.totalTravelMinutes)}</span>
       </div>
 
-      <details className="group mt-4 rounded-lg border border-line bg-white">
+      <details className="group mt-4 rounded-lg border border-line bg-paper">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-bold text-ink">
           <span>Why this match?</span>
           <span className="text-lg leading-none text-slate transition group-open:rotate-45">+</span>
@@ -89,14 +89,14 @@ export function VenueCard({
           href={venue.googleMapsUri}
           target="_blank"
           rel="noreferrer"
-          className="rounded-full border border-line px-3 py-2.5 text-center text-sm font-bold text-ink transition hover:border-[#0071E3] hover:text-[#0071E3]"
+          className="rounded-lg border border-line bg-paper px-3 py-2.5 text-center text-sm font-bold text-ink transition hover:border-clay hover:text-clay"
         >
           Open in Maps
         </a>
         <button
           type="button"
           onClick={() => onShare(venue)}
-          className="rounded-full bg-ink px-3 py-2.5 text-sm font-bold text-white transition hover:bg-ink/85"
+          className="rounded-lg bg-ink px-3 py-2.5 text-sm font-bold text-white transition hover:bg-ink/85"
         >
           Share this spot
         </button>

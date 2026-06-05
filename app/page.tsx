@@ -86,42 +86,42 @@ export default function HomePage() {
   }
 
   return (
-    <main className="min-h-screen bg-white text-ink">
-      <section className="px-4 pb-12 pt-5 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-mint text-ink">
+      <section className="px-4 pb-10 pt-[calc(env(safe-area-inset-top)+1rem)] sm:px-6 sm:pt-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <nav className="flex items-center justify-between py-2">
+          <nav className="flex items-center justify-between py-1.5">
             <LogoMark />
             <a
               href="#how-it-works"
-              className="hidden rounded-full border border-line px-4 py-2 text-sm font-semibold text-slate transition hover:border-ink hover:text-ink sm:inline-flex"
+              className="hidden rounded-lg border border-line bg-paper px-4 py-2 text-sm font-semibold text-slate shadow-[0_8px_22px_rgba(17,17,17,0.04)] transition hover:border-ink hover:text-ink sm:inline-flex"
             >
-              See How It Works
+              See how it works
             </a>
           </nav>
 
-          <div className="grid gap-10 pb-10 pt-14 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:pb-16 lg:pt-20">
+          <div className="grid gap-7 pb-8 pt-8 sm:gap-10 sm:pt-14 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:pb-16 lg:pt-20">
             <div>
-              <p className="mb-5 inline-flex rounded-full bg-sky px-4 py-2 text-sm font-semibold text-slate">
+              <p className="mb-4 inline-flex rounded-lg border border-line bg-paper px-3 py-1.5 text-sm font-semibold text-slate shadow-[0_8px_22px_rgba(17,17,17,0.04)]">
                 Two locations. One great place to meet.
               </p>
-              <h1 className="max-w-4xl text-5xl font-black leading-[0.98] tracking-tight text-ink sm:text-6xl lg:text-7xl">
+              <h1 className="max-w-4xl text-[2.65rem] font-black leading-[1.02] tracking-tight text-ink sm:text-6xl lg:text-7xl">
                 Find the perfect place between you.
               </h1>
-              <p className="mt-6 max-w-2xl text-xl leading-8 text-slate">
-                Meet Me Halfway helps two people discover great places to meet — right in the middle.
+              <p className="mt-4 max-w-2xl text-lg leading-7 text-slate sm:mt-6 sm:text-xl sm:leading-8">
+                Put in two places. Get a fair midpoint. Pick somewhere good.
               </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-6 flex flex-col gap-2.5 sm:mt-8 sm:flex-row sm:gap-3">
                 <a
                   href="#search"
-                  className="inline-flex h-12 items-center justify-center rounded-full bg-[#0071E3] px-6 text-base font-bold text-white shadow-glow transition hover:bg-[#0066CC]"
+                  className="inline-flex h-11 items-center justify-center rounded-lg bg-clay px-5 text-base font-bold text-white shadow-glow transition hover:bg-[#174FE0] sm:h-12"
                 >
-                  Find a Meeting Spot
+                  Find the Middle
                 </a>
                 <a
                   href="#how-it-works"
-                  className="inline-flex h-12 items-center justify-center rounded-full bg-sky px-6 text-base font-bold text-ink transition hover:bg-line"
+                  className="inline-flex h-11 items-center justify-center rounded-lg border border-line bg-paper px-5 text-base font-bold text-ink shadow-[0_8px_22px_rgba(17,17,17,0.04)] transition hover:border-ink/30 sm:h-12"
                 >
-                  See How It Works
+                  See how it works
                 </a>
               </div>
             </div>
@@ -138,7 +138,7 @@ export default function HomePage() {
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           {error ? (
-          <div className="mt-5 rounded-lg border border-[#0071E3]/25 bg-[#0071E3]/10 p-4 text-sm font-semibold text-[#0071E3]">
+          <div className="mt-5 rounded-lg border border-clay/25 bg-clay/10 p-4 text-sm font-semibold text-clay">
             {error}
           </div>
         ) : null}
@@ -159,13 +159,13 @@ export default function HomePage() {
             <div>
               <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
                 <div>
-                  <p className="text-sm font-bold uppercase tracking-wide text-[#0071E3]">{resultCountLabel}</p>
+                  <p className="text-sm font-bold uppercase tracking-wide text-clay">{resultCountLabel}</p>
                   <h2 className="mt-1 text-3xl font-black text-ink">Places worth meeting at</h2>
                   <p className="mt-1 text-sm text-ink/60">
                     {results.originA.formattedAddress} → {results.originB.formattedAddress}
                   </p>
                 </div>
-                {shareMessage ? <p className="text-sm font-semibold text-[#0071E3]">{shareMessage}</p> : null}
+                {shareMessage ? <p className="text-sm font-semibold text-clay">{shareMessage}</p> : null}
               </div>
 
               {results.venues.length ? (
@@ -217,28 +217,26 @@ function LogoMark() {
     <img
       src="/meet-me-logo-v3.png"
       alt="Meet Me Halfway"
-      className="h-14 w-auto max-w-[180px] object-contain object-left sm:h-16 sm:max-w-[220px]"
+      className="h-11 w-auto max-w-[150px] object-contain object-left sm:h-16 sm:max-w-[220px]"
     />
   );
 }
 
 function HeroVisual() {
   return (
-    <div className="relative min-h-[320px] overflow-hidden rounded-lg border border-line bg-[#F5F5F7] p-6 shadow-soft sm:min-h-[420px]">
+    <div className="relative min-h-[270px] overflow-hidden rounded-lg border border-line bg-paper p-5 shadow-soft sm:min-h-[420px] sm:p-6">
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(17,17,17,.04)_1px,transparent_1px),linear-gradient(180deg,rgba(17,17,17,.04)_1px,transparent_1px)] bg-[size:44px_44px]" />
       <div className="absolute left-[12%] top-[28%] h-4 w-4 rounded-full bg-ink shadow-soft" />
       <div className="absolute right-[12%] top-[30%] h-4 w-4 rounded-full bg-ink shadow-soft" />
-      <div className="absolute left-[19%] right-[19%] top-[31%] h-px bg-gradient-to-r from-ink/10 via-[#0071E3] to-ink/10" />
-      <div className="absolute left-1/2 top-[31%] h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#0071E3] ring-8 ring-[#0071E3]/10" />
+      <div className="absolute left-[19%] right-[19%] top-[31%] h-px bg-gradient-to-r from-ink/10 via-clay to-ink/10" />
+      <div className="absolute left-1/2 top-[31%] h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-clay ring-8 ring-clay/10" />
 
-      <div className="absolute bottom-6 left-6 right-6 rounded-lg border border-line bg-white/88 p-5 shadow-soft backdrop-blur">
-        <p className="text-sm font-bold text-[#0071E3]">Skip the back-and-forth.</p>
-        <h2 className="mt-2 text-2xl font-black tracking-tight text-ink">Find somewhere fair, fast.</h2>
-        <div className="mt-5 grid gap-3 text-sm font-semibold text-slate sm:grid-cols-3">
-          <div className="rounded-lg bg-sky p-3">You</div>
-          <div className="rounded-lg bg-sky p-3">The spot</div>
-          <div className="rounded-lg bg-sky p-3">Them</div>
-        </div>
+      <div className="absolute bottom-5 left-5 right-5 rounded-lg border border-line bg-paper/92 p-4 shadow-[0_14px_34px_rgba(17,17,17,0.08)] backdrop-blur sm:bottom-6 sm:left-6 sm:right-6 sm:p-5">
+        <p className="text-sm font-bold text-clay">Skip the back-and-forth.</p>
+        <h2 className="mt-2 text-xl font-black tracking-tight text-ink sm:text-2xl">Meet somewhere fair, fast.</h2>
+        <p className="mt-3 text-sm leading-6 text-slate">
+          Enter two starting points. We’ll find places that keep the trip balanced.
+        </p>
       </div>
     </div>
   );
@@ -252,15 +250,15 @@ function HowItWorks() {
   ];
 
   return (
-    <section id="how-it-works" className="bg-[#F5F5F7] px-4 py-16 sm:px-6 lg:px-8">
+    <section id="how-it-works" className="bg-sky px-4 py-16 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
         <div className="max-w-2xl">
-          <p className="text-sm font-bold uppercase tracking-wide text-[#0071E3]">How it works</p>
+          <p className="text-sm font-bold uppercase tracking-wide text-clay">How it works</p>
           <h2 className="mt-3 text-4xl font-black tracking-tight text-ink sm:text-5xl">Plans without the group text.</h2>
         </div>
         <div className="mt-10 grid gap-4 md:grid-cols-3">
           {steps.map(([title, copy], index) => (
-            <article key={title} className="rounded-lg border border-line bg-white p-6 shadow-soft">
+            <article key={title} className="rounded-lg border border-line bg-paper p-6 shadow-soft">
               <div className="grid h-9 w-9 place-items-center rounded-full bg-ink text-sm font-black text-white">
                 {index + 1}
               </div>
@@ -295,7 +293,7 @@ function UseCases() {
         </div>
         <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {cards.map((card) => (
-            <article key={card} className="rounded-lg border border-line bg-white p-6 shadow-soft">
+            <article key={card} className="rounded-lg border border-line bg-paper p-6 shadow-soft">
               <p className="text-xl font-black text-ink">{card}</p>
             </article>
           ))}

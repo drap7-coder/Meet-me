@@ -22,9 +22,9 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-lg border border-line bg-white p-5 shadow-soft sm:p-7">
+    <form onSubmit={handleSubmit} className="rounded-lg border border-line bg-paper p-5 shadow-soft sm:p-7">
       <div className="mb-6">
-        <p className="text-sm font-bold uppercase tracking-wide text-[#0071E3]">Find a meeting spot</p>
+        <p className="text-sm font-bold uppercase tracking-wide text-clay">Find a meeting spot</p>
         <h2 className="mt-2 text-2xl font-black tracking-tight text-ink sm:text-3xl">
           Skip the group text.
         </h2>
@@ -62,7 +62,7 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
             value={form.customQuery ?? ""}
             onChange={(event) => update("customQuery", event.target.value)}
             placeholder="e.g. ramen, pickleball, live jazz"
-            className="h-12 rounded-lg border border-line bg-white px-4 text-base outline-none transition focus:border-[#0071E3] focus:ring-4 focus:ring-[#0071E3]/10"
+            className="h-11 rounded-lg border border-line bg-paper px-4 text-base outline-none transition focus:border-clay focus:ring-4 focus:ring-clay/10 sm:h-12"
           />
         </label>
       ) : null}
@@ -70,9 +70,9 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
       <button
         type="submit"
         disabled={loading}
-        className="mt-6 h-12 w-full rounded-full bg-[#0071E3] px-5 font-bold text-white shadow-glow transition hover:bg-[#0066CC] disabled:cursor-not-allowed disabled:bg-ink/30"
+        className="mt-6 h-11 w-full rounded-lg bg-clay px-5 font-bold text-white shadow-glow transition hover:bg-[#174FE0] disabled:cursor-not-allowed disabled:bg-ink/30 sm:h-12"
       >
-        {loading ? "Finding the halfway spot..." : "Find the Halfway Spot"}
+        {loading ? "Finding the middle..." : "Find the Middle"}
       </button>
     </form>
   );
@@ -151,13 +151,13 @@ function LocationInput({
           }}
           onFocus={() => setOpen(true)}
           placeholder={placeholder}
-          className="h-12 rounded-lg border border-line bg-white px-4 text-base outline-none transition focus:border-[#0071E3] focus:ring-4 focus:ring-[#0071E3]/10"
+          className="h-11 rounded-lg border border-line bg-paper px-4 text-base outline-none transition focus:border-clay focus:ring-4 focus:ring-clay/10 sm:h-12"
         />
       </label>
-      {placeId ? <p className="text-xs font-semibold text-[#0071E3]">Location selected</p> : null}
+      {placeId ? <p className="text-xs font-semibold text-clay">Location selected</p> : null}
       {status ? <p className="text-xs font-semibold text-slate">{status}</p> : null}
       {open && suggestions.length ? (
-        <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-lg border border-line bg-white shadow-soft">
+        <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-lg border border-line bg-paper shadow-soft">
           {suggestions.map((suggestion) => (
             <button
               key={suggestion.placeId}

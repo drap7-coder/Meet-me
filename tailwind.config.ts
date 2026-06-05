@@ -9,17 +9,17 @@ const config: Config = {
     extend: {
       colors: {
         ink: "#111111",
-        slate: "#6E6E73",
+        slate: "#6F6F6F",
         moss: "#111111",
-        mint: "#F5F5F7",
+        mint: "#F7F5F0",
         paper: "#FFFFFF",
-        clay: "#0071E3",
-        sky: "#F5F5F7",
-        line: "#E5E5EA"
+        clay: "#1F5EFF",
+        sky: "#F2EEE7",
+        line: "#E8E3DA"
       },
       boxShadow: {
-        soft: "0 22px 70px rgba(0, 0, 0, 0.08)",
-        glow: "0 22px 80px rgba(0, 113, 227, 0.16)"
+        soft: "0 16px 44px rgba(17, 17, 17, 0.08)",
+        glow: "0 14px 34px rgba(31, 94, 255, 0.18)"
       }
     }
   },

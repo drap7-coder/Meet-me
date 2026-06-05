@@ -16,10 +16,10 @@ export function CategorySelector({ value, onChange }: Props) {
           key={category.id}
           type="button"
           onClick={() => onChange(category.id)}
-          className={`rounded-full border px-4 py-3 text-center text-sm font-bold transition ${
+          className={`rounded-lg border px-3 py-2.5 text-center text-sm font-bold transition ${
             value === category.id
-              ? "border-[#0071E3] bg-[#0071E3] text-white shadow-glow"
-              : "border-line bg-white text-ink hover:border-[#0071E3]/40 hover:bg-sky"
+              ? "border-clay bg-clay text-white shadow-glow"
+              : "border-line bg-paper text-ink hover:border-clay/40 hover:bg-sky"
           }`}
         >
           {category.label}

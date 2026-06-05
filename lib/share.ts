@@ -18,7 +18,7 @@ export async function shareWithFallback({ title, text, url }: SharePayload): Pro
     }
   }
 
-  if (await copyToClipboard(fullText)) return "copied";
+  if (await copyTextToClipboard(fullText)) return "copied";
 
   const subject = encodeURIComponent(title);
   const body = encodeURIComponent(fullText);
@@ -30,7 +30,7 @@ function isCancelledShare(error: unknown) {
   return error instanceof DOMException && error.name === "AbortError";
 }
 
-async function copyToClipboard(text: string) {
+export async function copyTextToClipboard(text: string) {
   try {
     if (window.isSecureContext && navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(text);

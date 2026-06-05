@@ -2,7 +2,7 @@
 
 import { CategorySelector } from "@/app/components/CategorySelector";
 import type { PlaceSuggestion, SearchHalfwayRequest, VenueCategory } from "@/lib/types";
-import { shareWithFallback } from "@/lib/share";
+import { copyTextToClipboard, shareWithFallback } from "@/lib/share";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 type Props = {
@@ -14,6 +14,13 @@ type Props = {
 
 export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
   const [inviteStatus, setInviteStatus] = useState("");
+  const [inviteUrl, setInviteUrl] = useState("");
+  const [showInviteTools, setShowInviteTools] = useState(false);
+  const inviteText = "Want to meet halfway? Add your starting point and we’ll find somewhere that works for both of us.";
+
+  useEffect(() => {
+    setInviteUrl(window.location.origin);
+  }, []);
 
   function update<K extends keyof SearchHalfwayRequest>(key: K, value: SearchHalfwayRequest[K]) {
     onChange({ ...form, [key]: value });
@@ -25,13 +32,25 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
   }
 
   async function shareInvite() {
-    const url = window.location.origin;
-    const text = "Want to meet halfway? Add your starting point and we’ll find somewhere that works for both of us.";
-    const result = await shareWithFallback({ title: "Meet Me Halfway", text, url });
-    if (result === "shared") setInviteStatus("");
+    const url = inviteUrl || window.location.origin;
+    setInviteUrl(url);
+    setShowInviteTools(true);
+
+    const result = await shareWithFallback({ title: "Meet Me Halfway", text: inviteText, url });
+    if (result === "shared") {
+      setInviteStatus("");
+      setShowInviteTools(false);
+    }
     if (result === "copied") setInviteStatus("Invite link copied.");
     if (result === "email") setInviteStatus("Email draft opened.");
     if (result === "cancelled") setInviteStatus("Invite was cancelled.");
+  }
+
+  async function copyInviteLink() {
+    const url = inviteUrl || window.location.origin;
+    setInviteUrl(url);
+    const copied = await copyTextToClipboard(`${inviteText}\n\n${url}`);
+    setInviteStatus(copied ? "Invite link copied." : "Copy failed. You can select the link below.");
   }
 
   return (
@@ -94,6 +113,32 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
       >
         Invite someone to plan with you
       </button>
+      {showInviteTools ? (
+        <div className="mt-3 rounded-lg border border-line bg-mint p-3">
+          <p className="text-xs font-semibold leading-5 text-slate">Send this link to invite someone to plan with you.</p>
+          <input
+            readOnly
+            value={inviteUrl}
+            onFocus={(event) => event.currentTarget.select()}
+            className="mt-2 h-10 w-full rounded-lg border border-line bg-white px-3 text-sm font-semibold text-ink outline-none"
+          />
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={copyInviteLink}
+              className="h-10 rounded-lg bg-ink px-3 text-sm font-bold text-white transition hover:bg-ink/85"
+            >
+              Copy link
+            </button>
+            <a
+              href={`mailto:?subject=${encodeURIComponent("Meet Me Halfway")}&body=${encodeURIComponent(`${inviteText}\n\n${inviteUrl}`)}`}
+              className="inline-flex h-10 items-center justify-center rounded-lg border border-line bg-white px-3 text-sm font-bold text-ink transition hover:border-clay hover:text-clay"
+            >
+              Email invite
+            </a>
+          </div>
+        </div>
+      ) : null}
       {inviteStatus ? <p className="mt-3 text-center text-xs font-semibold text-slate">{inviteStatus}</p> : null}
     </form>
   );

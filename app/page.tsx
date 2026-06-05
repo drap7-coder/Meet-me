@@ -101,17 +101,21 @@ export default function HomePage() {
       <SiteHeader />
 
       {!hasSearched && !results && !loading ? (
-        <section className="px-4 pb-10 pt-[max(72px,calc(env(safe-area-inset-top)+64px))] sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-7xl">
-            <MarketingHero />
-          </div>
-          <section id="search" className="mx-auto mt-8 max-w-5xl sm:mt-10">
-            <LocationForm form={form} loading={loading} onChange={setForm} onSubmit={submitSearch} />
+        <>
+          <section className="relative isolate overflow-hidden bg-mint px-4 pb-8 pt-[max(72px,calc(env(safe-area-inset-top)+64px))] sm:px-6 sm:pb-10 lg:px-8">
+            <div className="relative z-10 mx-auto max-w-7xl">
+              <MarketingHero />
+            </div>
           </section>
-        </section>
+          <section id="search" className="bg-mint px-4 pb-10 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-5xl">
+              <LocationForm form={form} loading={loading} onChange={setForm} onSubmit={submitSearch} />
+            </div>
+          </section>
+        </>
       ) : null}
 
-      <div className="px-4 sm:px-6 lg:px-8">
+      <div className="bg-mint px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           {hasSearched || results || loading ? (
             <CompactResultsHeader
@@ -123,7 +127,7 @@ export default function HomePage() {
           ) : null}
 
           {error ? (
-            <div className="mt-5 rounded-lg border border-clay/25 bg-clay/10 p-4 text-sm font-semibold text-clay">
+            <div className="mt-5 rounded-lg border border-[#C9D7FF] bg-[#EEF3FF] p-4 text-sm font-semibold text-clay">
               {error}
             </div>
           ) : null}
@@ -271,7 +275,7 @@ function CompactResultsHeader({
 
 function SiteHeader() {
   return (
-    <header className="sticky top-0 z-50 border-b border-line/80 bg-mint/86 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-line bg-mint pt-[env(safe-area-inset-top)]">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:h-16 sm:px-6 lg:px-8">
         <a href="/" className="inline-flex min-w-0 items-center gap-2.5" aria-label="Meet Me Halfway home">
           <span className="truncate text-base font-black tracking-tight text-ink sm:text-lg">Meet Me Halfway</span>
@@ -388,7 +392,7 @@ function FeedbackSection() {
           </div>
           <a
             href={feedbackHref}
-            className="inline-flex h-11 items-center justify-center rounded-lg bg-clay px-5 text-sm font-bold text-white shadow-glow transition hover:bg-[#174FE0]"
+            className="inline-flex h-11 items-center justify-center rounded-lg bg-clay px-5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(17,17,17,0.12)] transition hover:bg-[#174FE0]"
           >
             Send Feedback
           </a>

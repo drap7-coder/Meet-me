@@ -24,9 +24,9 @@ export function ResultsMap({ originA, originB, midpoint, venues }: Props) {
 
   return (
     <section className="sticky top-4 overflow-hidden rounded-lg border border-line bg-sky shadow-soft">
-      <div className="relative h-[420px] min-h-[320px] w-full bg-[linear-gradient(135deg,rgba(255,255,255,.72)_25%,transparent_25%),linear-gradient(225deg,rgba(255,255,255,.72)_25%,transparent_25%),linear-gradient(45deg,rgba(255,255,255,.72)_25%,transparent_25%),linear-gradient(315deg,rgba(255,255,255,.72)_25%,#f2eee7_25%)] bg-[length:38px_38px] bg-[position:19px_0,19px_0,0_0,0_0]">
-        <div className="absolute inset-x-6 top-1/2 h-1 -translate-y-1/2 rounded-full bg-white/60" />
-        <div className="absolute inset-y-8 left-1/2 w-1 -translate-x-1/2 rounded-full bg-white/60" />
+      <div className="relative h-[420px] min-h-[320px] w-full">
+        <div className="absolute inset-x-6 top-1/2 h-1 -translate-y-1/2 rounded-full bg-mint" />
+        <div className="absolute inset-y-8 left-1/2 w-1 -translate-x-1/2 rounded-full bg-mint" />
         {points.map((point) => {
           const position = project(point.location, bounds);
           return (
@@ -40,7 +40,7 @@ export function ResultsMap({ originA, originB, midpoint, venues }: Props) {
             </div>
           );
         })}
-        <div className="absolute bottom-3 left-3 right-3 rounded-lg border border-line bg-paper/90 p-3 text-xs font-semibold text-slate backdrop-blur">
+        <div className="absolute bottom-3 left-3 right-3 rounded-lg border border-line bg-paper p-3 text-xs font-semibold text-slate">
           A simple view of where both of you are starting and the best spots between you.
         </div>
       </div>

@@ -70,7 +70,7 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
       <button
         type="submit"
         disabled={loading}
-        className="mt-6 h-11 w-full rounded-lg bg-clay px-5 font-bold text-white shadow-glow transition hover:bg-[#174FE0] disabled:cursor-not-allowed disabled:bg-ink/30 sm:h-12"
+        className="mt-6 h-11 w-full rounded-lg bg-clay px-5 font-bold text-white shadow-[0_10px_24px_rgba(17,17,17,0.12)] transition hover:bg-[#174FE0] disabled:cursor-not-allowed disabled:bg-ink/30 sm:h-12"
       >
         {loading ? "Finding the middle..." : "Find the Middle"}
       </button>

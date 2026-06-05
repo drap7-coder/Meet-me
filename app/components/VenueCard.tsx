@@ -11,43 +11,43 @@ export function VenueCard({ venue, rank, onShare }: Props) {
   const timeB = formatMinutes(venue.travelFromB.durationMinutes);
 
   return (
-    <article className="rounded-xl border border-ink/10 bg-white p-4 shadow-soft">
+    <article className="rounded-lg border border-line bg-white p-5 shadow-soft">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="mb-2 inline-flex rounded-full bg-mint px-2.5 py-1 text-xs font-bold text-moss">
-            #{rank} fairest
+          <div className="mb-3 inline-flex rounded-full bg-sky px-3 py-1 text-xs font-bold text-slate">
+            Spot {rank}
           </div>
-          <h3 className="text-lg font-bold leading-tight text-ink">{venue.name}</h3>
-          <p className="mt-1 text-sm text-ink/60">{venue.category}</p>
+          <h3 className="text-xl font-black leading-tight text-ink">{venue.name}</h3>
+          <p className="mt-1 text-sm font-semibold text-slate">{venue.category}</p>
         </div>
-        <div className="rounded-lg bg-ink px-3 py-2 text-center text-white">
-          <div className="text-xs uppercase tracking-wide text-white/70">Score</div>
-          <div className="text-lg font-black">{venue.fairnessScore}</div>
+        <div className="rounded-lg bg-sky px-3 py-2 text-center">
+          <div className="text-xs font-bold uppercase tracking-wide text-slate">Fit</div>
+          <div className="text-lg font-black text-ink">{Math.round(venue.fairnessScore)}</div>
         </div>
       </div>
 
-      <p className="mt-3 text-sm leading-5 text-ink/70">{venue.address}</p>
+      <p className="mt-3 text-sm leading-6 text-slate">{venue.address}</p>
 
       <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-        <Metric label="Person A" value={timeA} />
-        <Metric label="Person B" value={timeB} />
-        <Metric label="Difference" value={formatMinutes(venue.timeDifferenceMinutes)} />
-        <Metric label="Reviews" value={`${venue.rating ?? "N/A"} ★ · ${venue.reviewCount}`} />
+        <Metric label="You" value={timeA} />
+        <Metric label="Them" value={timeB} />
+        <Metric label="Time apart" value={formatMinutes(venue.timeDifferenceMinutes)} />
+        <Metric label="Rating" value={`${venue.rating ?? "N/A"} ★ · ${venue.reviewCount}`} />
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
         <span
           className={`rounded-full px-2.5 py-1 font-semibold ${
             venue.openNow === true
-              ? "bg-mint text-moss"
+              ? "bg-sky text-ink"
               : venue.openNow === false
-                ? "bg-clay/15 text-clay"
-                : "bg-ink/10 text-ink/60"
+                ? "bg-line text-slate"
+                : "bg-line text-slate"
           }`}
         >
           {venue.openNow === true ? "Open now" : venue.openNow === false ? "Closed" : "Hours unknown"}
         </span>
-        <span className="text-ink/50">Total travel: {formatMinutes(venue.totalTravelMinutes)}</span>
+        <span className="text-slate">Total time: {formatMinutes(venue.totalTravelMinutes)}</span>
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-2">
@@ -55,16 +55,16 @@ export function VenueCard({ venue, rank, onShare }: Props) {
           href={venue.googleMapsUri}
           target="_blank"
           rel="noreferrer"
-          className="rounded-lg border border-ink/15 px-3 py-2 text-center text-sm font-bold text-ink transition hover:border-moss hover:text-moss"
+          className="rounded-full border border-line px-3 py-2.5 text-center text-sm font-bold text-ink transition hover:border-[#0071E3] hover:text-[#0071E3]"
         >
-          Google Maps
+          Open in Maps
         </a>
         <button
           type="button"
           onClick={() => onShare(venue)}
-          className="rounded-lg bg-moss px-3 py-2 text-sm font-bold text-white transition hover:bg-moss/90"
+          className="rounded-full bg-ink px-3 py-2.5 text-sm font-bold text-white transition hover:bg-ink/85"
         >
-          Share this option
+          Share this spot
         </button>
       </div>
     </article>
@@ -73,8 +73,8 @@ export function VenueCard({ venue, rank, onShare }: Props) {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-paper px-3 py-2">
-      <div className="text-xs font-semibold uppercase text-ink/45">{label}</div>
+    <div className="rounded-lg bg-sky px-3 py-2">
+      <div className="text-xs font-bold uppercase text-slate">{label}</div>
       <div className="mt-1 font-bold text-ink">{value}</div>
     </div>
   );

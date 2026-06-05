@@ -5,14 +5,14 @@ export const CATEGORIES: Array<{
   label: string;
   searchTerm: string;
 }> = [
-  { id: "restaurant", label: "Restaurant", searchTerm: "restaurants" },
-  { id: "bar", label: "Bar", searchTerm: "bars" },
   { id: "coffee", label: "Coffee", searchTerm: "coffee shops" },
-  { id: "bookstore", label: "Bookstore", searchTerm: "bookstores" },
-  { id: "driving_range", label: "Driving range", searchTerm: "driving ranges" },
-  { id: "park", label: "Park", searchTerm: "parks" },
+  { id: "restaurant", label: "Food", searchTerm: "restaurants" },
+  { id: "bar", label: "Drinks", searchTerm: "bars" },
+  { id: "bookstore", label: "Bookstores", searchTerm: "bookstores" },
+  { id: "park", label: "Parks", searchTerm: "parks" },
+  { id: "driving_range", label: "Activities", searchTerm: "driving ranges" },
   { id: "dessert", label: "Dessert", searchTerm: "dessert shops" },
-  { id: "custom", label: "Custom", searchTerm: "" }
+  { id: "custom", label: "Something else", searchTerm: "" }
 ];
 
 export function getCategoryLabel(category: VenueCategory) {

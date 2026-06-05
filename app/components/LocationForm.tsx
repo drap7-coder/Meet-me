@@ -22,17 +22,27 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-xl border border-ink/10 bg-white/90 p-4 shadow-soft sm:p-5">
-      <div className="grid gap-3 sm:grid-cols-2">
+    <form onSubmit={handleSubmit} className="rounded-lg border border-line bg-white p-5 shadow-soft sm:p-7">
+      <div className="mb-6">
+        <p className="text-sm font-bold uppercase tracking-wide text-[#0071E3]">Find a meeting spot</p>
+        <h2 className="mt-2 text-2xl font-black tracking-tight text-ink sm:text-3xl">
+          Skip the group text.
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-slate">
+          Add two starting points, choose the vibe, and find a place that works.
+        </p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
         <LocationInput
-          label="Person A"
+          label="Where are you starting from?"
           value={form.locationA}
           placeId={form.locationAPlaceId}
           placeholder="e.g. Hoboken, NJ"
           onChange={(locationA, locationAPlaceId) => onChange({ ...form, locationA, locationAPlaceId })}
         />
         <LocationInput
-          label="Person B"
+          label="Where are they starting from?"
           value={form.locationB}
           placeId={form.locationBPlaceId}
           placeholder="e.g. Edison, NJ"
@@ -40,19 +50,19 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
         />
       </div>
 
-      <div className="mt-4 grid gap-2">
-        <span className="text-sm font-semibold text-ink/75">What are you meeting for?</span>
+      <div className="mt-5 grid gap-3">
+        <span className="text-sm font-bold text-ink">Choose the vibe</span>
         <CategorySelector value={form.category} onChange={(category: VenueCategory) => update("category", category)} />
       </div>
 
       {form.category === "custom" ? (
         <label className="mt-4 grid gap-2">
-          <span className="text-sm font-semibold text-ink/75">Custom search</span>
+          <span className="text-sm font-bold text-ink">Something different</span>
           <input
             value={form.customQuery ?? ""}
             onChange={(event) => update("customQuery", event.target.value)}
             placeholder="e.g. ramen, pickleball, live jazz"
-            className="h-12 rounded-lg border border-ink/15 bg-paper px-3 text-base outline-none transition focus:border-moss focus:ring-4 focus:ring-moss/10"
+            className="h-12 rounded-lg border border-line bg-white px-4 text-base outline-none transition focus:border-[#0071E3] focus:ring-4 focus:ring-[#0071E3]/10"
           />
         </label>
       ) : null}
@@ -60,9 +70,9 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
       <button
         type="submit"
         disabled={loading}
-        className="mt-5 h-12 w-full rounded-lg bg-clay px-4 font-bold text-white shadow-soft transition hover:bg-clay/90 disabled:cursor-not-allowed disabled:bg-ink/30"
+        className="mt-6 h-12 w-full rounded-full bg-[#0071E3] px-5 font-bold text-white shadow-glow transition hover:bg-[#0066CC] disabled:cursor-not-allowed disabled:bg-ink/30"
       >
-        {loading ? "Finding fair options..." : "Find the fairest spots"}
+        {loading ? "Finding the halfway spot..." : "Find the Halfway Spot"}
       </button>
     </form>
   );
@@ -131,7 +141,7 @@ function LocationInput({
   return (
     <div className="relative grid gap-2">
       <label className="grid gap-2">
-        <span className="text-sm font-semibold text-ink/75">{label}</span>
+        <span className="text-sm font-bold text-ink">{label}</span>
         <input
           value={value}
           onBlur={() => window.setTimeout(() => setOpen(false), 120)}
@@ -141,24 +151,24 @@ function LocationInput({
           }}
           onFocus={() => setOpen(true)}
           placeholder={placeholder}
-          className="h-12 rounded-lg border border-ink/15 bg-paper px-3 text-base outline-none transition focus:border-moss focus:ring-4 focus:ring-moss/10"
+          className="h-12 rounded-lg border border-line bg-white px-4 text-base outline-none transition focus:border-[#0071E3] focus:ring-4 focus:ring-[#0071E3]/10"
         />
       </label>
-      {placeId ? <p className="text-xs font-semibold text-moss">Using selected Google location</p> : null}
-      {status ? <p className="text-xs font-semibold text-ink/55">{status}</p> : null}
+      {placeId ? <p className="text-xs font-semibold text-[#0071E3]">Location selected</p> : null}
+      {status ? <p className="text-xs font-semibold text-slate">{status}</p> : null}
       {open && suggestions.length ? (
-        <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-lg border border-ink/10 bg-white shadow-soft">
+        <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-lg border border-line bg-white shadow-soft">
           {suggestions.map((suggestion) => (
             <button
               key={suggestion.placeId}
               type="button"
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => selectSuggestion(suggestion)}
-              className="grid w-full gap-0.5 border-b border-ink/5 px-3 py-2 text-left last:border-b-0 hover:bg-moss/8"
+              className="grid w-full gap-0.5 border-b border-line px-3 py-2.5 text-left last:border-b-0 hover:bg-sky"
             >
               <span className="text-sm font-bold text-ink">{suggestion.mainText}</span>
               {suggestion.secondaryText ? (
-                <span className="text-xs font-medium text-ink/55">{suggestion.secondaryText}</span>
+                <span className="text-xs font-medium text-slate">{suggestion.secondaryText}</span>
               ) : null}
             </button>
           ))}

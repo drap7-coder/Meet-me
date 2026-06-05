@@ -10,16 +10,16 @@ type Props = {
 
 export function CategorySelector({ value, onChange }: Props) {
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
       {CATEGORIES.map((category) => (
         <button
           key={category.id}
           type="button"
           onClick={() => onChange(category.id)}
-          className={`rounded-lg border px-3 py-3 text-left text-sm font-semibold transition ${
+          className={`rounded-full border px-4 py-3 text-center text-sm font-bold transition ${
             value === category.id
-              ? "border-moss bg-moss text-white shadow-soft"
-              : "border-ink/10 bg-white/80 text-ink hover:border-moss/40"
+              ? "border-[#0071E3] bg-[#0071E3] text-white shadow-glow"
+              : "border-line bg-white text-ink hover:border-[#0071E3]/40 hover:bg-sky"
           }`}
         >
           {category.label}

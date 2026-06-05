@@ -2,6 +2,7 @@
 
 import { CategorySelector } from "@/app/components/CategorySelector";
 import type { PlaceSuggestion, SearchHalfwayRequest, VenueCategory } from "@/lib/types";
+import { shareWithFallback } from "@/lib/share";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 type Props = {
@@ -26,17 +27,11 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
   async function shareInvite() {
     const url = window.location.origin;
     const text = "Want to meet halfway? Add your starting point and we’ll find somewhere that works for both of us.";
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: "Meet Me Halfway", text, url });
-        setInviteStatus("");
-      } else {
-        await navigator.clipboard.writeText(`${text} ${url}`);
-        setInviteStatus("Invite link copied.");
-      }
-    } catch {
-      setInviteStatus("Invite was cancelled.");
-    }
+    const result = await shareWithFallback({ title: "Meet Me Halfway", text, url });
+    if (result === "shared") setInviteStatus("");
+    if (result === "copied") setInviteStatus("Invite link copied.");
+    if (result === "email") setInviteStatus("Email draft opened.");
+    if (result === "cancelled") setInviteStatus("Invite was cancelled.");
   }
 
   return (

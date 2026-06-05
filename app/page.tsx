@@ -4,6 +4,7 @@ import { EmptyState } from "@/app/components/EmptyState";
 import { LocationForm } from "@/app/components/LocationForm";
 import { ResultsMap } from "@/app/components/ResultsMap";
 import { VenueCard } from "@/app/components/VenueCard";
+import { shareWithFallback } from "@/lib/share";
 import type { LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory } from "@/lib/types";
 import { useEffect, useMemo, useState } from "react";
 
@@ -84,16 +85,11 @@ export default function HomePage() {
 
   async function shareVenue(venue: ScoredVenue) {
     const text = `${venue.name} looks like a good halfway spot: ${formatMinutes(venue.travelFromA.durationMinutes)} for one of you, ${formatMinutes(venue.travelFromB.durationMinutes)} for the other. ${venue.googleMapsUri}`;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: "Meet Me Halfway", text, url: venue.googleMapsUri });
-      } else {
-        await navigator.clipboard.writeText(text);
-        setShareMessage("Spot copied to clipboard.");
-      }
-    } catch {
-      setShareMessage("Sharing was cancelled.");
-    }
+    const result = await shareWithFallback({ title: "Meet Me Halfway", text, url: venue.googleMapsUri });
+    if (result === "shared") setShareMessage("");
+    if (result === "copied") setShareMessage("Spot copied to clipboard.");
+    if (result === "email") setShareMessage("Email draft opened.");
+    if (result === "cancelled") setShareMessage("Sharing was cancelled.");
   }
 
   async function shareOptions() {
@@ -113,17 +109,11 @@ export default function HomePage() {
       `Full list: ${url}`
     ].join("\n");
 
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: "Meet Me Halfway options", text, url });
-        setShareMessage("");
-      } else {
-        await navigator.clipboard.writeText(text);
-        setShareMessage("Options copied to clipboard.");
-      }
-    } catch {
-      setShareMessage("Sharing was cancelled.");
-    }
+    const result = await shareWithFallback({ title: "Meet Me Halfway options", text, url });
+    if (result === "shared") setShareMessage("");
+    if (result === "copied") setShareMessage("Options copied to clipboard.");
+    if (result === "email") setShareMessage("Email draft opened.");
+    if (result === "cancelled") setShareMessage("Sharing was cancelled.");
   }
 
   return (

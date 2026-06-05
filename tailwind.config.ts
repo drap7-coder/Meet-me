@@ -12,10 +12,10 @@ const config: Config = {
         slate: "#6F6F6F",
         moss: "#111111",
         mint: "#FFFFFF",
-        paper: "#F3EEE5",
+        paper: "#F4F7FF",
         clay: "#1F5EFF",
-        sky: "#EBE3D6",
-        line: "#DED5C8"
+        sky: "#EAF0FF",
+        line: "#D8E3F8"
       },
       boxShadow: {
         soft: "0 16px 44px rgba(17, 17, 17, 0.08)",

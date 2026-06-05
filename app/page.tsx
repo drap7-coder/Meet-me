@@ -20,6 +20,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [shareMessage, setShareMessage] = useState("");
+  const [hasSearched, setHasSearched] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -50,6 +51,7 @@ export default function HomePage() {
   }, [results]);
 
   async function submitSearch() {
+    setHasSearched(true);
     setLoading(true);
     setError("");
     setShareMessage("");
@@ -71,6 +73,15 @@ export default function HomePage() {
     }
   }
 
+  function startNewSearch() {
+    setResults(null);
+    setError("");
+    setShareMessage("");
+    setHasSearched(false);
+    window.history.replaceState(null, "", "/");
+    window.requestAnimationFrame(() => document.getElementById("search")?.scrollIntoView({ behavior: "smooth" }));
+  }
+
   async function shareVenue(venue: ScoredVenue) {
     const text = `${venue.name} looks like a good halfway spot: ${formatMinutes(venue.travelFromA.durationMinutes)} for one of you, ${formatMinutes(venue.travelFromB.durationMinutes)} for the other. ${venue.googleMapsUri}`;
     try {
@@ -89,54 +100,39 @@ export default function HomePage() {
     <main className="min-h-screen bg-mint text-ink">
       <SiteHeader />
 
-      <section className="px-4 pb-10 pt-[max(88px,calc(env(safe-area-inset-top)+76px))] sm:px-6 sm:pt-[max(72px,calc(env(safe-area-inset-top)+64px))] lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid gap-7 pb-8 sm:gap-10 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:pb-16">
-            <div>
-              <h1 className="max-w-4xl text-[2.75rem] font-black leading-[0.98] tracking-tight text-ink sm:text-6xl sm:leading-[1.02] lg:text-7xl">
-                Meet somewhere fair.
-              </h1>
-              <p className="mt-4 max-w-2xl text-lg leading-7 text-slate sm:mt-6 sm:text-xl sm:leading-8">
-                Enter two starting points and discover great places right in the middle.
-              </p>
-              <p className="mt-3 max-w-2xl text-base leading-7 text-slate">
-                Restaurants, coffee shops, bars, bookstores, parks, and more.
-              </p>
-              <div className="mt-6 flex flex-col gap-2.5 sm:mt-8 sm:flex-row sm:gap-3">
-                <a
-                  href="#search"
-                  className="inline-flex h-11 items-center justify-center rounded-lg bg-clay px-5 text-base font-bold text-white shadow-glow transition hover:bg-[#174FE0] sm:h-12"
-                >
-                  Find the Middle
-                </a>
-                <a
-                  href="#how-it-works"
-                  className="inline-flex h-11 items-center justify-center rounded-lg border border-line bg-paper px-5 text-base font-bold text-ink shadow-[0_8px_22px_rgba(17,17,17,0.04)] transition hover:border-ink/30 sm:h-12"
-                >
-                  How It Works
-                </a>
-              </div>
-              <p className="mt-4 max-w-xl text-sm leading-6 text-slate">
-                Meet Me Halfway is currently in beta. We're improving recommendations and adding new features every week.
-              </p>
-            </div>
-
-            <HeroVisual />
+      {!hasSearched && !results && !loading ? (
+        <section className="px-4 pb-10 pt-[max(72px,calc(env(safe-area-inset-top)+64px))] sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl">
+            <MarketingHero />
           </div>
-
-          <section id="search" className="mx-auto max-w-5xl">
+          <section id="search" className="mx-auto mt-8 max-w-5xl sm:mt-10">
             <LocationForm form={form} loading={loading} onChange={setForm} onSubmit={submitSearch} />
           </section>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
+          {hasSearched || results || loading ? (
+            <CompactResultsHeader
+              loading={loading}
+              resultCountLabel={resultCountLabel}
+              originSummary={results ? `${results.originA.formattedAddress} → ${results.originB.formattedAddress}` : ""}
+              onNewSearch={startNewSearch}
+            />
+          ) : null}
+
           {error ? (
-          <div className="mt-5 rounded-lg border border-clay/25 bg-clay/10 p-4 text-sm font-semibold text-clay">
-            {error}
-          </div>
-        ) : null}
+            <div className="mt-5 rounded-lg border border-clay/25 bg-clay/10 p-4 text-sm font-semibold text-clay">
+              {error}
+            </div>
+          ) : null}
+
+          {error && !loading && !results ? (
+            <section id="search" className="mt-5 max-w-5xl">
+              <LocationForm form={form} loading={loading} onChange={setForm} onSubmit={submitSearch} />
+            </section>
+          ) : null}
 
         {loading ? (
           <section className="mt-8 grid gap-4 lg:grid-cols-[1fr_420px]">
@@ -150,18 +146,9 @@ export default function HomePage() {
         ) : null}
 
         {results && !loading ? (
-          <section className="mt-8 grid gap-5 pb-16 lg:grid-cols-[1fr_420px] lg:items-start">
+          <section className="mt-5 grid gap-5 pb-16 lg:grid-cols-[1fr_420px] lg:items-start">
             <div>
-              <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-wide text-clay">{resultCountLabel}</p>
-                  <h2 className="mt-1 text-3xl font-black text-ink">Places worth meeting at</h2>
-                  <p className="mt-1 text-sm text-ink/60">
-                    {results.originA.formattedAddress} → {results.originB.formattedAddress}
-                  </p>
-                </div>
-                {shareMessage ? <p className="text-sm font-semibold text-clay">{shareMessage}</p> : null}
-              </div>
+              {shareMessage ? <p className="mb-4 text-sm font-semibold text-clay">{shareMessage}</p> : null}
 
               {results.venues.length ? (
                 <div className="grid gap-4">
@@ -196,7 +183,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {!results && !loading ? (
+      {!hasSearched && !results && !loading ? (
         <>
           <HowItWorks />
           <UseCases />
@@ -207,6 +194,78 @@ export default function HomePage() {
       <FeedbackSection />
       <Footer />
     </main>
+  );
+}
+
+function MarketingHero() {
+  return (
+    <section className="grid gap-7 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
+      <div className="order-1">
+        <h1 className="max-w-2xl text-[2.75rem] font-black leading-[0.98] tracking-tight text-ink sm:text-6xl sm:leading-[1.02] lg:text-7xl">
+          Where should we meet?
+        </h1>
+        <p className="mt-4 max-w-xl text-lg leading-7 text-slate sm:mt-6 sm:text-xl sm:leading-8">
+          Meet Me Halfway finds the perfect place between two people, so nobody gets stuck with the long drive.
+        </p>
+        <div className="mt-6 flex flex-col gap-2.5 sm:mt-8 sm:flex-row sm:gap-3">
+          <a
+            href="#search"
+            className="inline-flex h-11 items-center justify-center rounded-lg bg-clay px-5 text-base font-bold text-white shadow-glow transition hover:bg-[#174FE0] sm:h-12"
+          >
+            Find the Middle
+          </a>
+          <a
+            href="#how-it-works"
+            className="inline-flex h-11 items-center justify-center rounded-lg border border-line bg-paper px-5 text-base font-bold text-ink shadow-[0_8px_22px_rgba(17,17,17,0.04)] transition hover:border-ink/30 sm:h-12"
+          >
+            How It Works
+          </a>
+        </div>
+      </div>
+
+      <div className="order-3 overflow-hidden rounded-[24px] border border-black/[0.06] bg-paper shadow-soft lg:order-2">
+        <img
+          src="/homepage-hero.png"
+          alt="Meet Me Halfway hero illustration"
+          className="block aspect-[3/2] h-auto w-full object-cover object-center lg:aspect-[1.42/1]"
+        />
+      </div>
+    </section>
+  );
+}
+
+function CompactResultsHeader({
+  loading,
+  resultCountLabel,
+  originSummary,
+  onNewSearch
+}: {
+  loading: boolean;
+  resultCountLabel: string;
+  originSummary: string;
+  onNewSearch: () => void;
+}) {
+  return (
+    <section className="pt-[max(72px,calc(env(safe-area-inset-top)+64px))]">
+      <div className="rounded-lg border border-line bg-paper p-5 shadow-soft sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-bold uppercase tracking-wide text-clay">
+              {loading ? "Finding places" : resultCountLabel || "Recommended places"}
+            </p>
+            <h1 className="mt-1 text-3xl font-black tracking-tight text-ink sm:text-4xl">Recommended places</h1>
+            {originSummary ? <p className="mt-2 text-sm leading-6 text-slate">{originSummary}</p> : null}
+          </div>
+          <button
+            type="button"
+            onClick={onNewSearch}
+            className="inline-flex h-10 items-center justify-center rounded-lg border border-line bg-paper px-4 text-sm font-bold text-ink transition hover:border-clay hover:text-clay"
+          >
+            New search
+          </button>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -228,44 +287,6 @@ function SiteHeader() {
         </a>
       </div>
     </header>
-  );
-}
-
-function HeroVisual() {
-  return (
-    <div className="relative min-h-[300px] overflow-hidden rounded-[24px] border border-black/[0.06] bg-[#F7F8FB] p-5 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.03),0_16px_42px_rgba(17,17,17,0.08)] sm:min-h-[420px] sm:p-6">
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.052)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.052)_1px,transparent_1px)] bg-[size:76px_76px]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_48%,rgba(31,94,255,0.24),transparent_13%)]" />
-      <svg className="absolute inset-0 h-full w-full" viewBox="0 0 390 300" aria-hidden="true" preserveAspectRatio="none">
-        <path
-          d="M18 214 C88 174 116 198 184 150 S292 102 372 130"
-          fill="none"
-          stroke="rgba(17,17,17,0.15)"
-          strokeLinecap="round"
-          strokeWidth="3"
-        />
-        <path
-          d="M28 108 C104 88 150 112 194 146 S288 214 362 176"
-          fill="none"
-          stroke="rgba(31,94,255,0.26)"
-          strokeLinecap="round"
-          strokeWidth="2"
-        />
-      </svg>
-      <div className="absolute left-[13%] top-[28%] h-3.5 w-3.5 rounded-full bg-ink shadow-[0_0_0_7px_rgba(17,17,17,0.06)]" />
-      <div className="absolute right-[13%] top-[31%] h-3.5 w-3.5 rounded-full bg-ink shadow-[0_0_0_7px_rgba(17,17,17,0.06)]" />
-      <div className="absolute left-1/2 top-[45%] h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-clay shadow-[0_0_0_12px_rgba(31,94,255,0.14),0_18px_42px_rgba(31,94,255,0.26)]" />
-      <div className="absolute left-[30%] top-[56%] h-2 w-2 rounded-full bg-ink/30" />
-      <div className="absolute right-[27%] top-[54%] h-2 w-2 rounded-full bg-ink/30" />
-
-      <div className="absolute left-5 right-5 top-12 rounded-[24px] border border-black/[0.06] bg-white/95 p-5 shadow-[0_24px_60px_rgba(15,23,42,0.16),0_2px_8px_rgba(15,23,42,0.08)] backdrop-blur-md sm:bottom-6 sm:left-6 sm:right-6 sm:top-auto sm:p-6">
-        <p className="text-sm font-bold text-clay">Skip the back-and-forth.</p>
-        <h2 className="mt-2 text-xl font-black tracking-tight text-ink sm:text-2xl">Meet somewhere fair, fast.</h2>
-        <p className="mt-3 text-sm leading-6 text-slate">
-          Enter two starting points and we’ll find places that keep the trip balanced for everyone.
-        </p>
-      </div>
-    </div>
   );
 }
 

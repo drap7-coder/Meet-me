@@ -302,7 +302,7 @@ function HowItWorks() {
       <div className="mx-auto max-w-7xl">
         <div className="max-w-2xl">
           <p className="text-sm font-bold uppercase tracking-wide text-clay">How it works</p>
-          <h2 className="mt-3 text-4xl font-black tracking-tight text-ink sm:text-5xl">Plans without the group text.</h2>
+          <h2 className="mt-3 text-4xl font-black tracking-tight text-ink sm:text-5xl">Put in two places. Pick somewhere good.</h2>
         </div>
         <div className="mt-10 grid gap-4 md:grid-cols-3">
           {steps.map(([title, copy], index) => (

@@ -26,7 +26,7 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
       <div className="mb-6">
         <p className="text-sm font-bold uppercase tracking-wide text-clay">Find a meeting spot</p>
         <h2 className="mt-2 text-2xl font-black tracking-tight text-ink sm:text-3xl">
-          Skip the group text.
+          Meet somewhere fair, fast.
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate">
           Add two starting points, choose the vibe, and find a place that works.

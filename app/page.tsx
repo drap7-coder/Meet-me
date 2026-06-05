@@ -87,28 +87,20 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-mint text-ink">
-      <section className="px-4 pb-10 pt-[calc(env(safe-area-inset-top)+1rem)] sm:px-6 sm:pt-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <nav className="flex items-center justify-between py-1.5">
-            <LogoMark />
-            <a
-              href="#how-it-works"
-              className="hidden rounded-lg border border-line bg-paper px-4 py-2 text-sm font-semibold text-slate shadow-[0_8px_22px_rgba(17,17,17,0.04)] transition hover:border-ink hover:text-ink sm:inline-flex"
-            >
-              See how it works
-            </a>
-          </nav>
+      <SiteHeader />
 
-          <div className="grid gap-7 pb-8 pt-8 sm:gap-10 sm:pt-14 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:pb-16 lg:pt-20">
+      <section className="px-4 pb-10 pt-7 sm:px-6 sm:pt-12 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-7 pb-8 sm:gap-10 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:pb-16">
             <div>
-              <p className="mb-4 inline-flex rounded-lg border border-line bg-paper px-3 py-1.5 text-sm font-semibold text-slate shadow-[0_8px_22px_rgba(17,17,17,0.04)]">
-                Two locations. One great place to meet.
-              </p>
-              <h1 className="max-w-4xl text-[2.65rem] font-black leading-[1.02] tracking-tight text-ink sm:text-6xl lg:text-7xl">
-                Find the perfect place between you.
+              <h1 className="max-w-4xl text-[2.75rem] font-black leading-[1.02] tracking-tight text-ink sm:text-6xl lg:text-7xl">
+                Meet somewhere fair.
               </h1>
               <p className="mt-4 max-w-2xl text-lg leading-7 text-slate sm:mt-6 sm:text-xl sm:leading-8">
-                Put in two places. Get a fair midpoint. Pick somewhere good.
+                Enter two starting points and discover great places right in the middle.
+              </p>
+              <p className="mt-3 max-w-2xl text-base leading-7 text-slate">
+                Restaurants, coffee shops, bars, bookstores, parks, and more.
               </p>
               <div className="mt-6 flex flex-col gap-2.5 sm:mt-8 sm:flex-row sm:gap-3">
                 <a
@@ -121,9 +113,12 @@ export default function HomePage() {
                   href="#how-it-works"
                   className="inline-flex h-11 items-center justify-center rounded-lg border border-line bg-paper px-5 text-base font-bold text-ink shadow-[0_8px_22px_rgba(17,17,17,0.04)] transition hover:border-ink/30 sm:h-12"
                 >
-                  See how it works
+                  How It Works
                 </a>
               </div>
+              <p className="mt-4 max-w-xl text-sm leading-6 text-slate">
+                Meet Me Halfway is currently in beta. We're improving recommendations and adding new features every week.
+              </p>
             </div>
 
             <HeroVisual />
@@ -208,17 +203,31 @@ export default function HomePage() {
           <BrandSection />
         </>
       ) : null}
+
+      <FeedbackSection />
+      <Footer />
     </main>
   );
 }
 
-function LogoMark() {
+function SiteHeader() {
   return (
-    <img
-      src="/meet-me-logo-v3.png"
-      alt="Meet Me Halfway"
-      className="h-11 w-auto max-w-[150px] object-contain object-left sm:h-16 sm:max-w-[220px]"
-    />
+    <header className="sticky top-0 z-50 border-b border-line/80 bg-mint/86 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:h-16 sm:px-6 lg:px-8">
+        <a href="/" className="inline-flex min-w-0 items-center gap-2.5" aria-label="Meet Me Halfway home">
+          <span className="truncate text-base font-black tracking-tight text-ink sm:text-lg">Meet Me Halfway</span>
+          <span className="rounded-md border border-line bg-paper px-1.5 py-0.5 text-[0.65rem] font-black tracking-wide text-slate">
+            BETA
+          </span>
+        </a>
+        <a
+          href="#search"
+          className="inline-flex h-9 items-center justify-center rounded-lg bg-ink px-4 text-sm font-bold text-white shadow-[0_10px_24px_rgba(17,17,17,0.12)] transition hover:bg-ink/85"
+        >
+          Start
+        </a>
+      </div>
+    </header>
   );
 }
 
@@ -226,16 +235,16 @@ function HeroVisual() {
   return (
     <div className="relative min-h-[270px] overflow-hidden rounded-lg border border-line bg-paper p-5 shadow-soft sm:min-h-[420px] sm:p-6">
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(17,17,17,.04)_1px,transparent_1px),linear-gradient(180deg,rgba(17,17,17,.04)_1px,transparent_1px)] bg-[size:44px_44px]" />
-      <div className="absolute left-[12%] top-[28%] h-4 w-4 rounded-full bg-ink shadow-soft" />
-      <div className="absolute right-[12%] top-[30%] h-4 w-4 rounded-full bg-ink shadow-soft" />
+      <div className="absolute left-[12%] top-[28%] h-4 w-4 rounded-full bg-ink" />
+      <div className="absolute right-[12%] top-[30%] h-4 w-4 rounded-full bg-ink" />
       <div className="absolute left-[19%] right-[19%] top-[31%] h-px bg-gradient-to-r from-ink/10 via-clay to-ink/10" />
       <div className="absolute left-1/2 top-[31%] h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-clay ring-8 ring-clay/10" />
 
-      <div className="absolute bottom-5 left-5 right-5 rounded-lg border border-line bg-paper/92 p-4 shadow-[0_14px_34px_rgba(17,17,17,0.08)] backdrop-blur sm:bottom-6 sm:left-6 sm:right-6 sm:p-5">
+      <div className="absolute bottom-5 left-5 right-5 rounded-lg border border-line bg-paper p-4 shadow-[0_14px_34px_rgba(17,17,17,0.08)] sm:bottom-6 sm:left-6 sm:right-6 sm:p-5">
         <p className="text-sm font-bold text-clay">Skip the back-and-forth.</p>
         <h2 className="mt-2 text-xl font-black tracking-tight text-ink sm:text-2xl">Meet somewhere fair, fast.</h2>
         <p className="mt-3 text-sm leading-6 text-slate">
-          Enter two starting points. We’ll find places that keep the trip balanced.
+          Enter two starting points and we’ll find places that keep the trip balanced for everyone.
         </p>
       </div>
     </div>
@@ -305,7 +314,7 @@ function UseCases() {
 
 function BrandSection() {
   return (
-    <section className="px-4 pb-20 sm:px-6 lg:px-8">
+    <section className="px-4 py-16 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl rounded-lg bg-ink px-6 py-14 text-white shadow-soft sm:px-10 lg:px-14">
         <h2 className="max-w-3xl text-4xl font-black tracking-tight sm:text-6xl">Halfway isn’t compromise.</h2>
         <p className="mt-5 max-w-2xl text-xl leading-8 text-white/70">
@@ -313,6 +322,64 @@ function BrandSection() {
         </p>
       </div>
     </section>
+  );
+}
+
+function FeedbackSection() {
+  const feedbackHref =
+    "mailto:nathandrapkin@gmail.com?subject=Meet%20Me%20Halfway%20feedback&body=What%20worked%3A%0A%0AWhat%20felt%20confusing%3A%0A%0AWhat%20I%27d%20like%20you%20to%20add%3A%0A";
+
+  return (
+    <section className="px-4 py-12 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl rounded-lg border border-line bg-paper p-6 shadow-soft sm:p-8 lg:p-10">
+        <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div>
+            <p className="text-sm font-bold uppercase tracking-wide text-clay">Beta feedback</p>
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-ink sm:text-4xl">
+              Help shape Meet Me Halfway.
+            </h2>
+            <p className="mt-3 max-w-2xl text-base leading-7 text-slate">
+              We're actively building this product and would love your feedback.
+            </p>
+            <div className="mt-5 grid gap-2 text-sm font-semibold text-slate sm:grid-cols-3">
+              <span className="rounded-lg border border-line bg-sky px-3 py-2">What worked</span>
+              <span className="rounded-lg border border-line bg-sky px-3 py-2">What felt confusing</span>
+              <span className="rounded-lg border border-line bg-sky px-3 py-2">What you'd like us to add</span>
+            </div>
+          </div>
+          <a
+            href={feedbackHref}
+            className="inline-flex h-11 items-center justify-center rounded-lg bg-clay px-5 text-sm font-bold text-white shadow-glow transition hover:bg-[#174FE0]"
+          >
+            Send Feedback
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Footer() {
+  const feedbackHref =
+    "mailto:nathandrapkin@gmail.com?subject=Meet%20Me%20Halfway%20feedback&body=Questions%2C%20ideas%2C%20or%20feedback%3A%0A";
+
+  return (
+    <footer className="border-t border-line px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-7xl flex-col gap-6 text-sm text-slate sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-base font-black text-ink">Meet Me Halfway</p>
+          <p className="mt-1 font-semibold">Currently in Beta</p>
+          <p className="mt-3 max-w-sm leading-6">Made to make meeting up easier.</p>
+        </div>
+        <div className="sm:text-right">
+          <p className="leading-6">Questions, ideas, or feedback?</p>
+          <p className="leading-6">We'd love to hear from you.</p>
+          <a href={feedbackHref} className="mt-3 inline-flex font-bold text-clay hover:text-[#174FE0]">
+            Send Feedback -&gt;
+          </a>
+        </div>
+      </div>
+    </footer>
   );
 }
 

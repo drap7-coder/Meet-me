@@ -38,7 +38,6 @@ export function VenueCard({
             <span className="inline-flex rounded-lg bg-clay px-3 py-1 text-xs font-bold text-white">
               {match.badge}
             </span>
-            <span className="inline-flex rounded-lg border border-line bg-sky px-3 py-1 text-xs font-bold text-slate">Spot {rank}</span>
           </div>
           <h3 className="text-xl font-black leading-tight text-ink">{venue.name}</h3>
           <p className="mt-1 text-sm font-semibold text-slate">{venue.category}</p>
@@ -80,7 +79,6 @@ export function VenueCard({
           <Detail label="Venue rating" value={match.details.rating} />
           <Detail label="Category match" value={match.details.category} />
           <Detail label="Convenience" value={match.details.convenience} />
-          <p className="pt-1 text-xs font-semibold text-slate">Internal fit: {Math.round(venue.fairnessScore)}</p>
         </div>
       </details>
 
@@ -126,8 +124,6 @@ function Detail({ label, value }: { label: string; value: string }) {
 function getMatchExplanation({
   venue,
   rank,
-  originALabel,
-  originBLabel,
   isClosestToHalfway,
   isShortestCombined
 }: {
@@ -145,8 +141,8 @@ function getMatchExplanation({
   const onePersonSavesTime =
     typeof a === "number" && typeof b === "number" && Math.abs(a - b) >= 15
       ? a < b
-        ? originALabel
-        : originBLabel
+        ? "You"
+        : "Them"
       : null;
 
   let badge = "Good Meeting Spot";

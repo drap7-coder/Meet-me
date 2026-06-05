@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Meet Me Halfway",
-  description: "Find the perfect place between you.",
+  description: "Enter two starting points and discover great places right in the middle.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
   icons: {
     icon: "/meet-me-logo-v3.png",
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Meet Me Halfway",
-    description: "Find the perfect place between you.",
+    description: "Enter two starting points and discover great places right in the middle.",
     type: "website",
     images: [
       {
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Meet Me Halfway",
-    description: "Find the perfect place between you.",
+    description: "Enter two starting points and discover great places right in the middle.",
     images: ["/meet-me-logo-v3.png"]
   }
 };

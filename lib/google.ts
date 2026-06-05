@@ -7,10 +7,12 @@ import type {
   RouteLeg,
   SearchHalfwayRequest,
   SearchHalfwayResponse,
-  VenueCandidate
+  VenueCandidate,
+  PlaceSuggestion
 } from "@/lib/types";
 
 const GEOCODING_URL = "https://maps.googleapis.com/maps/api/geocode/json";
+const PLACES_AUTOCOMPLETE_URL = "https://places.googleapis.com/v1/places:autocomplete";
 const PLACES_TEXT_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText";
 const ROUTE_MATRIX_URL = "https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix";
 
@@ -22,12 +24,16 @@ function getGoogleMapsKey() {
   return key;
 }
 
-export async function geocodeAddress(input: string): Promise<GeocodedLocation> {
+export async function geocodeAddress(input: string, placeId?: string): Promise<GeocodedLocation> {
   const trimmed = input.trim();
   if (!trimmed) throw new Error("Location is required.");
 
   const url = new URL(GEOCODING_URL);
-  url.searchParams.set("address", trimmed);
+  if (placeId) {
+    url.searchParams.set("place_id", placeId);
+  } else {
+    url.searchParams.set("address", trimmed);
+  }
   url.searchParams.set("key", getGoogleMapsKey());
 
   const response = await fetch(url, { cache: "no-store" });
@@ -49,6 +55,48 @@ export async function geocodeAddress(input: string): Promise<GeocodedLocation> {
     },
     placeId: result.place_id
   };
+}
+
+export async function autocompleteLocations(input: string): Promise<PlaceSuggestion[]> {
+  const trimmed = input.trim();
+  if (trimmed.length < 2) return [];
+
+  const response = await fetch(PLACES_AUTOCOMPLETE_URL, {
+    method: "POST",
+    cache: "no-store",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": getGoogleMapsKey(),
+      "X-Goog-FieldMask": [
+        "suggestions.placePrediction.placeId",
+        "suggestions.placePrediction.text",
+        "suggestions.placePrediction.structuredFormat"
+      ].join(",")
+    },
+    body: JSON.stringify({
+      input: trimmed,
+      includedRegionCodes: ["us"],
+      includeQueryPredictions: false,
+      languageCode: "en"
+    })
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Location autocomplete failed with ${response.status}: ${body.slice(0, 180)}`);
+  }
+
+  const data = await response.json();
+  return (data.suggestions ?? [])
+    .map((suggestion: any) => suggestion.placePrediction)
+    .filter((prediction: any) => prediction?.placeId && prediction?.text?.text)
+    .slice(0, 5)
+    .map((prediction: any) => ({
+      placeId: prediction.placeId,
+      text: prediction.text.text,
+      mainText: prediction.structuredFormat?.mainText?.text ?? prediction.text.text,
+      secondaryText: prediction.structuredFormat?.secondaryText?.text ?? ""
+    }));
 }
 
 export async function searchPlacesNearMidpoint(params: {
@@ -166,8 +214,8 @@ export async function computeRouteMatrix(params: {
 
 export async function searchHalfway(request: SearchHalfwayRequest): Promise<SearchHalfwayResponse> {
   const [originA, originB] = await Promise.all([
-    geocodeAddress(request.locationA),
-    geocodeAddress(request.locationB)
+    geocodeAddress(request.locationA, request.locationAPlaceId),
+    geocodeAddress(request.locationB, request.locationBPlaceId)
   ]);
 
   const midpoint = calculateMidpoint(originA.location, originB.location);

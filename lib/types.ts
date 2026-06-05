@@ -20,6 +20,13 @@ export type GeocodedLocation = {
   placeId?: string;
 };
 
+export type PlaceSuggestion = {
+  placeId: string;
+  text: string;
+  mainText: string;
+  secondaryText: string;
+};
+
 export type VenueCandidate = {
   id: string;
   name: string;
@@ -49,7 +56,9 @@ export type ScoredVenue = VenueCandidate & {
 
 export type SearchHalfwayRequest = {
   locationA: string;
+  locationAPlaceId?: string;
   locationB: string;
+  locationBPlaceId?: string;
   category: VenueCategory;
   customQuery?: string;
 };

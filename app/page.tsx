@@ -25,11 +25,13 @@ export default function HomePage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const locationA = params.get("a") ?? "";
+    const locationAPlaceId = params.get("aPlaceId") ?? undefined;
     const locationB = params.get("b") ?? "";
+    const locationBPlaceId = params.get("bPlaceId") ?? undefined;
     const category = (params.get("category") as VenueCategory | null) ?? "restaurant";
     const customQuery = params.get("q") ?? "";
     if (locationA || locationB || customQuery) {
-      setForm({ locationA, locationB, category, customQuery });
+      setForm({ locationA, locationAPlaceId, locationB, locationBPlaceId, category, customQuery });
     }
   }, []);
 
@@ -166,7 +168,9 @@ export default function HomePage() {
 function updateShareUrl(form: SearchHalfwayRequest) {
   const params = new URLSearchParams();
   if (form.locationA) params.set("a", form.locationA);
+  if (form.locationAPlaceId) params.set("aPlaceId", form.locationAPlaceId);
   if (form.locationB) params.set("b", form.locationB);
+  if (form.locationBPlaceId) params.set("bPlaceId", form.locationBPlaceId);
   params.set("category", form.category);
   if (form.customQuery) params.set("q", form.customQuery);
   window.history.replaceState(null, "", `/?${params.toString()}`);

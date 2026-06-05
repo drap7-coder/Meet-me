@@ -1,8 +1,8 @@
 # Meet Me Half Way
 
-Find the fairest place to meet.
+Find a place that works for both of you.
 
-Meet Me Half Way is a mobile-first Next.js MVP that helps two people find high-quality meeting places near a fair travel-time midpoint. It searches restaurants, bars, coffee shops, bookstores, driving ranges, parks, dessert spots, or a custom venue type, then ranks venues by route fairness and venue quality.
+Meet Me Half Way is a mobile-first Next.js MVP that helps two people find high-quality meeting places near a balanced travel-time midpoint. It searches restaurants, bars, coffee shops, bookstores, driving ranges, parks, dessert spots, or a custom venue type, then ranks venues by travel-time balance and venue quality.
 
 ## Stack
 

@@ -75,7 +75,7 @@ export function VenueCard({
           <span className="text-lg leading-none text-slate transition group-open:rotate-45">+</span>
         </summary>
         <div className="grid gap-3 border-t border-line px-4 py-4 text-sm leading-6 text-slate">
-          <Detail label="Distance fairness" value={match.details.fairness} />
+          <Detail label="Drive balance" value={match.details.balance} />
           <Detail label="Venue rating" value={match.details.rating} />
           <Detail label="Category match" value={match.details.category} />
           <Detail label="Convenience" value={match.details.convenience} />
@@ -150,10 +150,10 @@ function getMatchExplanation({
 
   if (rank === 1 && typeof diff === "number" && diff <= 10 && typeof rating === "number" && rating >= 4.3) {
     badge = "Best Overall Match";
-    explanation = "A strong mix of fair travel times, good reviews, and a convenient location.";
+    explanation = "A strong mix of balanced travel times, good reviews, and a convenient location.";
   } else if (typeof diff === "number" && diff <= 5) {
     badge = "Most Balanced";
-    explanation = "This spot keeps the trip fair, with nearly equal travel times for both people.";
+    explanation = "This spot keeps the trip balanced, with nearly equal travel times for both people.";
   } else if (isShortestCombined) {
     badge = "Shortest Combined Drive";
     explanation = "This option keeps the total time on the road especially low.";
@@ -172,7 +172,7 @@ function getMatchExplanation({
     badge,
     explanation,
     details: {
-      fairness: describeFairness(diff),
+      balance: describeBalance(diff),
       rating: describeRating(rating, venue.reviewCount),
       category: `Matches your ${venue.category.toLowerCase()} search.`,
       convenience: describeConvenience(venue, isClosestToHalfway, isShortestCombined)
@@ -180,7 +180,7 @@ function getMatchExplanation({
   };
 }
 
-function describeFairness(diff: number | null) {
+function describeBalance(diff: number | null) {
   if (typeof diff !== "number") return "Travel times could not be compared for both people.";
   if (diff <= 5) return `Keeps drive times within ${diff} minute${diff === 1 ? "" : "s"} of each other.`;
   if (diff <= 10) return `Keeps the trip reasonably even, with a ${diff} minute difference.`;

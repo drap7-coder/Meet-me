@@ -96,6 +96,36 @@ export default function HomePage() {
     }
   }
 
+  async function shareOptions() {
+    if (!results) return;
+    const topOptions = results.venues.slice(0, 5);
+    const url = window.location.href;
+    const lines = topOptions.map((venue, index) => {
+      const timeA = formatMinutes(venue.travelFromA.durationMinutes);
+      const timeB = formatMinutes(venue.travelFromB.durationMinutes);
+      return `${index + 1}. ${venue.name} - ${timeA} / ${timeB} - ${venue.googleMapsUri}`;
+    });
+    const text = [
+      `Here are a few places that could work between ${shortLocationLabel(results.originA.formattedAddress)} and ${shortLocationLabel(results.originB.formattedAddress)}:`,
+      "",
+      ...lines,
+      "",
+      `Full list: ${url}`
+    ].join("\n");
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Meet Me Halfway options", text, url });
+        setShareMessage("");
+      } else {
+        await navigator.clipboard.writeText(text);
+        setShareMessage("Options copied to clipboard.");
+      }
+    } catch {
+      setShareMessage("Sharing was cancelled.");
+    }
+  }
+
   return (
     <main className="min-h-screen bg-mint text-ink">
       <SiteHeader />
@@ -122,6 +152,8 @@ export default function HomePage() {
               loading={loading}
               resultCountLabel={resultCountLabel}
               originSummary={results ? `${results.originA.formattedAddress} → ${results.originB.formattedAddress}` : ""}
+              canShareOptions={Boolean(results?.venues.length)}
+              onShareOptions={shareOptions}
               onNewSearch={startNewSearch}
             />
           ) : null}
@@ -242,11 +274,15 @@ function CompactResultsHeader({
   loading,
   resultCountLabel,
   originSummary,
+  canShareOptions,
+  onShareOptions,
   onNewSearch
 }: {
   loading: boolean;
   resultCountLabel: string;
   originSummary: string;
+  canShareOptions: boolean;
+  onShareOptions: () => void;
   onNewSearch: () => void;
 }) {
   return (
@@ -260,13 +296,24 @@ function CompactResultsHeader({
             <h1 className="mt-1 text-3xl font-black tracking-tight text-ink sm:text-4xl">Recommended places</h1>
             {originSummary ? <p className="mt-2 text-sm leading-6 text-slate">{originSummary}</p> : null}
           </div>
-          <button
-            type="button"
-            onClick={onNewSearch}
-            className="inline-flex h-10 items-center justify-center rounded-lg border border-line bg-paper px-4 text-sm font-bold text-ink transition hover:border-clay hover:text-clay"
-          >
-            New search
-          </button>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            {canShareOptions ? (
+              <button
+                type="button"
+                onClick={onShareOptions}
+                className="inline-flex h-10 items-center justify-center rounded-lg bg-clay px-4 text-sm font-bold text-white transition hover:bg-[#174FE0]"
+              >
+                Share these options
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={onNewSearch}
+              className="inline-flex h-10 items-center justify-center rounded-lg border border-line bg-paper px-4 text-sm font-bold text-ink transition hover:border-clay hover:text-clay"
+            >
+              New search
+            </button>
+          </div>
         </div>
       </div>
     </section>
@@ -361,7 +408,7 @@ function BrandSection() {
       <div className="mx-auto max-w-7xl rounded-lg bg-ink px-6 py-14 text-white shadow-soft sm:px-10 lg:px-14">
         <h2 className="max-w-3xl text-4xl font-black tracking-tight sm:text-6xl">Halfway isn’t compromise.</h2>
         <p className="mt-5 max-w-2xl text-xl leading-8 text-white/70">
-          It’s the simplest way to make plans fair, easy, and actually happen.
+          It’s the simplest way to make plans easier, faster, and actually happen.
         </p>
       </div>
     </section>

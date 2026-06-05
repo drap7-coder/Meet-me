@@ -25,7 +25,7 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
 
   async function shareInvite() {
     const url = window.location.origin;
-    const text = "Want to meet halfway? Add your starting point and we’ll find somewhere fair.";
+    const text = "Want to meet halfway? Add your starting point and we’ll find somewhere that works for both of us.";
     try {
       if (navigator.share) {
         await navigator.share({ title: "Meet Me Halfway", text, url });
@@ -44,7 +44,7 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
       <div className="mb-6">
         <p className="text-sm font-bold uppercase tracking-wide text-clay">Find a meeting spot</p>
         <h2 className="mt-2 text-2xl font-black tracking-tight text-ink sm:text-3xl">
-          Meet somewhere fair, fast.
+          Meet somewhere easy, fast.
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate">
           Add two starting points, choose the vibe, and find a place that works.

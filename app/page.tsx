@@ -89,11 +89,11 @@ export default function HomePage() {
     <main className="min-h-screen bg-mint text-ink">
       <SiteHeader />
 
-      <section className="px-4 pb-10 pt-7 sm:px-6 sm:pt-12 lg:px-8">
+      <section className="px-4 pb-10 pt-[max(88px,calc(env(safe-area-inset-top)+76px))] sm:px-6 sm:pt-[max(72px,calc(env(safe-area-inset-top)+64px))] lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-7 pb-8 sm:gap-10 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:pb-16">
             <div>
-              <h1 className="max-w-4xl text-[2.75rem] font-black leading-[1.02] tracking-tight text-ink sm:text-6xl lg:text-7xl">
+              <h1 className="max-w-4xl text-[2.75rem] font-black leading-[0.98] tracking-tight text-ink sm:text-6xl sm:leading-[1.02] lg:text-7xl">
                 Meet somewhere fair.
               </h1>
               <p className="mt-4 max-w-2xl text-lg leading-7 text-slate sm:mt-6 sm:text-xl sm:leading-8">
@@ -233,14 +233,32 @@ function SiteHeader() {
 
 function HeroVisual() {
   return (
-    <div className="relative min-h-[270px] overflow-hidden rounded-lg border border-line bg-paper p-5 shadow-soft sm:min-h-[420px] sm:p-6">
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(17,17,17,.04)_1px,transparent_1px),linear-gradient(180deg,rgba(17,17,17,.04)_1px,transparent_1px)] bg-[size:44px_44px]" />
-      <div className="absolute left-[12%] top-[28%] h-4 w-4 rounded-full bg-ink" />
-      <div className="absolute right-[12%] top-[30%] h-4 w-4 rounded-full bg-ink" />
-      <div className="absolute left-[19%] right-[19%] top-[31%] h-px bg-gradient-to-r from-ink/10 via-clay to-ink/10" />
-      <div className="absolute left-1/2 top-[31%] h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-clay ring-8 ring-clay/10" />
+    <div className="relative min-h-[300px] overflow-hidden rounded-[24px] border border-black/[0.06] bg-[#F7F8FB] p-5 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.03),0_16px_42px_rgba(17,17,17,0.08)] sm:min-h-[420px] sm:p-6">
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.052)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.052)_1px,transparent_1px)] bg-[size:76px_76px]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_48%,rgba(31,94,255,0.24),transparent_13%)]" />
+      <svg className="absolute inset-0 h-full w-full" viewBox="0 0 390 300" aria-hidden="true" preserveAspectRatio="none">
+        <path
+          d="M18 214 C88 174 116 198 184 150 S292 102 372 130"
+          fill="none"
+          stroke="rgba(17,17,17,0.15)"
+          strokeLinecap="round"
+          strokeWidth="3"
+        />
+        <path
+          d="M28 108 C104 88 150 112 194 146 S288 214 362 176"
+          fill="none"
+          stroke="rgba(31,94,255,0.26)"
+          strokeLinecap="round"
+          strokeWidth="2"
+        />
+      </svg>
+      <div className="absolute left-[13%] top-[28%] h-3.5 w-3.5 rounded-full bg-ink shadow-[0_0_0_7px_rgba(17,17,17,0.06)]" />
+      <div className="absolute right-[13%] top-[31%] h-3.5 w-3.5 rounded-full bg-ink shadow-[0_0_0_7px_rgba(17,17,17,0.06)]" />
+      <div className="absolute left-1/2 top-[45%] h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-clay shadow-[0_0_0_12px_rgba(31,94,255,0.14),0_18px_42px_rgba(31,94,255,0.26)]" />
+      <div className="absolute left-[30%] top-[56%] h-2 w-2 rounded-full bg-ink/30" />
+      <div className="absolute right-[27%] top-[54%] h-2 w-2 rounded-full bg-ink/30" />
 
-      <div className="absolute bottom-5 left-5 right-5 rounded-lg border border-line bg-paper p-4 shadow-[0_14px_34px_rgba(17,17,17,0.08)] sm:bottom-6 sm:left-6 sm:right-6 sm:p-5">
+      <div className="absolute left-5 right-5 top-12 rounded-[24px] border border-black/[0.06] bg-white/95 p-5 shadow-[0_24px_60px_rgba(15,23,42,0.16),0_2px_8px_rgba(15,23,42,0.08)] backdrop-blur-md sm:bottom-6 sm:left-6 sm:right-6 sm:top-auto sm:p-6">
         <p className="text-sm font-bold text-clay">Skip the back-and-forth.</p>
         <h2 className="mt-2 text-xl font-black tracking-tight text-ink sm:text-2xl">Meet somewhere fair, fast.</h2>
         <p className="mt-3 text-sm leading-6 text-slate">

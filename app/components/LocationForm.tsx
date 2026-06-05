@@ -12,6 +12,8 @@ type Props = {
 };
 
 export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
+  const [inviteStatus, setInviteStatus] = useState("");
+
   function update<K extends keyof SearchHalfwayRequest>(key: K, value: SearchHalfwayRequest[K]) {
     onChange({ ...form, [key]: value });
   }
@@ -19,6 +21,22 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     onSubmit();
+  }
+
+  async function shareInvite() {
+    const url = window.location.origin;
+    const text = "Want to meet halfway? Add your starting point and we’ll find somewhere fair.";
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Meet Me Halfway", text, url });
+        setInviteStatus("");
+      } else {
+        await navigator.clipboard.writeText(`${text} ${url}`);
+        setInviteStatus("Invite link copied.");
+      }
+    } catch {
+      setInviteStatus("Invite was cancelled.");
+    }
   }
 
   return (
@@ -74,6 +92,14 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
       >
         {loading ? "Finding the middle..." : "Find the Middle"}
       </button>
+      <button
+        type="button"
+        onClick={shareInvite}
+        className="mt-3 h-10 w-full rounded-lg border border-line bg-mint px-5 text-sm font-bold text-ink transition hover:border-clay hover:text-clay"
+      >
+        Invite someone to plan with you
+      </button>
+      {inviteStatus ? <p className="mt-3 text-center text-xs font-semibold text-slate">{inviteStatus}</p> : null}
     </form>
   );
 }

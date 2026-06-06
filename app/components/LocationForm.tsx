@@ -97,21 +97,17 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
         <CategorySelector value={form.category} onChange={(category: VenueCategory) => update("category", category)} />
       </div>
 
-      <details className="mt-5 rounded-lg border border-line bg-mint p-4">
-        <summary className="cursor-pointer list-none text-sm font-bold text-ink">
-          Preferences
-          {form.preferences?.length ? (
-            <span className="ml-2 text-xs font-bold text-clay">
-              {form.preferences.length} selected
-            </span>
-          ) : (
-            <span className="ml-2 text-xs font-semibold text-slate">Optional</span>
-          )}
-        </summary>
-        <p className="mt-2 text-xs font-semibold leading-5 text-slate">
-          Add setting preferences to gently shape the ranking.
-        </p>
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible">
+      <div className="mt-5 grid gap-3 rounded-lg border border-line bg-mint p-4">
+        <div>
+          <span className="text-sm font-bold text-ink">Preferences</span>
+          <span className="ml-2 text-xs font-semibold text-slate">
+            {form.preferences?.length ? `${form.preferences.length} selected` : "Optional"}
+          </span>
+          <p className="mt-1 text-xs font-semibold leading-5 text-slate">
+            Add setting preferences to gently shape the ranking.
+          </p>
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible">
           {PREFERENCES.map((preference) => {
             const selected = Boolean(form.preferences?.includes(preference.id));
             return (
@@ -131,7 +127,7 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
             );
           })}
         </div>
-      </details>
+      </div>
 
       {form.category === "custom" ? (
         <label className="mt-4 grid gap-2">

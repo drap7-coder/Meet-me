@@ -8,8 +8,8 @@ export const metadata: Metadata = {
   description: BRAND.description,
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
   icons: {
-    icon: "/icon",
-    apple: "/apple-icon"
+    icon: "/halfway-logo.png",
+    apple: "/halfway-logo.png"
   },
   openGraph: {
     title: BRAND.name,
@@ -17,9 +17,9 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/icon",
-        width: 512,
-        height: 512,
+        url: "/halfway-logo.png",
+        width: 1254,
+        height: 1254,
         alt: BRAND.name
       }
     ]
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: BRAND.name,
     description: BRAND.description,
-    images: ["/icon"]
+    images: ["/halfway-logo.png"]
   }
 };
 

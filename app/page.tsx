@@ -288,9 +288,9 @@ function MarketingHero() {
 
       <div className="order-3 overflow-hidden rounded-[24px] border border-black/[0.06] bg-paper shadow-soft lg:order-2">
         <img
-          src="/homepage-hero.png"
-          alt={`${BRAND.name} hero illustration`}
-          className="block aspect-[3/2] h-auto w-full object-cover object-center lg:aspect-[1.42/1]"
+          src="/halfway-logo.png"
+          alt={`${BRAND.name} logo`}
+          className="block aspect-[3/2] h-auto w-full object-contain object-center p-8 lg:aspect-[1.42/1] lg:p-12"
         />
       </div>
     </section>

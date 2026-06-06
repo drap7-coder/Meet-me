@@ -17,6 +17,7 @@ import {
 } from "@/lib/recentMeetups";
 import { shareWithFallback } from "@/lib/share";
 import type { LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory } from "@/lib/types";
+import { BRAND } from "@/src/config/branding";
 import { useEffect, useMemo, useState } from "react";
 
 const initialForm: SearchHalfwayRequest = {
@@ -113,7 +114,7 @@ export default function HomePage() {
 
   async function shareVenue(venue: ScoredVenue) {
     const text = `${venue.name} looks like a good halfway spot: ${formatMinutes(venue.travelFromA.durationMinutes)} for one of you, ${formatMinutes(venue.travelFromB.durationMinutes)} for the other. ${venue.googleMapsUri}`;
-    const result = await shareWithFallback({ title: "Meet Me Halfway", text, url: venue.googleMapsUri });
+    const result = await shareWithFallback({ title: BRAND.name, text, url: venue.googleMapsUri });
     if (result === "shared") setShareMessage("");
     if (result === "copied") setShareMessage("Spot copied to clipboard.");
     if (result === "email") setShareMessage("Email draft opened.");
@@ -137,7 +138,7 @@ export default function HomePage() {
       `Full list: ${url}`
     ].join("\n");
 
-    const result = await shareWithFallback({ title: "Meet Me Halfway options", text, url });
+    const result = await shareWithFallback({ title: `${BRAND.name} options`, text, url });
     if (result === "shared") setShareMessage("");
     if (result === "copied") setShareMessage("Options copied to clipboard.");
     if (result === "email") setShareMessage("Email draft opened.");
@@ -262,17 +263,17 @@ function MarketingHero() {
     <section className="grid gap-7 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
       <div className="order-1">
         <h1 className="max-w-2xl text-[2.75rem] font-black leading-[0.98] tracking-tight text-ink sm:text-6xl sm:leading-[1.02] lg:text-7xl">
-          Where should we meet?
+          Meet in the middle.
         </h1>
         <p className="mt-4 max-w-xl text-lg leading-7 text-slate sm:mt-6 sm:text-xl sm:leading-8">
-          Meet Me Halfway finds the perfect place between two people, so nobody gets stuck with the long drive.
+          {BRAND.heroSubheadline}
         </p>
         <div className="mt-6 flex flex-col gap-2.5 sm:mt-8 sm:flex-row sm:gap-3">
           <a
             href="#search"
             className="inline-flex h-11 items-center justify-center rounded-lg bg-clay px-5 text-base font-bold text-white shadow-glow transition hover:bg-[#174FE0] sm:h-12"
           >
-            Find the Middle
+            Find a Place
           </a>
           <a
             href="#how-it-works"
@@ -286,7 +287,7 @@ function MarketingHero() {
       <div className="order-3 overflow-hidden rounded-[24px] border border-black/[0.06] bg-paper shadow-soft lg:order-2">
         <img
           src="/homepage-hero.png"
-          alt="Meet Me Halfway hero illustration"
+          alt={`${BRAND.name} hero illustration`}
           className="block aspect-[3/2] h-auto w-full object-cover object-center lg:aspect-[1.42/1]"
         />
       </div>
@@ -314,7 +315,8 @@ function CompactResultsHeader({
       <div className="rounded-lg border border-line bg-paper p-5 shadow-soft sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-bold uppercase tracking-wide text-clay">
+            <p className="text-sm font-bold uppercase tracking-wide text-clay">{BRAND.name}</p>
+            <p className="mt-2 text-sm font-bold uppercase tracking-wide text-clay">
               {loading ? "Finding places" : resultCountLabel || "Recommended places"}
             </p>
             <h1 className="mt-1 text-3xl font-black tracking-tight text-ink sm:text-4xl">Recommended places</h1>
@@ -348,8 +350,8 @@ function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-mint pt-[env(safe-area-inset-top)]">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:h-16 sm:px-6 lg:px-8">
-        <a href="/" className="inline-flex min-w-0 items-center gap-2.5" aria-label="Meet Me Halfway home">
-          <span className="truncate text-base font-black tracking-tight text-ink sm:text-lg">Meet Me Halfway</span>
+        <a href="/" className="inline-flex min-w-0 items-center gap-2.5" aria-label={`${BRAND.name} home`}>
+          <span className="truncate text-base font-black tracking-tight text-ink sm:text-lg">{BRAND.name}</span>
           <span className="rounded-md border border-line bg-paper px-1.5 py-0.5 text-[0.65rem] font-black tracking-wide text-slate">
             BETA
           </span>
@@ -440,8 +442,9 @@ function BrandSection() {
 }
 
 function FeedbackSection() {
-  const feedbackHref =
-    "mailto:nathandrapkin@gmail.com?subject=Meet%20Me%20Halfway%20feedback&body=What%20worked%3A%0A%0AWhat%20felt%20confusing%3A%0A%0AWhat%20I%27d%20like%20you%20to%20add%3A%0A";
+  const feedbackHref = `mailto:nathandrapkin@gmail.com?subject=${encodeURIComponent(
+    `${BRAND.name} feedback`
+  )}&body=${encodeURIComponent("What worked:\n\nWhat felt confusing:\n\nWhat I'd like you to add:\n")}`;
 
   return (
     <section className="px-4 py-12 sm:px-6 lg:px-8">
@@ -450,7 +453,7 @@ function FeedbackSection() {
           <div>
             <p className="text-sm font-bold uppercase tracking-wide text-clay">Beta feedback</p>
             <h2 className="mt-3 text-3xl font-black tracking-tight text-ink sm:text-4xl">
-              Help shape Meet Me Halfway.
+              Help shape {BRAND.name}.
             </h2>
             <p className="mt-3 max-w-2xl text-base leading-7 text-slate">
               We're actively building this product and would love your feedback.
@@ -474,16 +477,17 @@ function FeedbackSection() {
 }
 
 function Footer() {
-  const feedbackHref =
-    "mailto:nathandrapkin@gmail.com?subject=Meet%20Me%20Halfway%20feedback&body=Questions%2C%20ideas%2C%20or%20feedback%3A%0A";
+  const feedbackHref = `mailto:nathandrapkin@gmail.com?subject=${encodeURIComponent(
+    `${BRAND.name} feedback`
+  )}&body=${encodeURIComponent("Questions, ideas, or feedback:\n")}`;
 
   return (
     <footer className="border-t border-line px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 text-sm text-slate sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-base font-black text-ink">Meet Me Halfway</p>
+          <p className="text-base font-black text-ink">{BRAND.name}</p>
           <p className="mt-1 font-semibold">Currently in Beta</p>
-          <p className="mt-3 max-w-sm leading-6">Made to make meeting up easier.</p>
+          <p className="mt-3 max-w-sm leading-6">{BRAND.footerDescription}</p>
         </div>
         <div className="sm:text-right">
           <p className="leading-6">Questions, ideas, or feedback?</p>

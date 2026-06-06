@@ -1,32 +1,34 @@
 import type { Metadata } from "next";
+import { BRAND } from "@/src/config/branding";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Meet Me Halfway",
-  description: "Enter two starting points and discover great places right in the middle.",
+  title: BRAND.name,
+  applicationName: BRAND.name,
+  description: BRAND.description,
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
   icons: {
-    icon: "/meet-me-logo-v3.png",
-    apple: "/meet-me-logo-v3.png"
+    icon: "/icon",
+    apple: "/apple-icon"
   },
   openGraph: {
-    title: "Meet Me Halfway",
-    description: "Enter two starting points and discover great places right in the middle.",
+    title: BRAND.name,
+    description: BRAND.description,
     type: "website",
     images: [
       {
-        url: "/meet-me-logo-v3.png",
-        width: 1254,
-        height: 1254,
-        alt: "Meet Me Halfway"
+        url: "/icon",
+        width: 512,
+        height: 512,
+        alt: BRAND.name
       }
     ]
   },
   twitter: {
     card: "summary_large_image",
-    title: "Meet Me Halfway",
-    description: "Enter two starting points and discover great places right in the middle.",
-    images: ["/meet-me-logo-v3.png"]
+    title: BRAND.name,
+    description: BRAND.description,
+    images: ["/icon"]
   }
 };
 

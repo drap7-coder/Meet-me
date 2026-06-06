@@ -3,6 +3,7 @@
 import { CategorySelector } from "@/app/components/CategorySelector";
 import type { PlaceSuggestion, SearchHalfwayRequest, VenueCategory } from "@/lib/types";
 import { copyTextToClipboard, shareWithFallback } from "@/lib/share";
+import { BRAND } from "@/src/config/branding";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 type Props = {
@@ -36,7 +37,7 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
     setInviteUrl(url);
     setShowInviteTools(true);
 
-    const result = await shareWithFallback({ title: "Meet Me Halfway", text: inviteText, url });
+    const result = await shareWithFallback({ title: BRAND.name, text: inviteText, url });
     if (result === "shared") {
       setInviteStatus("");
       setShowInviteTools(false);
@@ -56,12 +57,12 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
   return (
     <form onSubmit={handleSubmit} className="rounded-lg border border-line bg-paper p-5 shadow-soft sm:p-7">
       <div className="mb-6">
-        <p className="text-sm font-bold uppercase tracking-wide text-clay">Find a meeting spot</p>
+        <p className="text-sm font-bold uppercase tracking-wide text-clay">{BRAND.name}</p>
         <h2 className="mt-2 text-2xl font-black tracking-tight text-ink sm:text-3xl">
-          Meet somewhere easy, fast.
+          Where should you meet?
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate">
-          Add two starting points, choose the vibe, and find a place that works.
+          Enter two locations and we’ll find great places between them.
         </p>
       </div>
 
@@ -104,7 +105,7 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
         disabled={loading}
         className="mt-6 h-11 w-full rounded-lg bg-clay px-5 font-bold text-white shadow-[0_10px_24px_rgba(17,17,17,0.12)] transition hover:bg-[#174FE0] disabled:cursor-not-allowed disabled:bg-ink/30 sm:h-12"
       >
-        {loading ? "Finding the middle..." : "Find the Middle"}
+        {loading ? "Finding a place..." : "Find a Place"}
       </button>
       <button
         type="button"
@@ -131,7 +132,7 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
               Copy link
             </button>
             <a
-              href={`mailto:?subject=${encodeURIComponent("Meet Me Halfway")}&body=${encodeURIComponent(`${inviteText}\n\n${inviteUrl}`)}`}
+              href={`mailto:?subject=${encodeURIComponent(BRAND.name)}&body=${encodeURIComponent(`${inviteText}\n\n${inviteUrl}`)}`}
               className="inline-flex h-10 items-center justify-center rounded-lg border border-line bg-white px-3 text-sm font-bold text-ink transition hover:border-clay hover:text-clay"
             >
               Email invite

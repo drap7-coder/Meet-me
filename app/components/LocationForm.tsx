@@ -107,7 +107,7 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
             Add setting preferences to gently shape the ranking.
           </p>
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
           {PREFERENCES.map((preference) => {
             const selected = Boolean(form.preferences?.includes(preference.id));
             return (
@@ -116,7 +116,7 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
                 type="button"
                 title={preference.helper}
                 onClick={() => togglePreference(preference.id)}
-                className={`shrink-0 rounded-lg border px-3 py-2 text-sm font-bold transition ${
+                className={`rounded-lg border px-3 py-2 text-center text-sm font-bold transition ${
                   selected
                     ? "border-clay bg-clay text-white"
                     : "border-line bg-paper text-ink hover:border-clay/40 hover:bg-sky"

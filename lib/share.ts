@@ -9,7 +9,7 @@ export type ShareResult = "shared" | "copied" | "email" | "cancelled";
 export async function shareWithFallback({ title, text, url }: SharePayload): Promise<ShareResult> {
   const fullText = [text, url].filter(Boolean).join("\n\n");
 
-  if (navigator.share) {
+  if (shouldUseNativeShare() && navigator.share) {
     try {
       await navigator.share({ title, text, url });
       return "shared";
@@ -24,6 +24,15 @@ export async function shareWithFallback({ title, text, url }: SharePayload): Pro
   const body = encodeURIComponent(fullText);
   window.location.href = `mailto:?subject=${subject}&body=${body}`;
   return "email";
+}
+
+function shouldUseNativeShare() {
+  const userAgent = navigator.userAgent.toLowerCase();
+  const isMobileLike =
+    /iphone|ipad|ipod|android|mobile/.test(userAgent) ||
+    (navigator.maxTouchPoints > 1 && /macintosh/.test(userAgent));
+
+  return isMobileLike;
 }
 
 function isCancelledShare(error: unknown) {

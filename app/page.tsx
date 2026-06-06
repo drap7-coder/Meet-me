@@ -4,6 +4,17 @@ import { EmptyState } from "@/app/components/EmptyState";
 import { LocationForm } from "@/app/components/LocationForm";
 import { ResultsMap } from "@/app/components/ResultsMap";
 import { VenueCard } from "@/app/components/VenueCard";
+import { WeatherCard } from "@/app/components/WeatherCard";
+import {
+  clearRecentMeetups,
+  createRecentMeetup,
+  formatRecentMeetupDate,
+  getRecentMeetupCategoryLabel,
+  getRecentMeetups,
+  recentMeetupToForm,
+  saveRecentMeetup,
+  type RecentMeetup
+} from "@/lib/recentMeetups";
 import { shareWithFallback } from "@/lib/share";
 import type { LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory } from "@/lib/types";
 import { useEffect, useMemo, useState } from "react";
@@ -22,6 +33,7 @@ export default function HomePage() {
   const [error, setError] = useState("");
   const [shareMessage, setShareMessage] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
+  const [recentMeetups, setRecentMeetups] = useState<RecentMeetup[]>([]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -34,6 +46,10 @@ export default function HomePage() {
     if (locationA || locationB || customQuery) {
       setForm({ locationA, locationAPlaceId, locationB, locationBPlaceId, category, customQuery });
     }
+  }, []);
+
+  useEffect(() => {
+    setRecentMeetups(getRecentMeetups());
   }, []);
 
   const resultCountLabel = useMemo(() => {
@@ -51,7 +67,7 @@ export default function HomePage() {
     };
   }, [results]);
 
-  async function submitSearch() {
+  async function submitSearch(searchForm: SearchHalfwayRequest = form) {
     setHasSearched(true);
     setLoading(true);
     setError("");
@@ -60,12 +76,13 @@ export default function HomePage() {
       const response = await fetch("/api/search-halfway", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form)
+        body: JSON.stringify(searchForm)
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "Search failed.");
       setResults(data);
-      updateShareUrl(form);
+      const shareUrl = updateShareUrl(searchForm);
+      setRecentMeetups(saveRecentMeetup(createRecentMeetup(searchForm, data, shareUrl)));
     } catch (searchError) {
       setResults(null);
       setError(searchError instanceof Error ? searchError.message : "Search failed.");
@@ -81,6 +98,17 @@ export default function HomePage() {
     setHasSearched(false);
     window.history.replaceState(null, "", "/");
     window.requestAnimationFrame(() => document.getElementById("search")?.scrollIntoView({ behavior: "smooth" }));
+  }
+
+  function rerunRecentMeetup(meetup: RecentMeetup) {
+    const nextForm = recentMeetupToForm(meetup);
+    setForm(nextForm);
+    submitSearch(nextForm);
+  }
+
+  function clearRecent() {
+    clearRecentMeetups();
+    setRecentMeetups([]);
   }
 
   async function shareVenue(venue: ScoredVenue) {
@@ -128,8 +156,9 @@ export default function HomePage() {
             </div>
           </section>
           <section id="search" className="bg-mint px-4 pb-10 sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-5xl">
+            <div className="mx-auto grid max-w-5xl gap-5">
               <LocationForm form={form} loading={loading} onChange={setForm} onSubmit={submitSearch} />
+              <RecentMeetupsSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
             </div>
           </section>
         </>
@@ -155,8 +184,9 @@ export default function HomePage() {
           ) : null}
 
           {error && !loading && !results ? (
-            <section id="search" className="mt-5 max-w-5xl">
+            <section id="search" className="mt-5 grid max-w-5xl gap-5">
               <LocationForm form={form} loading={loading} onChange={setForm} onSubmit={submitSearch} />
+              <RecentMeetupsSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
             </section>
           ) : null}
 
@@ -173,8 +203,21 @@ export default function HomePage() {
 
         {results && !loading ? (
           <section className="mt-5 grid gap-5 pb-16 lg:grid-cols-[1fr_420px] lg:items-start">
-            <div>
+            {results.venues.length ? (
+              <div className="order-1 lg:order-2">
+                <ResultsMap
+                  originA={results.originA}
+                  originB={results.originB}
+                  midpoint={results.midpoint}
+                  venues={results.venues}
+                />
+              </div>
+            ) : null}
+
+            <div className="order-2 grid gap-5 lg:order-1">
               {shareMessage ? <p className="mb-4 text-sm font-semibold text-clay">{shareMessage}</p> : null}
+
+              <WeatherCard midpoint={results.midpoint} />
 
               {results.venues.length ? (
                 <div className="grid gap-4">
@@ -195,15 +238,6 @@ export default function HomePage() {
                 <EmptyState />
               )}
             </div>
-
-            {results.venues.length ? (
-              <ResultsMap
-                originA={results.originA}
-                originB={results.originB}
-                midpoint={results.midpoint}
-                venues={results.venues}
-              />
-            ) : null}
           </section>
         ) : null}
         </div>
@@ -463,6 +497,75 @@ function Footer() {
   );
 }
 
+function RecentMeetupsSection({
+  meetups,
+  onSelect,
+  onClear
+}: {
+  meetups: RecentMeetup[];
+  onSelect: (meetup: RecentMeetup) => void;
+  onClear: () => void;
+}) {
+  if (!meetups.length) return null;
+
+  return (
+    <section className="rounded-lg border border-line bg-paper p-5 shadow-soft sm:p-6">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm font-bold uppercase tracking-wide text-clay">Recent Meetups</p>
+          <h2 className="mt-1 text-2xl font-black tracking-tight text-ink">Pick up where you left off.</h2>
+        </div>
+        <button
+          type="button"
+          onClick={onClear}
+          className="rounded-lg border border-line bg-mint px-3 py-2 text-sm font-bold text-slate transition hover:border-clay hover:text-clay"
+        >
+          Clear
+        </button>
+      </div>
+      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        {meetups.slice(0, 5).map((meetup) => (
+          <button
+            key={meetup.id}
+            type="button"
+            onClick={() => onSelect(meetup)}
+            className="rounded-lg border border-line bg-mint p-4 text-left shadow-[0_8px_22px_rgba(17,17,17,0.04)] transition hover:-translate-y-0.5 hover:border-clay hover:bg-white hover:shadow-soft"
+          >
+            <div className="flex items-start gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-sky text-lg" aria-hidden="true">
+                {categoryIcon(meetup.category)}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-base font-black text-ink">
+                  {shortLocationLabel(meetup.originA)} ↔ {shortLocationLabel(meetup.originB)}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-slate">
+                  {getRecentMeetupCategoryLabel(meetup)} · {formatRecentMeetupDate(meetup.timestamp)}
+                </p>
+                <p className="mt-2 text-xs font-semibold text-slate">Tap to meet here again</p>
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function categoryIcon(category: VenueCategory) {
+  const icons: Record<VenueCategory, string> = {
+    coffee: "☕",
+    restaurant: "🍽",
+    bar: "◐",
+    bookstore: "▰",
+    driving_range: "◉",
+    park: "⌁",
+    dessert: "✦",
+    custom: "•"
+  };
+  return icons[category];
+}
+
 function updateShareUrl(form: SearchHalfwayRequest) {
   const params = new URLSearchParams();
   if (form.locationA) params.set("a", form.locationA);
@@ -471,7 +574,9 @@ function updateShareUrl(form: SearchHalfwayRequest) {
   if (form.locationBPlaceId) params.set("bPlaceId", form.locationBPlaceId);
   params.set("category", form.category);
   if (form.customQuery) params.set("q", form.customQuery);
-  window.history.replaceState(null, "", `/?${params.toString()}`);
+  const path = `/?${params.toString()}`;
+  window.history.replaceState(null, "", path);
+  return `${window.location.origin}${path}`;
 }
 
 function formatMinutes(value: number | null) {

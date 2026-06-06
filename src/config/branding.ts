@@ -4,5 +4,5 @@ export const BRAND = {
   description: "Find the perfect place for two people to meet.",
   footerDescription: "Find the perfect place between two locations.",
   heroSubheadline:
-    "Find the perfect coffee shop, restaurant, bar, bookstore, golf course, or meeting place between two locations."
+    "Find the best coffee shop, restaurant, bar, bookstore, golf course, or meeting place that works for both people."
 };

@@ -262,9 +262,10 @@ export default function HomePage() {
 
 function MarketingHero() {
   return (
-    <section className="grid gap-7 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
+    <section className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
       <div className="order-1">
-        <h1 className="max-w-2xl text-[2.75rem] font-black leading-[0.98] tracking-tight text-ink sm:text-6xl sm:leading-[1.02] lg:text-7xl">
+        <p className="mb-4 text-sm font-bold uppercase tracking-[0.18em] text-clay">Two people. One destination. Equal effort.</p>
+        <h1 className="max-w-2xl text-[3.1rem] font-black leading-[0.94] tracking-tight text-ink sm:text-6xl sm:leading-[0.98] lg:text-7xl">
           Meet in the middle.
         </h1>
         <p className="mt-4 max-w-xl text-lg leading-7 text-slate sm:mt-6 sm:text-xl sm:leading-8">
@@ -275,25 +276,72 @@ function MarketingHero() {
             href="#search"
             className="inline-flex h-11 items-center justify-center rounded-lg bg-clay px-5 text-base font-bold text-white shadow-glow transition hover:bg-[#174FE0] sm:h-12"
           >
-            Find a Place
+            Find a Halfway Spot
           </a>
           <a
             href="#how-it-works"
             className="inline-flex h-11 items-center justify-center rounded-lg border border-line bg-paper px-5 text-base font-bold text-ink shadow-[0_8px_22px_rgba(17,17,17,0.04)] transition hover:border-ink/30 sm:h-12"
           >
-            How It Works
+            See How It Works
           </a>
         </div>
       </div>
 
-      <div className="order-3 overflow-hidden rounded-[24px] border border-black/[0.06] bg-paper shadow-soft lg:order-2">
-        <img
-          src="/halfway-logo.png"
-          alt={`${BRAND.name} logo`}
-          className="block aspect-[3/2] h-auto w-full object-contain object-center p-8 lg:aspect-[1.42/1] lg:p-12"
-        />
-      </div>
+      <ProductDemoVisual />
     </section>
+  );
+}
+
+function ProductDemoVisual() {
+  return (
+    <div className="order-3 lg:order-2">
+      <div className="relative min-h-[330px] overflow-hidden rounded-[28px] border border-line bg-[#FAFBFD] shadow-soft sm:min-h-[500px]">
+        <div
+          className="absolute inset-0 opacity-90"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(17,17,17,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(17,17,17,0.045) 1px, transparent 1px), radial-gradient(circle at 50% 55%, rgba(31,94,255,0.16), transparent 22%)",
+            backgroundSize: "54px 54px, 54px 54px, auto"
+          }}
+        />
+        <svg className="absolute inset-0 h-full w-full" viewBox="0 0 760 520" aria-hidden="true">
+          <path d="M120 140 C210 180 245 250 335 285 C390 306 420 340 465 385" fill="none" stroke="#1F5EFF" strokeWidth="12" strokeLinecap="round" />
+          <path d="M640 170 C560 210 550 282 474 348 C454 365 444 377 430 392" fill="none" stroke="#7C3AED" strokeWidth="12" strokeLinecap="round" />
+          <path d="M120 140 C210 180 245 250 335 285 C390 306 420 340 465 385" fill="none" stroke="rgba(255,255,255,0.76)" strokeWidth="3" strokeDasharray="16 16" strokeLinecap="round" />
+          <path d="M640 170 C560 210 550 282 474 348 C454 365 444 377 430 392" fill="none" stroke="rgba(255,255,255,0.76)" strokeWidth="3" strokeDasharray="16 16" strokeLinecap="round" />
+        </svg>
+
+        <div className="absolute left-4 top-5 rounded-2xl border border-line bg-white/95 p-3 shadow-[0_16px_38px_rgba(17,17,17,0.1)] backdrop-blur sm:left-8 sm:top-10 sm:p-4">
+          <p className="text-sm font-black text-ink sm:text-base">Hoboken, NJ</p>
+          <p className="mt-1 text-lg font-black text-clay">24 min</p>
+          <p className="mt-1 text-xs font-semibold text-slate">10.8 miles</p>
+        </div>
+
+        <div className="absolute right-4 top-10 rounded-2xl border border-line bg-white/95 p-3 shadow-[0_16px_38px_rgba(17,17,17,0.1)] backdrop-blur sm:right-8 sm:top-16 sm:p-4">
+          <p className="text-sm font-black text-ink sm:text-base">Edison, NJ</p>
+          <p className="mt-1 text-lg font-black text-[#6D28D9]">26 min</p>
+          <p className="mt-1 text-xs font-semibold text-slate">12.4 miles</p>
+        </div>
+
+        <div className="absolute left-[17%] top-[36%] grid h-12 w-12 place-items-center rounded-full bg-clay text-white shadow-glow sm:h-14 sm:w-14">
+          <span className="h-5 w-5 rounded-full border-[5px] border-white" />
+        </div>
+        <div className="absolute right-[10%] top-[42%] grid h-12 w-12 place-items-center rounded-full bg-[#6D28D9] text-white shadow-[0_16px_34px_rgba(109,40,217,0.24)] sm:h-14 sm:w-14">
+          <span className="h-5 w-5 rounded-full border-[5px] border-white" />
+        </div>
+
+        <div className="absolute bottom-4 left-1/2 w-[min(90%,340px)] -translate-x-1/2 rounded-[24px] border border-black/[0.06] bg-white p-4 text-center shadow-[0_24px_70px_rgba(17,17,17,0.16)] sm:bottom-8 sm:p-5">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-clay">Best Match</p>
+          <h2 className="mt-1 text-xl font-black tracking-tight text-ink sm:mt-2 sm:text-2xl">Sunset Coffee Co.</h2>
+          <div className="mt-4 grid grid-cols-2 gap-2 text-sm font-bold text-ink">
+            <span className="rounded-lg bg-sky px-3 py-2">Hoboken: 24 min</span>
+            <span className="rounded-lg bg-sky px-3 py-2">Edison: 26 min</span>
+          </div>
+          <p className="mt-3 text-base font-black text-ink">Only 2 minutes apart</p>
+          <p className="mt-2 text-sm font-semibold text-slate">Great coffee - Free parking - Highly rated</p>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -401,27 +449,26 @@ function HowItWorks() {
 
 function UseCases() {
   const cards = [
-    "Coffee catch-ups",
-    "Dinner with friends",
-    "First dates",
-    "Family meetups",
-    "Client meetings",
-    "Weekend activities"
+    ["Fair for Both People", "Nearly equal travel times so nobody gets stuck with the long drive."],
+    ["Best Local Places", "Restaurants, coffee shops, bars, bookstores, golf courses, and more."],
+    ["Save Time", "Stop comparing locations manually."],
+    ["Just Meet", "Pick a place and go."]
   ];
 
   return (
     <section className="px-4 py-16 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-          <h2 className="max-w-2xl text-4xl font-black tracking-tight text-ink sm:text-5xl">
-            Perfect for coffee, dinner, drinks, or something different.
+        <div className="max-w-2xl">
+          <p className="text-sm font-bold uppercase tracking-wide text-clay">Why it works</p>
+          <h2 className="mt-3 text-4xl font-black tracking-tight text-ink sm:text-5xl">
+            Equal effort, better plans.
           </h2>
-          <p className="max-w-sm text-lg leading-8 text-slate">Meet more often. Plan less.</p>
         </div>
-        <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {cards.map((card) => (
-            <article key={card} className="rounded-lg border border-line bg-paper p-6 shadow-soft">
-              <p className="text-xl font-black text-ink">{card}</p>
+        <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {cards.map(([title, copy]) => (
+            <article key={title} className="rounded-[22px] border border-line bg-paper p-6 shadow-[0_12px_30px_rgba(17,17,17,0.05)]">
+              <p className="text-xl font-black text-ink">{title}</p>
+              <p className="mt-3 text-sm font-semibold leading-6 text-slate">{copy}</p>
             </article>
           ))}
         </div>

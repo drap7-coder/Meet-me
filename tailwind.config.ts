@@ -12,14 +12,14 @@ const config: Config = {
         slate: "#6F6F6F",
         moss: "#111111",
         mint: "#FFFFFF",
-        paper: "#F4F7FF",
+        paper: "#FFFFFF",
         clay: "#1F5EFF",
-        sky: "#EAF0FF",
-        line: "#D8E3F8"
+        sky: "#F5F6FA",
+        line: "#E5E7EB"
       },
       boxShadow: {
-        soft: "0 16px 44px rgba(17, 17, 17, 0.08)",
-        glow: "0 14px 34px rgba(31, 94, 255, 0.18)"
+        soft: "0 18px 50px rgba(17, 17, 17, 0.08)",
+        glow: "0 16px 34px rgba(31, 94, 255, 0.2)"
       }
     }
   },

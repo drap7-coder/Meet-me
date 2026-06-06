@@ -337,8 +337,7 @@ function ProductDemoVisual() {
             <span className="rounded-lg bg-sky px-3 py-2">Hoboken: 24 min</span>
             <span className="rounded-lg bg-sky px-3 py-2">Edison: 26 min</span>
           </div>
-          <p className="mt-3 text-base font-black text-ink">Only 2 minutes apart</p>
-          <p className="mt-2 text-sm font-semibold text-slate">Great coffee - Free parking - Highly rated</p>
+          <p className="mt-3 text-sm font-semibold text-slate">Great coffee - Free parking - Highly rated</p>
         </div>
       </div>
     </div>

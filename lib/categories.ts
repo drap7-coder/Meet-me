@@ -6,11 +6,11 @@ export const CATEGORIES: Array<{
   searchTerm: string;
 }> = [
   { id: "coffee", label: "Coffee", searchTerm: "coffee shops" },
-  { id: "restaurant", label: "Food", searchTerm: "restaurants" },
+  { id: "restaurant", label: "Restaurant", searchTerm: "restaurants" },
   { id: "bar", label: "Drinks", searchTerm: "bars" },
   { id: "bookstore", label: "Bookstores", searchTerm: "bookstores" },
   { id: "park", label: "Parks", searchTerm: "parks" },
-  { id: "driving_range", label: "Activities", searchTerm: "driving ranges" },
+  { id: "driving_range", label: "Golf", searchTerm: "driving ranges" },
   { id: "dessert", label: "Dessert", searchTerm: "dessert shops" },
   { id: "custom", label: "Something else", searchTerm: "" }
 ];

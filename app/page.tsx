@@ -15,6 +15,7 @@ import {
   saveRecentMeetup,
   type RecentMeetup
 } from "@/lib/recentMeetups";
+import { getPreferenceLabel, parsePreferences } from "@/lib/preferences";
 import { shareWithFallback } from "@/lib/share";
 import type { LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory } from "@/lib/types";
 import { BRAND } from "@/src/config/branding";
@@ -44,8 +45,9 @@ export default function HomePage() {
     const locationBPlaceId = params.get("bPlaceId") ?? undefined;
     const category = (params.get("category") as VenueCategory | null) ?? "restaurant";
     const customQuery = params.get("q") ?? "";
+    const preferences = parsePreferences(params.get("preferences"));
     if (locationA || locationB || customQuery) {
-      setForm({ locationA, locationAPlaceId, locationB, locationBPlaceId, category, customQuery });
+      setForm({ locationA, locationAPlaceId, locationB, locationBPlaceId, category, customQuery, preferences });
     }
   }, []);
 
@@ -546,6 +548,11 @@ function RecentMeetupsSection({
                 <p className="mt-1 text-sm font-semibold text-slate">
                   {getRecentMeetupCategoryLabel(meetup)} · {formatRecentMeetupDate(meetup.timestamp)}
                 </p>
+                {meetup.preferences?.length ? (
+                  <p className="mt-1 truncate text-xs font-semibold text-clay">
+                    {meetup.preferences.map(getPreferenceLabel).join(" + ")}
+                  </p>
+                ) : null}
                 <p className="mt-2 text-xs font-semibold text-slate">Tap to meet here again</p>
               </div>
             </div>
@@ -578,6 +585,7 @@ function updateShareUrl(form: SearchHalfwayRequest) {
   if (form.locationBPlaceId) params.set("bPlaceId", form.locationBPlaceId);
   params.set("category", form.category);
   if (form.customQuery) params.set("q", form.customQuery);
+  if (form.preferences?.length) params.set("preferences", form.preferences.join(","));
   const path = `/?${params.toString()}`;
   window.history.replaceState(null, "", path);
   return `${window.location.origin}${path}`;

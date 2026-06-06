@@ -13,6 +13,15 @@ export type VenueCategory =
   | "dessert"
   | "custom";
 
+export type Preference =
+  | "downtown"
+  | "walkable"
+  | "easy_parking"
+  | "waterfront"
+  | "outdoor_seating"
+  | "upscale"
+  | "family_friendly";
+
 export type GeocodedLocation = {
   input: string;
   formattedAddress: string;
@@ -38,6 +47,7 @@ export type VenueCandidate = {
   openNow: boolean | null;
   googleMapsUri: string;
   websiteUri?: string;
+  types?: string[];
 };
 
 export type RouteLeg = {
@@ -52,6 +62,8 @@ export type ScoredVenue = VenueCandidate & {
   timeDifferenceMinutes: number | null;
   totalTravelMinutes: number | null;
   fairnessScore: number;
+  preferenceScore: number;
+  preferenceMatches: Preference[];
 };
 
 export type SearchHalfwayRequest = {
@@ -61,6 +73,7 @@ export type SearchHalfwayRequest = {
   locationBPlaceId?: string;
   category: VenueCategory;
   customQuery?: string;
+  preferences?: Preference[];
 };
 
 export type SearchHalfwayResponse = {
@@ -68,6 +81,7 @@ export type SearchHalfwayResponse = {
   originB: GeocodedLocation;
   midpoint: LatLng;
   category: VenueCategory;
+  preferences: Preference[];
   query: string;
   venues: ScoredVenue[];
 };

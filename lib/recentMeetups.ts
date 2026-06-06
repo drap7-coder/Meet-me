@@ -1,5 +1,5 @@
 import { getCategoryLabel } from "@/lib/categories";
-import type { SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory } from "@/lib/types";
+import type { Preference, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory } from "@/lib/types";
 
 export const RECENT_MEETUPS_KEY = "meetMeHalfway.recentMeetups.v1";
 
@@ -11,6 +11,7 @@ export type RecentMeetup = {
   originBPlaceId?: string;
   category: VenueCategory;
   customQuery?: string;
+  preferences?: Preference[];
   timestamp: number;
   shareUrl: string;
 };
@@ -81,6 +82,7 @@ export function createRecentMeetup(
     originBPlaceId: form.locationBPlaceId ?? results.originB.placeId,
     category: results.category,
     customQuery: form.customQuery,
+    preferences: form.preferences ?? [],
     timestamp,
     shareUrl
   };
@@ -93,7 +95,8 @@ export function recentMeetupToForm(meetup: RecentMeetup): SearchHalfwayRequest {
     locationB: meetup.originB,
     locationBPlaceId: meetup.originBPlaceId,
     category: meetup.category,
-    customQuery: meetup.customQuery ?? ""
+    customQuery: meetup.customQuery ?? "",
+    preferences: meetup.preferences ?? []
   };
 }
 

@@ -161,7 +161,8 @@ export async function searchPlacesNearMidpoint(params: {
       reviewCount: typeof place.userRatingCount === "number" ? place.userRatingCount : 0,
       openNow: typeof place.currentOpeningHours?.openNow === "boolean" ? place.currentOpeningHours.openNow : null,
       googleMapsUri: place.googleMapsUri ?? buildGoogleMapsSearchLink(place.displayName?.text, place.formattedAddress),
-      websiteUri: place.websiteUri
+      websiteUri: place.websiteUri,
+      types: Array.isArray(place.types) ? place.types : []
     }));
 }
 
@@ -213,6 +214,7 @@ export async function computeRouteMatrix(params: {
 }
 
 export async function searchHalfway(request: SearchHalfwayRequest): Promise<SearchHalfwayResponse> {
+  const preferences = request.preferences ?? [];
   const [originA, originB] = await Promise.all([
     geocodeAddress(request.locationA, request.locationAPlaceId),
     geocodeAddress(request.locationB, request.locationBPlaceId)
@@ -233,6 +235,7 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
       originB,
       midpoint,
       category: request.category,
+      preferences,
       query: getCategorySearchTerm(request.category, request.customQuery),
       venues: []
     };
@@ -249,7 +252,7 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
         ...venue,
         travelFromA: routeMatrix[0]?.[index] ?? unavailableLeg(),
         travelFromB: routeMatrix[1]?.[index] ?? unavailableLeg()
-      })
+      }, preferences)
     )
     .sort((a, b) => b.fairnessScore - a.fairnessScore);
 
@@ -258,6 +261,7 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
     originB,
     midpoint,
     category: request.category,
+    preferences,
     query: getCategorySearchTerm(request.category, request.customQuery),
     venues: scoredVenues
   };

@@ -88,3 +88,4 @@ The MVP formula:
 - Supabase is not wired yet; environment variables are included for future saved searches.
 - The map panel uses returned coordinates and local rendering so the browser does not need a public Google Maps key.
 - Shareable URL parameters are supported for locations, category, and custom query.
+- Optional preferences can be shared with `preferences=downtown,walkable,easy_parking`; existing links without preferences still work.

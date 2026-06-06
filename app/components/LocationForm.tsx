@@ -1,7 +1,8 @@
 "use client";
 
 import { CategorySelector } from "@/app/components/CategorySelector";
-import type { PlaceSuggestion, SearchHalfwayRequest, VenueCategory } from "@/lib/types";
+import { PREFERENCES } from "@/lib/preferences";
+import type { PlaceSuggestion, Preference, SearchHalfwayRequest, VenueCategory } from "@/lib/types";
 import { copyTextToClipboard, shareWithFallback } from "@/lib/share";
 import { BRAND } from "@/src/config/branding";
 import { FormEvent, useEffect, useRef, useState } from "react";
@@ -54,6 +55,14 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
     setInviteStatus(copied ? "Invite link copied." : "Copy failed. You can select the link below.");
   }
 
+  function togglePreference(preference: Preference) {
+    const current = form.preferences ?? [];
+    const preferences = current.includes(preference)
+      ? current.filter((item) => item !== preference)
+      : [...current, preference];
+    onChange({ ...form, preferences });
+  }
+
   return (
     <form onSubmit={handleSubmit} className="rounded-lg border border-line bg-paper p-5 shadow-soft sm:p-7">
       <div className="mb-6">
@@ -87,6 +96,42 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
         <span className="text-sm font-bold text-ink">Choose the vibe</span>
         <CategorySelector value={form.category} onChange={(category: VenueCategory) => update("category", category)} />
       </div>
+
+      <details className="mt-5 rounded-lg border border-line bg-mint p-4">
+        <summary className="cursor-pointer list-none text-sm font-bold text-ink">
+          Preferences
+          {form.preferences?.length ? (
+            <span className="ml-2 text-xs font-bold text-clay">
+              {form.preferences.length} selected
+            </span>
+          ) : (
+            <span className="ml-2 text-xs font-semibold text-slate">Optional</span>
+          )}
+        </summary>
+        <p className="mt-2 text-xs font-semibold leading-5 text-slate">
+          Add setting preferences to gently shape the ranking.
+        </p>
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible">
+          {PREFERENCES.map((preference) => {
+            const selected = Boolean(form.preferences?.includes(preference.id));
+            return (
+              <button
+                key={preference.id}
+                type="button"
+                title={preference.helper}
+                onClick={() => togglePreference(preference.id)}
+                className={`shrink-0 rounded-lg border px-3 py-2 text-sm font-bold transition ${
+                  selected
+                    ? "border-clay bg-clay text-white"
+                    : "border-line bg-paper text-ink hover:border-clay/40 hover:bg-sky"
+                }`}
+              >
+                {preference.label}
+              </button>
+            );
+          })}
+        </div>
+      </details>
 
       {form.category === "custom" ? (
         <label className="mt-4 grid gap-2">

@@ -1,3 +1,4 @@
+import { getPreferenceBadge, getPreferenceLabel } from "@/lib/preferences";
 import type { ScoredVenue } from "@/lib/types";
 
 type Props = {
@@ -78,6 +79,7 @@ export function VenueCard({
           <Detail label="Drive balance" value={match.details.balance} />
           <Detail label="Venue rating" value={match.details.rating} />
           <Detail label="Category match" value={match.details.category} />
+          <Detail label="Preference match" value={match.details.preference} />
           <Detail label="Convenience" value={match.details.convenience} />
         </div>
       </details>
@@ -138,6 +140,8 @@ function getMatchExplanation({
   const rating = venue.rating;
   const a = venue.travelFromA.durationMinutes;
   const b = venue.travelFromB.durationMinutes;
+  const primaryPreference = venue.preferenceMatches[0];
+  const preferencePhrase = formatPreferencePhrase(venue.preferenceMatches);
   const onePersonSavesTime =
     typeof a === "number" && typeof b === "number" && Math.abs(a - b) >= 15
       ? a < b
@@ -148,7 +152,10 @@ function getMatchExplanation({
   let badge = "Good Meeting Spot";
   let explanation = "A solid option near the halfway area with a workable trip for both people.";
 
-  if (rank === 1 && typeof diff === "number" && diff <= 10 && typeof rating === "number" && rating >= 4.3) {
+  if (primaryPreference && rank <= 3) {
+    badge = getPreferenceBadge(primaryPreference);
+    explanation = `A strong ${venue.category.toLowerCase()} option near the midpoint with ${preferencePhrase} and workable travel times.`;
+  } else if (rank === 1 && typeof diff === "number" && diff <= 10 && typeof rating === "number" && rating >= 4.3) {
     badge = "Best Overall Match";
     explanation = "A strong mix of balanced travel times, good reviews, and a convenient location.";
   } else if (typeof diff === "number" && diff <= 5) {
@@ -175,9 +182,23 @@ function getMatchExplanation({
       balance: describeBalance(diff),
       rating: describeRating(rating, venue.reviewCount),
       category: `Matches your ${venue.category.toLowerCase()} search.`,
+      preference: describePreferenceMatch(venue.preferenceMatches),
       convenience: describeConvenience(venue, isClosestToHalfway, isShortestCombined)
     }
   };
+}
+
+function formatPreferencePhrase(preferences: ScoredVenue["preferenceMatches"]) {
+  const labels = preferences.map((preference) => getPreferenceLabel(preference).toLowerCase());
+  if (labels.length === 0) return "useful setting signals";
+  if (labels.length === 1) return `${labels[0]} appeal`;
+  if (labels.length === 2) return `${labels[0]} and ${labels[1]} appeal`;
+  return `${labels.slice(0, -1).join(", ")}, and ${labels[labels.length - 1]} appeal`;
+}
+
+function describePreferenceMatch(preferences: ScoredVenue["preferenceMatches"]) {
+  if (!preferences.length) return "No strong preference signal found for this place.";
+  return `Shows signs of matching ${preferences.map(getPreferenceLabel).join(", ")}.`;
 }
 
 function describeBalance(diff: number | null) {

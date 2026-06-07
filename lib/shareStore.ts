@@ -38,6 +38,11 @@ export async function createShare(payload: SharePayload) {
     return shortId;
   }
 
+  if (process.env.NODE_ENV === "production") {
+    warnNoDurableStorage();
+    return encodePortablePayload(payload);
+  }
+
   warnNoDurableStorage();
   memoryStore.set(shortId, payload);
   return shortId;
@@ -46,6 +51,11 @@ export async function createShare(payload: SharePayload) {
 export async function getShare(id: string) {
   const safeId = id.replace(/[^a-zA-Z0-9_-]/g, "");
   if (!safeId) return null;
+
+  if (safeId.startsWith("p_")) {
+    return decodePortablePayload(safeId);
+  }
+
   const redis = getRedisConfig();
 
   if (redis) {
@@ -117,4 +127,45 @@ function getMemoryStore() {
   };
   globalStore.__halfwayShareStore ??= new Map<string, SharePayload>();
   return globalStore.__halfwayShareStore;
+}
+
+function encodePortablePayload(payload: SharePayload) {
+  const compact = {
+    a: payload.locationA,
+    b: payload.locationB,
+    c: payload.category,
+    q: payload.customQuery,
+    p: payload.preferences,
+    m: payload.midpoint,
+    r: payload.selectedResultIds,
+    t: payload.createdAt
+  };
+  return `p_${Buffer.from(JSON.stringify(compact), "utf8").toString("base64url")}`;
+}
+
+function decodePortablePayload(id: string): SharePayload | null {
+  try {
+    const compact = JSON.parse(Buffer.from(id.slice(2), "base64url").toString("utf8")) as {
+      a: SharePayload["locationA"];
+      b: SharePayload["locationB"];
+      c: SharePayload["category"];
+      q?: string;
+      p?: SharePayload["preferences"];
+      m?: SharePayload["midpoint"];
+      r?: SharePayload["selectedResultIds"];
+      t?: string;
+    };
+    return {
+      locationA: compact.a,
+      locationB: compact.b,
+      category: compact.c,
+      customQuery: compact.q,
+      preferences: compact.p ?? [],
+      midpoint: compact.m,
+      selectedResultIds: compact.r,
+      createdAt: compact.t ?? new Date().toISOString()
+    };
+  } catch {
+    return null;
+  }
 }

@@ -53,8 +53,7 @@ export async function POST(request: Request) {
 
 function getAppUrl(request: Request) {
   const requestOrigin = request.headers.get("origin") || new URL(request.url).origin;
-  if (process.env.NODE_ENV !== "production") return requestOrigin;
-  return process.env.NEXT_PUBLIC_APP_URL || requestOrigin;
+  return requestOrigin || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 }
 
 function safeLocationLabel(value: string) {

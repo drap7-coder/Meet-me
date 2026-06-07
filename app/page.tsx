@@ -17,6 +17,7 @@ import {
 } from "@/lib/recentMeetups";
 import { getPreferenceLabel, parsePreferences } from "@/lib/preferences";
 import { shareWithFallback } from "@/lib/share";
+import { trackEvent } from "@/lib/analytics";
 import type { LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory } from "@/lib/types";
 import { BRAND } from "@/src/config/branding";
 import { useEffect, useMemo, useState } from "react";
@@ -34,6 +35,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [shareMessage, setShareMessage] = useState("");
+  const [currentShareUrl, setCurrentShareUrl] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
   const [recentMeetups, setRecentMeetups] = useState<RecentMeetup[]>([]);
 
@@ -46,8 +48,22 @@ export default function HomePage() {
     const category = (params.get("category") as VenueCategory | null) ?? "restaurant";
     const customQuery = params.get("q") ?? "";
     const preferences = parsePreferences(params.get("preferences"));
+    const shareId = params.get("shareId");
+    const shouldAutoSearch = params.get("auto") === "1";
     if (locationA || locationB || customQuery) {
-      setForm({ locationA, locationAPlaceId, locationB, locationBPlaceId, category, customQuery, preferences });
+      const nextForm = { locationA, locationAPlaceId, locationB, locationBPlaceId, category, customQuery, preferences };
+      setForm(nextForm);
+      if (shareId) {
+        const shareUrl = `${window.location.origin}/s/${shareId}`;
+        setCurrentShareUrl(shareUrl);
+        trackEvent("share_link_opened", {
+          category,
+          hasPreferences: preferences.length > 0
+        });
+      }
+      if (shouldAutoSearch && locationA && locationB) {
+        submitSearch(nextForm, shareId ? `${window.location.origin}/s/${shareId}` : undefined);
+      }
     }
   }, []);
 
@@ -70,11 +86,15 @@ export default function HomePage() {
     };
   }, [results]);
 
-  async function submitSearch(searchForm: SearchHalfwayRequest = form) {
+  async function submitSearch(searchForm: SearchHalfwayRequest = form, existingShareUrl?: string) {
     setHasSearched(true);
     setLoading(true);
     setError("");
     setShareMessage("");
+    trackEvent("search_started", {
+      category: searchForm.category,
+      hasPreferences: Boolean(searchForm.preferences?.length)
+    });
     try {
       const response = await fetch("/api/search-halfway", {
         method: "POST",
@@ -85,7 +105,14 @@ export default function HomePage() {
       if (!response.ok) throw new Error(data.error ?? "Search failed.");
       setResults(data);
       const shareUrl = updateShareUrl(searchForm);
+      setCurrentShareUrl(existingShareUrl ?? shareUrl);
       setRecentMeetups(saveRecentMeetup(createRecentMeetup(searchForm, data, shareUrl)));
+      trackEvent("search_completed", {
+        category: data.category,
+        resultCount: data.venues.length,
+        hasWeather: true,
+        hasPreferences: data.preferences.length > 0
+      });
     } catch (searchError) {
       setResults(null);
       setError(searchError instanceof Error ? searchError.message : "Search failed.");
@@ -98,6 +125,7 @@ export default function HomePage() {
     setResults(null);
     setError("");
     setShareMessage("");
+    setCurrentShareUrl("");
     setHasSearched(false);
     window.history.replaceState(null, "", "/");
     window.requestAnimationFrame(() => document.getElementById("search")?.scrollIntoView({ behavior: "smooth" }));
@@ -123,28 +151,45 @@ export default function HomePage() {
     if (result === "cancelled") setShareMessage("Sharing was cancelled.");
   }
 
-  async function shareOptions() {
+  async function shareMeetup() {
     if (!results) return;
-    const topOptions = results.venues.slice(0, 5);
-    const url = window.location.href;
-    const lines = topOptions.map((venue, index) => {
-      const timeA = formatMinutes(venue.travelFromA.durationMinutes);
-      const timeB = formatMinutes(venue.travelFromB.durationMinutes);
-      return `${index + 1}. ${venue.name} - ${timeA} / ${timeB} - ${venue.googleMapsUri}`;
-    });
-    const text = [
-      `Here are a few places that could work between ${shortLocationLabel(results.originA.formattedAddress)} and ${shortLocationLabel(results.originB.formattedAddress)}:`,
-      "",
-      ...lines,
-      "",
-      `Full list: ${url}`
-    ].join("\n");
+    setShareMessage("Creating meetup link...");
+    try {
+      const response = await fetch("/api/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          form,
+          results,
+          selectedResultIds: results.venues.slice(0, 5).map((venue) => venue.id)
+        })
+      });
+      const data = (await response.json()) as { shareUrl?: string; error?: string };
+      if (!response.ok || !data.shareUrl) throw new Error(data.error ?? "Share link creation failed.");
 
-    const result = await shareWithFallback({ title: `${BRAND.name} options`, text, url });
-    if (result === "shared") setShareMessage("");
-    if (result === "copied") setShareMessage("Options copied to clipboard.");
-    if (result === "email") setShareMessage("Email draft opened.");
-    if (result === "cancelled") setShareMessage("Sharing was cancelled.");
+      setCurrentShareUrl(data.shareUrl);
+      const text = `Here are places that could work between ${shortLocationLabel(results.originA.formattedAddress)} and ${shortLocationLabel(results.originB.formattedAddress)}.`;
+      const result = await shareWithFallback({ title: `${BRAND.name} meetup`, text, url: data.shareUrl });
+      if (result === "shared" || result === "copied") setShareMessage("Meetup link copied.");
+      if (result === "email") setShareMessage("Email draft opened.");
+      if (result === "cancelled") setShareMessage("Sharing was cancelled.");
+      trackEvent("share_link_created", {
+        category: results.category,
+        resultCount: results.venues.length,
+        hasPreferences: results.preferences.length > 0
+      });
+    } catch (error) {
+      console.warn("[share] Falling back to URL search sharing.", error);
+      const fallbackUrl = currentShareUrl || window.location.href;
+      const result = await shareWithFallback({
+        title: `${BRAND.name} meetup`,
+        text: "Here is the Halfway search.",
+        url: fallbackUrl
+      });
+      if (result === "shared" || result === "copied") setShareMessage("Search link copied.");
+      if (result === "email") setShareMessage("Email draft opened.");
+      if (result === "cancelled") setShareMessage("Sharing was cancelled.");
+    }
   }
 
   return (
@@ -175,7 +220,7 @@ export default function HomePage() {
               resultCountLabel={resultCountLabel}
               originSummary={results ? `${results.originA.formattedAddress} → ${results.originB.formattedAddress}` : ""}
               canShareOptions={Boolean(results?.venues.length)}
-              onShareOptions={shareOptions}
+              onShareOptions={shareMeetup}
               onNewSearch={startNewSearch}
             />
           ) : null}
@@ -234,6 +279,7 @@ export default function HomePage() {
                       isClosestToHalfway={venue.id === resultContext?.closestVenueId}
                       isShortestCombined={venue.id === resultContext?.shortestCombinedVenueId}
                       onShare={shareVenue}
+                      shareUrl={currentShareUrl}
                     />
                   ))}
                 </div>
@@ -378,7 +424,7 @@ function CompactResultsHeader({
                 onClick={onShareOptions}
                 className="inline-flex h-10 items-center justify-center rounded-lg bg-clay px-4 text-sm font-bold text-white transition hover:bg-[#174FE0]"
               >
-                Share these options
+                Share this meetup
               </button>
             ) : null}
             <button

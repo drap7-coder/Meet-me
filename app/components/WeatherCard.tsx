@@ -1,7 +1,8 @@
 "use client";
 
 import type { LatLng } from "@/lib/types";
-import { useEffect, useMemo, useState } from "react";
+import { trackEvent } from "@/lib/analytics";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type Props = {
   midpoint: LatLng;
@@ -37,6 +38,7 @@ type OpenMeteoResponse = {
 
 export function WeatherCard({ midpoint }: Props) {
   const [weatherState, setWeatherState] = useState<WeatherState>({ status: "loading" });
+  const tracked = useRef(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -94,6 +96,12 @@ export function WeatherCard({ midpoint }: Props) {
   const recommendation = useMemo(() => {
     if (weatherState.status !== "ready") return null;
     return getWeatherRecommendation(weatherState.weather);
+  }, [weatherState]);
+
+  useEffect(() => {
+    if (weatherState.status !== "ready" || tracked.current) return;
+    tracked.current = true;
+    trackEvent("weather_viewed", { hasWeather: true });
   }, [weatherState]);
 
   return (

@@ -30,8 +30,8 @@ export function CategorySelector({ value, mode = DEFAULT_MEETUP_MODE, onChange, 
   }
 
   return (
-    <div className="grid gap-4">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+    <div className="grid gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-5">
         {CATEGORY_GROUPS.map((primary) => {
           const selected = primary.id === activePrimaryId;
           return (
@@ -40,24 +40,26 @@ export function CategorySelector({ value, mode = DEFAULT_MEETUP_MODE, onChange, 
               type="button"
               onClick={() => selectPrimary(primary.id)}
               aria-pressed={selected}
-              className={`group rounded-lg border p-4 text-left shadow-[0_10px_26px_rgba(17,17,17,0.04)] transition ${
+              className={`group min-h-[72px] rounded-lg border p-3 text-left shadow-[0_8px_18px_rgba(17,17,17,0.04)] transition sm:min-h-[154px] sm:p-4 sm:shadow-[0_10px_26px_rgba(17,17,17,0.04)] ${
                 selected
                   ? "border-clay bg-ink text-white shadow-[0_18px_40px_rgba(31,94,255,0.18)]"
                   : `border-line bg-gradient-to-br ${primary.accent} text-ink hover:-translate-y-0.5 hover:border-clay/40 hover:shadow-soft`
               }`}
             >
               <div className="flex items-start justify-between gap-3">
-                <span className="text-base font-black leading-tight">{primary.label}</span>
+                <span className="text-sm font-black leading-tight sm:text-base">{primary.label}</span>
                 <span
-                  className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border text-xs font-black ${
-                    selected ? "border-white/30 bg-white text-clay" : "border-line bg-white text-slate group-hover:border-clay/30"
+                  className={`mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full sm:grid sm:h-6 sm:w-6 sm:place-items-center sm:border sm:text-xs sm:font-black ${
+                    selected
+                      ? "bg-white text-clay sm:border-white/30"
+                      : "bg-line text-slate group-hover:border-clay/30 sm:border-line sm:bg-white"
                   }`}
                   aria-hidden="true"
                 >
-                  {selected ? "On" : ">"}
+                  <span className="hidden sm:inline">{selected ? "On" : ">"}</span>
                 </span>
               </div>
-              <p className={`mt-3 text-xs font-semibold leading-5 ${selected ? "text-white/72" : "text-slate"}`}>
+              <p className={`mt-3 hidden text-xs font-semibold leading-5 sm:block ${selected ? "text-white/72" : "text-slate"}`}>
                 {primary.description}
               </p>
             </button>
@@ -65,11 +67,11 @@ export function CategorySelector({ value, mode = DEFAULT_MEETUP_MODE, onChange, 
         })}
       </div>
 
-      <div className="rounded-lg border border-line bg-white p-3 shadow-[0_14px_36px_rgba(17,17,17,0.05)] sm:p-4">
+      <div className="rounded-lg border border-line bg-white p-3 shadow-[0_10px_26px_rgba(17,17,17,0.05)] sm:p-4 sm:shadow-[0_14px_36px_rgba(17,17,17,0.05)]">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-black text-ink">{activePrimary.label}</p>
-            <p className="mt-1 text-xs font-semibold leading-5 text-slate">Choose the exact kind of meet-up.</p>
+            <p className="mt-1 hidden text-xs font-semibold leading-5 text-slate sm:block">Choose the exact kind of meet-up.</p>
           </div>
           <div className="grid grid-cols-2 rounded-lg border border-line bg-sky p-1">
             {MODE_OPTIONS.map((option) => {
@@ -81,7 +83,7 @@ export function CategorySelector({ value, mode = DEFAULT_MEETUP_MODE, onChange, 
                   title={option.helper}
                   onClick={() => onModeChange(option.id)}
                   aria-pressed={selected}
-                  className={`min-h-10 rounded-md px-3 text-center text-xs font-black transition sm:text-sm ${
+                  className={`min-h-9 rounded-md px-2 text-center text-xs font-black transition sm:min-h-10 sm:px-3 sm:text-sm ${
                     selected
                       ? "bg-white text-ink shadow-[0_8px_20px_rgba(17,17,17,0.08)]"
                       : "text-slate hover:text-ink"
@@ -94,7 +96,7 @@ export function CategorySelector({ value, mode = DEFAULT_MEETUP_MODE, onChange, 
           </div>
         </div>
 
-        <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-4 sm:grid-cols-2 lg:grid-cols-3">
           {activePrimary.subcategories.map((subcategory) => {
             const selected = subcategory.id === value;
             return (
@@ -103,7 +105,7 @@ export function CategorySelector({ value, mode = DEFAULT_MEETUP_MODE, onChange, 
                 type="button"
                 onClick={() => onChange(subcategory.id)}
                 aria-pressed={selected}
-                className={`rounded-lg border p-3 text-left transition ${
+                className={`rounded-lg border px-3 py-2.5 text-left transition sm:p-3 ${
                   selected
                     ? "border-clay bg-[#F4F7FF] shadow-[0_12px_28px_rgba(31,94,255,0.12)]"
                     : "border-line bg-white hover:-translate-y-0.5 hover:border-clay/40 hover:bg-sky"
@@ -112,22 +114,22 @@ export function CategorySelector({ value, mode = DEFAULT_MEETUP_MODE, onChange, 
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-black text-ink">{subcategory.label}</span>
                   <span
-                    className={`h-2.5 w-2.5 rounded-full ${
+                    className={`h-2 w-2 shrink-0 rounded-full sm:h-2.5 sm:w-2.5 ${
                       selected ? "bg-clay shadow-[0_0_0_4px_rgba(31,94,255,0.12)]" : "bg-line"
                     }`}
                     aria-hidden="true"
                   />
                 </div>
-                <p className="mt-2 text-xs font-semibold leading-5 text-slate">{subcategory.description}</p>
+                <p className="mt-2 hidden text-xs font-semibold leading-5 text-slate sm:block">{subcategory.description}</p>
               </button>
             );
           })}
         </div>
 
-        <p className="mt-4 rounded-lg bg-sky px-3 py-2 text-xs font-semibold leading-5 text-slate">
+        <p className="mt-3 rounded-lg bg-sky px-3 py-2 text-xs font-semibold leading-5 text-slate sm:mt-4">
           {mode === "district"
-            ? "District mode favors broader searches like walkable downtowns, main streets, shopping districts, and outlet centers."
-            : "Single Place mode favors specific venues like coffee shops, stores, restaurants, ranges, and activity spots."}
+            ? "District mode favors downtowns, main streets, shopping districts, and outlet centers."
+            : "Single Place mode favors specific venues like shops, restaurants, ranges, and activity spots."}
         </p>
       </div>
     </div>

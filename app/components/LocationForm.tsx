@@ -1,6 +1,7 @@
 "use client";
 
 import { CategorySelector } from "@/app/components/CategorySelector";
+import { Logo } from "@/app/components/Logo";
 import { PREFERENCES } from "@/lib/preferences";
 import type { MeetupMode, PlaceSuggestion, Preference, SearchHalfwayRequest, VenueCategory } from "@/lib/types";
 import { copyTextToClipboard, shareWithFallback } from "@/lib/share";
@@ -66,7 +67,7 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
   return (
     <form onSubmit={handleSubmit} className="rounded-lg border border-line bg-paper p-5 shadow-soft sm:p-7">
       <div className="mb-6">
-        <p className="text-sm font-bold uppercase tracking-wide text-clay">{BRAND.name}</p>
+        <Logo size="sm" />
         <h2 className="mt-2 text-2xl font-black tracking-tight text-ink sm:text-3xl">
           Where should you meet?
         </h2>
@@ -154,14 +155,14 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
       <button
         type="submit"
         disabled={loading}
-        className="mt-6 h-11 w-full rounded-lg bg-clay px-5 font-bold text-white shadow-[0_10px_24px_rgba(17,17,17,0.12)] transition hover:bg-[#174FE0] disabled:cursor-not-allowed disabled:bg-ink/30 sm:h-12"
+        className="mt-6 h-11 w-full rounded-full bg-clay px-5 font-bold text-white shadow-[0_10px_24px_rgba(255,107,107,0.22)] transition hover:bg-[#E55757] focus:outline-none focus:ring-4 focus:ring-clay/25 disabled:cursor-not-allowed disabled:bg-ink/30 sm:h-12"
       >
-        {loading ? "Finding a place..." : "Find a Place"}
+        {loading ? "Finding a place..." : "Find a place"}
       </button>
       <button
         type="button"
         onClick={shareInvite}
-        className="mt-3 h-10 w-full rounded-lg border border-line bg-mint px-5 text-sm font-bold text-ink transition hover:border-clay hover:text-clay"
+        className="mt-3 h-10 w-full rounded-full border border-line bg-paper px-5 text-sm font-bold text-ink transition hover:border-clay hover:text-clay focus:outline-none focus:ring-4 focus:ring-ink/10"
       >
         Invite someone to plan with you
       </button>

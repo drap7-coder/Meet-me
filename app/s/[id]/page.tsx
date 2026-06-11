@@ -16,7 +16,7 @@ export default async function SharedMeetupPage({ params }: { params: Promise<{ i
           </p>
           <a
             href="/"
-            className="mt-5 inline-flex h-11 items-center justify-center rounded-lg bg-clay px-5 text-sm font-bold text-white"
+            className="mt-5 inline-flex h-11 items-center justify-center rounded-full bg-clay px-5 text-sm font-bold text-white"
           >
             Start a new search
           </a>

@@ -13,18 +13,20 @@ export default function Icon() {
       <div
         style={{
           alignItems: "center",
-          background: "#111111",
-          borderRadius: 112,
+          background: "#F8FAFC",
           display: "flex",
           height: "100%",
           justifyContent: "center",
-          position: "relative",
           width: "100%"
         }}
       >
-        <div style={{ background: "#ffffff", borderRadius: 999, height: 112, left: 104, position: "absolute", width: 112 }} />
-        <div style={{ background: "#ffffff", borderRadius: 999, height: 112, position: "absolute", right: 104, width: 112 }} />
-        <div style={{ background: "#1F5EFF", borderRadius: 999, height: 160, position: "absolute", width: 160 }} />
+        <svg width="310" height="310" viewBox="0 0 64 64">
+          <path
+            d="M32 4C43.6 4 53 13.4 53 25C53 39.2 37.9 54 32 61C26.1 54 11 39.2 11 25C11 13.4 20.4 4 32 4Z"
+            fill="#FF6B6B"
+          />
+          <circle cx="32" cy="25" fill="#FFFFFF" r="8" />
+        </svg>
       </div>
     ),
     size

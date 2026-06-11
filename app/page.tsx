@@ -2,6 +2,7 @@
 
 import { EmptyState } from "@/app/components/EmptyState";
 import { LocationForm } from "@/app/components/LocationForm";
+import { Logo, PinIcon } from "@/app/components/Logo";
 import { ResultsMap } from "@/app/components/ResultsMap";
 import { VenueCard } from "@/app/components/VenueCard";
 import { WeatherCard } from "@/app/components/WeatherCard";
@@ -229,7 +230,7 @@ export default function HomePage() {
           ) : null}
 
           {error ? (
-            <div className="mt-5 rounded-lg border border-[#C9D7FF] bg-[#EEF3FF] p-4 text-sm font-semibold text-clay">
+            <div className="mt-5 rounded-lg border border-[#FFD2D2] bg-[#FFF1F1] p-4 text-sm font-semibold text-clay">
               {error}
             </div>
           ) : null}
@@ -313,11 +314,11 @@ export default function HomePage() {
 
 function MarketingHero() {
   return (
-    <section className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
+    <section className="grid gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
       <div className="order-1">
-        <p className="mb-4 text-sm font-bold uppercase tracking-[0.18em] text-clay">Two people. One destination. Equal effort.</p>
-        <h1 className="max-w-2xl text-[3.1rem] font-black leading-[0.94] tracking-tight text-ink sm:text-6xl sm:leading-[0.98] lg:text-7xl">
-          Meet in the middle.
+        <Logo size="lg" layout="stacked" showTagline className="mb-8" />
+        <h1 className="max-w-2xl text-[2.55rem] font-black leading-[0.98] tracking-tight text-ink sm:text-6xl sm:leading-[0.98] lg:text-7xl">
+          Find the perfect place to meet.
         </h1>
         <p className="mt-4 max-w-xl text-lg leading-7 text-slate sm:mt-6 sm:text-xl sm:leading-8">
           {BRAND.heroSubheadline}
@@ -325,13 +326,13 @@ function MarketingHero() {
         <div className="mt-6 flex flex-col gap-2.5 sm:mt-8 sm:flex-row sm:gap-3">
           <a
             href="#search"
-            className="inline-flex h-11 items-center justify-center rounded-lg bg-clay px-5 text-base font-bold text-white shadow-glow transition hover:bg-[#174FE0] sm:h-12"
+            className="inline-flex h-11 items-center justify-center rounded-full bg-clay px-6 text-base font-bold text-white shadow-glow transition hover:bg-[#E55757] focus:outline-none focus:ring-4 focus:ring-clay/25 sm:h-12"
           >
-            Find a Halfway Spot
+            Start planning
           </a>
           <a
             href="#how-it-works"
-            className="inline-flex h-11 items-center justify-center rounded-lg border border-line bg-paper px-5 text-base font-bold text-ink shadow-[0_8px_22px_rgba(17,17,17,0.04)] transition hover:border-ink/30 sm:h-12"
+            className="inline-flex h-11 items-center justify-center rounded-full border border-line bg-paper px-6 text-base font-bold text-ink shadow-[0_8px_22px_rgba(17,24,39,0.04)] transition hover:border-ink/30 focus:outline-none focus:ring-4 focus:ring-ink/10 sm:h-12"
           >
             See How It Works
           </a>
@@ -346,42 +347,45 @@ function MarketingHero() {
 function ProductDemoVisual() {
   return (
     <div className="order-3 lg:order-2">
-      <div className="relative min-h-[330px] overflow-hidden rounded-[28px] border border-line bg-[#FAFBFD] shadow-soft sm:min-h-[500px]">
+      <div className="relative min-h-[330px] overflow-hidden rounded-[28px] border border-line bg-paper shadow-soft sm:min-h-[500px]">
         <div
           className="absolute inset-0 opacity-90"
           style={{
             backgroundImage:
-              "linear-gradient(rgba(17,17,17,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(17,17,17,0.045) 1px, transparent 1px), radial-gradient(circle at 50% 55%, rgba(31,94,255,0.16), transparent 22%)",
+              "linear-gradient(rgba(17,24,39,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(17,24,39,0.045) 1px, transparent 1px), radial-gradient(circle at 50% 55%, rgba(255,107,107,0.16), transparent 22%)",
             backgroundSize: "54px 54px, 54px 54px, auto"
           }}
         />
         <svg className="absolute inset-0 h-full w-full" viewBox="0 0 760 520" aria-hidden="true">
-          <path d="M120 140 C210 180 245 250 335 285 C390 306 420 340 465 385" fill="none" stroke="#1F5EFF" strokeWidth="12" strokeLinecap="round" />
-          <path d="M640 170 C560 210 550 282 474 348 C454 365 444 377 430 392" fill="none" stroke="#7C3AED" strokeWidth="12" strokeLinecap="round" />
+          <path d="M120 140 C210 180 245 250 335 285 C390 306 420 340 465 385" fill="none" stroke="#4F46E5" strokeWidth="12" strokeLinecap="round" />
+          <path d="M640 170 C560 210 550 282 474 348 C454 365 444 377 430 392" fill="none" stroke="#111827" strokeWidth="12" strokeLinecap="round" />
           <path d="M120 140 C210 180 245 250 335 285 C390 306 420 340 465 385" fill="none" stroke="rgba(255,255,255,0.76)" strokeWidth="3" strokeDasharray="16 16" strokeLinecap="round" />
           <path d="M640 170 C560 210 550 282 474 348 C454 365 444 377 430 392" fill="none" stroke="rgba(255,255,255,0.76)" strokeWidth="3" strokeDasharray="16 16" strokeLinecap="round" />
         </svg>
 
-        <div className="absolute left-4 top-5 rounded-2xl border border-line bg-white/95 p-3 shadow-[0_16px_38px_rgba(17,17,17,0.1)] backdrop-blur sm:left-8 sm:top-10 sm:p-4">
+        <div className="absolute left-4 top-5 rounded-2xl border border-line bg-white/95 p-3 shadow-[0_16px_38px_rgba(17,24,39,0.1)] backdrop-blur sm:left-8 sm:top-10 sm:p-4">
           <p className="text-sm font-black text-ink sm:text-base">Hoboken, NJ</p>
-          <p className="mt-1 text-lg font-black text-clay">24 min</p>
+          <p className="mt-1 text-lg font-black text-indigo">24 min</p>
           <p className="mt-1 text-xs font-semibold text-slate">10.8 miles</p>
         </div>
 
-        <div className="absolute right-4 top-10 rounded-2xl border border-line bg-white/95 p-3 shadow-[0_16px_38px_rgba(17,17,17,0.1)] backdrop-blur sm:right-8 sm:top-16 sm:p-4">
+        <div className="absolute right-4 top-10 rounded-2xl border border-line bg-white/95 p-3 shadow-[0_16px_38px_rgba(17,24,39,0.1)] backdrop-blur sm:right-8 sm:top-16 sm:p-4">
           <p className="text-sm font-black text-ink sm:text-base">Edison, NJ</p>
-          <p className="mt-1 text-lg font-black text-[#6D28D9]">26 min</p>
+          <p className="mt-1 text-lg font-black text-ink">26 min</p>
           <p className="mt-1 text-xs font-semibold text-slate">12.4 miles</p>
         </div>
 
-        <div className="absolute left-[17%] top-[36%] grid h-12 w-12 place-items-center rounded-full bg-clay text-white shadow-glow sm:h-14 sm:w-14">
+        <div className="absolute left-[17%] top-[36%] grid h-12 w-12 place-items-center rounded-full bg-indigo text-white shadow-[0_16px_34px_rgba(79,70,229,0.2)] sm:h-14 sm:w-14">
           <span className="h-5 w-5 rounded-full border-[5px] border-white" />
         </div>
-        <div className="absolute right-[10%] top-[42%] grid h-12 w-12 place-items-center rounded-full bg-[#6D28D9] text-white shadow-[0_16px_34px_rgba(109,40,217,0.24)] sm:h-14 sm:w-14">
+        <div className="absolute right-[10%] top-[42%] grid h-12 w-12 place-items-center rounded-full bg-ink text-white shadow-[0_16px_34px_rgba(17,24,39,0.2)] sm:h-14 sm:w-14">
           <span className="h-5 w-5 rounded-full border-[5px] border-white" />
+        </div>
+        <div className="absolute left-1/2 top-[52%] grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white shadow-soft">
+          <PinIcon className="h-10 w-10" />
         </div>
 
-        <div className="absolute bottom-4 left-1/2 w-[min(90%,340px)] -translate-x-1/2 rounded-[24px] border border-black/[0.06] bg-white p-4 text-center shadow-[0_24px_70px_rgba(17,17,17,0.16)] sm:bottom-8 sm:p-5">
+        <div className="absolute bottom-4 left-1/2 w-[min(90%,340px)] -translate-x-1/2 rounded-[24px] border border-black/[0.06] bg-white p-4 text-center shadow-[0_24px_70px_rgba(17,24,39,0.16)] sm:bottom-8 sm:p-5">
           <p className="text-xs font-black uppercase tracking-[0.16em] text-clay">Best Match</p>
           <h2 className="mt-1 text-xl font-black tracking-tight text-ink sm:mt-2 sm:text-2xl">Sunset Coffee Co.</h2>
           <div className="mt-4 grid grid-cols-2 gap-2 text-sm font-bold text-ink">
@@ -427,7 +431,7 @@ function CompactResultsHeader({
               <button
                 type="button"
                 onClick={onShareOptions}
-                className="inline-flex h-10 items-center justify-center rounded-lg bg-clay px-4 text-sm font-bold text-white transition hover:bg-[#174FE0]"
+                className="inline-flex h-10 items-center justify-center rounded-full bg-clay px-4 text-sm font-bold text-white transition hover:bg-[#E55757] focus:outline-none focus:ring-4 focus:ring-clay/25"
               >
                 Share this meetup
               </button>
@@ -435,7 +439,7 @@ function CompactResultsHeader({
             <button
               type="button"
               onClick={onNewSearch}
-              className="inline-flex h-10 items-center justify-center rounded-lg border border-line bg-paper px-4 text-sm font-bold text-ink transition hover:border-clay hover:text-clay"
+              className="inline-flex h-10 items-center justify-center rounded-full border border-line bg-paper px-4 text-sm font-bold text-ink transition hover:border-clay hover:text-clay focus:outline-none focus:ring-4 focus:ring-ink/10"
             >
               New search
             </button>
@@ -448,17 +452,17 @@ function CompactResultsHeader({
 
 function SiteHeader() {
   return (
-    <header className="sticky top-0 z-50 border-b border-line bg-mint pt-[env(safe-area-inset-top)]">
+    <header className="sticky top-0 z-50 border-b border-line bg-mint/95 pt-[env(safe-area-inset-top)] backdrop-blur">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:h-16 sm:px-6 lg:px-8">
         <a href="/" className="inline-flex min-w-0 items-center gap-2.5" aria-label={`${BRAND.name} home`}>
-          <span className="truncate text-base font-black tracking-tight text-ink sm:text-lg">{BRAND.name}</span>
+          <Logo size="sm" />
           <span className="rounded-md border border-line bg-paper px-1.5 py-0.5 text-[0.65rem] font-black tracking-wide text-slate">
             BETA
           </span>
         </a>
         <a
           href="#search"
-          className="inline-flex h-9 items-center justify-center rounded-lg bg-ink px-4 text-sm font-bold text-white shadow-[0_10px_24px_rgba(17,17,17,0.12)] transition hover:bg-ink/85"
+          className="inline-flex h-9 items-center justify-center rounded-full bg-ink px-4 text-sm font-bold text-white shadow-[0_10px_24px_rgba(17,24,39,0.12)] transition hover:bg-ink/85"
         >
           Start
         </a>
@@ -516,7 +520,7 @@ function UseCases() {
         </div>
         <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {cards.map(([title, copy]) => (
-            <article key={title} className="rounded-[22px] border border-line bg-paper p-6 shadow-[0_12px_30px_rgba(17,17,17,0.05)]">
+            <article key={title} className="rounded-[22px] border border-line bg-paper p-6 shadow-[0_12px_30px_rgba(17,24,39,0.05)]">
               <p className="text-xl font-black text-ink">{title}</p>
               <p className="mt-3 text-sm font-semibold leading-6 text-slate">{copy}</p>
             </article>
@@ -565,7 +569,7 @@ function FeedbackSection() {
           </div>
           <a
             href={feedbackHref}
-            className="inline-flex h-11 items-center justify-center rounded-lg bg-clay px-5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(17,17,17,0.12)] transition hover:bg-[#174FE0]"
+            className="inline-flex h-11 items-center justify-center rounded-full bg-clay px-5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(255,107,107,0.22)] transition hover:bg-[#E55757] focus:outline-none focus:ring-4 focus:ring-clay/25"
           >
             Send Feedback
           </a>
@@ -591,7 +595,7 @@ function Footer() {
         <div className="sm:text-right">
           <p className="leading-6">Questions, ideas, or feedback?</p>
           <p className="leading-6">We'd love to hear from you.</p>
-          <a href={feedbackHref} className="mt-3 inline-flex font-bold text-clay hover:text-[#174FE0]">
+          <a href={feedbackHref} className="mt-3 inline-flex font-bold text-clay hover:text-[#E55757]">
             Send Feedback -&gt;
           </a>
         </div>
@@ -632,7 +636,7 @@ function RecentMeetupsSection({
             key={meetup.id}
             type="button"
             onClick={() => onSelect(meetup)}
-            className="rounded-lg border border-line bg-mint p-4 text-left shadow-[0_8px_22px_rgba(17,17,17,0.04)] transition hover:-translate-y-0.5 hover:border-clay hover:bg-white hover:shadow-soft"
+            className="rounded-lg border border-line bg-mint p-4 text-left shadow-[0_8px_22px_rgba(17,24,39,0.04)] transition hover:-translate-y-0.5 hover:border-clay hover:bg-white hover:shadow-soft"
           >
             <div className="flex items-start gap-3">
               <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-sky text-lg" aria-hidden="true">

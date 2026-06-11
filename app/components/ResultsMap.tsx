@@ -9,24 +9,25 @@ type Props = {
 
 export function ResultsMap({ originA, originB, midpoint, venues }: Props) {
   const points = [
-    { id: "a", label: "A", location: originA.location, className: "bg-ink text-white" },
+    { id: "a", label: "A", location: originA.location, className: "bg-indigo text-white" },
     { id: "b", label: "B", location: originB.location, className: "bg-ink text-white" },
     { id: "m", label: "•", location: midpoint, className: "bg-clay text-white" },
     ...venues.slice(0, 8).map((venue, index) => ({
       id: venue.id,
       label: String(index + 1),
       location: venue.location,
-      className: "bg-ink text-white"
+      className: "bg-clay text-white"
     }))
   ];
 
   const bounds = getBounds(points.map((point) => point.location));
 
   return (
-    <section className="sticky top-4 overflow-hidden rounded-lg border border-line bg-sky shadow-soft">
+    <section className="sticky top-4 overflow-hidden rounded-lg border border-line bg-paper shadow-soft">
       <div className="relative h-[420px] min-h-[320px] w-full">
-        <div className="absolute inset-x-6 top-1/2 h-1 -translate-y-1/2 rounded-full bg-mint" />
-        <div className="absolute inset-y-8 left-1/2 w-1 -translate-x-1/2 rounded-full bg-mint" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(17,24,39,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(17,24,39,0.045)_1px,transparent_1px)] bg-[length:56px_56px]" />
+        <div className="absolute inset-x-6 top-1/2 h-1 -translate-y-1/2 rounded-full bg-line/70" />
+        <div className="absolute inset-y-8 left-1/2 w-1 -translate-x-1/2 rounded-full bg-line/70" />
         {points.map((point) => {
           const position = project(point.location, bounds);
           return (

@@ -143,21 +143,21 @@ export function VenueCard({
           target="_blank"
           rel="noreferrer"
           onClick={handleDirectionsClick}
-          className="rounded-lg bg-clay px-3 py-2.5 text-center text-sm font-bold text-white transition hover:bg-[#174FE0]"
+          className="rounded-full bg-clay px-3 py-2.5 text-center text-sm font-bold text-white transition hover:bg-[#E55757] focus:outline-none focus:ring-4 focus:ring-clay/25"
         >
           Get directions
         </a>
         <button
           type="button"
           onClick={() => onShare(venue)}
-          className="rounded-lg border border-line bg-mint px-3 py-2.5 text-sm font-bold text-ink transition hover:border-clay hover:text-clay"
+          className="rounded-full border border-line bg-paper px-3 py-2.5 text-sm font-bold text-ink transition hover:border-clay hover:text-clay focus:outline-none focus:ring-4 focus:ring-ink/10"
         >
           Share
         </button>
         <button
           type="button"
           onClick={() => setCalendarOpen(true)}
-          className="rounded-lg border border-line bg-mint px-3 py-2.5 text-sm font-bold text-ink transition hover:border-clay hover:text-clay"
+          className="rounded-full border border-line bg-paper px-3 py-2.5 text-sm font-bold text-ink transition hover:border-clay hover:text-clay focus:outline-none focus:ring-4 focus:ring-ink/10"
         >
           Add to calendar
         </button>
@@ -243,7 +243,7 @@ function CalendarSheet({
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-end bg-black/30 p-3 sm:place-items-center" role="dialog" aria-modal="true">
-      <div className="w-full max-w-lg rounded-[24px] border border-line bg-white p-5 shadow-[0_24px_80px_rgba(17,17,17,0.24)] sm:p-6">
+      <div className="w-full max-w-lg rounded-[24px] border border-line bg-white p-5 shadow-[0_24px_80px_rgba(17,24,39,0.24)] sm:p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-sm font-bold uppercase tracking-wide text-clay">Add to calendar</p>
@@ -296,7 +296,7 @@ function CalendarSheet({
             target="_blank"
             rel="noreferrer"
             onClick={() => trackCalendar("google")}
-            className="inline-flex h-11 items-center justify-center rounded-lg bg-clay px-3 text-sm font-bold text-white transition hover:bg-[#174FE0]"
+            className="inline-flex h-11 items-center justify-center rounded-full bg-clay px-3 text-sm font-bold text-white transition hover:bg-[#E55757] focus:outline-none focus:ring-4 focus:ring-clay/25"
           >
             Google Calendar
           </a>

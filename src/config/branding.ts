@@ -1,5 +1,6 @@
 export const BRAND = {
   name: "Halfway",
+  url: "https://meetmehalfway.app",
   tagline: "Find the perfect place to meet.",
   description: "Find the perfect place to meet.",
   footerDescription: "Find the perfect place to meet between two locations.",

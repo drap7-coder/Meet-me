@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: BRAND.name,
   applicationName: BRAND.name,
   description: BRAND.description,
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
+  metadataBase: new URL(BRAND.url),
   icons: {
     icon: "/icon",
     apple: "/apple-icon"

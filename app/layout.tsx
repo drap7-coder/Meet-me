@@ -18,9 +18,9 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/opengraph-image",
-        width: 1200,
-        height: 630,
+        url: "/halfway-share-logo.png",
+        width: 1774,
+        height: 887,
         alt: BRAND.name
       }
     ]
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: BRAND.name,
     description: BRAND.description,
-    images: ["/opengraph-image"]
+    images: ["/halfway-share-logo.png"]
   }
 };
 

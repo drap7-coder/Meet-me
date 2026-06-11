@@ -1,5 +1,5 @@
 import { getCategoryLabel } from "@/lib/categories";
-import type { Preference, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory } from "@/lib/types";
+import type { MeetupMode, Preference, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory } from "@/lib/types";
 
 export const RECENT_MEETUPS_KEY = "meetMeHalfway.recentMeetups.v1";
 
@@ -10,6 +10,7 @@ export type RecentMeetup = {
   originB: string;
   originBPlaceId?: string;
   category: VenueCategory;
+  meetupMode?: MeetupMode;
   customQuery?: string;
   preferences?: Preference[];
   timestamp: number;
@@ -48,8 +49,10 @@ export function clearRecentMeetups() {
   window.localStorage.removeItem(RECENT_MEETUPS_KEY);
 }
 
-export function buildMeetupKey(meetup: Pick<RecentMeetup, "originA" | "originB" | "category">) {
-  return [meetup.originA, meetup.originB, meetup.category].map((value) => value.trim().toLowerCase()).join("|");
+export function buildMeetupKey(meetup: Pick<RecentMeetup, "originA" | "originB" | "category"> & { meetupMode?: MeetupMode }) {
+  return [meetup.originA, meetup.originB, meetup.category, meetup.meetupMode ?? "single"]
+    .map((value) => value.trim().toLowerCase())
+    .join("|");
 }
 
 export function formatRecentMeetupDate(timestamp: number) {
@@ -75,12 +78,13 @@ export function createRecentMeetup(
   const timestamp = Date.now();
 
   return {
-    id: `${buildMeetupKey({ originA, originB, category: results.category })}-${timestamp}`,
+    id: `${buildMeetupKey({ originA, originB, category: results.category, meetupMode: results.meetupMode })}-${timestamp}`,
     originA,
     originAPlaceId: form.locationAPlaceId ?? results.originA.placeId,
     originB,
     originBPlaceId: form.locationBPlaceId ?? results.originB.placeId,
     category: results.category,
+    meetupMode: results.meetupMode,
     customQuery: form.customQuery,
     preferences: form.preferences ?? [],
     timestamp,
@@ -95,6 +99,7 @@ export function recentMeetupToForm(meetup: RecentMeetup): SearchHalfwayRequest {
     locationB: meetup.originB,
     locationBPlaceId: meetup.originBPlaceId,
     category: meetup.category,
+    meetupMode: meetup.meetupMode,
     customQuery: meetup.customQuery ?? "",
     preferences: meetup.preferences ?? []
   };

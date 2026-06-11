@@ -1,4 +1,4 @@
-import { getCategorySearchTerm } from "@/lib/categories";
+import { DEFAULT_MEETUP_MODE, getCategorySearchTerm, getCategorySearchTerms } from "@/lib/categories";
 import { calculateMidpoint, estimateSearchRadiusMeters } from "@/lib/geo";
 import { scoreVenue } from "@/lib/scoring";
 import type {
@@ -102,10 +102,36 @@ export async function autocompleteLocations(input: string): Promise<PlaceSuggest
 export async function searchPlacesNearMidpoint(params: {
   midpoint: LatLng;
   category: SearchHalfwayRequest["category"];
+  meetupMode?: SearchHalfwayRequest["meetupMode"];
   customQuery?: string;
   radiusMeters: number;
 }): Promise<VenueCandidate[]> {
-  const query = getCategorySearchTerm(params.category, params.customQuery);
+  const meetupMode = params.meetupMode ?? DEFAULT_MEETUP_MODE;
+  const queries = getCategorySearchTerms(params.category, params.customQuery, meetupMode).slice(0, 4);
+  const placesById = new Map<string, VenueCandidate>();
+
+  await Promise.all(
+    queries.map(async (query) => {
+      const places = await searchPlacesForQuery({
+        midpoint: params.midpoint,
+        query,
+        radiusMeters: params.radiusMeters
+      });
+
+      for (const place of places) {
+        if (!placesById.has(place.id)) placesById.set(place.id, place);
+      }
+    })
+  );
+
+  return Array.from(placesById.values()).slice(0, 18);
+}
+
+async function searchPlacesForQuery(params: {
+  midpoint: LatLng;
+  query: string;
+  radiusMeters: number;
+}): Promise<VenueCandidate[]> {
   const response = await fetch(PLACES_TEXT_SEARCH_URL, {
     method: "POST",
     cache: "no-store",
@@ -126,7 +152,7 @@ export async function searchPlacesNearMidpoint(params: {
       ].join(",")
     },
     body: JSON.stringify({
-      textQuery: query,
+      textQuery: params.query,
       maxResultCount: 16,
       locationBias: {
         circle: {
@@ -151,7 +177,7 @@ export async function searchPlacesNearMidpoint(params: {
     .map((place: any) => ({
       id: place.id,
       name: place.displayName?.text ?? "Unnamed place",
-      category: humanizeType(place.types?.[0]) || getCategorySearchTerm(params.category, params.customQuery),
+      category: humanizeType(place.types?.[0]) || params.query,
       address: place.formattedAddress ?? "Address unavailable",
       location: {
         lat: place.location.latitude,
@@ -225,6 +251,7 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
   const venues = await searchPlacesNearMidpoint({
     midpoint,
     category: request.category,
+    meetupMode: request.meetupMode,
     customQuery: request.customQuery,
     radiusMeters
   });
@@ -235,8 +262,9 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
       originB,
       midpoint,
       category: request.category,
+      meetupMode: request.meetupMode ?? DEFAULT_MEETUP_MODE,
       preferences,
-      query: getCategorySearchTerm(request.category, request.customQuery),
+      query: getCategorySearchTerm(request.category, request.customQuery, request.meetupMode),
       venues: []
     };
   }
@@ -261,8 +289,9 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
     originB,
     midpoint,
     category: request.category,
+    meetupMode: request.meetupMode ?? DEFAULT_MEETUP_MODE,
     preferences,
-    query: getCategorySearchTerm(request.category, request.customQuery),
+    query: getCategorySearchTerm(request.category, request.customQuery, request.meetupMode),
     venues: scoredVenues
   };
 }

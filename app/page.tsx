@@ -15,6 +15,7 @@ import {
   saveRecentMeetup,
   type RecentMeetup
 } from "@/lib/recentMeetups";
+import { getPrimaryCategory, parseMeetupMode } from "@/lib/categories";
 import { getPreferenceLabel, parsePreferences } from "@/lib/preferences";
 import { shareWithFallback } from "@/lib/share";
 import { trackEvent } from "@/lib/analytics";
@@ -26,6 +27,7 @@ const initialForm: SearchHalfwayRequest = {
   locationA: "",
   locationB: "",
   category: "coffee",
+  meetupMode: "single",
   customQuery: ""
 };
 
@@ -45,13 +47,14 @@ export default function HomePage() {
     const locationAPlaceId = params.get("aPlaceId") ?? undefined;
     const locationB = params.get("b") ?? "";
     const locationBPlaceId = params.get("bPlaceId") ?? undefined;
-    const category = (params.get("category") as VenueCategory | null) ?? "restaurant";
+    const category = (params.get("category") as VenueCategory | null) ?? "coffee";
+    const meetupMode = parseMeetupMode(params.get("mode"));
     const customQuery = params.get("q") ?? "";
     const preferences = parsePreferences(params.get("preferences"));
     const shareId = params.get("shareId");
     const shouldAutoSearch = params.get("auto") === "1";
     if (locationA || locationB || customQuery) {
-      const nextForm = { locationA, locationAPlaceId, locationB, locationBPlaceId, category, customQuery, preferences };
+      const nextForm = { locationA, locationAPlaceId, locationB, locationBPlaceId, category, meetupMode, customQuery, preferences };
       setForm(nextForm);
       if (shareId) {
         const shareUrl = `${window.location.origin}/s/${shareId}`;
@@ -278,6 +281,8 @@ export default function HomePage() {
                       originBLabel={resultContext?.originBLabel ?? "Person B"}
                       isClosestToHalfway={venue.id === resultContext?.closestVenueId}
                       isShortestCombined={venue.id === resultContext?.shortestCombinedVenueId}
+                      searchCategory={results.category}
+                      meetupMode={results.meetupMode}
                       onShare={shareVenue}
                       shareUrl={currentShareUrl}
                     />
@@ -638,7 +643,7 @@ function RecentMeetupsSection({
                   {shortLocationLabel(meetup.originA)} ↔ {shortLocationLabel(meetup.originB)}
                 </p>
                 <p className="mt-1 text-sm font-semibold text-slate">
-                  {getRecentMeetupCategoryLabel(meetup)} · {formatRecentMeetupDate(meetup.timestamp)}
+                  {getRecentMeetupCategoryLabel(meetup)} · {(meetup.meetupMode ?? "single") === "district" ? "District" : "Single place"} · {formatRecentMeetupDate(meetup.timestamp)}
                 </p>
                 {meetup.preferences?.length ? (
                   <p className="mt-1 truncate text-xs font-semibold text-clay">
@@ -656,17 +661,7 @@ function RecentMeetupsSection({
 }
 
 function categoryIcon(category: VenueCategory) {
-  const icons: Record<VenueCategory, string> = {
-    coffee: "☕",
-    restaurant: "🍽",
-    bar: "◐",
-    bookstore: "▰",
-    driving_range: "◉",
-    park: "⌁",
-    dessert: "✦",
-    custom: "•"
-  };
-  return icons[category];
+  return getPrimaryCategory(category).label.slice(0, 1);
 }
 
 function updateShareUrl(form: SearchHalfwayRequest) {
@@ -676,6 +671,7 @@ function updateShareUrl(form: SearchHalfwayRequest) {
   if (form.locationB) params.set("b", form.locationB);
   if (form.locationBPlaceId) params.set("bPlaceId", form.locationBPlaceId);
   params.set("category", form.category);
+  if (form.meetupMode && form.meetupMode !== "single") params.set("mode", form.meetupMode);
   if (form.customQuery) params.set("q", form.customQuery);
   if (form.preferences?.length) params.set("preferences", form.preferences.join(","));
   const path = `/?${params.toString()}`;

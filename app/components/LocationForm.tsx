@@ -2,7 +2,7 @@
 
 import { CategorySelector } from "@/app/components/CategorySelector";
 import { PREFERENCES } from "@/lib/preferences";
-import type { PlaceSuggestion, Preference, SearchHalfwayRequest, VenueCategory } from "@/lib/types";
+import type { MeetupMode, PlaceSuggestion, Preference, SearchHalfwayRequest, VenueCategory } from "@/lib/types";
 import { copyTextToClipboard, shareWithFallback } from "@/lib/share";
 import { BRAND } from "@/src/config/branding";
 import { FormEvent, useEffect, useRef, useState } from "react";
@@ -93,8 +93,18 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
       </div>
 
       <div className="mt-5 grid gap-3">
-        <span className="text-sm font-bold text-ink">Choose the vibe</span>
-        <CategorySelector value={form.category} onChange={(category: VenueCategory) => update("category", category)} />
+        <div>
+          <span className="text-sm font-bold text-ink">Choose the kind of meet-up</span>
+          <p className="mt-1 text-xs font-semibold leading-5 text-slate">
+            Start broad, then pick the exact style you want.
+          </p>
+        </div>
+        <CategorySelector
+          value={form.category}
+          mode={form.meetupMode}
+          onChange={(category: VenueCategory) => update("category", category)}
+          onModeChange={(meetupMode: MeetupMode) => update("meetupMode", meetupMode)}
+        />
       </div>
 
       <div className="mt-5 grid gap-3 rounded-lg border border-line bg-mint p-4">

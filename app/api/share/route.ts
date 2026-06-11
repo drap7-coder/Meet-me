@@ -25,6 +25,7 @@ export async function POST(request: Request) {
         placeId: body.results?.originB.placeId || body.form.locationBPlaceId
       },
       category: body.form.category,
+      meetupMode: body.form.meetupMode,
       customQuery: body.form.customQuery,
       preferences: body.form.preferences ?? [],
       midpoint: body.results?.midpoint,

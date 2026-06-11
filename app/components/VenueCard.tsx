@@ -8,8 +8,9 @@ import {
 } from "@/lib/calendar";
 import { copyTextToClipboard } from "@/lib/share";
 import { trackEvent } from "@/lib/analytics";
-import { getPreferenceBadge, getPreferenceLabel } from "@/lib/preferences";
-import type { ScoredVenue } from "@/lib/types";
+import { getCategoryConfig, getCategoryLabel, getPrimaryCategory } from "@/lib/categories";
+import { getPreferenceLabel } from "@/lib/preferences";
+import type { MeetupMode, ScoredVenue, VenueCategory } from "@/lib/types";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type Props = {
@@ -19,6 +20,8 @@ type Props = {
   originBLabel: string;
   isClosestToHalfway: boolean;
   isShortestCombined: boolean;
+  searchCategory: VenueCategory;
+  meetupMode: MeetupMode;
   onShare: (venue: ScoredVenue) => void;
   shareUrl?: string;
 };
@@ -30,6 +33,8 @@ export function VenueCard({
   originBLabel,
   isClosestToHalfway,
   isShortestCombined,
+  searchCategory,
+  meetupMode,
   onShare,
   shareUrl
 }: Props) {
@@ -44,7 +49,9 @@ export function VenueCard({
     originALabel,
     originBLabel,
     isClosestToHalfway,
-    isShortestCombined
+    isShortestCombined,
+    searchCategory,
+    meetupMode
   });
 
   useEffect(() => {
@@ -336,7 +343,9 @@ function getMatchExplanation({
   venue,
   rank,
   isClosestToHalfway,
-  isShortestCombined
+  isShortestCombined,
+  searchCategory,
+  meetupMode
 }: {
   venue: ScoredVenue;
   rank: number;
@@ -344,44 +353,48 @@ function getMatchExplanation({
   originBLabel: string;
   isClosestToHalfway: boolean;
   isShortestCombined: boolean;
+  searchCategory: VenueCategory;
+  meetupMode: MeetupMode;
 }) {
   const diff = venue.timeDifferenceMinutes;
   const rating = venue.rating;
   const a = venue.travelFromA.durationMinutes;
   const b = venue.travelFromB.durationMinutes;
+  const categoryConfig = getCategoryConfig(searchCategory);
+  const primaryCategory = getPrimaryCategory(searchCategory);
   const primaryPreference = venue.preferenceMatches[0];
   const preferencePhrase = formatPreferencePhrase(venue.preferenceMatches);
   const onePersonSavesTime =
     typeof a === "number" && typeof b === "number" && Math.abs(a - b) >= 15
       ? a < b
-        ? "You"
-        : "Them"
+        ? "Person A"
+        : "Person B"
       : null;
 
-  let badge = "Good Meeting Spot";
-  let explanation = "A solid option near the halfway area with a workable trip for both people.";
+  let badge = categoryConfig?.resultBadge ?? "Best Overall Match";
+  let explanation = categoryConfig?.explanation ?? "A solid option near the halfway area with a workable trip for both people.";
 
-  if (primaryPreference && rank <= 3) {
-    badge = getPreferenceBadge(primaryPreference);
+  if (rank === 1 && meetupMode === "district") {
+    badge = "Best District";
+    explanation = categoryConfig?.explanation ?? "A strong district-style match near the midpoint with multiple nearby stops.";
+  } else if (primaryPreference && rank <= 3) {
+    badge = categoryConfig?.resultBadge ?? "Best Overall Match";
     explanation = `A strong ${venue.category.toLowerCase()} option near the midpoint with ${preferencePhrase} and workable travel times.`;
   } else if (rank === 1 && typeof diff === "number" && diff <= 10 && typeof rating === "number" && rating >= 4.3) {
     badge = "Best Overall Match";
-    explanation = "A strong mix of balanced travel times, good reviews, and a convenient location.";
+    explanation = categoryConfig?.explanation ?? "A strong mix of balanced travel times, good reviews, and a convenient location.";
   } else if (typeof diff === "number" && diff <= 5) {
     badge = "Most Balanced";
     explanation = "This spot keeps the trip balanced, with nearly equal travel times for both people.";
-  } else if (isShortestCombined) {
-    badge = "Shortest Combined Drive";
-    explanation = "This option keeps the total time on the road especially low.";
   } else if (isClosestToHalfway) {
     badge = "Closest to Halfway";
     explanation = "This option is closest to the halfway area between both starting points.";
   } else if (onePersonSavesTime) {
     badge = `Better for ${onePersonSavesTime}`;
     explanation = "Good option, but one person has a noticeably shorter trip.";
-  } else if (typeof rating === "number" && rating >= 4.5) {
-    badge = "Highly Rated Nearby";
-    explanation = "A well-reviewed place near the halfway area, even if the drive is slightly less balanced.";
+  } else if (isShortestCombined && rank <= 5) {
+    badge = "Most Balanced";
+    explanation = "This option keeps the overall drive practical while staying close to the midpoint.";
   }
 
   return {
@@ -390,9 +403,9 @@ function getMatchExplanation({
     details: {
       balance: describeBalance(diff),
       rating: describeRating(rating, venue.reviewCount),
-      category: `Matches your ${venue.category.toLowerCase()} search.`,
+      category: `Matches your ${getCategoryLabel(searchCategory).toLowerCase()} search in ${meetupMode === "district" ? "district" : "single place"} mode.`,
       preference: describePreferenceMatch(venue.preferenceMatches),
-      convenience: describeConvenience(venue, isClosestToHalfway, isShortestCombined)
+      convenience: describeConvenience(venue, isClosestToHalfway, isShortestCombined, primaryCategory.label)
     }
   };
 }
@@ -422,12 +435,17 @@ function describeRating(rating: number | null, reviewCount: number) {
   return `${rating.toFixed(1)} stars from ${reviewCount} review${reviewCount === 1 ? "" : "s"}.`;
 }
 
-function describeConvenience(venue: ScoredVenue, isClosestToHalfway: boolean, isShortestCombined: boolean) {
+function describeConvenience(
+  venue: ScoredVenue,
+  isClosestToHalfway: boolean,
+  isShortestCombined: boolean,
+  primaryCategoryLabel: string
+) {
   if (isShortestCombined) return "One of the quickest options for the two of you together.";
   if (isClosestToHalfway) return "Especially close to the middle between both starting points.";
   if (venue.openNow === true) return "Open now, which makes it easier to act on.";
   if (venue.openNow === false) return "Worth saving, but check hours before heading out.";
-  return "A practical option near the halfway area.";
+  return `A practical ${primaryCategoryLabel.toLowerCase()} option near the halfway area.`;
 }
 
 function formatDifference(value: number | null) {

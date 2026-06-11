@@ -32,6 +32,7 @@ export default async function SharedMeetupPage({ params }: { params: Promise<{ i
   query.set("b", request.locationB);
   if (request.locationBPlaceId) query.set("bPlaceId", request.locationBPlaceId);
   query.set("category", request.category);
+  if (request.meetupMode && request.meetupMode !== "single") query.set("mode", request.meetupMode);
   if (request.customQuery) query.set("q", request.customQuery);
   if (request.preferences?.length) query.set("preferences", request.preferences.join(","));
   query.set("shareId", id);

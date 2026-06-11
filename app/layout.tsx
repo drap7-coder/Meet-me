@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/halfway-share-logo.png",
+        url: "/halfway-hero-logo.png",
         width: 1774,
         height: 887,
         alt: BRAND.name
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: BRAND.name,
     description: BRAND.description,
-    images: ["/halfway-share-logo.png"]
+    images: ["/halfway-hero-logo.png"]
   }
 };
 

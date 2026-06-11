@@ -316,17 +316,11 @@ function MarketingHero() {
   return (
     <section className="grid gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
       <div className="order-1">
-        <div className="mb-8 inline-grid gap-3">
-          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-            <PinIcon className="h-10 w-10 shrink-0 sm:h-12 sm:w-12" />
-            <span className="truncate text-6xl font-black leading-none tracking-tight text-ink sm:text-7xl">
-              {BRAND.name}
-            </span>
-          </div>
-          <span className="text-base font-bold leading-tight text-slate sm:text-lg">
-            {BRAND.tagline}
-          </span>
-        </div>
+        <img
+          src="/halfway-hero-logo.png"
+          alt={`${BRAND.name} logo`}
+          className="mb-7 block w-full max-w-[420px] sm:mb-8 sm:max-w-[560px]"
+        />
         <h1 className="max-w-2xl text-[2.55rem] font-black leading-[0.98] tracking-tight text-ink sm:text-6xl sm:leading-[0.98] lg:text-7xl">
           Find the perfect place to meet.
         </h1>

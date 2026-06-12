@@ -108,7 +108,7 @@ export function WeatherCard({ midpoint }: Props) {
     <article className="rounded-lg border border-line bg-paper p-5 shadow-soft sm:p-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-bold uppercase tracking-wide text-clay">Weather at the midpoint</p>
+          <p className="text-sm font-bold uppercase tracking-wide text-clay">Midpoint weather</p>
           <h2 className="mt-2 text-2xl font-black tracking-tight text-ink">
             {weatherState.status === "ready" ? `${weatherState.weather.temperature}°F` : "Checking the forecast"}
           </h2>
@@ -131,14 +131,14 @@ export function WeatherCard({ midpoint }: Props) {
 
       {weatherState.status === "unavailable" ? (
         <p className="mt-4 text-sm leading-6 text-slate">
-          Weather is not available right now, but your meeting spot search is still good to go.
+          Weather is not available right now, but your halfway search is still ready to use.
         </p>
       ) : null}
 
       {weatherState.status === "ready" ? (
         <>
           <p className="mt-2 text-base font-semibold text-slate">{weatherState.weather.condition}</p>
-          {recommendation ? <p className="mt-4 text-sm leading-6 text-slate">{recommendation}</p> : null}
+          {recommendation ? <p className="mt-4 text-sm font-semibold leading-6 text-ink">{recommendation}</p> : null}
 
           <div className="mt-5 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
             <WeatherMetric label="Feels like" value={`${weatherState.weather.feelsLike}°F`} />
@@ -195,13 +195,13 @@ function weatherIcon(code: number) {
 function getWeatherRecommendation(weather: WeatherSummary) {
   const rainChance = weather.rainChance ?? 0;
   if (rainChance >= 45 || [61, 63, 65, 80, 81, 82, 95, 96, 99].includes(weather.weatherCode)) {
-    return "Rain possible — indoor spot recommended.";
+    return "Indoor plans look smarter at your halfway point.";
   }
-  if (weather.feelsLike <= 50 || weather.windSpeed >= 18) return "Bring a jacket.";
+  if (weather.feelsLike <= 50 || weather.windSpeed >= 18) return "A cozy indoor spot may be better at your halfway point.";
   if (weather.feelsLike >= 58 && weather.feelsLike <= 82 && rainChance < 25) {
-    return "Great day for outdoor seating.";
+    return "Perfect patio weather at your halfway point.";
   }
-  return "Maybe pick somewhere indoors.";
+  return "Good to know before you pick the final halfway spot.";
 }
 
 function shortPlanLabel(weather: WeatherSummary) {

@@ -9,14 +9,14 @@ type Props = {
 
 export function ResultsMap({ originA, originB, midpoint, venues }: Props) {
   const points = [
-    { id: "a", label: "A", location: originA.location, className: "bg-indigo text-white" },
-    { id: "b", label: "B", location: originB.location, className: "bg-ink text-white" },
-    { id: "m", label: "•", location: midpoint, className: "bg-clay text-white" },
-    ...venues.slice(0, 8).map((venue, index) => ({
+    { id: "a", label: "A", location: originA.location, kind: "originA" },
+    { id: "b", label: "B", location: originB.location, kind: "originB" },
+    { id: "m", label: "", location: midpoint, kind: "midpoint" },
+    ...venues.slice(0, 5).map((venue, index) => ({
       id: venue.id,
       label: String(index + 1),
       location: venue.location,
-      className: "bg-clay text-white"
+      kind: "venue"
     }))
   ];
 
@@ -25,27 +25,83 @@ export function ResultsMap({ originA, originB, midpoint, venues }: Props) {
   return (
     <section className="sticky top-4 overflow-hidden rounded-lg border border-line bg-paper shadow-soft">
       <div className="relative h-[420px] min-h-[320px] w-full">
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(17,24,39,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(17,24,39,0.045)_1px,transparent_1px)] bg-[length:56px_56px]" />
-        <div className="absolute inset-x-6 top-1/2 h-1 -translate-y-1/2 rounded-full bg-line/70" />
-        <div className="absolute inset-y-8 left-1/2 w-1 -translate-x-1/2 rounded-full bg-line/70" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(17,24,39,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(17,24,39,0.03)_1px,transparent_1px)] bg-[length:64px_64px]" />
+        <div className="absolute inset-x-10 top-1/2 h-px -translate-y-1/2 rounded-full bg-line/60" />
+        <div className="absolute inset-y-10 left-1/2 w-px -translate-x-1/2 rounded-full bg-line/60" />
+        <div className="absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-clay/10 blur-2xl" />
         {points.map((point) => {
           const position = project(point.location, bounds);
+          const isMidpoint = point.kind === "midpoint";
           return (
             <div
               key={point.id}
-              className={`absolute grid h-9 w-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full text-sm font-black shadow-soft ${point.className}`}
+              className={`absolute -translate-x-1/2 -translate-y-1/2 ${isMidpoint ? "z-20" : "z-10"}`}
               style={{ left: `${position.x}%`, top: `${position.y}%` }}
               title={point.label}
             >
-              {point.label}
+              <MapMarker label={point.label} kind={point.kind} />
             </div>
           );
         })}
-        <div className="absolute bottom-3 left-3 right-3 rounded-lg border border-line bg-paper p-3 text-xs font-semibold text-slate">
-          A simple view of where both of you are starting and the best spots between you.
+        <div className="absolute left-4 top-4 rounded-lg border border-line bg-paper/95 p-3 shadow-[0_14px_34px_rgba(17,24,39,0.08)] backdrop-blur">
+          <p className="text-xs font-black uppercase tracking-[0.14em] text-clay">Fairness at a glance</p>
+          <p className="mt-1 max-w-[240px] text-sm font-semibold leading-5 text-slate">
+            See both starting points and the best places between them.
+          </p>
+        </div>
+        <div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-2 rounded-lg border border-line bg-paper/95 p-3 text-xs font-bold text-slate shadow-[0_14px_34px_rgba(17,24,39,0.08)] backdrop-blur">
+          <LegendDot className="bg-indigo" label="Person A" />
+          <LegendDot className="bg-ink" label="Person B" />
+          <LegendDot className="bg-clay" label="Midpoint" />
+          <LegendDot className="bg-white ring-1 ring-line" label="Ranked destinations" />
         </div>
       </div>
     </section>
+  );
+}
+
+function MapMarker({ label, kind }: { label: string; kind: string }) {
+  if (kind === "midpoint") {
+    return (
+      <span className="relative grid h-16 w-16 place-items-center">
+        <span className="absolute inset-0 rounded-full bg-clay/20 animate-pulse" />
+        <span className="absolute h-12 w-12 rounded-full bg-clay/20" />
+        <span className="relative grid h-9 w-9 place-items-center rounded-full bg-clay shadow-[0_18px_36px_rgba(255,107,107,0.28)]">
+          <span className="h-3.5 w-3.5 rounded-full bg-white" />
+        </span>
+      </span>
+    );
+  }
+
+  if (kind === "originA") {
+    return (
+      <span className="grid h-9 w-9 place-items-center rounded-full bg-indigo text-sm font-black text-white shadow-[0_14px_30px_rgba(79,70,229,0.18)]">
+        {label}
+      </span>
+    );
+  }
+
+  if (kind === "originB") {
+    return (
+      <span className="grid h-9 w-9 place-items-center rounded-full bg-ink text-sm font-black text-white shadow-[0_14px_30px_rgba(17,24,39,0.18)]">
+        {label}
+      </span>
+    );
+  }
+
+  return (
+    <span className="grid h-8 w-8 place-items-center rounded-full border border-line bg-white text-xs font-black text-ink shadow-[0_12px_24px_rgba(17,24,39,0.12)]">
+      {label}
+    </span>
+  );
+}
+
+function LegendDot({ className, label }: { className: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className={`h-2.5 w-2.5 rounded-full ${className}`} aria-hidden="true" />
+      {label}
+    </span>
   );
 }
 

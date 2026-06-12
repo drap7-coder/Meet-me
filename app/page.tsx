@@ -202,7 +202,7 @@ export default function HomePage() {
 
       {!hasSearched && !results && !loading ? (
         <>
-          <section className="relative isolate overflow-hidden bg-paper px-4 pb-8 pt-8 sm:px-6 sm:pb-10 sm:pt-12 lg:px-8">
+          <section className="relative isolate overflow-hidden bg-paper px-4 pb-6 pt-4 sm:px-6 sm:pb-8 sm:pt-6 lg:px-8">
             <div className="relative z-10 mx-auto max-w-7xl">
               <MarketingHero />
             </div>
@@ -313,16 +313,18 @@ export default function HomePage() {
 }
 
 function MarketingHero() {
+  const trustItems = ["Equal travel times", "Local recommendations", "Weather at the midpoint"];
+
   return (
-    <section className="mx-auto max-w-6xl py-10 sm:py-16 lg:py-20">
+    <section className="mx-auto max-w-6xl py-8 sm:py-12 lg:py-16">
       <div className="max-w-4xl">
-        <p className="mb-5 text-sm font-black uppercase tracking-[0.18em] text-clay">
+        <p className="mb-4 text-sm font-black uppercase tracking-[0.18em] text-clay">
           Fair meeting places in seconds
         </p>
         <h1 className="max-w-4xl text-[clamp(48px,8vw,72px)] font-black leading-[0.96] tracking-[-0.04em] text-ink">
-          Meet in the middle.
+          The easiest way to meet halfway.
         </h1>
-        <p className="mt-6 max-w-2xl text-lg font-medium leading-8 text-slate sm:mt-7 sm:text-xl">
+        <p className="mt-6 max-w-2xl text-lg font-medium leading-8 text-slate sm:text-xl">
           Find restaurants, coffee shops, and meeting places that work for everyone.
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:gap-4">
@@ -338,6 +340,14 @@ function MarketingHero() {
           >
             See How It Works
           </a>
+        </div>
+        <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm font-bold text-slate">
+          {trustItems.map((item) => (
+            <span key={item} className="inline-flex items-center gap-2">
+              <span className="text-clay" aria-hidden="true">✓</span>
+              {item}
+            </span>
+          ))}
         </div>
       </div>
     </section>
@@ -502,8 +512,7 @@ function UseCases() {
   const cards = [
     ["Fair for Both People", "Nearly equal travel times so nobody gets stuck with the long drive."],
     ["Best Local Places", "Restaurants, coffee shops, bars, bookstores, golf courses, and more."],
-    ["Save Time", "Stop comparing locations manually."],
-    ["Just Meet", "Pick a place and go."]
+    ["Save Time", "Stop comparing locations manually. Pick a place and go."]
   ];
 
   return (
@@ -515,9 +524,9 @@ function UseCases() {
             Equal effort, better plans.
           </h2>
         </div>
-        <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-8 grid gap-2.5 sm:grid-cols-3 sm:gap-3">
           {cards.map(([title, copy]) => (
-            <article key={title} className="rounded-[22px] border border-line bg-paper p-6 shadow-[0_12px_30px_rgba(17,24,39,0.05)]">
+            <article key={title} className="rounded-[22px] border border-line bg-paper p-5 shadow-[0_12px_30px_rgba(17,24,39,0.05)] sm:p-6">
               <p className="text-xl font-black text-ink">{title}</p>
               <p className="mt-3 text-sm font-semibold leading-6 text-slate">{copy}</p>
             </article>

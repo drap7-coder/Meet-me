@@ -43,6 +43,7 @@ export function VenueCard({
   const viewed = useRef(false);
   const timeA = formatMinutes(venue.travelFromA.durationMinutes);
   const timeB = formatMinutes(venue.travelFromB.durationMinutes);
+  const venueAction = getVenueAction(venue, searchCategory);
   const match = getMatchExplanation({
     venue,
     rank,
@@ -122,6 +123,26 @@ export function VenueCard({
         </span>
         <span className="text-slate">Total time: {formatMinutes(venue.totalTravelMinutes)}</span>
       </div>
+
+      {venueAction ? (
+        <div className="mt-4">
+          <a
+            href={venueAction.url}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() =>
+              trackEvent("venue_action_clicked", {
+                category: venue.category,
+                action: venueAction.label,
+                placeType: venue.types?.[0] ?? venue.category
+              })
+            }
+            className="inline-flex h-10 items-center justify-center rounded-full border border-clay/25 bg-clay/10 px-4 text-sm font-black text-ink transition hover:border-clay hover:bg-clay hover:text-white focus:outline-none focus:ring-4 focus:ring-clay/20"
+          >
+            {venueAction.label}
+          </a>
+        </div>
+      ) : null}
 
       <details className="group mt-4 rounded-lg border border-line bg-mint">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-bold text-ink">
@@ -337,6 +358,48 @@ function Detail({ label, value }: { label: string; value: string }) {
       <span>{value}</span>
     </div>
   );
+}
+
+function getVenueAction(venue: ScoredVenue, searchCategory: VenueCategory) {
+  const url = venue.websiteUri;
+  if (!url) return null;
+
+  const haystack = [venue.name, venue.category, ...(venue.types ?? [])].join(" ").toLowerCase();
+
+  if (haystack.includes("comedy") || haystack.includes("theater") || haystack.includes("music venue")) {
+    return { label: "View Show", url };
+  }
+
+  if (
+    ["zoos", "aquariums", "childrens_museums"].includes(searchCategory) ||
+    haystack.includes("museum") ||
+    haystack.includes("aquarium") ||
+    haystack.includes("zoo")
+  ) {
+    return { label: "View Tickets", url };
+  }
+
+  if (["golf", "driving_range"].includes(searchCategory) || haystack.includes("golf course")) {
+    return { label: searchCategory === "golf" ? "Book Tee Time" : "Book Activity", url };
+  }
+
+  if (["pickleball", "bowling", "escape_rooms", "arcades"].includes(searchCategory)) {
+    return { label: "Book Activity", url };
+  }
+
+  if (
+    ["restaurant", "brunch", "breweries", "wine_bars"].includes(searchCategory) ||
+    haystack.includes("restaurant") ||
+    haystack.includes("cafe")
+  ) {
+    return { label: "Reserve Table", url };
+  }
+
+  if (haystack.includes("event") || haystack.includes("ticket")) {
+    return { label: "View Event", url };
+  }
+
+  return null;
 }
 
 function getMatchExplanation({

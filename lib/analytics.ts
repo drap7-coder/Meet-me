@@ -11,6 +11,7 @@ type EventName =
   | "share_link_created"
   | "share_link_opened"
   | "calendar_invite_created"
+  | "venue_action_clicked"
   | "weather_viewed";
 
 type EventProperties = Record<string, string | number | boolean | null | undefined>;

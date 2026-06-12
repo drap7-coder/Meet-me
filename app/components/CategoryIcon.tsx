@@ -33,7 +33,13 @@ function getIconKey(category: VenueCategory | string) {
   if (value === "breweries" || value === "bar") return "beer";
   if (value === "wine_bars") return "wine";
   if (value === "events") return "calendar";
-  if (["universities", "colleges", "campus_tours", "campus_areas"].includes(value)) return "graduation";
+  if (value === "engineering_stem") return "flask";
+  if (value === "business_finance") return "briefcase";
+  if (value === "health_pre_med") return "medical";
+  if (value === "liberal_arts") return "book";
+  if (value === "urban_campuses") return "building";
+  if (["universities", "colleges"].includes(value)) return "graduation";
+  if (value === "college_towns") return "trees";
   if (["sports", "golf", "driving_range", "pickleball", "bowling"].includes(value)) return "trophy";
   if (value === "hotels") return "bed";
   if (["park", "parks", "playgrounds", "scenic_spots", "waterfronts"].includes(value)) return "trees";
@@ -47,7 +53,6 @@ function getIconKey(category: VenueCategory | string) {
       "vintage",
       "antiques",
       "bookstore",
-      "campus_bookstores",
       "home_design",
       "farmers_markets"
     ].includes(value)
@@ -55,8 +60,6 @@ function getIconKey(category: VenueCategory | string) {
     return "shopping";
   }
   if (["activities", "escape_rooms", "arcades"].includes(value)) return "compass";
-  if (value === "libraries") return "landmark";
-  if (value === "student_food") return "utensils";
   if (value === "family") return "users";
   return "compass";
 }
@@ -120,6 +123,51 @@ function renderIcon(icon: string) {
           <path d="M3 8 12 4l9 4-9 4Z" />
           <path d="M7 10v5c3 2 7 2 10 0v-5" />
           <path d="M21 8v6" />
+        </>
+      );
+    case "flask":
+      return (
+        <>
+          <path d="M9 3h6" />
+          <path d="M10 3v6l-5 8a3 3 0 0 0 2.5 4.5h9a3 3 0 0 0 2.5-4.5l-5-8V3" />
+          <path d="M8 15h8" />
+        </>
+      );
+    case "briefcase":
+      return (
+        <>
+          <path d="M10 6V5a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v1" />
+          <rect x="4" y="6" width="16" height="14" rx="2" />
+          <path d="M4 12h16" />
+          <path d="M10 12v2h4v-2" />
+        </>
+      );
+    case "medical":
+      return (
+        <>
+          <path d="M12 21s-7-4.4-9-9.4C1.7 8.2 3.7 5 7.1 5c2 0 3.3 1.1 4.9 3 1.6-1.9 2.9-3 4.9-3 3.4 0 5.4 3.2 4.1 6.6C19 16.6 12 21 12 21Z" />
+          <path d="M12 10v5" />
+          <path d="M9.5 12.5h5" />
+        </>
+      );
+    case "book":
+      return (
+        <>
+          <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5Z" />
+          <path d="M4 5.5v16" />
+          <path d="M8 7h8" />
+          <path d="M8 11h6" />
+        </>
+      );
+    case "building":
+      return (
+        <>
+          <rect x="5" y="4" width="14" height="17" rx="2" />
+          <path d="M9 8h.01" />
+          <path d="M15 8h.01" />
+          <path d="M9 12h.01" />
+          <path d="M15 12h.01" />
+          <path d="M9 21v-5h6v5" />
         </>
       );
     case "trophy":

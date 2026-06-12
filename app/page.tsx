@@ -17,7 +17,7 @@ import {
   saveRecentMeetup,
   type RecentMeetup
 } from "@/lib/recentMeetups";
-import { parseMeetupMode } from "@/lib/categories";
+import { normalizeCategory, parseMeetupMode } from "@/lib/categories";
 import { getPreferenceLabel, parsePreferences } from "@/lib/preferences";
 import { copyTextToClipboard, shareWithFallback, shouldUseNativeShare } from "@/lib/share";
 import { trackEvent } from "@/lib/analytics";
@@ -57,7 +57,7 @@ export default function HomePage() {
     const locationAPlaceId = params.get("aPlaceId") ?? undefined;
     const locationB = params.get("b") ?? "";
     const locationBPlaceId = params.get("bPlaceId") ?? undefined;
-    const category = (params.get("category") as VenueCategory | null) ?? "coffee";
+    const category = normalizeCategory((params.get("category") as VenueCategory | null) ?? "coffee");
     const meetupMode = parseMeetupMode(params.get("mode"));
     const customQuery = params.get("q") ?? "";
     const preferences = parsePreferences(params.get("preferences"));

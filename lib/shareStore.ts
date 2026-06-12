@@ -1,3 +1,4 @@
+import { normalizeCategory } from "@/lib/categories";
 import type { LatLng, MeetupMode, Preference, ScoredVenue, SearchHalfwayRequest, VenueCategory } from "@/lib/types";
 
 const SHARE_PREFIX = "halfway:share:";
@@ -75,7 +76,7 @@ export function sharePayloadToSearchRequest(payload: SharePayload): SearchHalfwa
     locationAPlaceId: payload.locationA.placeId,
     locationB: payload.locationB.label,
     locationBPlaceId: payload.locationB.placeId,
-    category: payload.category,
+    category: normalizeCategory(payload.category),
     meetupMode: payload.meetupMode,
     customQuery: payload.customQuery,
     preferences: payload.preferences

@@ -59,10 +59,17 @@ select {
   font-size: 0.9rem;
   font-weight: 650;
   line-height: 1.15;
-  word-break: keep-all;
+  word-break: normal;
   overflow-wrap: normal;
   hyphens: none;
   text-wrap: balance;
+}
+
+@media (max-width: 640px) {
+  .category-title {
+    font-size: 0.82rem;
+    line-height: 1.12;
+  }
 }
 
 .category-card.selected,

@@ -32,7 +32,7 @@ export const FEATURED_CATEGORY_ORDER: VenueCategory[] = [
   "breweries",
   "wine_bars",
   "events",
-  "colleges",
+  "engineering_stem",
   "sports",
   "hotels",
   "park",
@@ -220,32 +220,32 @@ export const CATEGORY_GROUPS: PrimaryCategoryConfig[] = [
   {
     id: "colleges",
     label: "Colleges",
-    description: "Campus visits, college tours, libraries, bookstores, and nearby student spots.",
+    description: "Find schools by fit — STEM, business, health, liberal arts, urban campuses, and classic college towns.",
     accent: "from-[#EEF4FF] to-white",
     subcategories: [
-      category("campus_tours", "Campus Tours", "Visitor centers and campus tour starting points.", "Best Overall Match", "A campus-tour match near the midpoint with a recognizable college setting.", {
-        single: ["campus tour", "college visitor center", "university visitor center", "admissions office"],
-        district: ["campus tour area", "college visitor center area", "university district visitor center", "campus visit area"]
+      category("engineering_stem", "Engineering & STEM", "Engineering, computer science, technology, and science-forward schools.", "Best Overall Match", "A strong STEM-focused college match near the midpoint with fair travel times.", {
+        single: ["engineering schools", "STEM colleges", "computer science colleges", "technology universities", "science programs"],
+        district: ["engineering schools", "STEM colleges", "computer science colleges", "technology universities", "science programs"]
       }),
-      category("colleges", "Colleges", "Colleges and universities as recognizable meetup anchors.", "Best Overall Match", "A college match near the midpoint with a clear campus landmark.", {
-        single: ["college", "university", "campus"],
-        district: ["college town", "university district", "campus area", "college campus"]
+      category("business_finance", "Business & Finance", "Business, finance, economics, and undergraduate business programs.", "Best Overall Match", "A strong business-focused college match near the midpoint with fair travel times.", {
+        single: ["business schools", "finance programs", "economics colleges", "undergraduate business programs"],
+        district: ["business schools", "finance programs", "economics colleges", "undergraduate business programs"]
       }),
-      category("libraries", "Libraries", "Campus libraries, public libraries, and quiet meeting anchors.", "Best Overall Match", "A library match near the midpoint with an easy, low-pressure meetup setting.", {
-        single: ["library", "college library", "university library", "public library"],
-        district: ["library district", "campus library area", "college town library", "downtown library"]
+      category("health_pre_med", "Health & Pre-Med", "Pre-med, health sciences, nursing, and biology-focused programs.", "Best Overall Match", "A health and pre-med college match near the midpoint with fair travel times.", {
+        single: ["pre-med colleges", "health sciences programs", "nursing schools", "biology programs"],
+        district: ["pre-med colleges", "health sciences programs", "nursing schools", "biology programs"]
       }),
-      category("campus_bookstores", "Bookstores", "Campus bookstores and nearby bookshops.", "Best Shopping Match", "A bookstore match near the midpoint with an easy campus-adjacent stop.", {
-        single: ["campus bookstore", "college bookstore", "university bookstore", "bookstore"],
-        district: ["campus bookstore area", "college town bookstores", "university district bookstore", "downtown bookstores"]
+      category("liberal_arts", "Liberal Arts", "Small colleges, humanities programs, and undergraduate liberal arts schools.", "Best Overall Match", "A liberal arts college match near the midpoint with a thoughtful campus fit.", {
+        single: ["liberal arts colleges", "small colleges", "humanities colleges", "undergraduate liberal arts"],
+        district: ["liberal arts colleges", "small colleges", "humanities colleges", "undergraduate liberal arts"]
       }),
-      category("student_food", "Student Food", "Casual cafes, pizza spots, diners, and student-friendly food.", "Best Food Match", "A student-food match near the midpoint with casual places to meet before or after a campus stop.", {
-        single: ["student food", "college cafe", "pizza near campus", "campus restaurant"],
-        district: ["student food district", "college town restaurants", "campus food area", "university district cafes"]
+      category("urban_campuses", "Urban Campuses", "City campuses, downtown schools, and universities in urban settings.", "Best Overall Match", "An urban campus match near the midpoint with city access and fair drive times.", {
+        single: ["urban colleges", "city campuses", "universities in cities", "downtown campus"],
+        district: ["urban colleges", "city campuses", "universities in cities", "downtown campus"]
       }),
-      category("campus_areas", "Campus Areas", "Campus-adjacent streets with coffee, food, shops, and libraries.", "Best District", "A campus-area match near the midpoint with multiple nearby places to eat, browse, or meet.", {
-        single: ["campus area", "college town", "university district", "near campus"],
-        district: ["campus area", "college town", "university district", "walkable campus district"]
+      category("college_towns", "College Towns", "Traditional campuses, residential colleges, and classic student towns.", "Best District", "A classic college-town match near the midpoint with a strong campus feel.", {
+        single: ["college towns", "traditional campus", "residential colleges", "student town"],
+        district: ["college towns", "traditional campus", "residential colleges", "student town"]
       })
     ]
   }
@@ -281,14 +281,15 @@ export const FEATURED_CATEGORIES = FEATURED_CATEGORY_ORDER.map((categoryId) => g
 );
 
 export function getCategoryLabel(category: VenueCategory) {
-  return getCategoryConfig(category)?.label ?? "Custom";
+  return getCategoryConfig(normalizeCategory(category))?.label ?? "Custom";
 }
 
 export function getCategoryConfig(category: VenueCategory) {
-  return CATEGORIES.find((item) => item.id === category) ?? null;
+  return CATEGORIES.find((item) => item.id === normalizeCategory(category)) ?? null;
 }
 
 export function getPrimaryCategory(category: VenueCategory) {
+  category = normalizeCategory(category);
   if (category === "bar") return CATEGORY_GROUPS[0];
   if (category === "shopping") return CATEGORY_GROUPS.find((group) => group.id === "shopping") ?? CATEGORY_GROUPS[0];
   if (category === "activities") return CATEGORY_GROUPS.find((group) => group.id === "activities") ?? CATEGORY_GROUPS[0];
@@ -305,6 +306,11 @@ export function getDefaultCategoryForPrimary(primaryId: PrimaryCategoryId): Venu
   return CATEGORY_GROUPS.find((group) => group.id === primaryId)?.subcategories[0]?.id ?? "coffee";
 }
 
+export function normalizeCategory(category: VenueCategory): VenueCategory {
+  if (category === "colleges" || category === "universities") return "engineering_stem";
+  return category;
+}
+
 export function parseMeetupMode(value: string | null | undefined): MeetupMode {
   return value === "district" ? "district" : DEFAULT_MEETUP_MODE;
 }
@@ -314,6 +320,7 @@ export function getCategorySearchTerms(
   customQuery?: string,
   meetupMode: MeetupMode = DEFAULT_MEETUP_MODE
 ) {
+  category = normalizeCategory(category);
   if (category === "custom") return [customQuery?.trim() || "places to meet"];
   const config = getCategoryConfig(category);
   if (!config) return ["places to meet"];

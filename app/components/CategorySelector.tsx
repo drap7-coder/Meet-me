@@ -33,13 +33,13 @@ export function CategorySelector({ value, mode = DEFAULT_MEETUP_MODE, onChange, 
               onClick={() => onChange(primaryCategory)}
               aria-pressed={selected}
               aria-selected={selected}
-              className={`category-card group flex min-w-0 items-center rounded-[18px] border bg-white px-3 py-4 text-left shadow-[0_8px_18px_rgba(17,24,39,0.03)] transition sm:p-4 sm:shadow-[0_10px_26px_rgba(17,24,39,0.04)] ${
+              className={`category-card group flex min-w-0 items-center justify-center rounded-[18px] border bg-white px-3 py-4 text-center shadow-[0_8px_18px_rgba(17,24,39,0.03)] transition sm:justify-start sm:p-4 sm:text-left sm:shadow-[0_10px_26px_rgba(17,24,39,0.04)] ${
                 selected
                   ? "selected border-2 border-[var(--mmh-coral)] !bg-[#FFF3F1] text-ink !shadow-[0_0_0_4px_rgba(255,107,95,0.08),0_14px_30px_rgba(255,107,95,0.12)]"
                   : "border-[#D8DDE6] text-ink hover:-translate-y-0.5 hover:border-ink/25 hover:shadow-soft"
               }`}
             >
-              <div className="flex min-w-0 items-center gap-3">
+              <div className="flex min-w-0 flex-col items-center gap-2.5 sm:flex-row sm:gap-3">
                 <span
                   className={`category-icon-wrapper grid shrink-0 place-items-center rounded-full transition ${
                     selected ? "bg-[var(--mmh-coral)] text-white shadow-[0_10px_22px_rgba(255,107,95,0.24)]" : "bg-[#F6F7FA] text-slate"
@@ -78,7 +78,7 @@ export function CategorySelector({ value, mode = DEFAULT_MEETUP_MODE, onChange, 
                 onClick={() => onChange(category.id)}
                 aria-pressed={selected}
                 aria-selected={selected}
-                className={`category-card group flex min-w-0 items-center rounded-[16px] border bg-white px-3 py-3 text-left transition ${
+                className={`category-card group flex min-w-0 flex-col items-center justify-center rounded-[16px] border bg-white px-3 py-3 text-center transition sm:flex-row sm:justify-start sm:text-left ${
                   selected
                     ? "selected border-2 border-[var(--mmh-coral)] !bg-[#FFF3F1] text-ink !shadow-[0_0_0_4px_rgba(255,107,95,0.08)]"
                     : "border-[#D8DDE6] text-ink hover:border-ink/25 hover:bg-sky"

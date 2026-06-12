@@ -392,14 +392,14 @@ function Detail({ label, value, category }: { label: string; value: string; cate
   );
 }
 
-function getCollegeResearchLinks(college: Partial<ScoredVenue> & { displayName?: { text?: string }; website?: string; url?: string }) {
+function getCollegeResearchLinks(college: Partial<ScoredVenue> & { displayName?: { text?: string }; website?: string }) {
   const name = college?.name || college?.displayName?.text || "";
-  const encodedName = encodeURIComponent(name);
+  const encodedName = encodeURIComponent(`${name} site:niche.com/colleges`);
 
   return {
-    niche: `https://www.niche.com/search/?q=${encodedName}`,
-    wikipedia: `https://en.wikipedia.org/wiki/Special:Search?search=${encodedName}`,
-    website: college?.websiteUri || college?.website || college?.url || null
+    niche: `https://www.google.com/search?q=${encodedName}`,
+    wikipedia: `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(name)}`,
+    website: college?.websiteUri || college?.website || null
   };
 }
 

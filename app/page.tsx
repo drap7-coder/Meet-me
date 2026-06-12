@@ -202,7 +202,7 @@ export default function HomePage() {
 
       {!hasSearched && !results && !loading ? (
         <>
-          <section className="relative isolate overflow-hidden bg-mint px-4 pb-8 pt-[max(72px,calc(env(safe-area-inset-top)+64px))] sm:px-6 sm:pb-10 lg:px-8">
+          <section className="relative isolate overflow-hidden bg-paper px-4 pb-8 pt-8 sm:px-6 sm:pb-10 sm:pt-12 lg:px-8">
             <div className="relative z-10 mx-auto max-w-7xl">
               <MarketingHero />
             </div>
@@ -314,36 +314,32 @@ export default function HomePage() {
 
 function MarketingHero() {
   return (
-    <section className="grid gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
-      <div className="order-1">
-        <img
-          src="/halfway-hero-logo.png"
-          alt={`${BRAND.name} logo`}
-          className="mb-7 block w-full max-w-[420px] sm:mb-8 sm:max-w-[560px]"
-        />
-        <h1 className="max-w-2xl text-[2.55rem] font-black leading-[0.98] tracking-tight text-ink sm:text-6xl sm:leading-[0.98] lg:text-7xl">
-          Find the perfect place to meet.
-        </h1>
-        <p className="mt-4 max-w-xl text-lg leading-7 text-slate sm:mt-6 sm:text-xl sm:leading-8">
-          {BRAND.heroSubheadline}
+    <section className="mx-auto max-w-6xl py-10 sm:py-16 lg:py-20">
+      <div className="max-w-4xl">
+        <p className="mb-5 text-sm font-black uppercase tracking-[0.18em] text-clay">
+          Fair meeting places in seconds
         </p>
-        <div className="mt-6 flex flex-col gap-2.5 sm:mt-8 sm:flex-row sm:gap-3">
+        <h1 className="max-w-4xl text-[clamp(48px,8vw,72px)] font-black leading-[0.96] tracking-[-0.04em] text-ink">
+          Meet in the middle.
+        </h1>
+        <p className="mt-6 max-w-2xl text-lg font-medium leading-8 text-slate sm:mt-7 sm:text-xl">
+          Find restaurants, coffee shops, and meeting places that work for everyone.
+        </p>
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:gap-4">
           <a
             href="#search"
-            className="inline-flex h-11 items-center justify-center rounded-full bg-clay px-6 text-base font-bold text-white shadow-glow transition hover:bg-[#E55757] focus:outline-none focus:ring-4 focus:ring-clay/25 sm:h-12"
+            className="inline-flex h-12 items-center justify-center rounded-full bg-clay px-7 text-base font-bold text-white shadow-glow transition hover:bg-[#E55757] focus:outline-none focus:ring-4 focus:ring-clay/25"
           >
-            Start planning
+            Start Planning
           </a>
           <a
             href="#how-it-works"
-            className="inline-flex h-11 items-center justify-center rounded-full border border-line bg-paper px-6 text-base font-bold text-ink shadow-[0_8px_22px_rgba(17,24,39,0.04)] transition hover:border-ink/30 focus:outline-none focus:ring-4 focus:ring-ink/10 sm:h-12"
+            className="inline-flex h-12 items-center justify-center rounded-full border border-line bg-paper px-7 text-base font-bold text-ink shadow-[0_8px_22px_rgba(17,24,39,0.04)] transition hover:border-ink/30 focus:outline-none focus:ring-4 focus:ring-ink/10"
           >
             See How It Works
           </a>
         </div>
       </div>
-
-      <ProductDemoVisual />
     </section>
   );
 }
@@ -456,19 +452,16 @@ function CompactResultsHeader({
 
 function SiteHeader() {
   return (
-    <header className="sticky top-0 z-50 border-b border-line bg-mint/95 pt-[env(safe-area-inset-top)] backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:h-16 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 border-b border-line bg-paper/90 pt-[env(safe-area-inset-top)] backdrop-blur">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <a href="/" className="inline-flex min-w-0 items-center gap-2.5" aria-label={`${BRAND.name} home`}>
           <Logo size="sm" />
-          <span className="rounded-md border border-line bg-paper px-1.5 py-0.5 text-[0.65rem] font-black tracking-wide text-slate">
-            BETA
-          </span>
         </a>
         <a
           href="#search"
-          className="inline-flex h-9 items-center justify-center rounded-full bg-ink px-4 text-sm font-bold text-white shadow-[0_10px_24px_rgba(17,24,39,0.12)] transition hover:bg-ink/85"
+          className="inline-flex h-10 items-center justify-center rounded-full bg-ink px-5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(17,24,39,0.12)] transition hover:bg-ink/85 focus:outline-none focus:ring-4 focus:ring-ink/10"
         >
-          Start
+          Start Planning
         </a>
       </div>
     </header>

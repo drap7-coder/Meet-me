@@ -13,9 +13,13 @@ export type VenueCategory =
   | "bar"
   | "breweries"
   | "brunch"
+  | "campus_areas"
+  | "campus_bookstores"
+  | "campus_tours"
   | "childrens_museums"
   | "coffee"
   | "bookstore"
+  | "colleges"
   | "downtowns"
   | "driving_range"
   | "events"
@@ -25,6 +29,7 @@ export type VenueCategory =
   | "golf"
   | "hotels"
   | "home_design"
+  | "libraries"
   | "malls"
   | "museums"
   | "outlets"
@@ -32,6 +37,7 @@ export type VenueCategory =
   | "park"
   | "playgrounds"
   | "scenic_spots"
+  | "student_food"
   | "shopping"
   | "small_towns"
   | "sports"
@@ -51,10 +57,11 @@ export type Preference =
   | "downtown"
   | "walkable"
   | "easy_parking"
-  | "waterfront"
   | "outdoor_seating"
   | "upscale"
-  | "family_friendly";
+  | "family_friendly"
+  | "scenic"
+  | "quick_stop";
 
 export type GeocodedLocation = {
   input: string;

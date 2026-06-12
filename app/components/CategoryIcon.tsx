@@ -33,7 +33,7 @@ function getIconKey(category: VenueCategory | string) {
   if (value === "breweries" || value === "bar") return "beer";
   if (value === "wine_bars") return "wine";
   if (value === "events") return "calendar";
-  if (value === "universities") return "graduation";
+  if (["universities", "colleges", "campus_tours", "campus_areas"].includes(value)) return "graduation";
   if (["sports", "golf", "driving_range", "pickleball", "bowling"].includes(value)) return "trophy";
   if (value === "hotels") return "bed";
   if (["park", "parks", "playgrounds", "scenic_spots", "waterfronts"].includes(value)) return "trees";
@@ -47,6 +47,7 @@ function getIconKey(category: VenueCategory | string) {
       "vintage",
       "antiques",
       "bookstore",
+      "campus_bookstores",
       "home_design",
       "farmers_markets"
     ].includes(value)
@@ -54,6 +55,8 @@ function getIconKey(category: VenueCategory | string) {
     return "shopping";
   }
   if (["activities", "escape_rooms", "arcades"].includes(value)) return "compass";
+  if (value === "libraries") return "landmark";
+  if (value === "student_food") return "utensils";
   if (value === "family") return "users";
   return "compass";
 }

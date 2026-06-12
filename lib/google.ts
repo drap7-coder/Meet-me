@@ -206,10 +206,14 @@ async function searchPlacesForQuery(params: {
 }
 
 function getIncludedPlaceTypes(category: SearchHalfwayRequest["category"]) {
-  if (category === "universities") return ["university", "school", "point_of_interest"];
+  if (category === "universities" || category === "colleges" || category === "campus_tours" || category === "campus_areas") {
+    return ["university", "school", "point_of_interest"];
+  }
   if (category === "hotels") return ["lodging"];
   if (category === "restaurant" || category === "brunch") return ["restaurant"];
+  if (category === "student_food") return ["restaurant", "cafe"];
   if (category === "coffee") return ["cafe"];
+  if (category === "libraries") return ["library"];
   if (category === "park") return ["park"];
   if (category === "museums" || category === "childrens_museums") return ["museum"];
   return [];

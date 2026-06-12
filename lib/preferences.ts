@@ -8,13 +8,6 @@ export const PREFERENCES: Array<{
   terms: string[];
 }> = [
   {
-    id: "downtown",
-    label: "Downtown",
-    helper: "Bias toward town centers and main streets.",
-    badge: "Best Downtown Match",
-    terms: ["downtown", "town center", "main street", "main st", "village", "central business district", "center city"]
-  },
-  {
     id: "walkable",
     label: "Walkable",
     helper: "Bias toward areas with places to stroll nearby.",
@@ -29,11 +22,11 @@ export const PREFERENCES: Array<{
     terms: ["parking", "parking lot", "garage", "free parking", "easy parking", "valet"]
   },
   {
-    id: "waterfront",
-    label: "Waterfront",
-    helper: "Bias toward scenic waterside areas.",
-    badge: "Best Waterfront Option",
-    terms: ["waterfront", "riverwalk", "marina", "boardwalk", "lakefront", "river", "harbor", "pier", "shore"]
+    id: "downtown",
+    label: "Downtown",
+    helper: "Bias toward town centers and main streets.",
+    badge: "Best Downtown Match",
+    terms: ["downtown", "town center", "main street", "main st", "village", "central business district", "center city"]
   },
   {
     id: "outdoor_seating",
@@ -55,6 +48,20 @@ export const PREFERENCES: Array<{
     helper: "Bias toward casual, approachable places.",
     badge: "Best Family-Friendly Option",
     terms: ["family friendly", "casual", "kid friendly", "kids", "relaxed", "diner", "family"]
+  },
+  {
+    id: "scenic",
+    label: "Scenic",
+    helper: "Bias toward views, waterfronts, gardens, and memorable settings.",
+    badge: "Most Scenic",
+    terms: ["scenic", "view", "overlook", "waterfront", "riverwalk", "marina", "garden", "botanical", "park"]
+  },
+  {
+    id: "quick_stop",
+    label: "Quick Stop",
+    helper: "Bias toward easy, low-commitment places.",
+    badge: "Best Quick Stop",
+    terms: ["quick", "casual", "cafe", "coffee", "grab and go", "easy", "counter service", "parking"]
   }
 ];
 

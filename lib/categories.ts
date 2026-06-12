@@ -1,6 +1,6 @@
 import type { MeetupMode, VenueCategory } from "@/lib/types";
 
-export type PrimaryCategoryId = "food_drink" | "shopping" | "activities" | "family" | "explore";
+export type PrimaryCategoryId = "food_drink" | "shopping" | "activities" | "family" | "explore" | "colleges";
 
 type CategorySearchConfig = {
   single: string[];
@@ -32,14 +32,12 @@ export const FEATURED_CATEGORY_ORDER: VenueCategory[] = [
   "breweries",
   "wine_bars",
   "events",
-  "universities",
+  "colleges",
   "sports",
   "hotels",
   "park",
   "museums",
-  "shopping",
-  "activities",
-  "family"
+  "downtowns"
 ];
 
 export const CATEGORY_GROUPS: PrimaryCategoryConfig[] = [
@@ -85,10 +83,6 @@ export const CATEGORY_GROUPS: PrimaryCategoryConfig[] = [
         single: ["shopping mall", "retail center", "shopping center"],
         district: ["shopping mall", "retail center", "shopping center", "shopping district"]
       }),
-      category("shopping", "Shopping", "Malls, outlets, thrift finds, bookstores, markets, and design stops.", "Best Shopping Match", "A shopping match near the midpoint with places worth browsing together.", {
-        single: ["shopping mall", "shopping center", "retail center", "stores"],
-        district: ["shopping district", "walkable shopping district", "main street shops", "retail district"]
-      }),
       category("outlets", "Outlets", "Outlet centers and brand-heavy shopping trips.", "Best Shopping Match", "A strong outlet match near the midpoint, with fair drive times for both people.", {
         single: ["outlet mall", "premium outlets", "factory outlet", "outlet center"],
         district: ["outlet mall", "premium outlets", "factory outlet", "outlet center"]
@@ -129,10 +123,6 @@ export const CATEGORY_GROUPS: PrimaryCategoryConfig[] = [
         single: ["golf course", "public golf course", "golf club", "golf simulator"],
         district: ["golf area", "golf courses near downtown", "public golf course area", "golf destination"]
       }),
-      category("activities", "Activities", "Bowling, games, courts, golf, and plans with something to do.", "Best Activity Match", "An activity-focused match near the midpoint with a built-in thing to do.", {
-        single: ["things to do", "activity center", "entertainment center", "recreation center"],
-        district: ["entertainment district", "activity district", "downtown activities", "walkable entertainment area"]
-      }),
       category("events", "Events", "Shows, performances, markets, and calendar-driven plans.", "Best Activity Match", "An event-friendly match near the midpoint with a clear plan attached.", {
         single: ["events", "live events", "things to do", "local events"],
         district: ["event district", "downtown events", "walkable entertainment district", "town center events"]
@@ -172,10 +162,6 @@ export const CATEGORY_GROUPS: PrimaryCategoryConfig[] = [
       category("park", "Parks", "Open-air space with room to walk and reset.", "Best Overall Match", "A park match near the midpoint with room to walk, sit, and keep the plan flexible.", {
         single: ["park", "public park", "garden", "nature park"],
         district: ["walkable park district", "downtown park", "waterfront park area", "parks near main street"]
-      }),
-      category("family", "Family", "Parks, museums, playgrounds, and easy all-ages options.", "Best Overall Match", "A family-friendly match near the midpoint with an easy shared activity.", {
-        single: ["family friendly activity", "family attraction", "kids activity", "family fun"],
-        district: ["family attraction district", "family friendly downtown", "family activity area", "walkable family attractions"]
       }),
       category("zoos", "Zoos", "Destination outings with a clear activity arc.", "Best Overall Match", "A zoo-focused match near the midpoint for a bigger family-friendly outing.", {
         single: ["zoo", "wildlife park", "animal park", "safari park"],
@@ -225,19 +211,63 @@ export const CATEGORY_GROUPS: PrimaryCategoryConfig[] = [
         single: ["scenic overlook", "scenic spot", "viewpoint", "botanical garden"],
         district: ["scenic downtown", "waterfront scenic area", "walkable scenic area", "scenic main street"]
       }),
-      category("universities", "Universities", "College campuses and university areas for easy landmark meet-ups.", "Best Overall Match", "A university-area match near the midpoint with a recognizable campus or college nearby.", {
-        single: ["university", "college", "campus"],
-        district: ["university district", "college town", "campus area", "college campus"]
-      }),
       category("hotels", "Hotels", "Hotel lobbies, lounges, and overnight-friendly meeting points.", "Best Overall Match", "A hotel match near the midpoint that can work for longer trips or overnight plans.", {
         single: ["hotel", "boutique hotel", "hotel lounge", "inn"],
         district: ["hotel district", "downtown hotels", "hotel area", "town center hotels"]
+      })
+    ]
+  },
+  {
+    id: "colleges",
+    label: "Colleges",
+    description: "Campus visits, college tours, libraries, bookstores, and nearby student spots.",
+    accent: "from-[#EEF4FF] to-white",
+    subcategories: [
+      category("campus_tours", "Campus Tours", "Visitor centers and campus tour starting points.", "Best Overall Match", "A campus-tour match near the midpoint with a recognizable college setting.", {
+        single: ["campus tour", "college visitor center", "university visitor center", "admissions office"],
+        district: ["campus tour area", "college visitor center area", "university district visitor center", "campus visit area"]
+      }),
+      category("colleges", "Colleges", "Colleges and universities as recognizable meetup anchors.", "Best Overall Match", "A college match near the midpoint with a clear campus landmark.", {
+        single: ["college", "university", "campus"],
+        district: ["college town", "university district", "campus area", "college campus"]
+      }),
+      category("libraries", "Libraries", "Campus libraries, public libraries, and quiet meeting anchors.", "Best Overall Match", "A library match near the midpoint with an easy, low-pressure meetup setting.", {
+        single: ["library", "college library", "university library", "public library"],
+        district: ["library district", "campus library area", "college town library", "downtown library"]
+      }),
+      category("campus_bookstores", "Bookstores", "Campus bookstores and nearby bookshops.", "Best Shopping Match", "A bookstore match near the midpoint with an easy campus-adjacent stop.", {
+        single: ["campus bookstore", "college bookstore", "university bookstore", "bookstore"],
+        district: ["campus bookstore area", "college town bookstores", "university district bookstore", "downtown bookstores"]
+      }),
+      category("student_food", "Student Food", "Casual cafes, pizza spots, diners, and student-friendly food.", "Best Food Match", "A student-food match near the midpoint with casual places to meet before or after a campus stop.", {
+        single: ["student food", "college cafe", "pizza near campus", "campus restaurant"],
+        district: ["student food district", "college town restaurants", "campus food area", "university district cafes"]
+      }),
+      category("campus_areas", "Campus Areas", "Campus-adjacent streets with coffee, food, shops, and libraries.", "Best District", "A campus-area match near the midpoint with multiple nearby places to eat, browse, or meet.", {
+        single: ["campus area", "college town", "university district", "near campus"],
+        district: ["campus area", "college town", "university district", "walkable campus district"]
       })
     ]
   }
 ];
 
 const LEGACY_CATEGORIES: SubcategoryConfig[] = [
+  category("shopping", "Shopping", "Legacy shopping category.", "Best Shopping Match", "A shopping match near the midpoint with places worth browsing together.", {
+    single: ["shopping mall", "shopping center", "retail center", "stores"],
+    district: ["shopping district", "walkable shopping district", "main street shops", "retail district"]
+  }),
+  category("activities", "Activities", "Legacy activities category.", "Best Activity Match", "An activity-focused match near the midpoint with a built-in thing to do.", {
+    single: ["things to do", "activity center", "entertainment center", "recreation center"],
+    district: ["entertainment district", "activity district", "downtown activities", "walkable entertainment area"]
+  }),
+  category("family", "Family", "Legacy family category.", "Best Overall Match", "A family-friendly match near the midpoint with an easy shared activity.", {
+    single: ["family friendly activity", "family attraction", "kids activity", "family fun"],
+    district: ["family attraction district", "family friendly downtown", "family activity area", "walkable family attractions"]
+  }),
+  category("universities", "Universities", "Legacy universities category.", "Best Overall Match", "A university-area match near the midpoint with a recognizable campus or college nearby.", {
+    single: ["university", "college", "campus"],
+    district: ["university district", "college town", "campus area", "college campus"]
+  }),
   category("bar", "Drinks", "Legacy drinks category.", "Best Food Match", "A strong drinks-focused option near the midpoint with workable travel times.", {
     single: ["bar", "cocktail bar", "pub", "drinks"],
     district: ["bar district", "downtown bars", "walkable drinks district", "main street bars"]
@@ -260,6 +290,10 @@ export function getCategoryConfig(category: VenueCategory) {
 
 export function getPrimaryCategory(category: VenueCategory) {
   if (category === "bar") return CATEGORY_GROUPS[0];
+  if (category === "shopping") return CATEGORY_GROUPS.find((group) => group.id === "shopping") ?? CATEGORY_GROUPS[0];
+  if (category === "activities") return CATEGORY_GROUPS.find((group) => group.id === "activities") ?? CATEGORY_GROUPS[0];
+  if (category === "family") return CATEGORY_GROUPS.find((group) => group.id === "family") ?? CATEGORY_GROUPS[0];
+  if (category === "universities") return CATEGORY_GROUPS.find((group) => group.id === "colleges") ?? CATEGORY_GROUPS[0];
   return CATEGORY_GROUPS.find((group) => group.subcategories.some((item) => item.id === category)) ?? CATEGORY_GROUPS[0];
 }
 

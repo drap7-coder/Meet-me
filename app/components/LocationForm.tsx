@@ -2,8 +2,9 @@
 
 import { CategorySelector } from "@/app/components/CategorySelector";
 import { Logo } from "@/app/components/Logo";
+import { getPrimaryCategoryId } from "@/lib/categories";
 import { PREFERENCES } from "@/lib/preferences";
-import type { MeetupMode, PlaceSuggestion, Preference, SearchHalfwayRequest, VenueCategory } from "@/lib/types";
+import type { PlaceSuggestion, Preference, SearchHalfwayRequest, VenueCategory } from "@/lib/types";
 import { copyTextToClipboard, shareWithFallback } from "@/lib/share";
 import { BRAND } from "@/src/config/branding";
 import { FormEvent, useEffect, useRef, useState } from "react";
@@ -64,6 +65,9 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
     onChange({ ...form, preferences });
   }
 
+  const activePrimaryId = getPrimaryCategoryId(form.category);
+  const submitCopy = getSubmitCopy(activePrimaryId);
+
   return (
     <form onSubmit={handleSubmit} className="rounded-lg border border-line bg-paper p-5 shadow-soft sm:p-7">
       <div className="mb-6">
@@ -104,18 +108,14 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
           value={form.category}
           mode={form.meetupMode}
           onChange={(category: VenueCategory) => update("category", category)}
-          onModeChange={(meetupMode: MeetupMode) => update("meetupMode", meetupMode)}
         />
       </div>
 
-      <div className="mt-5 grid gap-3 rounded-lg border border-line bg-mint p-4">
+      <div className="mt-4 grid gap-3 rounded-[18px] border border-line/80 bg-white/70 p-3 sm:p-4">
         <div>
-          <span className="text-sm font-bold text-ink">Preferences</span>
-          <span className="ml-2 text-xs font-semibold text-slate">
-            {form.preferences?.length ? `${form.preferences.length} selected` : "Optional"}
-          </span>
+          <span className="text-sm font-bold text-ink">Make it easier</span>
           <p className="mt-1 text-xs font-semibold leading-5 text-slate">
-            Add setting preferences to gently shape the ranking.
+            Optional — choose what matters most.
           </p>
         </div>
         <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
@@ -127,10 +127,10 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
                 type="button"
                 title={preference.helper}
                 onClick={() => togglePreference(preference.id)}
-                className={`rounded-lg border px-3 py-2 text-center text-sm font-bold transition ${
+                className={`rounded-full border px-3 py-2 text-center text-sm font-bold transition ${
                   selected
-                    ? "border-clay bg-clay text-white"
-                    : "border-line bg-paper text-ink hover:border-clay/40 hover:bg-sky"
+                    ? "border-clay bg-clay text-white shadow-[0_8px_18px_rgba(255,107,95,0.18)]"
+                    : "border-line bg-white text-ink hover:border-clay/40 hover:bg-sky"
                 }`}
               >
                 {preference.label}
@@ -157,7 +157,7 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
         disabled={loading}
         className="mt-6 h-11 w-full rounded-full bg-clay px-5 font-bold text-white shadow-[0_10px_24px_rgba(255,107,107,0.22)] transition hover:bg-[#E55757] focus:outline-none focus:ring-4 focus:ring-clay/25 disabled:cursor-not-allowed disabled:bg-ink/30 sm:h-12"
       >
-        {loading ? "Finding a place..." : "Find a place"}
+        {loading ? `${submitCopy.replace("Find", "Finding")}...` : submitCopy}
       </button>
       <button
         type="button"
@@ -195,6 +195,24 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
       {inviteStatus ? <p className="mt-3 text-center text-xs font-semibold text-slate">{inviteStatus}</p> : null}
     </form>
   );
+}
+
+function getSubmitCopy(primaryId: ReturnType<typeof getPrimaryCategoryId>) {
+  switch (primaryId) {
+    case "shopping":
+      return "Find shops";
+    case "activities":
+      return "Find something to do";
+    case "family":
+      return "Find family spots";
+    case "explore":
+      return "Find places";
+    case "colleges":
+      return "Find campus spots";
+    case "food_drink":
+    default:
+      return "Find a place";
+  }
 }
 
 function LocationInput({

@@ -18,7 +18,7 @@ export function CategoryIcon({ category, active = false, className = "h-4 w-4" }
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={`${className} ${colorClass}`}
+      className={`${colorClass} ${className}`}
       aria-hidden="true"
     >
       {renderIcon(icon)}

@@ -25,7 +25,7 @@ export function CategorySelector({ value, mode = DEFAULT_MEETUP_MODE, onChange, 
 
   return (
     <div className="grid gap-3 sm:gap-4">
-      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {visibleCategories.map((category) => {
           const selected = category.id === value;
           return (
@@ -34,22 +34,24 @@ export function CategorySelector({ value, mode = DEFAULT_MEETUP_MODE, onChange, 
               type="button"
               onClick={() => onChange(category.id)}
               aria-pressed={selected}
-              className={`group rounded-lg border bg-white p-3 text-left shadow-[0_8px_18px_rgba(17,24,39,0.04)] transition sm:p-4 sm:shadow-[0_10px_26px_rgba(17,24,39,0.04)] ${
+              className={`group flex min-w-0 items-center rounded-[18px] border bg-white px-3 py-4 text-left shadow-[0_8px_18px_rgba(17,24,39,0.03)] transition sm:p-4 sm:shadow-[0_10px_26px_rgba(17,24,39,0.04)] ${
                 selected
-                  ? "border-ink bg-[#F3F5F8] text-ink shadow-[0_18px_40px_rgba(17,24,39,0.12)]"
-                  : "border-line text-ink hover:-translate-y-0.5 hover:border-ink/30 hover:shadow-soft"
+                  ? "border-2 border-[#EF7A70] !bg-[#FFF3F1] text-ink !shadow-[0_0_0_4px_rgba(239,122,112,0.08),0_14px_30px_rgba(239,122,112,0.12)]"
+                  : "border-[#D8DDE6] text-ink hover:-translate-y-0.5 hover:border-ink/25 hover:shadow-soft"
               }`}
             >
-              <div className="flex items-start gap-3">
+              <div className="flex min-w-0 items-center gap-3">
                 <span
-                  className={`grid h-9 w-9 shrink-0 place-items-center rounded-full border transition ${
-                    selected ? "border-ink/20 bg-white shadow-[0_8px_20px_rgba(17,24,39,0.08)]" : "border-line bg-sky group-hover:border-ink/20"
+                  className={`grid h-12 w-12 shrink-0 place-items-center rounded-full transition ${
+                    selected ? "bg-[#EF7A70] text-white shadow-[0_10px_22px_rgba(239,122,112,0.24)]" : "bg-[#F6F7FA] text-slate"
                   }`}
                 >
-                  <CategoryIcon category={category.id} active={selected} className="h-[18px] w-[18px]" />
+                  <CategoryIcon category={category.id} className={`h-[18px] w-[18px] ${selected ? "text-white" : "text-slate"}`} />
                 </span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-black leading-tight text-ink sm:text-base">{category.label}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block min-w-0 text-[15px] font-black leading-[1.1] text-ink [overflow-wrap:anywhere] sm:text-base">
+                    {category.label}
+                  </span>
                   <span className="mt-1 hidden text-xs font-semibold leading-5 text-slate sm:block">
                     {category.description}
                   </span>

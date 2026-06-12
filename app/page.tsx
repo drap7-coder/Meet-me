@@ -252,12 +252,12 @@ export default function HomePage() {
       {!hasSearched && !results && !loading ? (
         <>
           <section id="search" className="relative isolate overflow-hidden bg-paper px-4 pb-8 pt-4 sm:px-6 sm:pt-6 lg:px-8">
-            <div className="relative z-10 mx-auto grid max-w-7xl items-start gap-10 py-8 lg:grid-cols-[minmax(0,1fr)_minmax(420px,680px)] lg:py-14">
+            <div className="relative z-10 mx-auto grid max-w-7xl items-start gap-8 py-8 md:grid-cols-[minmax(0,1fr)_minmax(300px,420px)] lg:grid-cols-[minmax(0,1fr)_minmax(420px,680px)] lg:gap-10 lg:py-14">
               <div className="grid gap-6">
                 <MarketingHero />
                 <LocationForm form={form} loading={loading} onChange={setForm} onSubmit={submitSearch} />
               </div>
-              <div className="flex justify-center lg:justify-end">
+              <div className="flex justify-center md:justify-end">
                 <HeroMidpointVisual />
               </div>
             </div>

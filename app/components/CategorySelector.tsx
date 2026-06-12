@@ -18,7 +18,7 @@ export function CategorySelector({ value, mode = DEFAULT_MEETUP_MODE, onChange }
 
   return (
     <div className="grid gap-4">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3">
         {CATEGORY_GROUPS.map((category) => {
           const selected = category.id === activePrimaryId;
           const primaryCategory = category.subcategories[0]?.id ?? "coffee";
@@ -64,7 +64,7 @@ export function CategorySelector({ value, mode = DEFAULT_MEETUP_MODE, onChange }
             <p className="mt-1 text-xs font-semibold leading-5 text-slate">{activePrimary.description}</p>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {activePrimary.subcategories.map((category) => {
             const selected = category.id === value;
             return (

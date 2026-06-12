@@ -26,7 +26,7 @@ export async function shareWithFallback({ title, text, url }: SharePayload): Pro
   return "email";
 }
 
-function shouldUseNativeShare() {
+export function shouldUseNativeShare() {
   const userAgent = navigator.userAgent.toLowerCase();
   const isMobileLike =
     /iphone|ipad|ipod|android|mobile/.test(userAgent) ||

@@ -6,9 +6,10 @@ import {
   defaultCalendarStart,
   venueToCalendarDetails
 } from "@/lib/calendar";
+import { CategoryIcon } from "@/app/components/CategoryIcon";
 import { copyTextToClipboard } from "@/lib/share";
 import { trackEvent } from "@/lib/analytics";
-import { getCategoryConfig, getCategoryLabel, getPrimaryCategory } from "@/lib/categories";
+import { getCategoryConfig, getCategoryLabel } from "@/lib/categories";
 import { getPreferenceLabel } from "@/lib/preferences";
 import type { MeetupMode, ScoredVenue, VenueCategory } from "@/lib/types";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -95,11 +96,22 @@ export function VenueCard({
             </span>
           </div>
           <h3 className="text-xl font-black leading-tight text-ink">{venue.name}</h3>
-          <p className="mt-1 text-sm font-semibold text-slate">{venue.category}</p>
+          <p className="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold text-slate">
+            <CategoryIcon category={searchCategory} className="h-4 w-4" />
+            {venue.category}
+          </p>
         </div>
       </div>
 
       <p className="mt-4 text-sm leading-6 text-slate">{match.explanation}</p>
+      <p className="mt-2 inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-bold text-ink">
+        <span>{formatDifference(venue.timeDifferenceMinutes)}</span>
+        {typeof venue.rating === "number" ? <span>· {venue.rating.toFixed(1)} stars</span> : null}
+        {isClosestToHalfway ? <span>· Near the midpoint</span> : null}
+        <span className="inline-flex items-center gap-1 text-slate">
+          · <CategoryIcon category={searchCategory} active className="h-3.5 w-3.5" /> Category match
+        </span>
+      </p>
       <p className="mt-3 text-sm leading-6 text-slate">{venue.address}</p>
 
       <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
@@ -152,7 +164,7 @@ export function VenueCard({
         <div className="grid gap-3 border-t border-line px-4 py-4 text-sm leading-6 text-slate">
           <Detail label="Drive balance" value={match.details.balance} />
           <Detail label="Venue rating" value={match.details.rating} />
-          <Detail label="Category match" value={match.details.category} />
+          <Detail label="Category match" value={match.details.category} category={searchCategory} />
           <Detail label="Preference match" value={match.details.preference} />
           <Detail label="Convenience" value={match.details.convenience} />
         </div>
@@ -351,10 +363,13 @@ function Metric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Detail({ label, value }: { label: string; value: string }) {
+function Detail({ label, value, category }: { label: string; value: string; category?: VenueCategory }) {
   return (
     <div>
-      <span className="font-bold text-ink">{label}: </span>
+      <span className="inline-flex items-center gap-1 font-bold text-ink">
+        {category ? <CategoryIcon category={category} active className="h-3.5 w-3.5" /> : null}
+        {label}:
+      </span>{" "}
       <span>{value}</span>
     </div>
   );
@@ -370,8 +385,12 @@ function getVenueAction(venue: ScoredVenue, searchCategory: VenueCategory) {
     return { label: "View Show", url };
   }
 
+  if (searchCategory === "events" || haystack.includes("event")) {
+    return { label: "View Event", url };
+  }
+
   if (
-    ["zoos", "aquariums", "childrens_museums"].includes(searchCategory) ||
+    ["zoos", "aquariums", "childrens_museums", "museums"].includes(searchCategory) ||
     haystack.includes("museum") ||
     haystack.includes("aquarium") ||
     haystack.includes("zoo")
@@ -387,19 +406,30 @@ function getVenueAction(venue: ScoredVenue, searchCategory: VenueCategory) {
     return { label: "Book Activity", url };
   }
 
-  if (
-    ["restaurant", "brunch", "breweries", "wine_bars"].includes(searchCategory) ||
-    haystack.includes("restaurant") ||
-    haystack.includes("cafe")
-  ) {
-    return { label: "Reserve Table", url };
+  if (searchCategory === "sports") {
+    return { label: "Book Activity", url };
   }
 
-  if (haystack.includes("event") || haystack.includes("ticket")) {
+  if (searchCategory === "hotels" || searchCategory === "universities") {
+    return { label: "Visit Website", url };
+  }
+
+  if (["restaurant", "brunch", "breweries", "wine_bars"].includes(searchCategory) || haystack.includes("restaurant") || haystack.includes("cafe")) {
+    return { label: isReservationUrl(url) ? "Reserve Table" : "Visit Website", url };
+  }
+
+  if (haystack.includes("ticket")) {
     return { label: "View Event", url };
   }
 
   return null;
+}
+
+function isReservationUrl(url: string) {
+  const value = url.toLowerCase();
+  return ["opentable", "resy", "tock", "sevenrooms", "exploretock", "reservation", "reserve"].some((term) =>
+    value.includes(term)
+  );
 }
 
 function getMatchExplanation({
@@ -424,7 +454,7 @@ function getMatchExplanation({
   const a = venue.travelFromA.durationMinutes;
   const b = venue.travelFromB.durationMinutes;
   const categoryConfig = getCategoryConfig(searchCategory);
-  const primaryCategory = getPrimaryCategory(searchCategory);
+  const categoryLabel = getCategoryLabel(searchCategory);
   const primaryPreference = venue.preferenceMatches[0];
   const preferencePhrase = formatPreferencePhrase(venue.preferenceMatches);
   const onePersonSavesTime =
@@ -468,7 +498,7 @@ function getMatchExplanation({
       rating: describeRating(rating, venue.reviewCount),
       category: `Matches your ${getCategoryLabel(searchCategory).toLowerCase()} search in ${meetupMode === "district" ? "district" : "single place"} mode.`,
       preference: describePreferenceMatch(venue.preferenceMatches),
-      convenience: describeConvenience(venue, isClosestToHalfway, isShortestCombined, primaryCategory.label)
+      convenience: describeConvenience(venue, isClosestToHalfway, isShortestCombined, categoryLabel)
     }
   };
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { EmptyState } from "@/app/components/EmptyState";
+import { CategoryIcon } from "@/app/components/CategoryIcon";
 import { LocationForm } from "@/app/components/LocationForm";
 import { Logo, PinIcon } from "@/app/components/Logo";
 import { ResultsMap } from "@/app/components/ResultsMap";
@@ -16,9 +17,9 @@ import {
   saveRecentMeetup,
   type RecentMeetup
 } from "@/lib/recentMeetups";
-import { getPrimaryCategory, parseMeetupMode } from "@/lib/categories";
+import { parseMeetupMode } from "@/lib/categories";
 import { getPreferenceLabel, parsePreferences } from "@/lib/preferences";
-import { shareWithFallback } from "@/lib/share";
+import { copyTextToClipboard, shareWithFallback, shouldUseNativeShare } from "@/lib/share";
 import { trackEvent } from "@/lib/analytics";
 import type { LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory } from "@/lib/types";
 import { BRAND } from "@/src/config/branding";
@@ -32,6 +33,13 @@ const initialForm: SearchHalfwayRequest = {
   customQuery: ""
 };
 
+type ShareDialogState = {
+  title: string;
+  url: string;
+  subject: string;
+  body: string;
+};
+
 export default function HomePage() {
   const [form, setForm] = useState<SearchHalfwayRequest>(initialForm);
   const [results, setResults] = useState<SearchHalfwayResponse | null>(null);
@@ -39,6 +47,7 @@ export default function HomePage() {
   const [error, setError] = useState("");
   const [shareMessage, setShareMessage] = useState("");
   const [currentShareUrl, setCurrentShareUrl] = useState("");
+  const [shareDialog, setShareDialog] = useState<ShareDialogState | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [recentMeetups, setRecentMeetups] = useState<RecentMeetup[]>([]);
 
@@ -147,8 +156,19 @@ export default function HomePage() {
   }
 
   async function shareVenue(venue: ScoredVenue) {
-    const text = `${venue.name} looks like a good halfway spot: ${formatMinutes(venue.travelFromA.durationMinutes)} for one of you, ${formatMinutes(venue.travelFromB.durationMinutes)} for the other. ${venue.googleMapsUri}`;
-    const result = await shareWithFallback({ title: BRAND.name, text, url: venue.googleMapsUri });
+    const url = currentShareUrl || window.location.href;
+    const text = buildSingleVenueEmailBody(venue, url);
+    if (!shouldUseNativeShare()) {
+      setShareDialog({
+        title: "Share this meetup",
+        url,
+        subject: "Let’s meet here",
+        body: text
+      });
+      return;
+    }
+
+    const result = await shareWithFallback({ title: BRAND.name, text, url });
     if (result === "shared") setShareMessage("");
     if (result === "copied") setShareMessage("Spot copied to clipboard.");
     if (result === "email") setShareMessage("Email draft opened.");
@@ -173,6 +193,17 @@ export default function HomePage() {
 
       setCurrentShareUrl(data.shareUrl);
       const text = `Here are places that could work between ${shortLocationLabel(results.originA.formattedAddress)} and ${shortLocationLabel(results.originB.formattedAddress)}.`;
+      if (!shouldUseNativeShare()) {
+        setShareDialog({
+          title: "Share this meetup",
+          url: data.shareUrl,
+          subject: "Let’s meet here",
+          body: buildMeetupEmailBody(results, data.shareUrl)
+        });
+        setShareMessage("");
+        return;
+      }
+
       const result = await shareWithFallback({ title: `${BRAND.name} meetup`, text, url: data.shareUrl });
       if (result === "shared" || result === "copied") setShareMessage("Meetup link copied.");
       if (result === "email") setShareMessage("Email draft opened.");
@@ -185,6 +216,16 @@ export default function HomePage() {
     } catch (error) {
       console.warn("[share] Falling back to URL search sharing.", error);
       const fallbackUrl = currentShareUrl || window.location.href;
+      if (!shouldUseNativeShare() && results) {
+        setShareDialog({
+          title: "Share this meetup",
+          url: fallbackUrl,
+          subject: "Let’s meet here",
+          body: buildMeetupEmailBody(results, fallbackUrl)
+        });
+        setShareMessage("");
+        return;
+      }
       const result = await shareWithFallback({
         title: `${BRAND.name} meetup`,
         text: "Here is the Halfway search.",
@@ -308,6 +349,13 @@ export default function HomePage() {
 
       <FeedbackSection />
       <Footer />
+      {shareDialog ? (
+        <ShareDialog
+          dialog={shareDialog}
+          onCopied={() => setShareMessage("Link copied")}
+          onClose={() => setShareDialog(null)}
+        />
+      ) : null}
     </main>
   );
 }
@@ -457,6 +505,62 @@ function CompactResultsHeader({
         </div>
       </div>
     </section>
+  );
+}
+
+function ShareDialog({
+  dialog,
+  onCopied,
+  onClose
+}: {
+  dialog: ShareDialogState;
+  onCopied: () => void;
+  onClose: () => void;
+}) {
+  const [status, setStatus] = useState("");
+  const mailto = `mailto:?subject=${encodeURIComponent(dialog.subject)}&body=${encodeURIComponent(dialog.body)}`;
+
+  async function copyLink() {
+    const copied = await copyTextToClipboard(dialog.url);
+    setStatus(copied ? "Link copied" : "Copy failed. Try Email Results instead.");
+    if (copied) onCopied();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-end bg-black/30 p-3 sm:place-items-center" role="dialog" aria-modal="true">
+      <div className="w-full max-w-sm rounded-[24px] border border-line bg-white p-5 shadow-[0_24px_80px_rgba(17,24,39,0.24)]">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-bold uppercase tracking-wide text-clay">Share</p>
+            <h2 className="mt-1 text-2xl font-black tracking-tight text-ink">{dialog.title}</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-line px-3 py-1.5 text-sm font-bold text-slate transition hover:border-clay hover:text-clay"
+          >
+            Close
+          </button>
+        </div>
+        <div className="mt-5 grid gap-2">
+          <button
+            type="button"
+            onClick={copyLink}
+            className="inline-flex h-11 items-center justify-center rounded-full bg-clay px-4 text-sm font-bold text-white transition hover:bg-[#E55757] focus:outline-none focus:ring-4 focus:ring-clay/25"
+          >
+            Copy Link
+          </button>
+          <a
+            href={mailto}
+            onClick={() => setStatus("Email draft opened.")}
+            className="inline-flex h-11 items-center justify-center rounded-full border border-line bg-paper px-4 text-sm font-bold text-ink transition hover:border-clay hover:text-clay focus:outline-none focus:ring-4 focus:ring-ink/10"
+          >
+            Email Results
+          </a>
+        </div>
+        {status ? <p className="mt-3 text-center text-xs font-semibold text-slate">{status}</p> : null}
+      </div>
+    </div>
   );
 }
 
@@ -645,8 +749,8 @@ function RecentMeetupsSection({
             className="rounded-lg border border-line bg-mint p-4 text-left shadow-[0_8px_22px_rgba(17,24,39,0.04)] transition hover:-translate-y-0.5 hover:border-clay hover:bg-white hover:shadow-soft"
           >
             <div className="flex items-start gap-3">
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-sky text-lg" aria-hidden="true">
-                {categoryIcon(meetup.category)}
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-sky" aria-hidden="true">
+                <CategoryIcon category={meetup.category} className="h-5 w-5" />
               </div>
               <div className="min-w-0">
                 <p className="truncate text-base font-black text-ink">
@@ -670,10 +774,6 @@ function RecentMeetupsSection({
   );
 }
 
-function categoryIcon(category: VenueCategory) {
-  return getPrimaryCategory(category).label.slice(0, 1);
-}
-
 function updateShareUrl(form: SearchHalfwayRequest) {
   const params = new URLSearchParams();
   if (form.locationA) params.set("a", form.locationA);
@@ -695,6 +795,42 @@ function formatMinutes(value: number | null) {
   const hours = Math.floor(value / 60);
   const minutes = value % 60;
   return minutes ? `${hours}h ${minutes}m` : `${hours}h`;
+}
+
+function buildSingleVenueEmailBody(venue: ScoredVenue, currentUrl: string) {
+  return [
+    "I found a halfway meetup option:",
+    "",
+    venue.name,
+    venue.address,
+    "",
+    "Drive times:",
+    `Me: ${formatMinutes(venue.travelFromA.durationMinutes)}`,
+    `You: ${formatMinutes(venue.travelFromB.durationMinutes)}`,
+    "",
+    "View details:",
+    currentUrl
+  ].join("\n");
+}
+
+function buildMeetupEmailBody(results: SearchHalfwayResponse, currentUrl: string) {
+  const recommendations = results.venues.slice(0, 3).map((venue, index) => {
+    const rating = typeof venue.rating === "number" ? `${venue.rating.toFixed(1)} stars` : "Not rated";
+    return `${index + 1}. ${venue.name} — ${venue.category} — ${rating} — ${formatDriveComparison(venue)}`;
+  });
+
+  return [
+    "I found a halfway meetup option:",
+    "",
+    ...recommendations,
+    "",
+    "View details:",
+    currentUrl
+  ].join("\n");
+}
+
+function formatDriveComparison(venue: ScoredVenue) {
+  return `${formatMinutes(venue.travelFromA.durationMinutes)} / ${formatMinutes(venue.travelFromB.durationMinutes)}`;
 }
 
 function shortLocationLabel(address: string) {

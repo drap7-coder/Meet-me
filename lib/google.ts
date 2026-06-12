@@ -108,14 +108,16 @@ export async function searchPlacesNearMidpoint(params: {
 }): Promise<VenueCandidate[]> {
   const meetupMode = params.meetupMode ?? DEFAULT_MEETUP_MODE;
   const queries = getCategorySearchTerms(params.category, params.customQuery, meetupMode).slice(0, 4);
+  const includedTypes = getIncludedPlaceTypes(params.category);
   const placesById = new Map<string, VenueCandidate>();
 
   await Promise.all(
-    queries.map(async (query) => {
+    queries.map(async (query, index) => {
       const places = await searchPlacesForQuery({
         midpoint: params.midpoint,
         query,
-        radiusMeters: params.radiusMeters
+        radiusMeters: params.radiusMeters,
+        includedType: includedTypes[index] ?? includedTypes[0]
       });
 
       for (const place of places) {
@@ -131,7 +133,23 @@ async function searchPlacesForQuery(params: {
   midpoint: LatLng;
   query: string;
   radiusMeters: number;
+  includedType?: string;
 }): Promise<VenueCandidate[]> {
+  const body = {
+    textQuery: params.query,
+    maxResultCount: 16,
+    locationBias: {
+      circle: {
+        center: {
+          latitude: params.midpoint.lat,
+          longitude: params.midpoint.lng
+        },
+        radius: params.radiusMeters
+      }
+    },
+    ...(params.includedType ? { includedType: params.includedType } : {})
+  };
+
   const response = await fetch(PLACES_TEXT_SEARCH_URL, {
     method: "POST",
     cache: "no-store",
@@ -151,22 +169,17 @@ async function searchPlacesForQuery(params: {
         "places.types"
       ].join(",")
     },
-    body: JSON.stringify({
-      textQuery: params.query,
-      maxResultCount: 16,
-      locationBias: {
-        circle: {
-          center: {
-            latitude: params.midpoint.lat,
-            longitude: params.midpoint.lng
-          },
-          radius: params.radiusMeters
-        }
-      }
-    })
+    body: JSON.stringify(body)
   });
 
   if (!response.ok) {
+    if (params.includedType) {
+      return searchPlacesForQuery({
+        midpoint: params.midpoint,
+        query: params.query,
+        radiusMeters: params.radiusMeters
+      });
+    }
     const body = await response.text();
     throw new Error(`Places search failed with ${response.status}: ${body.slice(0, 180)}`);
   }
@@ -190,6 +203,16 @@ async function searchPlacesForQuery(params: {
       websiteUri: place.websiteUri,
       types: Array.isArray(place.types) ? place.types : []
     }));
+}
+
+function getIncludedPlaceTypes(category: SearchHalfwayRequest["category"]) {
+  if (category === "universities") return ["university", "school", "point_of_interest"];
+  if (category === "hotels") return ["lodging"];
+  if (category === "restaurant" || category === "brunch") return ["restaurant"];
+  if (category === "coffee") return ["cafe"];
+  if (category === "park") return ["park"];
+  if (category === "museums" || category === "childrens_museums") return ["museum"];
+  return [];
 }
 
 export async function computeRouteMatrix(params: {

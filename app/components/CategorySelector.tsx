@@ -1,12 +1,7 @@
 "use client";
 
-import {
-  CATEGORY_GROUPS,
-  DEFAULT_MEETUP_MODE,
-  getDefaultCategoryForPrimary,
-  getPrimaryCategoryId,
-  type PrimaryCategoryId
-} from "@/lib/categories";
+import { CategoryIcon } from "@/app/components/CategoryIcon";
+import { DEFAULT_MEETUP_MODE, FEATURED_CATEGORIES, getCategoryConfig } from "@/lib/categories";
 import type { MeetupMode, VenueCategory } from "@/lib/types";
 
 type Props = {
@@ -22,46 +17,44 @@ const MODE_OPTIONS: Array<{ id: MeetupMode; label: string; helper: string }> = [
 ];
 
 export function CategorySelector({ value, mode = DEFAULT_MEETUP_MODE, onChange, onModeChange }: Props) {
-  const activePrimaryId = getPrimaryCategoryId(value);
-  const activePrimary = CATEGORY_GROUPS.find((group) => group.id === activePrimaryId) ?? CATEGORY_GROUPS[0];
-
-  function selectPrimary(primaryId: PrimaryCategoryId) {
-    onChange(getDefaultCategoryForPrimary(primaryId));
-  }
+  const activeConfig = getCategoryConfig(value);
+  const visibleCategories =
+    activeConfig && !FEATURED_CATEGORIES.some((category) => category.id === activeConfig.id)
+      ? [...FEATURED_CATEGORIES, activeConfig]
+      : FEATURED_CATEGORIES;
 
   return (
     <div className="grid gap-3 sm:gap-4">
-      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-5">
-        {CATEGORY_GROUPS.map((primary) => {
-          const selected = primary.id === activePrimaryId;
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
+        {visibleCategories.map((category) => {
+          const selected = category.id === value;
           return (
             <button
-              key={primary.id}
+              key={category.id}
               type="button"
-              onClick={() => selectPrimary(primary.id)}
+              onClick={() => onChange(category.id)}
               aria-pressed={selected}
-              className={`group min-h-[72px] rounded-lg border bg-white p-3 text-left shadow-[0_8px_18px_rgba(17,24,39,0.04)] transition sm:min-h-[154px] sm:p-4 sm:shadow-[0_10px_26px_rgba(17,24,39,0.04)] ${
+              className={`group rounded-lg border bg-white p-3 text-left shadow-[0_8px_18px_rgba(17,24,39,0.04)] transition sm:p-4 sm:shadow-[0_10px_26px_rgba(17,24,39,0.04)] ${
                 selected
-                  ? "border-clay text-ink shadow-[0_18px_40px_rgba(255,107,107,0.18)]"
-                  : "border-line text-ink hover:-translate-y-0.5 hover:border-clay/50 hover:shadow-soft"
+                  ? "border-ink bg-[#F3F5F8] text-ink shadow-[0_18px_40px_rgba(17,24,39,0.12)]"
+                  : "border-line text-ink hover:-translate-y-0.5 hover:border-ink/30 hover:shadow-soft"
               }`}
             >
-              <div className="flex items-start justify-between gap-3">
-                <span className="text-sm font-black leading-tight sm:text-base">{primary.label}</span>
+              <div className="flex items-start gap-3">
                 <span
-                  className={`mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full sm:grid sm:h-6 sm:w-6 sm:place-items-center sm:border sm:text-xs sm:font-black ${
-                    selected
-                      ? "bg-clay text-white sm:border-clay"
-                      : "bg-line text-slate group-hover:border-clay/30 sm:border-line sm:bg-white"
+                  className={`grid h-9 w-9 shrink-0 place-items-center rounded-full border transition ${
+                    selected ? "border-ink/20 bg-white shadow-[0_8px_20px_rgba(17,24,39,0.08)]" : "border-line bg-sky group-hover:border-ink/20"
                   }`}
-                  aria-hidden="true"
                 >
-                  <span className="hidden sm:inline">{selected ? "On" : ">"}</span>
+                  <CategoryIcon category={category.id} active={selected} className="h-[18px] w-[18px]" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-black leading-tight text-ink sm:text-base">{category.label}</span>
+                  <span className="mt-1 hidden text-xs font-semibold leading-5 text-slate sm:block">
+                    {category.description}
+                  </span>
                 </span>
               </div>
-              <p className="mt-3 hidden text-xs font-semibold leading-5 text-slate sm:block">
-                {primary.description}
-              </p>
             </button>
           );
         })}
@@ -70,8 +63,10 @@ export function CategorySelector({ value, mode = DEFAULT_MEETUP_MODE, onChange, 
       <div className="rounded-lg border border-line bg-white p-3 shadow-[0_10px_26px_rgba(17,24,39,0.05)] sm:p-4 sm:shadow-[0_14px_36px_rgba(17,24,39,0.05)]">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-black text-ink">{activePrimary.label}</p>
-            <p className="mt-1 hidden text-xs font-semibold leading-5 text-slate sm:block">Choose the exact kind of meet-up.</p>
+            <p className="text-sm font-black text-ink">Search style</p>
+            <p className="mt-1 hidden text-xs font-semibold leading-5 text-slate sm:block">
+              Choose a single venue or a broader area with multiple options nearby.
+            </p>
           </div>
           <div className="grid grid-cols-2 rounded-lg border border-line bg-sky p-1">
             {MODE_OPTIONS.map((option) => {
@@ -94,36 +89,6 @@ export function CategorySelector({ value, mode = DEFAULT_MEETUP_MODE, onChange, 
               );
             })}
           </div>
-        </div>
-
-        <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-4 sm:grid-cols-2 lg:grid-cols-3">
-          {activePrimary.subcategories.map((subcategory) => {
-            const selected = subcategory.id === value;
-            return (
-              <button
-                key={subcategory.id}
-                type="button"
-                onClick={() => onChange(subcategory.id)}
-                aria-pressed={selected}
-                className={`rounded-lg border px-3 py-2.5 text-left transition sm:p-3 ${
-                  selected
-                    ? "border-clay bg-[#FFF1F1] shadow-[0_12px_28px_rgba(255,107,107,0.12)]"
-                    : "border-line bg-white hover:-translate-y-0.5 hover:border-clay/40 hover:bg-sky"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-black text-ink">{subcategory.label}</span>
-                  <span
-                    className={`h-2 w-2 shrink-0 rounded-full sm:h-2.5 sm:w-2.5 ${
-                      selected ? "bg-clay shadow-[0_0_0_4px_rgba(255,107,107,0.14)]" : "bg-line"
-                    }`}
-                    aria-hidden="true"
-                  />
-                </div>
-                <p className="mt-2 hidden text-xs font-semibold leading-5 text-slate sm:block">{subcategory.description}</p>
-              </button>
-            );
-          })}
         </div>
 
         <p className="mt-3 rounded-lg bg-sky px-3 py-2 text-xs font-semibold leading-5 text-slate sm:mt-4">

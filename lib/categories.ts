@@ -26,6 +26,22 @@ export type PrimaryCategoryConfig = {
 
 export const DEFAULT_MEETUP_MODE: MeetupMode = "single";
 
+export const FEATURED_CATEGORY_ORDER: VenueCategory[] = [
+  "restaurant",
+  "coffee",
+  "breweries",
+  "wine_bars",
+  "events",
+  "universities",
+  "sports",
+  "hotels",
+  "park",
+  "museums",
+  "shopping",
+  "activities",
+  "family"
+];
+
 export const CATEGORY_GROUPS: PrimaryCategoryConfig[] = [
   {
     id: "food_drink",
@@ -49,6 +65,22 @@ export const CATEGORY_GROUPS: PrimaryCategoryConfig[] = [
         single: ["brewery", "craft brewery", "brewpub", "beer garden"],
         district: ["brewery district", "downtown breweries", "walkable brewery area", "brewpub district"]
       }),
+      category("events", "Events", "Shows, performances, markets, and calendar-driven plans.", "Best Activity Match", "An event-friendly match near the midpoint with a clear plan attached.", {
+        single: ["events", "live events", "things to do", "local events"],
+        district: ["event district", "downtown events", "walkable entertainment district", "town center events"]
+      }),
+      category("universities", "Universities", "College campuses and university areas for easy landmark meet-ups.", "Best Overall Match", "A university-area match near the midpoint with a recognizable campus or college nearby.", {
+        single: ["university", "college", "campus"],
+        district: ["university district", "college town", "campus area", "college campus"]
+      }),
+      category("sports", "Sports", "Sports venues, athletic centers, courts, fields, and active plans.", "Best Activity Match", "A sports-focused match near the midpoint with workable travel times for both people.", {
+        single: ["sports complex", "sports venue", "athletic center", "recreation center"],
+        district: ["sports complex area", "sports district", "athletic center area", "recreation district"]
+      }),
+      category("hotels", "Hotels", "Hotel lobbies, lounges, and overnight-friendly meeting points.", "Best Overall Match", "A hotel match near the midpoint that can work for longer trips or overnight plans.", {
+        single: ["hotel", "boutique hotel", "hotel lounge", "inn"],
+        district: ["hotel district", "downtown hotels", "hotel area", "town center hotels"]
+      }),
       category("wine_bars", "Wine Bars", "A polished drinks plan with a calmer pace.", "Best Food Match", "A wine bar match that keeps the trip balanced while feeling a little more elevated.", {
         single: ["wine bar", "wine lounge", "wine tasting room", "wine restaurant"],
         district: ["wine bars downtown", "walkable wine bar district", "downtown tasting rooms", "main street wine bars"]
@@ -68,6 +100,10 @@ export const CATEGORY_GROUPS: PrimaryCategoryConfig[] = [
       category("malls", "Malls", "Indoor retail clusters with food and easy backup options.", "Best Shopping Match", "A strong shopping mall match near the midpoint, with fair drive times for both people.", {
         single: ["shopping mall", "retail center", "shopping center"],
         district: ["shopping mall", "retail center", "shopping center", "shopping district"]
+      }),
+      category("shopping", "Shopping", "Malls, outlets, thrift finds, bookstores, markets, and design stops.", "Best Shopping Match", "A shopping match near the midpoint with places worth browsing together.", {
+        single: ["shopping mall", "shopping center", "retail center", "stores"],
+        district: ["shopping district", "walkable shopping district", "main street shops", "retail district"]
       }),
       category("outlets", "Outlets", "Outlet centers and brand-heavy shopping trips.", "Best Shopping Match", "A strong outlet match near the midpoint, with fair drive times for both people.", {
         single: ["outlet mall", "premium outlets", "factory outlet", "outlet center"],
@@ -109,6 +145,10 @@ export const CATEGORY_GROUPS: PrimaryCategoryConfig[] = [
         single: ["golf course", "public golf course", "golf club", "golf simulator"],
         district: ["golf area", "golf courses near downtown", "public golf course area", "golf destination"]
       }),
+      category("activities", "Activities", "Bowling, games, courts, golf, and plans with something to do.", "Best Activity Match", "An activity-focused match near the midpoint with a built-in thing to do.", {
+        single: ["things to do", "activity center", "entertainment center", "recreation center"],
+        district: ["entertainment district", "activity district", "downtown activities", "walkable entertainment area"]
+      }),
       category("driving_range", "Driving Range", "Low-pressure swings without a full round.", "Best Activity Match", "A driving range match near the midpoint for an easy activity-focused meet-up.", {
         single: ["driving range", "golf driving range", "topgolf", "golf range"],
         district: ["driving range area", "golf range district", "golf entertainment center", "activity center golf"]
@@ -141,6 +181,10 @@ export const CATEGORY_GROUPS: PrimaryCategoryConfig[] = [
         single: ["park", "public park", "garden", "nature park"],
         district: ["walkable park district", "downtown park", "waterfront park area", "parks near main street"]
       }),
+      category("family", "Family", "Parks, museums, playgrounds, and easy all-ages options.", "Best Overall Match", "A family-friendly match near the midpoint with an easy shared activity.", {
+        single: ["family friendly activity", "family attraction", "kids activity", "family fun"],
+        district: ["family attraction district", "family friendly downtown", "family activity area", "walkable family attractions"]
+      }),
       category("zoos", "Zoos", "Destination outings with a clear activity arc.", "Best Overall Match", "A zoo-focused match near the midpoint for a bigger family-friendly outing.", {
         single: ["zoo", "wildlife park", "animal park", "safari park"],
         district: ["zoo district", "wildlife park area", "family attraction district", "zoo nearby downtown"]
@@ -152,6 +196,10 @@ export const CATEGORY_GROUPS: PrimaryCategoryConfig[] = [
       category("childrens_museums", "Children's Museums", "Hands-on indoor stops for family plans.", "Best Overall Match", "A children's museum match near the midpoint with an easy activity for the day.", {
         single: ["children's museum", "kids museum", "hands on museum", "family museum"],
         district: ["children's museum district", "family museum district", "downtown children's museum", "family attraction district"]
+      }),
+      category("museums", "Museums", "Museums, exhibits, galleries, and culture-forward meet-ups.", "Best Overall Match", "A museum match near the midpoint with a clear activity and fair drive times.", {
+        single: ["museum", "art museum", "history museum", "gallery"],
+        district: ["museum district", "downtown museums", "arts district", "walkable museum area"]
       }),
       category("playgrounds", "Playgrounds", "Simple outdoor meet-ups with low planning overhead.", "Best Overall Match", "A playground match near the midpoint for an easy, flexible family meet-up.", {
         single: ["playground", "public playground", "inclusive playground", "kids playground"],
@@ -197,6 +245,10 @@ const LEGACY_CATEGORIES: SubcategoryConfig[] = [
 ];
 
 export const CATEGORIES = [...CATEGORY_GROUPS.flatMap((group) => group.subcategories), ...LEGACY_CATEGORIES];
+
+export const FEATURED_CATEGORIES = FEATURED_CATEGORY_ORDER.map((categoryId) => getCategoryConfig(categoryId)).filter(
+  (category): category is SubcategoryConfig => Boolean(category)
+);
 
 export function getCategoryLabel(category: VenueCategory) {
   return getCategoryConfig(category)?.label ?? "Custom";

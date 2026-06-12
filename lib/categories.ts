@@ -65,22 +65,6 @@ export const CATEGORY_GROUPS: PrimaryCategoryConfig[] = [
         single: ["brewery", "craft brewery", "brewpub", "beer garden"],
         district: ["brewery district", "downtown breweries", "walkable brewery area", "brewpub district"]
       }),
-      category("events", "Events", "Shows, performances, markets, and calendar-driven plans.", "Best Activity Match", "An event-friendly match near the midpoint with a clear plan attached.", {
-        single: ["events", "live events", "things to do", "local events"],
-        district: ["event district", "downtown events", "walkable entertainment district", "town center events"]
-      }),
-      category("universities", "Universities", "College campuses and university areas for easy landmark meet-ups.", "Best Overall Match", "A university-area match near the midpoint with a recognizable campus or college nearby.", {
-        single: ["university", "college", "campus"],
-        district: ["university district", "college town", "campus area", "college campus"]
-      }),
-      category("sports", "Sports", "Sports venues, athletic centers, courts, fields, and active plans.", "Best Activity Match", "A sports-focused match near the midpoint with workable travel times for both people.", {
-        single: ["sports complex", "sports venue", "athletic center", "recreation center"],
-        district: ["sports complex area", "sports district", "athletic center area", "recreation district"]
-      }),
-      category("hotels", "Hotels", "Hotel lobbies, lounges, and overnight-friendly meeting points.", "Best Overall Match", "A hotel match near the midpoint that can work for longer trips or overnight plans.", {
-        single: ["hotel", "boutique hotel", "hotel lounge", "inn"],
-        district: ["hotel district", "downtown hotels", "hotel area", "town center hotels"]
-      }),
       category("wine_bars", "Wine Bars", "A polished drinks plan with a calmer pace.", "Best Food Match", "A wine bar match that keeps the trip balanced while feeling a little more elevated.", {
         single: ["wine bar", "wine lounge", "wine tasting room", "wine restaurant"],
         district: ["wine bars downtown", "walkable wine bar district", "downtown tasting rooms", "main street wine bars"]
@@ -148,6 +132,14 @@ export const CATEGORY_GROUPS: PrimaryCategoryConfig[] = [
       category("activities", "Activities", "Bowling, games, courts, golf, and plans with something to do.", "Best Activity Match", "An activity-focused match near the midpoint with a built-in thing to do.", {
         single: ["things to do", "activity center", "entertainment center", "recreation center"],
         district: ["entertainment district", "activity district", "downtown activities", "walkable entertainment area"]
+      }),
+      category("events", "Events", "Shows, performances, markets, and calendar-driven plans.", "Best Activity Match", "An event-friendly match near the midpoint with a clear plan attached.", {
+        single: ["events", "live events", "things to do", "local events"],
+        district: ["event district", "downtown events", "walkable entertainment district", "town center events"]
+      }),
+      category("sports", "Sports", "Sports venues, athletic centers, courts, fields, and active plans.", "Best Activity Match", "A sports-focused match near the midpoint with workable travel times for both people.", {
+        single: ["sports complex", "sports venue", "athletic center", "recreation center"],
+        district: ["sports complex area", "sports district", "athletic center area", "recreation district"]
       }),
       category("driving_range", "Driving Range", "Low-pressure swings without a full round.", "Best Activity Match", "A driving range match near the midpoint for an easy activity-focused meet-up.", {
         single: ["driving range", "golf driving range", "topgolf", "golf range"],
@@ -232,6 +224,14 @@ export const CATEGORY_GROUPS: PrimaryCategoryConfig[] = [
       category("scenic_spots", "Scenic Spots", "Views, overlooks, gardens, and memorable places to pause.", "Best Overall Match", "A scenic match near the midpoint with a more memorable setting for the meet-up.", {
         single: ["scenic overlook", "scenic spot", "viewpoint", "botanical garden"],
         district: ["scenic downtown", "waterfront scenic area", "walkable scenic area", "scenic main street"]
+      }),
+      category("universities", "Universities", "College campuses and university areas for easy landmark meet-ups.", "Best Overall Match", "A university-area match near the midpoint with a recognizable campus or college nearby.", {
+        single: ["university", "college", "campus"],
+        district: ["university district", "college town", "campus area", "college campus"]
+      }),
+      category("hotels", "Hotels", "Hotel lobbies, lounges, and overnight-friendly meeting points.", "Best Overall Match", "A hotel match near the midpoint that can work for longer trips or overnight plans.", {
+        single: ["hotel", "boutique hotel", "hotel lounge", "inn"],
+        district: ["hotel district", "downtown hotels", "hotel area", "town center hotels"]
       })
     ]
   }

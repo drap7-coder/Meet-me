@@ -5,6 +5,8 @@
 :root {
   color-scheme: light;
   background: #f8fafc;
+  --mmh-navy: #12324a;
+  --mmh-coral: #ff6b5f;
 }
 
 * {
@@ -14,7 +16,7 @@
 body {
   margin: 0;
   background: #f8fafc;
-  color: #111827;
+  color: var(--mmh-navy);
   font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
@@ -27,4 +29,69 @@ select {
 ::selection {
   background: #ff6b6b;
   color: #ffffff;
+}
+
+/* Category selector */
+.category-card {
+  gap: 12px;
+  align-items: center;
+}
+
+.category-icon-wrapper,
+.category-icon-container {
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
+  min-height: 56px;
+  border-radius: 50%;
+}
+
+.category-icon,
+.category-card svg {
+  width: 24px;
+  height: 24px;
+  color: var(--mmh-navy);
+  stroke: currentColor;
+}
+
+.category-title {
+  color: var(--mmh-navy);
+  font-size: 0.9rem;
+  font-weight: 650;
+  line-height: 1.15;
+  word-break: keep-all;
+  overflow-wrap: normal;
+  hyphens: none;
+  text-wrap: balance;
+}
+
+.category-card.selected,
+.category-card.active,
+.category-card[aria-selected="true"] {
+  border-color: var(--mmh-coral);
+}
+
+.category-card.selected .category-title,
+.category-card.active .category-title,
+.category-card[aria-selected="true"] .category-title {
+  color: var(--mmh-navy);
+}
+
+.category-card.selected .category-icon-wrapper,
+.category-card.active .category-icon-wrapper,
+.category-card[aria-selected="true"] .category-icon-wrapper,
+.category-card.selected .category-icon-container,
+.category-card.active .category-icon-container,
+.category-card[aria-selected="true"] .category-icon-container {
+  background: var(--mmh-coral);
+}
+
+.category-card.selected .category-icon,
+.category-card.active .category-icon,
+.category-card[aria-selected="true"] .category-icon,
+.category-card.selected svg,
+.category-card.active svg,
+.category-card[aria-selected="true"] svg {
+  color: white;
+  stroke: currentColor;
 }

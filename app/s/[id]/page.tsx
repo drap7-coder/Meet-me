@@ -29,8 +29,12 @@ export default async function SharedMeetupPage({ params }: { params: Promise<{ i
   const query = new URLSearchParams();
   query.set("a", request.locationA);
   if (request.locationAPlaceId) query.set("aPlaceId", request.locationAPlaceId);
-  query.set("b", request.locationB);
-  if (request.locationBPlaceId) query.set("bPlaceId", request.locationBPlaceId);
+  if (request.searchMode === "single") {
+    query.set("searchMode", "single");
+  } else {
+    query.set("b", request.locationB);
+    if (request.locationBPlaceId) query.set("bPlaceId", request.locationBPlaceId);
+  }
   query.set("category", request.category);
   if (request.meetupMode && request.meetupMode !== "single") query.set("mode", request.meetupMode);
   if (request.customQuery) query.set("q", request.customQuery);

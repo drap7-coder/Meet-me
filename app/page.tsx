@@ -3,10 +3,11 @@
 import { EmptyState } from "@/app/components/EmptyState";
 import { CategoryIcon } from "@/app/components/CategoryIcon";
 import { LocationForm } from "@/app/components/LocationForm";
-import { Logo, PinIcon } from "@/app/components/Logo";
+import { Logo } from "@/app/components/Logo";
 import { ResultsMap } from "@/app/components/ResultsMap";
 import { VenueCard } from "@/app/components/VenueCard";
 import { WeatherCard } from "@/app/components/WeatherCard";
+import HeroMidpointVisual from "@/components/HeroMidpointVisual";
 import {
   clearRecentMeetups,
   createRecentMeetup,
@@ -17,7 +18,7 @@ import {
   saveRecentMeetup,
   type RecentMeetup
 } from "@/lib/recentMeetups";
-import { normalizeCategory, parseMeetupMode } from "@/lib/categories";
+import { getPrimaryCategoryId, normalizeCategory, parseMeetupMode, parseSearchMode } from "@/lib/categories";
 import { getPreferenceLabel, parsePreferences } from "@/lib/preferences";
 import { copyTextToClipboard, shareWithFallback, shouldUseNativeShare } from "@/lib/share";
 import { trackEvent } from "@/lib/analytics";
@@ -29,6 +30,7 @@ const initialForm: SearchHalfwayRequest = {
   locationA: "",
   locationB: "",
   category: "coffee",
+  searchMode: "midpoint",
   meetupMode: "single",
   customQuery: ""
 };
@@ -58,13 +60,14 @@ export default function HomePage() {
     const locationB = params.get("b") ?? "";
     const locationBPlaceId = params.get("bPlaceId") ?? undefined;
     const category = normalizeCategory((params.get("category") as VenueCategory | null) ?? "coffee");
+    const searchMode = parseSearchMode(params.get("searchMode"));
     const meetupMode = parseMeetupMode(params.get("mode"));
     const customQuery = params.get("q") ?? "";
     const preferences = parsePreferences(params.get("preferences"));
     const shareId = params.get("shareId");
     const shouldAutoSearch = params.get("auto") === "1";
     if (locationA || locationB || customQuery) {
-      const nextForm = { locationA, locationAPlaceId, locationB, locationBPlaceId, category, meetupMode, customQuery, preferences };
+      const nextForm = { locationA, locationAPlaceId, locationB, locationBPlaceId, category, searchMode, meetupMode, customQuery, preferences };
       setForm(nextForm);
       if (shareId) {
         const shareUrl = `${window.location.origin}/s/${shareId}`;
@@ -74,7 +77,7 @@ export default function HomePage() {
           hasPreferences: preferences.length > 0
         });
       }
-      if (shouldAutoSearch && locationA && locationB) {
+      if (shouldAutoSearch && locationA && (searchMode === "single" || locationB)) {
         submitSearch(nextForm, shareId ? `${window.location.origin}/s/${shareId}` : undefined);
       }
     }
@@ -86,14 +89,16 @@ export default function HomePage() {
 
   const resultCountLabel = useMemo(() => {
     if (!results) return "";
+    if (getPrimaryCategoryId(results.category) === "real_estate") return `${results.venues.length} place${results.venues.length === 1 ? "" : "s"} to consider`;
     return `${results.venues.length} place${results.venues.length === 1 ? "" : "s"} that could work`;
   }, [results]);
 
   const resultContext = useMemo(() => {
     if (!results) return null;
+    const singleLocation = results.searchMode === "single";
     return {
       originALabel: shortLocationLabel(results.originA.formattedAddress),
-      originBLabel: shortLocationLabel(results.originB.formattedAddress),
+      originBLabel: singleLocation ? "" : shortLocationLabel(results.originB.formattedAddress),
       closestVenueId: findClosestVenueId(results.venues, results.midpoint),
       shortestCombinedVenueId: findShortestCombinedVenueId(results.venues)
     };
@@ -192,7 +197,10 @@ export default function HomePage() {
       if (!response.ok || !data.shareUrl) throw new Error(data.error ?? "Share link creation failed.");
 
       setCurrentShareUrl(data.shareUrl);
-      const text = `Here are places that could work between ${shortLocationLabel(results.originA.formattedAddress)} and ${shortLocationLabel(results.originB.formattedAddress)}.`;
+      const text =
+        results.searchMode === "single"
+          ? `Here are places that could work near ${shortLocationLabel(results.originA.formattedAddress)}.`
+          : `Here are places that could work between ${shortLocationLabel(results.originA.formattedAddress)} and ${shortLocationLabel(results.originB.formattedAddress)}.`;
       if (!shouldUseNativeShare()) {
         setShareDialog({
           title: "Share this meetup",
@@ -243,14 +251,19 @@ export default function HomePage() {
 
       {!hasSearched && !results && !loading ? (
         <>
-          <section className="relative isolate overflow-hidden bg-paper px-4 pb-6 pt-4 sm:px-6 sm:pb-8 sm:pt-6 lg:px-8">
-            <div className="relative z-10 mx-auto max-w-7xl">
-              <MarketingHero />
+          <section id="search" className="relative isolate overflow-hidden bg-paper px-4 pb-8 pt-4 sm:px-6 sm:pt-6 lg:px-8">
+            <div className="relative z-10 mx-auto grid max-w-7xl items-start gap-10 py-8 lg:grid-cols-[minmax(0,1fr)_minmax(420px,680px)] lg:py-14">
+              <div className="grid gap-6">
+                <MarketingHero />
+                <LocationForm form={form} loading={loading} onChange={setForm} onSubmit={submitSearch} />
+              </div>
+              <div className="flex justify-center lg:justify-end">
+                <HeroMidpointVisual />
+              </div>
             </div>
           </section>
-          <section id="search" className="bg-mint px-4 pb-10 sm:px-6 lg:px-8">
+          <section className="bg-mint px-4 pb-10 pt-5 sm:px-6 lg:px-8">
             <div className="mx-auto grid max-w-5xl gap-5">
-              <LocationForm form={form} loading={loading} onChange={setForm} onSubmit={submitSearch} />
               <RecentMeetupsSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
             </div>
           </section>
@@ -263,7 +276,14 @@ export default function HomePage() {
             <CompactResultsHeader
               loading={loading}
               resultCountLabel={resultCountLabel}
-              originSummary={results ? `${results.originA.formattedAddress} → ${results.originB.formattedAddress}` : ""}
+              title={results && getPrimaryCategoryId(results.category) === "real_estate" ? "Best Places to Live" : "Recommended places"}
+              originSummary={
+                results
+                  ? results.searchMode === "single"
+                    ? `Near ${results.originA.formattedAddress}`
+                    : `${results.originA.formattedAddress} → ${results.originB.formattedAddress}`
+                  : ""
+              }
               canShareOptions={Boolean(results?.venues.length)}
               onShareOptions={shareMeetup}
               onNewSearch={startNewSearch}
@@ -303,6 +323,7 @@ export default function HomePage() {
                   originB={results.originB}
                   midpoint={results.midpoint}
                   venues={results.venues}
+                  searchMode={results.searchMode}
                 />
               </div>
             ) : null}
@@ -324,6 +345,7 @@ export default function HomePage() {
                       isClosestToHalfway={venue.id === resultContext?.closestVenueId}
                       isShortestCombined={venue.id === resultContext?.shortestCombinedVenueId}
                       searchCategory={results.category}
+                      searchMode={results.searchMode}
                       meetupMode={results.meetupMode}
                       onShare={shareVenue}
                       shareUrl={currentShareUrl}
@@ -331,7 +353,7 @@ export default function HomePage() {
                   ))}
                 </div>
               ) : (
-                <EmptyState />
+                getPrimaryCategoryId(results.category) === "real_estate" ? <RealEstateComingSoon /> : <EmptyState />
               )}
             </div>
           </section>
@@ -364,12 +386,11 @@ function MarketingHero() {
   const trustItems = ["Equal travel times", "Local recommendations", "Weather at the midpoint"];
 
   return (
-    <section className="mx-auto max-w-6xl py-8 sm:py-12 lg:py-16">
       <div className="max-w-4xl">
         <p className="mb-4 text-sm font-black uppercase tracking-[0.18em] text-clay">
           Fair meeting places in seconds
         </p>
-        <h1 className="max-w-4xl text-[clamp(48px,8vw,72px)] font-black leading-[0.96] tracking-[-0.04em] text-ink">
+        <h1 className="max-w-4xl text-[clamp(48px,8vw,72px)] font-black leading-[0.96] tracking-[-0.04em] text-[#0f2537]">
           The easiest way to meet halfway.
         </h1>
         <p className="mt-6 max-w-2xl text-lg font-medium leading-8 text-slate sm:text-xl">
@@ -398,68 +419,13 @@ function MarketingHero() {
           ))}
         </div>
       </div>
-    </section>
-  );
-}
-
-function ProductDemoVisual() {
-  return (
-    <div className="order-3 lg:order-2">
-      <div className="relative min-h-[330px] overflow-hidden rounded-[28px] border border-line bg-paper shadow-soft sm:min-h-[500px]">
-        <div
-          className="absolute inset-0 opacity-90"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(17,24,39,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(17,24,39,0.045) 1px, transparent 1px), radial-gradient(circle at 50% 55%, rgba(255,107,107,0.16), transparent 22%)",
-            backgroundSize: "54px 54px, 54px 54px, auto"
-          }}
-        />
-        <svg className="absolute inset-0 h-full w-full" viewBox="0 0 760 520" aria-hidden="true">
-          <path d="M120 140 C210 180 245 250 335 285 C390 306 420 340 465 385" fill="none" stroke="#4F46E5" strokeWidth="12" strokeLinecap="round" />
-          <path d="M640 170 C560 210 550 282 474 348 C454 365 444 377 430 392" fill="none" stroke="#111827" strokeWidth="12" strokeLinecap="round" />
-          <path d="M120 140 C210 180 245 250 335 285 C390 306 420 340 465 385" fill="none" stroke="rgba(255,255,255,0.76)" strokeWidth="3" strokeDasharray="16 16" strokeLinecap="round" />
-          <path d="M640 170 C560 210 550 282 474 348 C454 365 444 377 430 392" fill="none" stroke="rgba(255,255,255,0.76)" strokeWidth="3" strokeDasharray="16 16" strokeLinecap="round" />
-        </svg>
-
-        <div className="absolute left-4 top-5 rounded-2xl border border-line bg-white/95 p-3 shadow-[0_16px_38px_rgba(17,24,39,0.1)] backdrop-blur sm:left-8 sm:top-10 sm:p-4">
-          <p className="text-sm font-black text-ink sm:text-base">Hoboken, NJ</p>
-          <p className="mt-1 text-lg font-black text-indigo">24 min</p>
-          <p className="mt-1 text-xs font-semibold text-slate">10.8 miles</p>
-        </div>
-
-        <div className="absolute right-4 top-10 rounded-2xl border border-line bg-white/95 p-3 shadow-[0_16px_38px_rgba(17,24,39,0.1)] backdrop-blur sm:right-8 sm:top-16 sm:p-4">
-          <p className="text-sm font-black text-ink sm:text-base">Edison, NJ</p>
-          <p className="mt-1 text-lg font-black text-ink">26 min</p>
-          <p className="mt-1 text-xs font-semibold text-slate">12.4 miles</p>
-        </div>
-
-        <div className="absolute left-[17%] top-[36%] grid h-12 w-12 place-items-center rounded-full bg-indigo text-white shadow-[0_16px_34px_rgba(79,70,229,0.2)] sm:h-14 sm:w-14">
-          <span className="h-5 w-5 rounded-full border-[5px] border-white" />
-        </div>
-        <div className="absolute right-[10%] top-[42%] grid h-12 w-12 place-items-center rounded-full bg-ink text-white shadow-[0_16px_34px_rgba(17,24,39,0.2)] sm:h-14 sm:w-14">
-          <span className="h-5 w-5 rounded-full border-[5px] border-white" />
-        </div>
-        <div className="absolute left-1/2 top-[52%] grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white shadow-soft">
-          <PinIcon className="h-10 w-10" />
-        </div>
-
-        <div className="absolute bottom-4 left-1/2 w-[min(90%,340px)] -translate-x-1/2 rounded-[24px] border border-black/[0.06] bg-white p-4 text-center shadow-[0_24px_70px_rgba(17,24,39,0.16)] sm:bottom-8 sm:p-5">
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-clay">Best Match</p>
-          <h2 className="mt-1 text-xl font-black tracking-tight text-ink sm:mt-2 sm:text-2xl">Sunset Coffee Co.</h2>
-          <div className="mt-4 grid grid-cols-2 gap-2 text-sm font-bold text-ink">
-            <span className="rounded-lg bg-sky px-3 py-2">Hoboken: 24 min</span>
-            <span className="rounded-lg bg-sky px-3 py-2">Edison: 26 min</span>
-          </div>
-          <p className="mt-3 text-sm font-semibold text-slate">Great coffee - Free parking - Highly rated</p>
-        </div>
-      </div>
-    </div>
   );
 }
 
 function CompactResultsHeader({
   loading,
   resultCountLabel,
+  title,
   originSummary,
   canShareOptions,
   onShareOptions,
@@ -467,6 +433,7 @@ function CompactResultsHeader({
 }: {
   loading: boolean;
   resultCountLabel: string;
+  title: string;
   originSummary: string;
   canShareOptions: boolean;
   onShareOptions: () => void;
@@ -481,7 +448,7 @@ function CompactResultsHeader({
             <p className="mt-2 text-sm font-bold uppercase tracking-wide text-clay">
               {loading ? "Finding places" : resultCountLabel || "Recommended places"}
             </p>
-            <h1 className="mt-1 text-3xl font-black tracking-tight text-ink sm:text-4xl">Recommended places</h1>
+            <h1 className="mt-1 text-3xl font-black tracking-tight text-ink sm:text-4xl">{title}</h1>
             {originSummary ? <p className="mt-2 text-sm leading-6 text-slate">{originSummary}</p> : null}
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
@@ -754,7 +721,9 @@ function RecentMeetupsSection({
               </div>
               <div className="min-w-0">
                 <p className="truncate text-base font-black text-ink">
-                  {shortLocationLabel(meetup.originA)} ↔ {shortLocationLabel(meetup.originB)}
+                  {meetup.searchMode === "single"
+                    ? `Near ${shortLocationLabel(meetup.originA)}`
+                    : `${shortLocationLabel(meetup.originA)} ↔ ${shortLocationLabel(meetup.originB)}`}
                 </p>
                 <p className="mt-1 text-sm font-semibold text-slate">
                   {getRecentMeetupCategoryLabel(meetup)} · {(meetup.meetupMode ?? "single") === "district" ? "District" : "Single place"} · {formatRecentMeetupDate(meetup.timestamp)}
@@ -781,6 +750,7 @@ function updateShareUrl(form: SearchHalfwayRequest) {
   if (form.locationB) params.set("b", form.locationB);
   if (form.locationBPlaceId) params.set("bPlaceId", form.locationBPlaceId);
   params.set("category", form.category);
+  if (form.searchMode === "single") params.set("searchMode", "single");
   if (form.meetupMode && form.meetupMode !== "single") params.set("mode", form.meetupMode);
   if (form.customQuery) params.set("q", form.customQuery);
   if (form.preferences?.length) params.set("preferences", form.preferences.join(","));
@@ -820,7 +790,7 @@ function buildMeetupEmailBody(results: SearchHalfwayResponse, currentUrl: string
   });
 
   return [
-    "I found a halfway meetup option:",
+    results.searchMode === "single" ? "I found meetup options nearby:" : "I found a halfway meetup option:",
     "",
     ...recommendations,
     "",
@@ -831,6 +801,17 @@ function buildMeetupEmailBody(results: SearchHalfwayResponse, currentUrl: string
 
 function formatDriveComparison(venue: ScoredVenue) {
   return `${formatMinutes(venue.travelFromA.durationMinutes)} / ${formatMinutes(venue.travelFromB.durationMinutes)}`;
+}
+
+function RealEstateComingSoon() {
+  return (
+    <div className="rounded-lg border border-dashed border-line bg-paper p-8 text-center shadow-[0_8px_22px_rgba(17,24,39,0.04)]">
+      <h3 className="text-lg font-black text-ink">Places to Live recommendations are coming soon</h3>
+      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate">
+        For now, use this search to compare nearby towns, neighborhoods, and lifestyle fit.
+      </p>
+    </div>
+  );
 }
 
 function shortLocationLabel(address: string) {

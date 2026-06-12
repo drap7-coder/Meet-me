@@ -38,6 +38,7 @@ function getIconKey(category: VenueCategory | string) {
   if (value === "health_pre_med") return "medical";
   if (value === "liberal_arts") return "book";
   if (value === "urban_campuses") return "building";
+  if (value === "real_estate" || value.startsWith("real_estate_")) return "home";
   if (["universities", "colleges"].includes(value)) return "graduation";
   if (value === "college_towns") return "trees";
   if (["sports", "golf", "driving_range", "pickleball", "bowling"].includes(value)) return "trophy";
@@ -168,6 +169,14 @@ function renderIcon(icon: string) {
           <path d="M9 12h.01" />
           <path d="M15 12h.01" />
           <path d="M9 21v-5h6v5" />
+        </>
+      );
+    case "home":
+      return (
+        <>
+          <path d="M3 11 12 4l9 7" />
+          <path d="M5 10v10h14V10" />
+          <path d="M9 20v-6h6v6" />
         </>
       );
     case "trophy":

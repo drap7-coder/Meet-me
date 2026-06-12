@@ -1,4 +1,4 @@
-import { DEFAULT_MEETUP_MODE, getCategorySearchTerm, getCategorySearchTerms } from "@/lib/categories";
+import { DEFAULT_MEETUP_MODE, DEFAULT_SEARCH_MODE, getCategorySearchTerm, getCategorySearchTerms, getPrimaryCategoryId } from "@/lib/categories";
 import { calculateMidpoint, estimateSearchRadiusMeters } from "@/lib/geo";
 import { scoreVenue } from "@/lib/scoring";
 import type {
@@ -277,6 +277,50 @@ export async function computeRouteMatrix(params: {
 
 export async function searchHalfway(request: SearchHalfwayRequest): Promise<SearchHalfwayResponse> {
   const preferences = request.preferences ?? [];
+  const searchMode = request.searchMode ?? DEFAULT_SEARCH_MODE;
+  const meetupMode = request.meetupMode ?? DEFAULT_MEETUP_MODE;
+  const isSingleLocation = searchMode === "single";
+  const primaryCategoryId = getPrimaryCategoryId(request.category);
+  if (isSingleLocation) {
+    const originA = await geocodeAddress(request.locationA, request.locationAPlaceId);
+    const center = originA.location;
+    const venues = await searchPlacesNearMidpoint({
+      midpoint: center,
+      category: request.category,
+      meetupMode: request.meetupMode,
+      customQuery: request.customQuery,
+      radiusMeters: primaryCategoryId === "real_estate" ? 60_000 : 24_000
+    });
+
+    const routeMatrix = await computeRouteMatrix({
+      origins: [originA.location],
+      destinations: venues.map((venue) => venue.location)
+    });
+
+    const scoredVenues = venues
+      .map((venue, index) => {
+        const travelFromA = routeMatrix[0]?.[index] ?? unavailableLeg();
+        return scoreVenue({
+          ...venue,
+          travelFromA,
+          travelFromB: travelFromA
+        }, preferences);
+      })
+      .sort((a, b) => b.fairnessScore - a.fairnessScore);
+
+    return {
+      originA,
+      originB: originA,
+      midpoint: center,
+      category: request.category,
+      searchMode,
+      meetupMode,
+      preferences,
+      query: getCategorySearchTerm(request.category, request.customQuery, request.meetupMode),
+      venues: scoredVenues
+    };
+  }
+
   const [originA, originB] = await Promise.all([
     geocodeAddress(request.locationA, request.locationAPlaceId),
     geocodeAddress(request.locationB, request.locationBPlaceId)
@@ -298,7 +342,8 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
       originB,
       midpoint,
       category: request.category,
-      meetupMode: request.meetupMode ?? DEFAULT_MEETUP_MODE,
+      searchMode,
+      meetupMode,
       preferences,
       query: getCategorySearchTerm(request.category, request.customQuery, request.meetupMode),
       venues: []
@@ -325,7 +370,8 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
     originB,
     midpoint,
     category: request.category,
-    meetupMode: request.meetupMode ?? DEFAULT_MEETUP_MODE,
+    searchMode,
+    meetupMode,
     preferences,
     query: getCategorySearchTerm(request.category, request.customQuery, request.meetupMode),
     venues: scoredVenues

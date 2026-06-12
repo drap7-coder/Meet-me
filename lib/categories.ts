@@ -1,6 +1,6 @@
-import type { MeetupMode, VenueCategory } from "@/lib/types";
+import type { MeetupMode, SearchMode, VenueCategory } from "@/lib/types";
 
-export type PrimaryCategoryId = "food_drink" | "shopping" | "activities" | "family" | "explore" | "colleges";
+export type PrimaryCategoryId = "food_drink" | "shopping" | "activities" | "family" | "explore" | "colleges" | "real_estate";
 
 type CategorySearchConfig = {
   single: string[];
@@ -25,6 +25,7 @@ export type PrimaryCategoryConfig = {
 };
 
 export const DEFAULT_MEETUP_MODE: MeetupMode = "single";
+export const DEFAULT_SEARCH_MODE: SearchMode = "midpoint";
 
 export const FEATURED_CATEGORY_ORDER: VenueCategory[] = [
   "restaurant",
@@ -33,6 +34,7 @@ export const FEATURED_CATEGORY_ORDER: VenueCategory[] = [
   "wine_bars",
   "events",
   "engineering_stem",
+  "real_estate",
   "sports",
   "hotels",
   "park",
@@ -248,6 +250,54 @@ export const CATEGORY_GROUPS: PrimaryCategoryConfig[] = [
         district: ["college towns", "traditional campus", "residential colleges", "student town"]
       })
     ]
+  },
+  {
+    id: "real_estate",
+    label: "Places to Live",
+    description: "Compare nearby towns, neighborhoods, and lifestyle fit.",
+    accent: "from-[#F8FAFC] to-white",
+    subcategories: [
+      category("real_estate_schools", "Great Schools", "Find areas known for school access and family planning.", "Best Places to Live", "Strong fit for school access, lifestyle preferences, and nearby amenities.", {
+        single: ["best school districts neighborhoods", "towns with great schools", "family neighborhoods schools", "places to live near great schools"],
+        district: ["best school districts neighborhoods", "towns with great schools", "family neighborhoods schools", "places to live near great schools"]
+      }),
+      category("real_estate_walkable", "Walkable", "Neighborhoods and towns with shops, restaurants, and errands nearby.", "Best Places to Live", "Strong fit for walkability, restaurants, and nearby amenities.", {
+        single: ["walkable neighborhoods", "walkable towns", "main street neighborhoods", "places to live walkable"],
+        district: ["walkable neighborhoods", "walkable towns", "main street neighborhoods", "places to live walkable"]
+      }),
+      category("real_estate_commute", "Easy Commute", "Areas that balance access, drive times, and daily convenience.", "Best Places to Live", "Good fit for commute access with useful amenities nearby.", {
+        single: ["best commuter towns", "easy commute neighborhoods", "places to live for commuters", "commuter friendly towns"],
+        district: ["best commuter towns", "easy commute neighborhoods", "places to live for commuters", "commuter friendly towns"]
+      }),
+      category("real_estate_family", "Family Friendly", "Areas with parks, schools, calmer streets, and family-oriented amenities.", "Best Places to Live", "Good suburban option with parks and family-friendly amenities nearby.", {
+        single: ["family friendly neighborhoods", "best towns for families", "family friendly towns", "places to live for families"],
+        district: ["family friendly neighborhoods", "best towns for families", "family friendly towns", "places to live for families"]
+      }),
+      category("real_estate_downtown", "Downtown", "Town centers and downtown areas with restaurants, shops, and activity.", "Best Places to Live", "Strong fit for downtown access, walkability, and nearby restaurants.", {
+        single: ["downtown neighborhoods", "best downtowns to live", "town center living", "downtown places to live"],
+        district: ["downtown neighborhoods", "best downtowns to live", "town center living", "downtown places to live"]
+      }),
+      category("real_estate_suburban", "Suburban", "Suburban towns and neighborhoods with quieter residential feel.", "Best Places to Live", "Good suburban option with practical access and nearby amenities.", {
+        single: ["best suburbs", "suburban towns", "suburban neighborhoods", "places to live suburbs"],
+        district: ["best suburbs", "suburban towns", "suburban neighborhoods", "places to live suburbs"]
+      }),
+      category("real_estate_affordable", "Affordable", "Areas to explore for more approachable cost-of-living fit.", "Best Places to Live", "Good fit for affordability signals and everyday convenience.", {
+        single: ["affordable towns", "affordable neighborhoods", "affordable places to live", "best affordable suburbs"],
+        district: ["affordable towns", "affordable neighborhoods", "affordable places to live", "best affordable suburbs"]
+      }),
+      category("real_estate_safe", "Safe Areas", "Areas commonly searched for calm streets and comfort.", "Best Places to Live", "Good fit for comfort, everyday access, and lifestyle preferences.", {
+        single: ["safe neighborhoods", "safe towns", "quiet neighborhoods", "safe places to live"],
+        district: ["safe neighborhoods", "safe towns", "quiet neighborhoods", "safe places to live"]
+      }),
+      category("real_estate_parks", "Parks Nearby", "Neighborhoods and towns with parks, trails, and outdoor access.", "Best Places to Live", "Strong fit for parks, outdoor access, and nearby amenities.", {
+        single: ["neighborhoods near parks", "towns with parks", "places to live near parks", "parks nearby neighborhoods"],
+        district: ["neighborhoods near parks", "towns with parks", "places to live near parks", "parks nearby neighborhoods"]
+      }),
+      category("real_estate_restaurants", "Restaurants Nearby", "Areas with dining, coffee, and local spots close by.", "Best Places to Live", "Strong fit for restaurants, walkability, and lifestyle amenities.", {
+        single: ["neighborhoods near restaurants", "walkable restaurant neighborhoods", "towns with restaurants", "places to live near restaurants"],
+        district: ["neighborhoods near restaurants", "walkable restaurant neighborhoods", "towns with restaurants", "places to live near restaurants"]
+      })
+    ]
   }
 ];
 
@@ -308,7 +358,12 @@ export function getDefaultCategoryForPrimary(primaryId: PrimaryCategoryId): Venu
 
 export function normalizeCategory(category: VenueCategory): VenueCategory {
   if (category === "colleges" || category === "universities") return "engineering_stem";
+  if (category === "real_estate") return "real_estate_walkable";
   return category;
+}
+
+export function parseSearchMode(value: string | null | undefined): SearchMode {
+  return value === "single" ? "single" : DEFAULT_SEARCH_MODE;
 }
 
 export function parseMeetupMode(value: string | null | undefined): MeetupMode {

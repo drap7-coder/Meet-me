@@ -37,6 +37,17 @@ export type VenueCategory =
   | "pickleball"
   | "park"
   | "playgrounds"
+  | "real_estate"
+  | "real_estate_affordable"
+  | "real_estate_commute"
+  | "real_estate_downtown"
+  | "real_estate_family"
+  | "real_estate_parks"
+  | "real_estate_restaurants"
+  | "real_estate_safe"
+  | "real_estate_schools"
+  | "real_estate_suburban"
+  | "real_estate_walkable"
   | "scenic_spots"
   | "shopping"
   | "small_towns"
@@ -53,6 +64,8 @@ export type VenueCategory =
   | "custom";
 
 export type MeetupMode = "single" | "district";
+
+export type SearchMode = "single" | "midpoint";
 
 export type Preference =
   | "downtown"
@@ -114,6 +127,7 @@ export type SearchHalfwayRequest = {
   locationB: string;
   locationBPlaceId?: string;
   category: VenueCategory;
+  searchMode?: SearchMode;
   meetupMode?: MeetupMode;
   customQuery?: string;
   preferences?: Preference[];
@@ -124,6 +138,7 @@ export type SearchHalfwayResponse = {
   originB: GeocodedLocation;
   midpoint: LatLng;
   category: VenueCategory;
+  searchMode: SearchMode;
   meetupMode: MeetupMode;
   preferences: Preference[];
   query: string;

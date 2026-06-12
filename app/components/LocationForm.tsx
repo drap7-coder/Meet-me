@@ -67,6 +67,8 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
 
   const activePrimaryId = getPrimaryCategoryId(form.category);
   const submitCopy = getSubmitCopy(activePrimaryId);
+  const searchMode = form.searchMode ?? "midpoint";
+  const showGeneralPreferences = activePrimaryId !== "real_estate";
 
   return (
     <form onSubmit={handleSubmit} className="rounded-lg border border-line bg-paper p-5 shadow-soft sm:p-7">
@@ -76,25 +78,59 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
           Where should you meet?
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate">
-          Enter two locations and we’ll find great places between them.
+          Enter two locations for a midpoint search, or search around one place.
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="mb-4 rounded-full border border-line bg-mint p-1">
+        <div className="grid grid-cols-2 gap-1">
+          {[
+            { id: "single", label: "One Location" },
+            { id: "midpoint", label: "Two Locations" }
+          ].map((mode) => {
+            const selected = searchMode === mode.id;
+            return (
+              <button
+                key={mode.id}
+                type="button"
+                aria-pressed={selected}
+                onClick={() =>
+                  onChange({
+                    ...form,
+                    searchMode: mode.id as SearchHalfwayRequest["searchMode"],
+                    ...(mode.id === "single" ? { locationB: "", locationBPlaceId: undefined } : {})
+                  })
+                }
+                className={`h-10 rounded-full px-3 text-sm font-black transition ${
+                  selected
+                    ? "bg-clay text-white shadow-[0_8px_18px_rgba(255,107,95,0.18)]"
+                    : "text-ink hover:bg-white"
+                }`}
+              >
+                {mode.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className={`grid gap-4 ${searchMode === "midpoint" ? "sm:grid-cols-2" : ""}`}>
         <LocationInput
-          label="Where are you starting from?"
+          label={searchMode === "single" ? "Search near" : "Location 1"}
           value={form.locationA}
           placeId={form.locationAPlaceId}
-          placeholder="e.g. Hoboken, NJ"
+          placeholder={searchMode === "single" ? "Enter a city, town, address, or ZIP" : "e.g. Hoboken, NJ"}
           onChange={(locationA, locationAPlaceId) => onChange({ ...form, locationA, locationAPlaceId })}
         />
-        <LocationInput
-          label="Where are they starting from?"
-          value={form.locationB}
-          placeId={form.locationBPlaceId}
-          placeholder="e.g. Edison, NJ"
-          onChange={(locationB, locationBPlaceId) => onChange({ ...form, locationB, locationBPlaceId })}
-        />
+        {searchMode === "midpoint" ? (
+          <LocationInput
+            label="Location 2"
+            value={form.locationB}
+            placeId={form.locationBPlaceId}
+            placeholder="e.g. Edison, NJ"
+            onChange={(locationB, locationBPlaceId) => onChange({ ...form, locationB, locationBPlaceId })}
+          />
+        ) : null}
       </div>
 
       <div className="mt-5 grid gap-3">
@@ -111,6 +147,7 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
         />
       </div>
 
+      {showGeneralPreferences ? (
       <div className="mt-4 grid gap-3 rounded-[18px] border border-line/80 bg-white/70 p-3 sm:p-4">
         <div>
           <span className="text-sm font-bold text-ink">Make it easier</span>
@@ -139,6 +176,7 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
           })}
         </div>
       </div>
+      ) : null}
 
       {form.category === "custom" ? (
         <label className="mt-4 grid gap-2">
@@ -209,6 +247,8 @@ function getSubmitCopy(primaryId: ReturnType<typeof getPrimaryCategoryId>) {
       return "Find places";
     case "colleges":
       return "Find campus spots";
+    case "real_estate":
+      return "Find places to live";
     case "food_drink":
     default:
       return "Find a place";

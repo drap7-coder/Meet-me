@@ -11,7 +11,8 @@ type ShareRequest = {
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as ShareRequest;
-    if (!body.form?.locationA?.trim() || !body.form?.locationB?.trim()) {
+    const searchMode = body.form?.searchMode ?? "midpoint";
+    if (!body.form?.locationA?.trim() || (searchMode === "midpoint" && !body.form?.locationB?.trim())) {
       return NextResponse.json({ error: "A completed meetup search is required." }, { status: 400 });
     }
 
@@ -25,6 +26,7 @@ export async function POST(request: Request) {
         placeId: body.results?.originB.placeId || body.form.locationBPlaceId
       },
       category: body.form.category,
+      searchMode,
       meetupMode: body.form.meetupMode,
       customQuery: body.form.customQuery,
       preferences: body.form.preferences ?? [],

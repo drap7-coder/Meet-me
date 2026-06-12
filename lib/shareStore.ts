@@ -1,5 +1,5 @@
 import { normalizeCategory } from "@/lib/categories";
-import type { LatLng, MeetupMode, Preference, ScoredVenue, SearchHalfwayRequest, VenueCategory } from "@/lib/types";
+import type { LatLng, MeetupMode, Preference, ScoredVenue, SearchHalfwayRequest, SearchMode, VenueCategory } from "@/lib/types";
 
 const SHARE_PREFIX = "halfway:share:";
 const SHARE_TTL_SECONDS = 60 * 60 * 24 * 30;
@@ -14,6 +14,7 @@ export type SharePayload = {
     placeId?: string;
   };
   category: VenueCategory;
+  searchMode?: SearchMode;
   meetupMode?: MeetupMode;
   customQuery?: string;
   preferences: Preference[];
@@ -77,6 +78,7 @@ export function sharePayloadToSearchRequest(payload: SharePayload): SearchHalfwa
     locationB: payload.locationB.label,
     locationBPlaceId: payload.locationB.placeId,
     category: normalizeCategory(payload.category),
+    searchMode: payload.searchMode ?? "midpoint",
     meetupMode: payload.meetupMode,
     customQuery: payload.customQuery,
     preferences: payload.preferences
@@ -137,6 +139,7 @@ function encodePortablePayload(payload: SharePayload) {
     a: payload.locationA,
     b: payload.locationB,
     c: payload.category,
+    sm: payload.searchMode,
     mode: payload.meetupMode,
     q: payload.customQuery,
     p: payload.preferences,
@@ -153,6 +156,7 @@ function decodePortablePayload(id: string): SharePayload | null {
       a: SharePayload["locationA"];
       b: SharePayload["locationB"];
       c: SharePayload["category"];
+      sm?: SharePayload["searchMode"];
       mode?: SharePayload["meetupMode"];
       q?: string;
       p?: SharePayload["preferences"];
@@ -164,6 +168,7 @@ function decodePortablePayload(id: string): SharePayload | null {
       locationA: compact.a,
       locationB: compact.b,
       category: compact.c,
+      searchMode: compact.sm,
       meetupMode: compact.mode,
       customQuery: compact.q,
       preferences: compact.p ?? [],

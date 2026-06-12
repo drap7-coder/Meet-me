@@ -1,17 +1,23 @@
-import type { GeocodedLocation, LatLng, ScoredVenue } from "@/lib/types";
+import type { GeocodedLocation, LatLng, ScoredVenue, SearchMode } from "@/lib/types";
 
 type Props = {
   originA: GeocodedLocation;
   originB: GeocodedLocation;
   midpoint: LatLng;
   venues: ScoredVenue[];
+  searchMode: SearchMode;
 };
 
-export function ResultsMap({ originA, originB, midpoint, venues }: Props) {
+export function ResultsMap({ originA, originB, midpoint, venues, searchMode }: Props) {
+  const isSingleLocation = searchMode === "single";
   const points = [
-    { id: "a", label: "A", location: originA.location, kind: "originA" },
-    { id: "b", label: "B", location: originB.location, kind: "originB" },
-    { id: "m", label: "", location: midpoint, kind: "midpoint" },
+    { id: "a", label: isSingleLocation ? "" : "A", location: originA.location, kind: isSingleLocation ? "midpoint" : "originA" },
+    ...(isSingleLocation
+      ? []
+      : [
+          { id: "b", label: "B", location: originB.location, kind: "originB" },
+          { id: "m", label: "", location: midpoint, kind: "midpoint" }
+        ]),
     ...venues.slice(0, 5).map((venue, index) => ({
       id: venue.id,
       label: String(index + 1),
@@ -46,13 +52,13 @@ export function ResultsMap({ originA, originB, midpoint, venues }: Props) {
         <div className="absolute left-4 top-4 rounded-lg border border-line bg-paper/95 p-3 shadow-[0_14px_34px_rgba(17,24,39,0.08)] backdrop-blur">
           <p className="text-xs font-black uppercase tracking-[0.14em] text-clay">Fairness at a glance</p>
           <p className="mt-1 max-w-[240px] text-sm font-semibold leading-5 text-slate">
-            See both starting points and the best places between them.
+            {isSingleLocation ? "See the search center and the best places nearby." : "See both starting points and the best places between them."}
           </p>
         </div>
         <div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-2 rounded-lg border border-line bg-paper/95 p-3 text-xs font-bold text-slate shadow-[0_14px_34px_rgba(17,24,39,0.08)] backdrop-blur">
-          <LegendDot className="bg-indigo" label="Person A" />
-          <LegendDot className="bg-ink" label="Person B" />
-          <LegendDot className="bg-clay" label="Midpoint" />
+          {isSingleLocation ? null : <LegendDot className="bg-indigo" label="Person A" />}
+          {isSingleLocation ? null : <LegendDot className="bg-ink" label="Person B" />}
+          <LegendDot className="bg-clay" label={isSingleLocation ? "Search center" : "Midpoint"} />
           <LegendDot className="bg-white ring-1 ring-line" label="Ranked destinations" />
         </div>
       </div>

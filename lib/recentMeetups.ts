@@ -1,5 +1,5 @@
 import { getCategoryLabel } from "@/lib/categories";
-import type { MeetupMode, Preference, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory } from "@/lib/types";
+import type { MeetupMode, Preference, SearchHalfwayRequest, SearchHalfwayResponse, SearchMode, VenueCategory } from "@/lib/types";
 
 export const RECENT_MEETUPS_KEY = "meetMeHalfway.recentMeetups.v1";
 
@@ -10,6 +10,7 @@ export type RecentMeetup = {
   originB: string;
   originBPlaceId?: string;
   category: VenueCategory;
+  searchMode?: SearchMode;
   meetupMode?: MeetupMode;
   customQuery?: string;
   preferences?: Preference[];
@@ -49,8 +50,8 @@ export function clearRecentMeetups() {
   window.localStorage.removeItem(RECENT_MEETUPS_KEY);
 }
 
-export function buildMeetupKey(meetup: Pick<RecentMeetup, "originA" | "originB" | "category"> & { meetupMode?: MeetupMode }) {
-  return [meetup.originA, meetup.originB, meetup.category, meetup.meetupMode ?? "single"]
+export function buildMeetupKey(meetup: Pick<RecentMeetup, "originA" | "originB" | "category"> & { searchMode?: SearchMode; meetupMode?: MeetupMode }) {
+  return [meetup.originA, meetup.originB, meetup.category, meetup.searchMode ?? "midpoint", meetup.meetupMode ?? "single"]
     .map((value) => value.trim().toLowerCase())
     .join("|");
 }
@@ -78,12 +79,13 @@ export function createRecentMeetup(
   const timestamp = Date.now();
 
   return {
-    id: `${buildMeetupKey({ originA, originB, category: results.category, meetupMode: results.meetupMode })}-${timestamp}`,
+    id: `${buildMeetupKey({ originA, originB, category: results.category, searchMode: results.searchMode, meetupMode: results.meetupMode })}-${timestamp}`,
     originA,
     originAPlaceId: form.locationAPlaceId ?? results.originA.placeId,
     originB,
     originBPlaceId: form.locationBPlaceId ?? results.originB.placeId,
     category: results.category,
+    searchMode: results.searchMode,
     meetupMode: results.meetupMode,
     customQuery: form.customQuery,
     preferences: form.preferences ?? [],
@@ -99,6 +101,7 @@ export function recentMeetupToForm(meetup: RecentMeetup): SearchHalfwayRequest {
     locationB: meetup.originB,
     locationBPlaceId: meetup.originBPlaceId,
     category: meetup.category,
+    searchMode: meetup.searchMode ?? "midpoint",
     meetupMode: meetup.meetupMode,
     customQuery: meetup.customQuery ?? "",
     preferences: meetup.preferences ?? []

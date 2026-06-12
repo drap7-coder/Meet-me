@@ -6,7 +6,11 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as SearchHalfwayRequest;
-    if (!body.locationA?.trim() || !body.locationB?.trim()) {
+    const searchMode = body.searchMode ?? "midpoint";
+    if (!body.locationA?.trim()) {
+      return NextResponse.json({ error: searchMode === "single" ? "Enter a location." : "Enter both locations." }, { status: 400 });
+    }
+    if (searchMode === "midpoint" && !body.locationB?.trim()) {
       return NextResponse.json({ error: "Enter both locations." }, { status: 400 });
     }
     if (body.category === "custom" && !body.customQuery?.trim()) {

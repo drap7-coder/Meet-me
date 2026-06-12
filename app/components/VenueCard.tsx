@@ -11,7 +11,7 @@ import { copyTextToClipboard } from "@/lib/share";
 import { trackEvent } from "@/lib/analytics";
 import { getCategoryConfig, getCategoryLabel, getPrimaryCategoryId } from "@/lib/categories";
 import { getPreferenceLabel } from "@/lib/preferences";
-import type { MeetupMode, ScoredVenue, VenueCategory } from "@/lib/types";
+import type { MeetupMode, ScoredVenue, SearchMode, VenueCategory } from "@/lib/types";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type Props = {
@@ -22,6 +22,7 @@ type Props = {
   isClosestToHalfway: boolean;
   isShortestCombined: boolean;
   searchCategory: VenueCategory;
+  searchMode: SearchMode;
   meetupMode: MeetupMode;
   onShare: (venue: ScoredVenue) => void;
   shareUrl?: string;
@@ -35,6 +36,7 @@ export function VenueCard({
   isClosestToHalfway,
   isShortestCombined,
   searchCategory,
+  searchMode,
   meetupMode,
   onShare,
   shareUrl
@@ -54,6 +56,7 @@ export function VenueCard({
     isClosestToHalfway,
     isShortestCombined,
     searchCategory,
+    searchMode,
     meetupMode
   });
 
@@ -106,9 +109,9 @@ export function VenueCard({
 
       <p className="mt-4 text-sm leading-6 text-slate">{match.explanation}</p>
       <p className="mt-2 inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-bold text-ink">
-        <span>{formatDifference(venue.timeDifferenceMinutes)}</span>
-        {typeof venue.rating === "number" ? <span>· {venue.rating.toFixed(1)} stars</span> : null}
-        {isClosestToHalfway ? <span>· Near the midpoint</span> : null}
+        {searchMode === "midpoint" ? <span>{formatDifference(venue.timeDifferenceMinutes)}</span> : null}
+        {typeof venue.rating === "number" ? <span>{searchMode === "midpoint" ? "· " : ""}{venue.rating.toFixed(1)} stars</span> : null}
+        {searchMode === "midpoint" && isClosestToHalfway ? <span>· Near the midpoint</span> : null}
         <span className="inline-flex items-center gap-1 text-slate">
           · <CategoryIcon category={searchCategory} active className="h-3.5 w-3.5" /> Category match
         </span>
@@ -117,8 +120,8 @@ export function VenueCard({
 
       <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
         <Metric label={originALabel} value={timeA} />
-        <Metric label={originBLabel} value={timeB} />
-        <Metric label="Difference" value={formatDifference(venue.timeDifferenceMinutes)} />
+        {searchMode === "midpoint" ? <Metric label={originBLabel} value={timeB} /> : null}
+        {searchMode === "midpoint" ? <Metric label="Difference" value={formatDifference(venue.timeDifferenceMinutes)} /> : null}
         <Metric label="Rating" value={formatRating(venue.rating, venue.reviewCount)} />
       </div>
 
@@ -176,7 +179,7 @@ export function VenueCard({
           <span className="text-lg leading-none text-slate transition group-open:rotate-45">+</span>
         </summary>
         <div className="grid gap-3 border-t border-line px-4 py-4 text-sm leading-6 text-slate">
-          <Detail label="Drive balance" value={match.details.balance} />
+          <Detail label={searchMode === "single" ? "Distance" : "Drive balance"} value={match.details.balance} />
           <Detail label="Venue rating" value={match.details.rating} />
           <Detail label="Category match" value={match.details.category} category={searchCategory} />
           <Detail label="Preference match" value={match.details.preference} />
@@ -459,6 +462,7 @@ function getMatchExplanation({
   isClosestToHalfway,
   isShortestCombined,
   searchCategory,
+  searchMode,
   meetupMode
 }: {
   venue: ScoredVenue;
@@ -468,6 +472,7 @@ function getMatchExplanation({
   isClosestToHalfway: boolean;
   isShortestCombined: boolean;
   searchCategory: VenueCategory;
+  searchMode: SearchMode;
   meetupMode: MeetupMode;
 }) {
   const diff = venue.timeDifferenceMinutes;
@@ -476,6 +481,7 @@ function getMatchExplanation({
   const b = venue.travelFromB.durationMinutes;
   const categoryConfig = getCategoryConfig(searchCategory);
   const categoryLabel = getCategoryLabel(searchCategory);
+  const primaryCategoryId = getPrimaryCategoryId(searchCategory);
   const primaryPreference = venue.preferenceMatches[0];
   const preferencePhrase = formatPreferencePhrase(venue.preferenceMatches);
   const onePersonSavesTime =
@@ -488,7 +494,15 @@ function getMatchExplanation({
   let badge = categoryConfig?.resultBadge ?? "Best Overall Match";
   let explanation = categoryConfig?.explanation ?? "A solid option near the halfway area with a workable trip for both people.";
 
-  if (rank === 1 && meetupMode === "district") {
+  if (primaryCategoryId === "real_estate") {
+    badge = "Best Places to Live";
+    explanation = primaryPreference
+      ? `Strong fit for ${preferencePhrase}, with nearby amenities and practical access from your search area.`
+      : categoryConfig?.explanation ?? "Good option for comparing lifestyle fit, distance, and nearby amenities.";
+  } else if (searchMode === "single") {
+    badge = categoryConfig?.resultBadge ?? "Best Overall Match";
+    explanation = categoryConfig?.explanation ?? "A solid option near your search area with a practical trip from your location.";
+  } else if (rank === 1 && meetupMode === "district") {
     badge = "Best District";
     explanation = categoryConfig?.explanation ?? "A strong district-style match near the midpoint with multiple nearby stops.";
   } else if (primaryPreference && rank <= 3) {
@@ -515,9 +529,9 @@ function getMatchExplanation({
     badge,
     explanation,
     details: {
-      balance: describeBalance(diff),
+      balance: searchMode === "single" ? `About ${formatMinutes(venue.travelFromA.durationMinutes)} from your search location.` : describeBalance(diff),
       rating: describeRating(rating, venue.reviewCount),
-      category: `Matches your ${getCategoryLabel(searchCategory).toLowerCase()} search in ${meetupMode === "district" ? "district" : "single place"} mode.`,
+      category: `Matches your ${getCategoryLabel(searchCategory).toLowerCase()} search${primaryCategoryId === "real_estate" ? "." : ` in ${meetupMode === "district" ? "district" : "single place"} mode.`}`,
       preference: describePreferenceMatch(venue.preferenceMatches),
       convenience: describeConvenience(venue, isClosestToHalfway, isShortestCombined, categoryLabel)
     }

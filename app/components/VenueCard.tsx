@@ -9,7 +9,7 @@ import {
 import { CategoryIcon } from "@/app/components/CategoryIcon";
 import { copyTextToClipboard } from "@/lib/share";
 import { trackEvent } from "@/lib/analytics";
-import { getCategoryConfig, getCategoryLabel } from "@/lib/categories";
+import { getCategoryConfig, getCategoryLabel, getPrimaryCategoryId } from "@/lib/categories";
 import { getPreferenceLabel } from "@/lib/preferences";
 import type { MeetupMode, ScoredVenue, VenueCategory } from "@/lib/types";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -45,6 +45,7 @@ export function VenueCard({
   const timeA = formatMinutes(venue.travelFromA.durationMinutes);
   const timeB = formatMinutes(venue.travelFromB.durationMinutes);
   const venueAction = getVenueAction(venue, searchCategory);
+  const collegeResearchLinks = getPrimaryCategoryId(searchCategory) === "colleges" ? getCollegeResearchLinks(venue) : null;
   const match = getMatchExplanation({
     venue,
     rank,
@@ -152,6 +153,22 @@ export function VenueCard({
             className="inline-flex h-10 items-center justify-center rounded-full border border-clay/25 bg-clay/10 px-4 text-sm font-black text-ink transition hover:border-clay hover:bg-clay hover:text-white focus:outline-none focus:ring-4 focus:ring-clay/20"
           >
             {venueAction.label}
+          </a>
+        </div>
+      ) : null}
+
+      {collegeResearchLinks ? (
+        <div className="college-research-links" aria-label="College research links">
+          {collegeResearchLinks.website ? (
+            <a href={collegeResearchLinks.website} target="_blank" rel="noreferrer">
+              Website
+            </a>
+          ) : null}
+          <a href={collegeResearchLinks.niche} target="_blank" rel="noreferrer">
+            Niche
+          </a>
+          <a href={collegeResearchLinks.wikipedia} target="_blank" rel="noreferrer">
+            Wikipedia
           </a>
         </div>
       ) : null}
@@ -373,6 +390,17 @@ function Detail({ label, value, category }: { label: string; value: string; cate
       <span>{value}</span>
     </div>
   );
+}
+
+function getCollegeResearchLinks(college: Partial<ScoredVenue> & { displayName?: { text?: string }; website?: string; url?: string }) {
+  const name = college?.name || college?.displayName?.text || "";
+  const encodedName = encodeURIComponent(name);
+
+  return {
+    niche: `https://www.niche.com/search/?q=${encodedName}`,
+    wikipedia: `https://en.wikipedia.org/wiki/Special:Search?search=${encodedName}`,
+    website: college?.websiteUri || college?.website || college?.url || null
+  };
 }
 
 function getVenueAction(venue: ScoredVenue, searchCategory: VenueCategory) {

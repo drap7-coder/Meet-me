@@ -167,9 +167,6 @@ export function VenueCard({
           <a href={collegeResearchLinks.niche} target="_blank" rel="noreferrer">
             Niche
           </a>
-          <a href={collegeResearchLinks.wikipedia} target="_blank" rel="noreferrer">
-            Wikipedia
-          </a>
         </div>
       ) : null}
 
@@ -393,12 +390,8 @@ function Detail({ label, value, category }: { label: string; value: string; cate
 }
 
 function getCollegeResearchLinks(college: Partial<ScoredVenue> & { displayName?: { text?: string }; website?: string }) {
-  const name = college?.name || college?.displayName?.text || "";
-  const encodedName = encodeURIComponent(`${name} site:niche.com/colleges`);
-
   return {
-    niche: `https://www.google.com/search?q=${encodedName}`,
-    wikipedia: `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(name)}`,
+    niche: "https://www.niche.com/",
     website: college?.websiteUri || college?.website || null
   };
 }

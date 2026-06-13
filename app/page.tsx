@@ -393,13 +393,13 @@ function MarketingHero() {
   return (
       <div className="max-w-4xl">
         <p className="mb-4 text-sm font-black uppercase tracking-[0.18em] text-clay">
-          Fair meeting places in seconds
+          Meet me halfway app
         </p>
         <h1 className="max-w-4xl text-[clamp(48px,8vw,72px)] font-black leading-[0.96] tracking-[-0.04em] text-[#0f2537]">
           The easiest way to meet halfway.
         </h1>
         <p className="mt-6 max-w-2xl text-lg font-medium leading-8 text-slate sm:text-xl">
-          Find restaurants, coffee shops, and meeting places that work for everyone.
+          Find the best place to meet in the middle, from restaurants and coffee shops to easy local meeting spots that work for everyone.
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:gap-4">
           <a

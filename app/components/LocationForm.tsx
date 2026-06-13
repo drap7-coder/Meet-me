@@ -277,12 +277,13 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
 
 async function getCurrentPosition(): Promise<LatLng> {
   return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
+    const geolocation = window.navigator?.geolocation;
+    if (!geolocation) {
       reject(new Error("Geolocation is not supported"));
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(
+    geolocation.getCurrentPosition(
       (position) => {
         resolve({
           lat: position.coords.latitude,
@@ -439,6 +440,7 @@ function LocationInput({
         ) : null}
       </div>
       {placeId ? <p className="text-xs font-semibold text-clay">Location selected</p> : null}
+      {isLocating ? <p className="text-xs font-semibold text-slate">Requesting your location...</p> : null}
       {error ? <p className="text-xs font-semibold text-clay">{error}</p> : null}
       {status ? <p className="text-xs font-semibold text-slate">{status}</p> : null}
       {open && suggestions.length ? (

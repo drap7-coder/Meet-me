@@ -1,4 +1,4 @@
-import { DEFAULT_MEETUP_MODE, DEFAULT_SEARCH_MODE, getCategorySearchTerm, getCategorySearchTerms, getPrimaryCategoryId } from "@/lib/categories";
+import { DEFAULT_MEETUP_MODE, DEFAULT_SEARCH_MODE, getCategorySearchTerm, getCategorySearchTerms } from "@/lib/categories";
 import { calculateMidpoint, estimateSearchRadiusMeters } from "@/lib/geo";
 import { scoreVenue } from "@/lib/scoring";
 import type {
@@ -282,7 +282,6 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
   const searchMode = request.searchMode ?? DEFAULT_SEARCH_MODE;
   const meetupMode = request.meetupMode ?? DEFAULT_MEETUP_MODE;
   const isSingleLocation = searchMode === "single";
-  const primaryCategoryId = getPrimaryCategoryId(request.category);
   if (isSingleLocation) {
     const originA = await geocodeAddress(request.locationA, request.locationAPlaceId);
     const center = originA.location;
@@ -291,7 +290,7 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
       category: request.category,
       meetupMode: request.meetupMode,
       customQuery: request.customQuery,
-      radiusMeters: primaryCategoryId === "real_estate" ? MAX_PLACES_RADIUS_METERS : 24_000
+      radiusMeters: 24_000
     });
 
     const routeMatrix = await computeRouteMatrix({

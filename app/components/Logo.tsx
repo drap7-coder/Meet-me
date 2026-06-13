@@ -1,3 +1,4 @@
+import { BrandPin, BrandRoad } from "@/app/components/BrandRoad";
 import { BRAND } from "@/src/config/branding";
 
 type LogoSize = "sm" | "md" | "lg";
@@ -38,25 +39,8 @@ export function Logo({
         role="img"
         aria-label={`${BRAND.name} logo`}
       >
-        <path
-          d="M6 32H104"
-          fill="none"
-          stroke="#111827"
-          strokeLinecap="round"
-          strokeWidth="5"
-        />
-        <path
-          d="M14 32H22M32 32H40M50 32H58M68 32H76M86 32H94"
-          fill="none"
-          stroke="#FFFFFF"
-          strokeLinecap="round"
-          strokeWidth="2"
-        />
-        <path
-          d="M116 4C122.6 4 128 9.4 128 16C128 24.1 119.4 32.6 116 36.5C112.6 32.6 104 24.1 104 16C104 9.4 109.4 4 116 4Z"
-          fill="#FF6B6B"
-        />
-        <circle cx="116" cy="16" r="4.5" fill="#FFFFFF" />
+        <BrandRoad />
+        <BrandPin />
         <text
           x="0"
           y="22"

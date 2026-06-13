@@ -38,7 +38,6 @@ function getIconKey(category: VenueCategory | string) {
   if (value === "health_pre_med") return "medical";
   if (value === "liberal_arts") return "book";
   if (value === "urban_campuses") return "building";
-  if (value === "real_estate" || value.startsWith("real_estate_")) return "home";
   if (["universities", "colleges"].includes(value)) return "graduation";
   if (value === "college_towns") return "trees";
   if (["sports", "golf", "driving_range", "pickleball", "bowling"].includes(value)) return "trophy";

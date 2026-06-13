@@ -68,7 +68,6 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
   const activePrimaryId = getPrimaryCategoryId(form.category);
   const submitCopy = getSubmitCopy(activePrimaryId);
   const searchMode = form.searchMode ?? "midpoint";
-  const showGeneralPreferences = activePrimaryId !== "real_estate";
 
   return (
     <form onSubmit={handleSubmit} className="rounded-lg border border-line bg-paper p-5 shadow-soft sm:p-7">
@@ -147,7 +146,6 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
         />
       </div>
 
-      {showGeneralPreferences ? (
       <div className="mt-4 grid gap-3 rounded-[18px] border border-line/80 bg-white/70 p-3 sm:p-4">
         <div>
           <span className="text-sm font-bold text-ink">Make it easier</span>
@@ -176,7 +174,6 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
           })}
         </div>
       </div>
-      ) : null}
 
       {form.category === "custom" ? (
         <label className="mt-4 grid gap-2">
@@ -247,8 +244,6 @@ function getSubmitCopy(primaryId: ReturnType<typeof getPrimaryCategoryId>) {
       return "Find places";
     case "colleges":
       return "Find campus spots";
-    case "real_estate":
-      return "Find places to live";
     case "food_drink":
     default:
       return "Find a place";

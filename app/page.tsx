@@ -4,6 +4,7 @@ import { EmptyState } from "@/app/components/EmptyState";
 import { CategoryIcon } from "@/app/components/CategoryIcon";
 import { LocationForm } from "@/app/components/LocationForm";
 import { Logo } from "@/app/components/Logo";
+import { RoadDivider } from "@/app/components/BrandRoad";
 import { ResultsMap } from "@/app/components/ResultsMap";
 import { VenueCard } from "@/app/components/VenueCard";
 import { WeatherCard } from "@/app/components/WeatherCard";
@@ -17,7 +18,7 @@ import {
   saveRecentMeetup,
   type RecentMeetup
 } from "@/lib/recentMeetups";
-import { getPrimaryCategoryId, normalizeCategory, parseMeetupMode, parseSearchMode } from "@/lib/categories";
+import { normalizeCategory, parseMeetupMode, parseSearchMode } from "@/lib/categories";
 import { getPreferenceLabel, parsePreferences } from "@/lib/preferences";
 import { copyTextToClipboard, shareWithFallback, shouldUseNativeShare } from "@/lib/share";
 import { trackEvent } from "@/lib/analytics";
@@ -88,7 +89,6 @@ export default function HomePage() {
 
   const resultCountLabel = useMemo(() => {
     if (!results) return "";
-    if (getPrimaryCategoryId(results.category) === "real_estate") return `${results.venues.length} place${results.venues.length === 1 ? "" : "s"} to consider`;
     return `${results.venues.length} place${results.venues.length === 1 ? "" : "s"} that could work`;
   }, [results]);
 
@@ -104,6 +104,8 @@ export default function HomePage() {
   }, [results]);
 
   async function submitSearch(searchForm: SearchHalfwayRequest = form, existingShareUrl?: string) {
+    const startedAt = Date.now();
+    const shouldPlayMotion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setHasSearched(true);
     setLoading(true);
     setError("");
@@ -134,6 +136,8 @@ export default function HomePage() {
       setResults(null);
       setError(searchError instanceof Error ? searchError.message : "Search failed.");
     } finally {
+      const remainingMotionTime = 950 - (Date.now() - startedAt);
+      if (shouldPlayMotion && remainingMotionTime > 0) await wait(remainingMotionTime);
       setLoading(false);
     }
   }
@@ -270,7 +274,7 @@ export default function HomePage() {
             <CompactResultsHeader
               loading={loading}
               resultCountLabel={resultCountLabel}
-              title={results && getPrimaryCategoryId(results.category) === "real_estate" ? "Best Places to Live" : "Recommended places"}
+              title="Recommended places"
               originSummary={
                 results
                   ? results.searchMode === "single"
@@ -283,6 +287,8 @@ export default function HomePage() {
               onNewSearch={startNewSearch}
             />
           ) : null}
+
+          {hasSearched || results || loading ? <RoadDivider className="mx-auto mt-5 max-w-2xl" /> : null}
 
           {error ? (
             <div className="mt-5 rounded-lg border border-[#FFD2D2] bg-[#FFF1F1] p-4 text-sm font-semibold text-clay">
@@ -300,6 +306,7 @@ export default function HomePage() {
         {loading ? (
           <section className="mt-8 grid gap-4 lg:grid-cols-[1fr_420px]">
             <div className="grid gap-3">
+              <MeetInMiddleLoader />
               {[0, 1, 2].map((item) => (
                 <div key={item} className="h-48 animate-pulse rounded-lg bg-sky shadow-soft" />
               ))}
@@ -309,9 +316,9 @@ export default function HomePage() {
         ) : null}
 
         {results && !loading ? (
-          <section className="mt-5 grid gap-5 pb-16 lg:grid-cols-[1fr_420px] lg:items-start">
+          <section className="search-results-enter mt-5 grid gap-5 pb-16 lg:grid-cols-[1fr_420px] lg:items-start">
             {results.venues.length ? (
-              <div className="order-1 lg:order-2">
+              <div className="results-panel-enter order-1 lg:order-2">
                 <ResultsMap
                   originA={results.originA}
                   originB={results.originB}
@@ -322,13 +329,13 @@ export default function HomePage() {
               </div>
             ) : null}
 
-            <div className="order-2 grid gap-5 lg:order-1">
+            <div className="results-panel-enter order-2 grid gap-5 lg:order-1">
               {shareMessage ? <p className="mb-4 text-sm font-semibold text-clay">{shareMessage}</p> : null}
 
               <WeatherCard midpoint={results.midpoint} />
 
               {results.venues.length ? (
-                <div className="grid gap-4">
+                <div className="results-list-enter grid gap-4">
                   {results.venues.map((venue, index) => (
                     <VenueCard
                       key={venue.id}
@@ -347,7 +354,7 @@ export default function HomePage() {
                   ))}
                 </div>
               ) : (
-                getPrimaryCategoryId(results.category) === "real_estate" ? <RealEstateComingSoon /> : <EmptyState />
+                <EmptyState />
               )}
             </div>
           </section>
@@ -540,6 +547,30 @@ function SiteHeader() {
         </a>
       </div>
     </header>
+  );
+}
+
+function MeetInMiddleLoader() {
+  return (
+    <div
+      className="meet-middle-motion rounded-[24px] border border-line bg-paper p-5 shadow-[0_14px_38px_rgba(18,50,74,0.08)] sm:p-6"
+      role="status"
+      aria-live="polite"
+      aria-label="Finding a fair midpoint"
+    >
+      <div className="relative mx-auto h-20 max-w-md overflow-hidden rounded-full bg-sky/80 px-8">
+        <div className="absolute left-8 right-8 top-1/2 h-px -translate-y-1/2 bg-line" />
+        <div className="meet-middle-dot meet-middle-dot-left absolute left-8 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-[#4F46E5] shadow-[0_0_0_8px_rgba(79,70,229,0.10)]" />
+        <div className="meet-middle-dot meet-middle-dot-right absolute right-8 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-ink shadow-[0_0_0_8px_rgba(18,50,74,0.10)]" />
+        <div className="meet-middle-pin absolute left-1/2 top-1/2 grid h-10 w-10 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-clay text-white shadow-[0_12px_28px_rgba(255,107,95,0.28)] ring-8 ring-clay/10">
+          <span className="h-3 w-3 rounded-full bg-white" />
+        </div>
+      </div>
+      <div className="mt-4 text-center">
+        <p className="text-sm font-black text-ink">Finding the midpoint</p>
+        <p className="mt-1 text-xs font-semibold text-slate">Balancing drive times and local options.</p>
+      </div>
+    </div>
   );
 }
 
@@ -797,15 +828,8 @@ function formatDriveComparison(venue: ScoredVenue) {
   return `${formatMinutes(venue.travelFromA.durationMinutes)} / ${formatMinutes(venue.travelFromB.durationMinutes)}`;
 }
 
-function RealEstateComingSoon() {
-  return (
-    <div className="rounded-lg border border-dashed border-line bg-paper p-8 text-center shadow-[0_8px_22px_rgba(17,24,39,0.04)]">
-      <h3 className="text-lg font-black text-ink">Places to Live recommendations are coming soon</h3>
-      <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate">
-        For now, use this search to compare nearby towns, neighborhoods, and lifestyle fit.
-      </p>
-    </div>
-  );
+function wait(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
 function shortLocationLabel(address: string) {

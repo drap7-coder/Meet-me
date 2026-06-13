@@ -481,7 +481,6 @@ function getMatchExplanation({
   const b = venue.travelFromB.durationMinutes;
   const categoryConfig = getCategoryConfig(searchCategory);
   const categoryLabel = getCategoryLabel(searchCategory);
-  const primaryCategoryId = getPrimaryCategoryId(searchCategory);
   const primaryPreference = venue.preferenceMatches[0];
   const preferencePhrase = formatPreferencePhrase(venue.preferenceMatches);
   const onePersonSavesTime =
@@ -494,12 +493,7 @@ function getMatchExplanation({
   let badge = categoryConfig?.resultBadge ?? "Best Overall Match";
   let explanation = categoryConfig?.explanation ?? "A solid option near the halfway area with a workable trip for both people.";
 
-  if (primaryCategoryId === "real_estate") {
-    badge = "Best Places to Live";
-    explanation = primaryPreference
-      ? `Strong fit for ${preferencePhrase}, with nearby amenities and practical access from your search area.`
-      : categoryConfig?.explanation ?? "Good option for comparing lifestyle fit, distance, and nearby amenities.";
-  } else if (searchMode === "single") {
+  if (searchMode === "single") {
     badge = categoryConfig?.resultBadge ?? "Best Overall Match";
     explanation = categoryConfig?.explanation ?? "A solid option near your search area with a practical trip from your location.";
   } else if (rank === 1 && meetupMode === "district") {
@@ -531,7 +525,7 @@ function getMatchExplanation({
     details: {
       balance: searchMode === "single" ? `About ${formatMinutes(venue.travelFromA.durationMinutes)} from your search location.` : describeBalance(diff),
       rating: describeRating(rating, venue.reviewCount),
-      category: `Matches your ${getCategoryLabel(searchCategory).toLowerCase()} search${primaryCategoryId === "real_estate" ? "." : ` in ${meetupMode === "district" ? "district" : "single place"} mode.`}`,
+      category: `Matches your ${getCategoryLabel(searchCategory).toLowerCase()} search in ${meetupMode === "district" ? "district" : "single place"} mode.`,
       preference: describePreferenceMatch(venue.preferenceMatches),
       convenience: describeConvenience(venue, isClosestToHalfway, isShortestCombined, categoryLabel)
     }

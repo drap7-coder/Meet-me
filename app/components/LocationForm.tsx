@@ -4,7 +4,7 @@ import { CategorySelector } from "@/app/components/CategorySelector";
 import { Logo } from "@/app/components/Logo";
 import { getPrimaryCategoryId } from "@/lib/categories";
 import { PREFERENCES } from "@/lib/preferences";
-import type { PlaceSuggestion, Preference, SearchHalfwayRequest, VenueCategory } from "@/lib/types";
+import type { LatLng, PlaceSuggestion, Preference, SearchHalfwayRequest, VenueCategory } from "@/lib/types";
 import { copyTextToClipboard, shareWithFallback } from "@/lib/share";
 import { BRAND } from "@/src/config/branding";
 import { FormEvent, useEffect, useRef, useState } from "react";
@@ -20,6 +20,8 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
   const [inviteStatus, setInviteStatus] = useState("");
   const [inviteUrl, setInviteUrl] = useState("");
   const [showInviteTools, setShowInviteTools] = useState(false);
+  const [locationError, setLocationError] = useState("");
+  const [isLocating, setIsLocating] = useState(false);
   const inviteText = "Want to meet halfway? Add your starting point and we’ll find somewhere that works for both of us.";
 
   useEffect(() => {
@@ -97,7 +99,7 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
                   onChange({
                     ...form,
                     searchMode: mode.id as SearchHalfwayRequest["searchMode"],
-                    ...(mode.id === "single" ? { locationB: "", locationBPlaceId: undefined } : {})
+                    ...(mode.id === "single" ? { locationB: "", locationBPlaceId: undefined, locationBCoordinates: undefined } : {})
                   })
                 }
                 className={`h-10 rounded-full px-3 text-sm font-black transition ${
@@ -119,7 +121,17 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
           value={form.locationA}
           placeId={form.locationAPlaceId}
           placeholder={searchMode === "single" ? "Enter a city, town, address, or ZIP" : "e.g. Hoboken, NJ"}
-          onChange={(locationA, locationAPlaceId) => onChange({ ...form, locationA, locationAPlaceId })}
+          error={locationError}
+          isLocating={isLocating}
+          onUseCurrentLocation={useCurrentLocation}
+          onChange={(locationA, locationAPlaceId) => {
+            setLocationError("");
+            onChange({ ...form, locationA, locationAPlaceId, locationACoordinates: undefined });
+          }}
+          onClear={() => {
+            setLocationError("");
+            onChange({ ...form, locationA: "", locationAPlaceId: undefined, locationACoordinates: undefined });
+          }}
         />
         {searchMode === "midpoint" ? (
           <LocationInput
@@ -127,7 +139,8 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
             value={form.locationB}
             placeId={form.locationBPlaceId}
             placeholder="e.g. Edison, NJ"
-            onChange={(locationB, locationBPlaceId) => onChange({ ...form, locationB, locationBPlaceId })}
+            onChange={(locationB, locationBPlaceId) => onChange({ ...form, locationB, locationBPlaceId, locationBCoordinates: undefined })}
+            onClear={() => onChange({ ...form, locationB: "", locationBPlaceId: undefined, locationBCoordinates: undefined })}
           />
         ) : null}
       </div>
@@ -230,6 +243,60 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
       {inviteStatus ? <p className="mt-3 text-center text-xs font-semibold text-slate">{inviteStatus}</p> : null}
     </form>
   );
+
+  async function useCurrentLocation() {
+    setLocationError("");
+    setIsLocating(true);
+    try {
+      const coordinates = await getCurrentPosition();
+      const fallbackLabel = `Current location: ${coordinates.lat.toFixed(5)}, ${coordinates.lng.toFixed(5)}`;
+      let locationA = fallbackLabel;
+      let locationAPlaceId: string | undefined;
+      try {
+        const response = await fetch("/api/geocode", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(coordinates)
+        });
+        const data = await response.json();
+        if (response.ok) {
+          locationA = data.formattedAddress || fallbackLabel;
+          locationAPlaceId = data.placeId;
+        }
+      } catch {
+        locationA = fallbackLabel;
+      }
+      onChange({ ...form, locationA, locationAPlaceId, locationACoordinates: coordinates });
+    } catch {
+      setLocationError("Couldn’t access your location. You can still type it manually.");
+    } finally {
+      setIsLocating(false);
+    }
+  }
+}
+
+async function getCurrentPosition(): Promise<LatLng> {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error("Geolocation is not supported"));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        });
+      },
+      reject,
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000
+      }
+    );
+  });
 }
 
 function getSubmitCopy(primaryId: ReturnType<typeof getPrimaryCategoryId>) {
@@ -255,17 +322,26 @@ function LocationInput({
   value,
   placeId,
   placeholder,
-  onChange
+  error = "",
+  onChange,
+  onClear,
+  onUseCurrentLocation,
+  isLocating = false
 }: {
   label: string;
   value: string;
   placeId?: string;
   placeholder: string;
+  error?: string;
   onChange: (value: string, placeId?: string) => void;
+  onClear?: () => void;
+  onUseCurrentLocation?: () => void;
+  isLocating?: boolean;
 }) {
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
   const requestId = useRef(0);
 
   useEffect(() => {
@@ -310,11 +386,37 @@ function LocationInput({
     setStatus("");
   }
 
+  function clearLocation() {
+    if (onClear) {
+      onClear();
+    } else {
+      onChange("", undefined);
+    }
+    setSuggestions([]);
+    setOpen(false);
+    setStatus("");
+    window.requestAnimationFrame(() => inputRef.current?.focus());
+  }
+
   return (
     <div className="relative grid gap-2">
-      <label className="grid gap-2">
-        <span className="text-sm font-bold text-ink">{label}</span>
+      <div className="flex min-h-5 items-center justify-between gap-3">
+        <label htmlFor={inputId(label)} className="text-sm font-bold text-ink">{label}</label>
+        {onUseCurrentLocation ? (
+          <button
+            type="button"
+            onClick={onUseCurrentLocation}
+            disabled={isLocating}
+            className="text-xs font-black text-ink underline-offset-4 transition hover:text-clay hover:underline disabled:cursor-wait disabled:text-slate"
+          >
+            {isLocating ? "Locating..." : "Use my location"}
+          </button>
+        ) : null}
+      </div>
+      <div className="relative">
         <input
+          ref={inputRef}
+          id={inputId(label)}
           value={value}
           onBlur={() => window.setTimeout(() => setOpen(false), 120)}
           onChange={(event) => {
@@ -323,10 +425,21 @@ function LocationInput({
           }}
           onFocus={() => setOpen(true)}
           placeholder={placeholder}
-          className="h-11 rounded-lg border border-line bg-mint px-4 text-base outline-none transition focus:border-clay focus:ring-4 focus:ring-clay/10 sm:h-12"
+          className="h-11 w-full rounded-lg border border-line bg-mint px-4 pr-11 text-base text-ink outline-none transition focus:border-clay focus:ring-4 focus:ring-clay/10 sm:h-12"
         />
-      </label>
+        {value ? (
+          <button
+            type="button"
+            aria-label="Clear location"
+            onClick={clearLocation}
+            className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full border border-line bg-white text-base font-black leading-none text-slate transition hover:border-clay hover:text-clay focus:outline-none focus:ring-4 focus:ring-clay/10"
+          >
+            ×
+          </button>
+        ) : null}
+      </div>
       {placeId ? <p className="text-xs font-semibold text-clay">Location selected</p> : null}
+      {error ? <p className="text-xs font-semibold text-clay">{error}</p> : null}
       {status ? <p className="text-xs font-semibold text-slate">{status}</p> : null}
       {open && suggestions.length ? (
         <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-lg border border-line bg-mint shadow-soft">
@@ -348,4 +461,8 @@ function LocationInput({
       ) : null}
     </div>
   );
+}
+
+function inputId(label: string) {
+  return `location-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 }

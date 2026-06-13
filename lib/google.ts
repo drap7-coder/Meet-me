@@ -58,6 +58,34 @@ export async function geocodeAddress(input: string, placeId?: string): Promise<G
   };
 }
 
+export async function reverseGeocodeLocation(location: LatLng, input = "Current location"): Promise<GeocodedLocation> {
+  const url = new URL(GEOCODING_URL);
+  url.searchParams.set("latlng", `${location.lat},${location.lng}`);
+  url.searchParams.set("key", getGoogleMapsKey());
+
+  const response = await fetch(url, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Reverse geocoding failed with ${response.status}.`);
+
+  const data = await response.json();
+  if (data.status !== "OK" || !data.results?.[0]) {
+    const detail = typeof data.error_message === "string" ? ` ${data.error_message}` : "";
+    throw new Error(`Could not reverse geocode current location.${detail}`);
+  }
+
+  const result = data.results[0];
+  return {
+    input,
+    formattedAddress: result.formatted_address,
+    location,
+    placeId: result.place_id
+  };
+}
+
+function resolveRequestLocation(input: string, placeId: string | undefined, coordinates: LatLng | undefined) {
+  if (coordinates) return reverseGeocodeLocation(coordinates, input.trim() || "Current location");
+  return geocodeAddress(input, placeId);
+}
+
 export async function autocompleteLocations(input: string): Promise<PlaceSuggestion[]> {
   const trimmed = input.trim();
   if (trimmed.length < 2) return [];
@@ -283,7 +311,7 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
   const meetupMode = request.meetupMode ?? DEFAULT_MEETUP_MODE;
   const isSingleLocation = searchMode === "single";
   if (isSingleLocation) {
-    const originA = await geocodeAddress(request.locationA, request.locationAPlaceId);
+    const originA = await resolveRequestLocation(request.locationA, request.locationAPlaceId, request.locationACoordinates);
     const center = originA.location;
     const venues = await searchPlacesNearMidpoint({
       midpoint: center,
@@ -323,8 +351,8 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
   }
 
   const [originA, originB] = await Promise.all([
-    geocodeAddress(request.locationA, request.locationAPlaceId),
-    geocodeAddress(request.locationB, request.locationBPlaceId)
+    resolveRequestLocation(request.locationA, request.locationAPlaceId, request.locationACoordinates),
+    resolveRequestLocation(request.locationB, request.locationBPlaceId, request.locationBCoordinates)
   ]);
 
   const midpoint = calculateMidpoint(originA.location, originB.location);

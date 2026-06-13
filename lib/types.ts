@@ -113,8 +113,10 @@ export type ScoredVenue = VenueCandidate & {
 export type SearchHalfwayRequest = {
   locationA: string;
   locationAPlaceId?: string;
+  locationACoordinates?: LatLng;
   locationB: string;
   locationBPlaceId?: string;
+  locationBCoordinates?: LatLng;
   category: VenueCategory;
   searchMode?: SearchMode;
   meetupMode?: MeetupMode;

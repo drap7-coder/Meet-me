@@ -58,8 +58,10 @@ export default function HomePage() {
     const params = new URLSearchParams(window.location.search);
     const locationA = params.get("a") ?? "";
     const locationAPlaceId = params.get("aPlaceId") ?? undefined;
+    const locationACoordinates = parseCoordinates(params.get("aLat"), params.get("aLng"));
     const locationB = params.get("b") ?? "";
     const locationBPlaceId = params.get("bPlaceId") ?? undefined;
+    const locationBCoordinates = parseCoordinates(params.get("bLat"), params.get("bLng"));
     const category = normalizeCategory((params.get("category") as VenueCategory | null) ?? "coffee");
     const searchMode = parseSearchMode(params.get("searchMode"));
     const meetupMode = parseMeetupMode(params.get("mode"));
@@ -69,7 +71,7 @@ export default function HomePage() {
     const shouldAutoSearch = params.get("auto") === "1";
     setShowRoadDividerPreview(params.get("roadDivider") === "1");
     if (locationA || locationB || customQuery) {
-      const nextForm = { locationA, locationAPlaceId, locationB, locationBPlaceId, category, searchMode, meetupMode, customQuery, preferences };
+      const nextForm = { locationA, locationAPlaceId, locationACoordinates, locationB, locationBPlaceId, locationBCoordinates, category, searchMode, meetupMode, customQuery, preferences };
       setForm(nextForm);
       if (shareId) {
         const shareUrl = `${window.location.origin}/s/${shareId}`;
@@ -776,8 +778,16 @@ function updateShareUrl(form: SearchHalfwayRequest) {
   const params = new URLSearchParams();
   if (form.locationA) params.set("a", form.locationA);
   if (form.locationAPlaceId) params.set("aPlaceId", form.locationAPlaceId);
+  if (form.locationACoordinates) {
+    params.set("aLat", String(form.locationACoordinates.lat));
+    params.set("aLng", String(form.locationACoordinates.lng));
+  }
   if (form.locationB) params.set("b", form.locationB);
   if (form.locationBPlaceId) params.set("bPlaceId", form.locationBPlaceId);
+  if (form.locationBCoordinates) {
+    params.set("bLat", String(form.locationBCoordinates.lat));
+    params.set("bLng", String(form.locationBCoordinates.lng));
+  }
   params.set("category", form.category);
   if (form.searchMode === "single") params.set("searchMode", "single");
   if (form.meetupMode && form.meetupMode !== "single") params.set("mode", form.meetupMode);
@@ -786,6 +796,14 @@ function updateShareUrl(form: SearchHalfwayRequest) {
   const path = `/?${params.toString()}`;
   window.history.replaceState(null, "", path);
   return `${window.location.origin}${path}`;
+}
+
+function parseCoordinates(latValue: string | null, lngValue: string | null) {
+  if (!latValue || !lngValue) return undefined;
+  const lat = Number(latValue);
+  const lng = Number(lngValue);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return undefined;
+  return { lat, lng };
 }
 
 function formatMinutes(value: number | null) {

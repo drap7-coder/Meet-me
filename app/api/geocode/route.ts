@@ -1,9 +1,16 @@
-import { geocodeAddress } from "@/lib/google";
+import { geocodeAddress, reverseGeocodeLocation } from "@/lib/google";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    const lat = typeof body.lat === "number" ? body.lat : Number.NaN;
+    const lng = typeof body.lng === "number" ? body.lng : Number.NaN;
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      const result = await reverseGeocodeLocation({ lat, lng });
+      return NextResponse.json(result);
+    }
+
     const address = typeof body.address === "string" ? body.address : "";
     const result = await geocodeAddress(address);
     return NextResponse.json(result);

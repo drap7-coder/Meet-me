@@ -7,7 +7,6 @@ import { Logo } from "@/app/components/Logo";
 import { ResultsMap } from "@/app/components/ResultsMap";
 import { VenueCard } from "@/app/components/VenueCard";
 import { WeatherCard } from "@/app/components/WeatherCard";
-import HeroMidpointVisual from "@/components/HeroMidpointVisual";
 import {
   clearRecentMeetups,
   createRecentMeetup,
@@ -252,14 +251,9 @@ export default function HomePage() {
       {!hasSearched && !results && !loading ? (
         <>
           <section id="search" className="relative isolate overflow-hidden bg-paper px-4 pb-8 pt-4 sm:px-6 sm:pt-6 lg:px-8">
-            <div className="relative z-10 mx-auto grid max-w-7xl items-start gap-8 py-8 md:grid-cols-[minmax(0,1fr)_minmax(300px,420px)] lg:grid-cols-[minmax(0,1fr)_minmax(420px,680px)] lg:gap-10 lg:py-14">
-              <div className="grid gap-6">
-                <MarketingHero />
-                <LocationForm form={form} loading={loading} onChange={setForm} onSubmit={submitSearch} />
-              </div>
-              <div className="flex justify-center md:justify-end">
-                <HeroMidpointVisual />
-              </div>
+            <div className="relative z-10 mx-auto grid max-w-5xl gap-6 py-8 lg:py-12">
+              <MarketingHero />
+              <LocationForm form={form} loading={loading} onChange={setForm} onSubmit={submitSearch} />
             </div>
           </section>
           <section className="bg-mint px-4 pb-10 pt-5 sm:px-6 lg:px-8">

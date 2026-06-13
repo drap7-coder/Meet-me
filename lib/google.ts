@@ -15,6 +15,7 @@ const GEOCODING_URL = "https://maps.googleapis.com/maps/api/geocode/json";
 const PLACES_AUTOCOMPLETE_URL = "https://places.googleapis.com/v1/places:autocomplete";
 const PLACES_TEXT_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText";
 const ROUTE_MATRIX_URL = "https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix";
+const MAX_PLACES_RADIUS_METERS = 50_000;
 
 function getGoogleMapsKey() {
   const key = process.env.GOOGLE_MAPS_API_KEY;
@@ -135,6 +136,7 @@ async function searchPlacesForQuery(params: {
   radiusMeters: number;
   includedType?: string;
 }): Promise<VenueCandidate[]> {
+  const radiusMeters = Math.min(params.radiusMeters, MAX_PLACES_RADIUS_METERS);
   const body = {
     textQuery: params.query,
     maxResultCount: 16,
@@ -144,7 +146,7 @@ async function searchPlacesForQuery(params: {
           latitude: params.midpoint.lat,
           longitude: params.midpoint.lng
         },
-        radius: params.radiusMeters
+        radius: radiusMeters
       }
     },
     ...(params.includedType ? { includedType: params.includedType } : {})
@@ -177,7 +179,7 @@ async function searchPlacesForQuery(params: {
       return searchPlacesForQuery({
         midpoint: params.midpoint,
         query: params.query,
-        radiusMeters: params.radiusMeters
+        radiusMeters
       });
     }
     const body = await response.text();
@@ -289,7 +291,7 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
       category: request.category,
       meetupMode: request.meetupMode,
       customQuery: request.customQuery,
-      radiusMeters: primaryCategoryId === "real_estate" ? 60_000 : 24_000
+      radiusMeters: primaryCategoryId === "real_estate" ? MAX_PLACES_RADIUS_METERS : 24_000
     });
 
     const routeMatrix = await computeRouteMatrix({

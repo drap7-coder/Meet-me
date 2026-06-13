@@ -159,13 +159,6 @@ select {
   animation: road-divider-dashes 0.7s ease-out 0.22s forwards;
 }
 
-.road-divider-pin {
-  opacity: 0;
-  transform: translate(750px, 0) scale(0.86);
-  transform-origin: 116px 18px;
-  animation: road-divider-pin 0.36s ease-out 0.74s forwards;
-}
-
 @keyframes road-divider-draw {
   to {
     stroke-dashoffset: 0;
@@ -179,25 +172,13 @@ select {
   }
 }
 
-@keyframes road-divider-pin {
-  to {
-    opacity: 1;
-    transform: translate(750px, 0) scale(1);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .road-divider-track,
-  .road-divider-dashes,
-  .road-divider-pin {
+  .road-divider-dashes {
     animation: none;
     opacity: 1;
     stroke-dashoffset: 0;
     transform: none;
-  }
-
-  .road-divider-pin {
-    transform: translate(750px, 0);
   }
 }
 

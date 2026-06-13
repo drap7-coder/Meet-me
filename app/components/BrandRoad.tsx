@@ -55,9 +55,6 @@ export function RoadDivider({ className = "" }: BrandSvgProps) {
           strokeLinecap="round"
           strokeWidth="2"
         />
-        <g className="road-divider-pin" transform="translate(750 0)">
-          <BrandPin />
-        </g>
       </svg>
     </div>
   );

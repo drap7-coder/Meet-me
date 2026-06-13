@@ -24,6 +24,7 @@ import { copyTextToClipboard, shareWithFallback, shouldUseNativeShare } from "@/
 import { trackEvent } from "@/lib/analytics";
 import type { LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory } from "@/lib/types";
 import { BRAND } from "@/src/config/branding";
+import { FAQ_ITEMS } from "@/src/config/seo";
 import { useEffect, useMemo, useState } from "react";
 
 const initialForm: SearchHalfwayRequest = {
@@ -373,6 +374,7 @@ export default function HomePage() {
           <HowItWorks />
           <UseCases />
           <BrandSection />
+          <FaqSection />
         </>
       ) : null}
 
@@ -647,6 +649,37 @@ function BrandSection() {
         <p className="mt-5 max-w-2xl text-xl leading-8 text-white/70">
           It’s the simplest way to make plans easier, faster, and actually happen.
         </p>
+      </div>
+    </section>
+  );
+}
+
+function FaqSection() {
+  return (
+    <section className="bg-sky px-4 py-16 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-5xl">
+        <div className="max-w-2xl">
+          <p className="text-sm font-bold uppercase tracking-wide text-clay">FAQ</p>
+          <h2 className="mt-3 text-4xl font-black tracking-tight text-ink sm:text-5xl">
+            Meet me halfway, without the guesswork.
+          </h2>
+          <p className="mt-4 text-base font-semibold leading-7 text-slate">
+            Answers for people searching for a meet me halfway app or trying to find the best place to meet in the middle.
+          </p>
+        </div>
+        <div className="mt-8 grid gap-3">
+          {FAQ_ITEMS.map((item) => (
+            <details key={item.question} className="group rounded-[22px] border border-line bg-paper p-5 shadow-[0_12px_30px_rgba(17,24,39,0.05)]">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left text-lg font-black text-ink">
+                {item.question}
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-line text-xl leading-none text-slate transition group-open:rotate-45 group-open:text-clay">
+                  +
+                </span>
+              </summary>
+              <p className="mt-4 max-w-3xl text-sm font-semibold leading-6 text-slate">{item.answer}</p>
+            </details>
+          ))}
+        </div>
       </div>
     </section>
   );

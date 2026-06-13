@@ -139,17 +139,75 @@ select {
 }
 
 .road-divider {
-  opacity: 0.82;
+  opacity: 0.88;
+  pointer-events: none;
+}
+
+.road-divider svg {
+  display: block;
+}
+
+.road-divider-track {
+  stroke-dasharray: 980;
+  stroke-dashoffset: 980;
+  animation: road-divider-draw 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.road-divider-dashes {
+  opacity: 0;
+  transform: translateX(-18px);
+  animation: road-divider-dashes 0.7s ease-out 0.22s forwards;
+}
+
+.road-divider-pin {
+  opacity: 0;
+  transform: translate(750px, 0) scale(0.86);
+  transform-origin: 116px 18px;
+  animation: road-divider-pin 0.36s ease-out 0.74s forwards;
+}
+
+@keyframes road-divider-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes road-divider-dashes {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes road-divider-pin {
+  to {
+    opacity: 1;
+    transform: translate(750px, 0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .road-divider-track,
+  .road-divider-dashes,
+  .road-divider-pin {
+    animation: none;
+    opacity: 1;
+    stroke-dashoffset: 0;
+    transform: none;
+  }
+
+  .road-divider-pin {
+    transform: translate(750px, 0);
+  }
 }
 
 @media (max-width: 640px) {
   .road-divider {
-    gap: 10px;
-    opacity: 0.74;
+    opacity: 0.78;
   }
 
   .road-divider svg {
-    width: 124px;
+    height: 38px;
   }
 }
 

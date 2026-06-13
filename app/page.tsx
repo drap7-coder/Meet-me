@@ -52,6 +52,7 @@ export default function HomePage() {
   const [shareDialog, setShareDialog] = useState<ShareDialogState | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [recentMeetups, setRecentMeetups] = useState<RecentMeetup[]>([]);
+  const [showRoadDividerPreview, setShowRoadDividerPreview] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -66,6 +67,7 @@ export default function HomePage() {
     const preferences = parsePreferences(params.get("preferences"));
     const shareId = params.get("shareId");
     const shouldAutoSearch = params.get("auto") === "1";
+    setShowRoadDividerPreview(params.get("roadDivider") === "1");
     if (locationA || locationB || customQuery) {
       const nextForm = { locationA, locationAPlaceId, locationB, locationBPlaceId, category, searchMode, meetupMode, customQuery, preferences };
       setForm(nextForm);
@@ -288,7 +290,9 @@ export default function HomePage() {
             />
           ) : null}
 
-          {hasSearched || results || loading ? <RoadDivider className="mx-auto mt-5 max-w-2xl" /> : null}
+          {hasSearched || results || loading || showRoadDividerPreview ? (
+            <RoadDivider className="relative left-1/2 mt-5 w-screen -translate-x-1/2 px-4 sm:px-6 lg:px-8" />
+          ) : null}
 
           {error ? (
             <div className="mt-5 rounded-lg border border-[#FFD2D2] bg-[#FFF1F1] p-4 text-sm font-semibold text-clay">

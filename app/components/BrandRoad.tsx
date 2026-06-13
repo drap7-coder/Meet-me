@@ -37,13 +37,28 @@ export function BrandPin() {
 
 export function RoadDivider({ className = "" }: BrandSvgProps) {
   return (
-    <div className={`road-divider flex items-center gap-4 ${className}`} aria-hidden="true">
-      <span className="h-px flex-1 bg-line" />
-      <svg className="h-10 w-[150px] shrink-0" viewBox="0 0 142 42" focusable="false">
-        <BrandRoad />
-        <BrandPin />
+    <div className={`road-divider ${className}`} aria-hidden="true">
+      <svg className="h-12 w-full" viewBox="0 0 1000 42" preserveAspectRatio="none" focusable="false">
+        <path
+          className="road-divider-track"
+          d="M18 32H982"
+          fill="none"
+          stroke="#111827"
+          strokeLinecap="round"
+          strokeWidth="5"
+        />
+        <path
+          className="road-divider-dashes"
+          d="M44 32H104M148 32H208M252 32H312M356 32H416M460 32H520M564 32H624M668 32H728M772 32H832M876 32H936"
+          fill="none"
+          stroke="#FFFFFF"
+          strokeLinecap="round"
+          strokeWidth="2"
+        />
+        <g className="road-divider-pin" transform="translate(750 0)">
+          <BrandPin />
+        </g>
       </svg>
-      <span className="h-px flex-1 bg-line" />
     </div>
   );
 }

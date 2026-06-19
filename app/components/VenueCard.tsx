@@ -48,6 +48,7 @@ export function VenueCard({
   const timeB = formatMinutes(venue.travelFromB.durationMinutes);
   const venueAction = getVenueAction(venue, searchCategory);
   const collegeResearchLinks = getPrimaryCategoryId(searchCategory) === "colleges" ? getCollegeResearchLinks(venue) : null;
+  const reviewSnippet = venue.reviewQuote || venue.reviewSummary;
   const match = getMatchExplanation({
     venue,
     rank,
@@ -107,7 +108,17 @@ export function VenueCard({
         </div>
       </div>
 
-      <p className="mt-4 text-sm leading-6 text-slate">{match.explanation}</p>
+      <div className="mt-4 rounded-lg border border-line bg-mint p-4">
+        <p className="text-sm font-black text-ink">Why Koi picked it</p>
+        <p className="mt-2 text-sm leading-6 text-slate">{match.explanation}</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {match.tags.map((tag) => (
+            <span key={tag} className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate ring-1 ring-line">
+              {tag}
+            </span>
+          ))}
+        </div>
+      </div>
       <p className="mt-2 inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-bold text-ink">
         {searchMode === "midpoint" ? <span>{formatDifference(venue.timeDifferenceMinutes)}</span> : null}
         {typeof venue.rating === "number" ? <span>{searchMode === "midpoint" ? "· " : ""}{venue.rating.toFixed(1)} stars</span> : null}
@@ -118,11 +129,21 @@ export function VenueCard({
       </p>
       <p className="mt-3 text-sm leading-6 text-slate">{venue.address}</p>
 
+      {reviewSnippet ? (
+        <figure className="mt-4 rounded-lg border border-line bg-white px-4 py-3">
+          <blockquote className="text-sm font-semibold leading-6 text-ink">“{reviewSnippet}”</blockquote>
+          <figcaption className="mt-2 text-xs font-bold uppercase tracking-wide text-slate">
+            {venue.reviewQuote ? "Google review" : venue.reviewSummaryDisclosure || "Place summary"}
+          </figcaption>
+        </figure>
+      ) : null}
+
       <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-        <Metric label={originALabel} value={timeA} />
+        <Metric label={searchMode === "single" ? "Travel" : originALabel} value={timeA} />
         {searchMode === "midpoint" ? <Metric label={originBLabel} value={timeB} /> : null}
         {searchMode === "midpoint" ? <Metric label="Difference" value={formatDifference(venue.timeDifferenceMinutes)} /> : null}
         <Metric label="Rating" value={formatRating(venue.rating, venue.reviewCount)} />
+        {venue.priceLevel ? <Metric label="Price" value={formatPriceLevel(venue.priceLevel)} /> : null}
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
@@ -137,7 +158,11 @@ export function VenueCard({
         >
           {venue.openNow === true ? "Open now" : venue.openNow === false ? "Closed" : "Hours unknown"}
         </span>
-        <span className="text-slate">Total time: {formatMinutes(venue.totalTravelMinutes)}</span>
+        <span className="text-slate">
+          {searchMode === "single"
+            ? `From ${originALabel}: ${timeA}`
+            : `Total time: ${formatMinutes(venue.totalTravelMinutes)}`}
+        </span>
       </div>
 
       {venueAction ? (
@@ -175,7 +200,7 @@ export function VenueCard({
 
       <details className="group mt-4 rounded-lg border border-line bg-mint">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-bold text-ink">
-          <span>Why this match?</span>
+          <span>Why Koi picked it</span>
           <span className="text-lg leading-none text-slate transition group-open:rotate-45">+</span>
         </summary>
         <div className="grid gap-3 border-t border-line px-4 py-4 text-sm leading-6 text-slate">
@@ -193,7 +218,7 @@ export function VenueCard({
           target="_blank"
           rel="noreferrer"
           onClick={handleDirectionsClick}
-          className="rounded-full bg-clay px-3 py-2.5 text-center text-sm font-bold text-white transition hover:bg-[#E55757] focus:outline-none focus:ring-4 focus:ring-clay/25"
+          className="rounded-full bg-clay px-3 py-2.5 text-center text-sm font-bold text-white transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25"
         >
           Get directions
         </a>
@@ -346,7 +371,7 @@ function CalendarSheet({
             target="_blank"
             rel="noreferrer"
             onClick={() => trackCalendar("google")}
-            className="inline-flex h-11 items-center justify-center rounded-full bg-clay px-3 text-sm font-bold text-white transition hover:bg-[#E55757] focus:outline-none focus:ring-4 focus:ring-clay/25"
+            className="inline-flex h-11 items-center justify-center rounded-full bg-clay px-3 text-sm font-bold text-white transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25"
           >
             Google Calendar
           </a>
@@ -438,7 +463,37 @@ function getVenueAction(venue: ScoredVenue, searchCategory: VenueCategory) {
     return { label: "Visit Website", url };
   }
 
-  if (["restaurant", "brunch", "breweries", "wine_bars"].includes(searchCategory) || haystack.includes("restaurant") || haystack.includes("cafe")) {
+  if (
+    [
+      "restaurant",
+      "brunch",
+      "italian",
+      "bbq",
+      "mexican",
+      "sushi",
+      "asian",
+      "american",
+      "indian",
+      "mediterranean",
+      "thai",
+      "pizza",
+      "seafood",
+      "steakhouse",
+      "breakfast",
+      "vegan",
+      "breweries",
+      "wine_bars",
+      "cocktail_bars",
+      "lounges",
+      "pubs",
+      "rooftop_bars",
+      "distilleries",
+      "sports_bars",
+      "cigar_lounges"
+    ].includes(searchCategory) ||
+    haystack.includes("restaurant") ||
+    haystack.includes("cafe")
+  ) {
     return { label: isReservationUrl(url) ? "Reserve Table" : "Visit Website", url };
   }
 
@@ -495,7 +550,13 @@ function getMatchExplanation({
 
   if (searchMode === "single") {
     badge = categoryConfig?.resultBadge ?? "Best Overall Match";
-    explanation = categoryConfig?.explanation ?? "A solid option near your search area with a practical trip from your location.";
+    if (primaryPreference && rank <= 3) {
+      explanation = `A strong ${venue.category.toLowerCase()} option near your search area with ${preferencePhrase}.`;
+    } else if (typeof rating === "number" && rating >= 4.3) {
+      explanation = "A strong nearby option with good ratings and a practical trip from your location.";
+    } else {
+      explanation = `A solid ${categoryLabel.toLowerCase()} option near your selected location.`;
+    }
   } else if (rank === 1 && meetupMode === "district") {
     badge = "Best District";
     explanation = categoryConfig?.explanation ?? "A strong district-style match near the midpoint with multiple nearby stops.";
@@ -509,8 +570,8 @@ function getMatchExplanation({
     badge = "Most Balanced";
     explanation = "This spot keeps the trip balanced, with nearly equal travel times for both people.";
   } else if (isClosestToHalfway) {
-    badge = "Closest to Halfway";
-    explanation = "This option is closest to the halfway area between both starting points.";
+    badge = "Closest to midpoint";
+    explanation = "This option is closest to the midpoint area between both starting points.";
   } else if (onePersonSavesTime) {
     badge = `Better for ${onePersonSavesTime}`;
     explanation = "Good option, but one person has a noticeably shorter trip.";
@@ -522,14 +583,42 @@ function getMatchExplanation({
   return {
     badge,
     explanation,
+    tags: buildMatchTags({
+      venue,
+      searchMode,
+      categoryLabel
+    }),
     details: {
       balance: searchMode === "single" ? `About ${formatMinutes(venue.travelFromA.durationMinutes)} from your search location.` : describeBalance(diff),
       rating: describeRating(rating, venue.reviewCount),
       category: `Matches your ${getCategoryLabel(searchCategory).toLowerCase()} search in ${meetupMode === "district" ? "district" : "single place"} mode.`,
       preference: describePreferenceMatch(venue.preferenceMatches),
-      convenience: describeConvenience(venue, isClosestToHalfway, isShortestCombined, categoryLabel)
+      convenience: describeConvenience(venue, isClosestToHalfway, isShortestCombined, categoryLabel, searchMode)
     }
   };
+}
+
+function buildMatchTags({
+  venue,
+  searchMode,
+  categoryLabel
+}: {
+  venue: ScoredVenue;
+  searchMode: SearchMode;
+  categoryLabel: string;
+}) {
+  const tags = [`Good match for ${categoryLabel.toLowerCase()}`];
+  for (const preference of venue.preferenceMatches.slice(0, 2)) {
+    tags.push(getPreferenceLabel(preference));
+  }
+  if (venue.openNow === true) tags.push("Timing");
+  if (typeof venue.rating === "number" && venue.rating >= 4.3) tags.push("Reviews");
+  if (searchMode === "single") {
+    tags.push("Nearby");
+  } else {
+    tags.push("Balanced travel");
+  }
+  return Array.from(new Set(tags)).slice(0, 4);
 }
 
 function formatPreferencePhrase(preferences: ScoredVenue["preferenceMatches"]) {
@@ -561,13 +650,19 @@ function describeConvenience(
   venue: ScoredVenue,
   isClosestToHalfway: boolean,
   isShortestCombined: boolean,
-  primaryCategoryLabel: string
+  primaryCategoryLabel: string,
+  searchMode: SearchMode
 ) {
+  if (searchMode === "single") {
+    if (venue.openNow === true) return "Open now, which makes it easier to act on.";
+    if (venue.openNow === false) return "Worth saving, but check hours before heading out.";
+    return `A practical ${primaryCategoryLabel.toLowerCase()} option near your selected location.`;
+  }
   if (isShortestCombined) return "One of the quickest options for the two of you together.";
   if (isClosestToHalfway) return "Especially close to the middle between both starting points.";
   if (venue.openNow === true) return "Open now, which makes it easier to act on.";
   if (venue.openNow === false) return "Worth saving, but check hours before heading out.";
-  return `A practical ${primaryCategoryLabel.toLowerCase()} option near the halfway area.`;
+  return `A practical ${primaryCategoryLabel.toLowerCase()} option near the midpoint area.`;
 }
 
 function formatDifference(value: number | null) {
@@ -579,6 +674,17 @@ function formatDifference(value: number | null) {
 function formatRating(rating: number | null, reviewCount: number) {
   if (typeof rating !== "number") return "Not rated";
   return `${rating.toFixed(1)} ★ · ${reviewCount}`;
+}
+
+function formatPriceLevel(priceLevel: string) {
+  const prices: Record<string, string> = {
+    PRICE_LEVEL_FREE: "Free",
+    PRICE_LEVEL_INEXPENSIVE: "$",
+    PRICE_LEVEL_MODERATE: "$$",
+    PRICE_LEVEL_EXPENSIVE: "$$$",
+    PRICE_LEVEL_VERY_EXPENSIVE: "$$$$"
+  };
+  return prices[priceLevel] ?? priceLevel.replace(/^PRICE_LEVEL_/, "").toLowerCase().replace(/_/g, " ");
 }
 
 function formatMinutes(value: number | null) {

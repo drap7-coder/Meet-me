@@ -32,14 +32,14 @@ export function buildIcsUrl(details: CalendarDetails) {
     start: new Date(details.start).toISOString(),
     duration: String(details.durationMinutes),
     description: buildCalendarDescription(details),
-    filename: `meet-halfway-${slugify(details.placeName)}.ics`
+    filename: `koi-meetup-${slugify(details.placeName)}.ics`
   });
   return `/api/calendar/ics?${params.toString()}`;
 }
 
 export function buildCalendarDescription(details: CalendarDetails) {
   return [
-    "Halfway recommendation.",
+    "Koi recommendation.",
     `Travel time from first location: ${details.travelFromA}.`,
     `Travel time from second location: ${details.travelFromB}.`,
     details.shareUrl ? `Meetup link: ${details.shareUrl}` : "",

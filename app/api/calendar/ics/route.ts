@@ -2,12 +2,12 @@ import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const title = searchParams.get("title") || "Meet halfway";
+  const title = searchParams.get("title") || "Meet with Koi";
   const location = searchParams.get("location") || "";
   const description = searchParams.get("description") || "";
   const startParam = searchParams.get("start");
   const duration = Number(searchParams.get("duration") || "60");
-  const filename = safeFilename(searchParams.get("filename") || "meet-halfway.ics");
+  const filename = safeFilename(searchParams.get("filename") || "koi-meetup.ics");
 
   if (!startParam) {
     return NextResponse.json({ error: "Missing event start time." }, { status: 400 });
@@ -19,12 +19,12 @@ export async function GET(request: Request) {
   }
   const end = new Date(start.getTime() + Math.max(15, duration) * 60 * 1000);
   const now = new Date();
-  const uid = `${crypto.randomUUID()}@halfway`;
+  const uid = `${crypto.randomUUID()}@askkoibot.com`;
 
   const ics = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Halfway//Meetup Calendar//EN",
+    "PRODID:-//Koi//Meetup Calendar//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",

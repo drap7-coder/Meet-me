@@ -3,6 +3,7 @@
 import { CategoryIcon } from "@/app/components/CategoryIcon";
 import { CATEGORY_GROUPS, DEFAULT_MEETUP_MODE, getPrimaryCategoryId } from "@/lib/categories";
 import type { MeetupMode, VenueCategory } from "@/lib/types";
+import { useState } from "react";
 
 type Props = {
   value: VenueCategory;
@@ -13,8 +14,10 @@ type Props = {
 
 export function CategorySelector({ value, mode = DEFAULT_MEETUP_MODE, onChange }: Props) {
   void mode;
+  const [showMore, setShowMore] = useState(false);
   const activePrimaryId = getPrimaryCategoryId(value);
   const activePrimary = CATEGORY_GROUPS.find((group) => group.id === activePrimaryId) ?? CATEGORY_GROUPS[0];
+  const hasMoreSheet = activePrimaryId === "drinks" || activePrimaryId === "outdoors";
 
   return (
     <div className="grid gap-4">
@@ -29,16 +32,16 @@ export function CategorySelector({ value, mode = DEFAULT_MEETUP_MODE, onChange }
               onClick={() => onChange(primaryCategory)}
               aria-pressed={selected}
               aria-selected={selected}
-              className={`category-card group flex min-w-0 items-center justify-center rounded-[18px] border bg-white px-3 py-4 text-center shadow-[0_8px_18px_rgba(17,24,39,0.03)] transition sm:justify-start sm:p-4 sm:text-left sm:shadow-[0_10px_26px_rgba(17,24,39,0.04)] ${
+              className={`category-card group flex min-w-0 items-center justify-center rounded-[18px] border-2 bg-white px-3 py-4 text-center shadow-[0_8px_18px_rgba(17,24,39,0.03)] transition sm:justify-start sm:p-4 sm:text-left sm:shadow-[0_10px_26px_rgba(17,24,39,0.04)] ${
                 selected
-                  ? "selected border-2 border-[var(--mmh-coral)] !bg-[#FFF3F1] text-ink !shadow-[0_0_0_4px_rgba(255,107,95,0.08),0_14px_30px_rgba(255,107,95,0.12)]"
-                  : "border-[#D8DDE6] text-ink hover:-translate-y-0.5 hover:border-ink/25 hover:shadow-soft"
+                  ? "selected border-[var(--mmh-coral)] !bg-[#FFF4EC] text-ink !shadow-[0_0_0_4px_rgba(214,90,46,0.10),0_14px_30px_rgba(214,90,46,0.12)]"
+                  : "border-[#D8DDE6] text-ink hover:border-ink/25 hover:shadow-soft"
               }`}
             >
               <div className="flex min-w-0 flex-col items-center gap-2.5 sm:flex-row sm:gap-3">
                 <span
                   className={`category-icon-wrapper grid shrink-0 place-items-center rounded-full transition ${
-                    selected ? "bg-[var(--mmh-coral)] text-white shadow-[0_10px_22px_rgba(255,107,95,0.24)]" : "bg-[#F6F7FA] text-slate"
+                    selected ? "bg-[var(--mmh-coral)] text-white shadow-[0_10px_22px_rgba(214,90,46,0.24)]" : "bg-[#F7F1E8] text-slate"
                   }`}
                 >
                   <CategoryIcon category={primaryCategory} className={`category-icon ${selected ? "text-white" : "text-slate"}`} />
@@ -74,15 +77,15 @@ export function CategorySelector({ value, mode = DEFAULT_MEETUP_MODE, onChange }
                 onClick={() => onChange(category.id)}
                 aria-pressed={selected}
                 aria-selected={selected}
-                className={`category-card group flex min-w-0 flex-col items-center justify-center rounded-[16px] border bg-white px-3 py-3 text-center transition sm:flex-row sm:justify-start sm:text-left ${
+                className={`category-card group flex min-w-0 flex-col items-center justify-center rounded-[16px] border-2 bg-white px-3 py-3 text-center transition sm:flex-row sm:justify-start sm:text-left ${
                   selected
-                    ? "selected border-2 border-[var(--mmh-coral)] !bg-[#FFF3F1] text-ink !shadow-[0_0_0_4px_rgba(255,107,95,0.08)]"
+                    ? "selected border-[var(--mmh-coral)] !bg-[#FFF4EC] text-ink !shadow-[0_0_0_4px_rgba(214,90,46,0.10)]"
                     : "border-[#D8DDE6] text-ink hover:border-ink/25 hover:bg-sky"
                 }`}
               >
                 <span
                   className={`category-icon-wrapper grid shrink-0 place-items-center rounded-full transition ${
-                    selected ? "bg-[var(--mmh-coral)] text-white" : "bg-[#F6F7FA] text-slate"
+                    selected ? "bg-[var(--mmh-coral)] text-white" : "bg-[#F7F1E8] text-slate"
                   }`}
                 >
                   <CategoryIcon category={category.id} className={`category-icon ${selected ? "text-white" : "text-slate"}`} />
@@ -93,8 +96,66 @@ export function CategorySelector({ value, mode = DEFAULT_MEETUP_MODE, onChange }
               </button>
             );
           })}
+          {hasMoreSheet ? (
+            <button
+              type="button"
+              onClick={() => setShowMore(true)}
+              className="category-card group flex min-w-0 flex-col items-center justify-center rounded-[16px] border-2 border-[#D8DDE6] bg-white px-3 py-3 text-center text-ink transition hover:border-ink/25 hover:bg-sky sm:flex-row sm:justify-start sm:text-left"
+            >
+              <span className="category-icon-wrapper grid shrink-0 place-items-center rounded-full bg-[#F7F1E8] text-slate transition">
+                <CategoryIcon category={activePrimary.subcategories[0]?.id ?? "coffee"} className="category-icon text-slate" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="category-title block min-w-0 text-ink">More</span>
+              </span>
+            </button>
+          ) : null}
         </div>
       </div>
+
+      {showMore ? (
+        <div className="fixed inset-0 z-50 grid place-items-end bg-ink/35 p-0 sm:place-items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="category-more-title">
+          <div className="w-full rounded-t-[24px] border border-line bg-paper p-4 shadow-[0_24px_70px_rgba(10,19,35,0.22)] sm:max-w-xl sm:rounded-[24px] sm:p-5">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <p id="category-more-title" className="text-lg font-black text-ink">{activePrimary.label}</p>
+                <p className="mt-1 text-sm font-semibold leading-5 text-slate">{activePrimary.description}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowMore(false)}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-line bg-white text-lg font-black text-ink transition hover:border-ink/25"
+                aria-label="Close category list"
+              >
+                x
+              </button>
+            </div>
+            <div className="grid max-h-[60vh] grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3">
+              {activePrimary.subcategories.map((category) => {
+                const selected = category.id === value;
+                return (
+                  <button
+                    key={`more-${category.id}`}
+                    type="button"
+                    onClick={() => {
+                      onChange(category.id);
+                      setShowMore(false);
+                    }}
+                    aria-pressed={selected}
+                    className={`rounded-[16px] border-2 px-3 py-3 text-left text-sm font-black transition ${
+                      selected
+                        ? "border-[var(--mmh-coral)] bg-[#FFF4EC] text-ink"
+                        : "border-[#D8DDE6] bg-white text-ink hover:border-ink/25 hover:bg-sky"
+                    }`}
+                  >
+                    {category.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

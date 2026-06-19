@@ -1,6 +1,6 @@
 import type { MeetupMode, SearchMode, VenueCategory } from "@/lib/types";
 
-export type PrimaryCategoryId = "food_drink" | "shopping" | "activities" | "family" | "explore" | "colleges";
+export type PrimaryCategoryId = "food" | "drinks" | "shopping" | "activities" | "family" | "explore" | "colleges" | "outdoors";
 
 type CategorySearchConfig = {
   single: string[];
@@ -30,36 +30,83 @@ export const DEFAULT_SEARCH_MODE: SearchMode = "midpoint";
 export const FEATURED_CATEGORY_ORDER: VenueCategory[] = [
   "restaurant",
   "coffee",
+  "italian",
   "breweries",
   "wine_bars",
+  "cocktail_bars",
   "events",
   "engineering_stem",
   "sports",
   "hotels",
   "park",
+  "hiking",
   "museums",
   "downtowns"
 ];
 
 export const CATEGORY_GROUPS: PrimaryCategoryConfig[] = [
   {
-    id: "food_drink",
-    label: "Food & Drink",
-    description: "Coffee, brunch, dinner, dessert, and low-pressure places to sit awhile.",
-    accent: "from-[#EEF4FF] to-white",
+    id: "food",
+    label: "Food",
+    description: "Dining & cuisines",
+    accent: "from-[#FFF4EC] to-white",
     subcategories: [
-      category("coffee", "Coffee", "Simple, flexible spots for an easy first plan.", "Best Food Match", "A simple low-commitment meet-up spot with balanced travel times.", {
-        single: ["coffee shop", "cafe", "espresso bar", "coffee roaster"],
-        district: ["walkable cafe district", "coffee shops downtown", "main street cafes", "town center coffee"]
+      category("italian", "Italian", "Pasta, pizza, trattorias, and neighborhood Italian restaurants.", "Best Food Match", "An Italian food match near the midpoint with fair travel times.", {
+        single: ["Italian restaurant", "trattoria", "pasta restaurant", "Italian food"],
+        district: ["Italian restaurants downtown", "walkable Italian dining", "main street Italian restaurants", "Italian restaurant district"]
       }),
-      category("brunch", "Brunch", "Daytime meals with room to linger.", "Best Food Match", "A balanced brunch option near the midpoint with enough flexibility for both schedules.", {
+      category("bbq", "BBQ", "Barbecue, smokehouses, ribs, brisket, and casual comfort food.", "Best Food Match", "A BBQ match near the midpoint with balanced travel times.", {
+        single: ["bbq restaurant", "barbecue restaurant", "smokehouse", "brisket restaurant"],
+        district: ["bbq restaurants downtown", "barbecue district", "smokehouse area", "main street bbq"]
+      }),
+      category("mexican", "Mexican", "Tacos, taquerias, cantinas, and Mexican restaurants.", "Best Food Match", "A Mexican food match near the midpoint with fair travel times.", {
+        single: ["Mexican restaurant", "taqueria", "taco restaurant", "cantina"],
+        district: ["Mexican restaurants downtown", "taqueria district", "walkable taco restaurants", "main street Mexican food"]
+      }),
+      category("sushi", "Sushi", "Sushi bars, Japanese restaurants, and omakase-style spots.", "Best Food Match", "A sushi match near the midpoint with balanced travel times.", {
+        single: ["sushi restaurant", "sushi bar", "Japanese restaurant", "omakase"],
+        district: ["sushi restaurants downtown", "walkable sushi district", "Japanese restaurants downtown", "main street sushi"]
+      }),
+      category("indian", "Indian", "Indian restaurants, curries, tandoori, and regional cuisine.", "Best Food Match", "An Indian food match near the midpoint with fair travel times.", {
+        single: ["Indian restaurant", "curry restaurant", "tandoori restaurant", "Indian food"],
+        district: ["Indian restaurants downtown", "walkable Indian dining", "Indian food district", "main street Indian restaurants"]
+      }),
+      category("mediterranean", "Mediterranean", "Mediterranean, Greek, Lebanese, and fresh casual dining.", "Best Food Match", "A Mediterranean food match near the midpoint with balanced travel times.", {
+        single: ["Mediterranean restaurant", "Greek restaurant", "Lebanese restaurant", "falafel restaurant"],
+        district: ["Mediterranean restaurants downtown", "Greek restaurants downtown", "walkable Mediterranean dining", "main street Mediterranean food"]
+      }),
+      category("thai", "Thai", "Thai restaurants, noodles, curries, and casual dinner spots.", "Best Food Match", "A Thai food match near the midpoint with fair travel times.", {
+        single: ["Thai restaurant", "pad thai restaurant", "Thai food", "Thai curry restaurant"],
+        district: ["Thai restaurants downtown", "walkable Thai dining", "Thai food district", "main street Thai restaurants"]
+      }),
+      category("pizza", "Pizza", "Pizzerias, slices, wood-fired pies, and casual meetups.", "Best Food Match", "A pizza match near the midpoint with balanced travel times.", {
+        single: ["pizza restaurant", "pizzeria", "wood fired pizza", "pizza shop"],
+        district: ["pizzerias downtown", "pizza restaurants downtown", "walkable pizza area", "main street pizzerias"]
+      }),
+      category("seafood", "Seafood", "Seafood restaurants, oyster bars, fish houses, and coastal fare.", "Best Food Match", "A seafood match near the midpoint with fair travel times.", {
+        single: ["seafood restaurant", "oyster bar", "fish restaurant", "seafood grill"],
+        district: ["seafood restaurants downtown", "oyster bars downtown", "walkable seafood dining", "main street seafood"]
+      }),
+      category("steakhouse", "Steakhouse", "Steakhouses, grills, and more polished dinner plans.", "Best Food Match", "A steakhouse match near the midpoint with balanced travel times.", {
+        single: ["steakhouse", "steak restaurant", "grill steakhouse", "chophouse"],
+        district: ["steakhouses downtown", "restaurant district steakhouse", "walkable steak restaurants", "main street steakhouse"]
+      }),
+      category("breakfast", "Breakfast", "Breakfast, brunch, diners, and daytime places to linger.", "Best Food Match", "A breakfast match near the midpoint with enough flexibility for both schedules.", {
         single: ["brunch restaurant", "breakfast restaurant", "brunch cafe", "all day cafe"],
         district: ["brunch downtown", "walkable brunch area", "main street brunch", "restaurant district brunch"]
       }),
-      category("restaurant", "Restaurants", "A classic sit-down plan for lunch or dinner.", "Best Food Match", "A strong restaurant match near the midpoint, with fair drive times for both people.", {
-        single: ["restaurant", "casual restaurant", "highly rated restaurant", "dinner restaurant"],
-        district: ["restaurant district", "downtown restaurants", "walkable dining district", "main street restaurants"]
-      }),
+      category("coffee", "Coffee Shops", "Simple, flexible spots for an easy first plan.", "Best Food Match", "A simple low-commitment meet-up spot with balanced travel times.", {
+        single: ["coffee shop", "cafe", "espresso bar", "coffee roaster"],
+        district: ["walkable cafe district", "coffee shops downtown", "main street cafes", "town center coffee"]
+      })
+    ]
+  },
+  {
+    id: "drinks",
+    label: "Drinks",
+    description: "Breweries, wine bars & more",
+    accent: "from-[#FFF4EC] to-white",
+    subcategories: [
       category("breweries", "Breweries", "Casual drinks, open seating, and group-friendly energy.", "Best Food Match", "A brewery-focused match near the midpoint with workable travel times for both people.", {
         single: ["brewery", "craft brewery", "brewpub", "beer garden"],
         district: ["brewery district", "downtown breweries", "walkable brewery area", "brewpub district"]
@@ -68,9 +115,33 @@ export const CATEGORY_GROUPS: PrimaryCategoryConfig[] = [
         single: ["wine bar", "wine lounge", "wine tasting room", "wine restaurant"],
         district: ["wine bars downtown", "walkable wine bar district", "downtown tasting rooms", "main street wine bars"]
       }),
-      category("dessert", "Dessert", "Short, sweet plans that do not overcomplicate the day.", "Best Food Match", "A dessert-focused spot near the midpoint for an easy, low-commitment meet-up.", {
-        single: ["dessert shop", "ice cream shop", "bakery", "gelato shop"],
-        district: ["downtown dessert shops", "walkable dessert area", "main street bakery", "town center dessert"]
+      category("cocktail_bars", "Cocktail Bars", "Cocktails, date-night bars, and elevated drink spots.", "Best Drinks Match", "A cocktail bar match near the midpoint with fair travel times.", {
+        single: ["cocktail bar", "craft cocktail bar", "speakeasy", "cocktail lounge"],
+        district: ["cocktail bars downtown", "walkable cocktail bar district", "main street cocktail bars", "downtown speakeasies"]
+      }),
+      category("lounges", "Lounges", "Lounge seating, calmer drinks, and conversation-friendly spots.", "Best Drinks Match", "A lounge match near the midpoint with a comfortable pace.", {
+        single: ["lounge", "bar lounge", "cocktail lounge", "hotel lounge"],
+        district: ["lounges downtown", "walkable lounge district", "hotel lounge area", "main street lounges"]
+      }),
+      category("pubs", "Pubs", "Pubs, taverns, and casual places for a relaxed drink.", "Best Drinks Match", "A pub match near the midpoint with balanced travel times.", {
+        single: ["pub", "tavern", "gastropub", "neighborhood pub"],
+        district: ["pubs downtown", "tavern district", "walkable pub district", "main street pubs"]
+      }),
+      category("rooftop_bars", "Rooftop Bars", "Views, skyline energy, and more memorable drink plans.", "Best Drinks Match", "A rooftop bar match near the midpoint with a stronger sense of occasion.", {
+        single: ["rooftop bar", "rooftop lounge", "skyline bar", "roof bar"],
+        district: ["rooftop bars downtown", "skyline bar district", "walkable rooftop bars", "downtown rooftop lounges"]
+      }),
+      category("distilleries", "Distilleries", "Distilleries, tasting rooms, and spirit-focused outings.", "Best Drinks Match", "A distillery match near the midpoint with fair travel times.", {
+        single: ["distillery", "craft distillery", "spirits tasting room", "whiskey distillery"],
+        district: ["distillery district", "downtown distilleries", "walkable distillery area", "tasting room district"]
+      }),
+      category("sports_bars", "Sports Bars", "Games, TVs, casual food, and high-energy meetups.", "Best Drinks Match", "A sports bar match near the midpoint with a built-in game-day plan.", {
+        single: ["sports bar", "bar with TVs", "game day bar", "sports pub"],
+        district: ["sports bars downtown", "walkable sports bar district", "main street sports bars", "bar district sports"]
+      }),
+      category("cigar_lounges", "Cigar Lounges", "Cigar lounges and slower, more intentional drink plans.", "Best Drinks Match", "A cigar lounge match near the midpoint with a relaxed pace.", {
+        single: ["cigar lounge", "cigar bar", "cigar shop lounge", "smoking lounge"],
+        district: ["cigar lounges downtown", "walkable cigar lounge area", "cigar bar district", "main street cigar lounge"]
       })
     ]
   },
@@ -157,13 +228,9 @@ export const CATEGORY_GROUPS: PrimaryCategoryConfig[] = [
   {
     id: "family",
     label: "Family",
-    description: "Parks, zoos, museums, playgrounds, and easy all-ages options.",
+    description: "Zoos, museums, aquariums, and easy all-ages options.",
     accent: "from-[#FFF7ED] to-white",
     subcategories: [
-      category("park", "Parks", "Open-air space with room to walk and reset.", "Best Overall Match", "A park match near the midpoint with room to walk, sit, and keep the plan flexible.", {
-        single: ["park", "public park", "garden", "nature park"],
-        district: ["walkable park district", "downtown park", "waterfront park area", "parks near main street"]
-      }),
       category("zoos", "Zoos", "Destination outings with a clear activity arc.", "Best Overall Match", "A zoo-focused match near the midpoint for a bigger family-friendly outing.", {
         single: ["zoo", "wildlife park", "animal park", "safari park"],
         district: ["zoo district", "wildlife park area", "family attraction district", "zoo nearby downtown"]
@@ -179,17 +246,13 @@ export const CATEGORY_GROUPS: PrimaryCategoryConfig[] = [
       category("museums", "Museums", "Museums, exhibits, galleries, and culture-forward meet-ups.", "Best Overall Match", "A museum match near the midpoint with a clear activity and fair drive times.", {
         single: ["museum", "art museum", "history museum", "gallery"],
         district: ["museum district", "downtown museums", "arts district", "walkable museum area"]
-      }),
-      category("playgrounds", "Playgrounds", "Simple outdoor meet-ups with low planning overhead.", "Best Overall Match", "A playground match near the midpoint for an easy, flexible family meet-up.", {
-        single: ["playground", "public playground", "inclusive playground", "kids playground"],
-        district: ["playgrounds near downtown", "park with playground", "walkable playground area", "family park district"]
       })
     ]
   },
   {
     id: "explore",
     label: "Explore",
-    description: "Downtowns, main streets, waterfronts, small towns, and scenic stops.",
+    description: "Downtowns, main streets, small towns, and flexible destination areas.",
     accent: "from-[#F1F5F9] to-white",
     subcategories: [
       category("downtowns", "Downtowns", "A whole area to wander, eat, shop, and explore.", "Best District", "A walkable downtown near the midpoint with multiple places to eat, shop, and explore.", {
@@ -200,17 +263,9 @@ export const CATEGORY_GROUPS: PrimaryCategoryConfig[] = [
         single: ["main street", "historic main street", "walkable shops", "town center"],
         district: ["main street", "walkable shopping district", "historic downtown"]
       }),
-      category("waterfronts", "Waterfronts", "Water views, walks, restaurants, and destination energy.", "Best District", "A waterfront match near the midpoint with places to walk, eat, and linger.", {
-        single: ["waterfront", "waterfront restaurant", "riverwalk", "marina"],
-        district: ["waterfront district", "riverwalk district", "walkable waterfront", "downtown waterfront"]
-      }),
       category("small_towns", "Small Towns", "A charming midpoint with a few easy stops.", "Best District", "A small-town match near the midpoint with a compact area to eat, shop, and explore.", {
         single: ["small town downtown", "historic town center", "main street", "town square"],
         district: ["small town downtown", "historic downtown", "walkable small town", "main street town center"]
-      }),
-      category("scenic_spots", "Scenic Spots", "Views, overlooks, gardens, and memorable places to pause.", "Best Overall Match", "A scenic match near the midpoint with a more memorable setting for the meet-up.", {
-        single: ["scenic overlook", "scenic spot", "viewpoint", "botanical garden"],
-        district: ["scenic downtown", "waterfront scenic area", "walkable scenic area", "scenic main street"]
       }),
       category("hotels", "Hotels", "Hotel lobbies, lounges, and overnight-friendly meeting points.", "Best Overall Match", "A hotel match near the midpoint that can work for longer trips or overnight plans.", {
         single: ["hotel", "boutique hotel", "hotel lounge", "inn"],
@@ -249,10 +304,70 @@ export const CATEGORY_GROUPS: PrimaryCategoryConfig[] = [
         district: ["college towns", "traditional campus", "residential colleges", "student town"]
       })
     ]
+  },
+  {
+    id: "outdoors",
+    label: "Outdoors",
+    description: "Parks, trails & fresh air",
+    accent: "from-[#F2EFE7] to-white",
+    subcategories: [
+      category("park", "Parks", "Open-air space with room to walk and reset.", "Best Outdoors Match", "A park match near the midpoint with room to walk, sit, and keep the plan flexible.", {
+        single: ["park", "public park", "garden", "nature park"],
+        district: ["walkable park district", "downtown park", "waterfront park area", "parks near main street"]
+      }),
+      category("hiking", "Hiking", "Hiking areas, nature paths, and outdoor activity plans.", "Best Outdoors Match", "A hiking match near the midpoint with a clear outdoor plan.", {
+        single: ["hiking area", "hiking trail", "trailhead", "nature trail"],
+        district: ["hiking trails area", "trailhead area", "nature trail district", "outdoor recreation area"]
+      }),
+      category("trails", "Trails", "Walking, biking, and multi-use trails.", "Best Outdoors Match", "A trail match near the midpoint for an easy outdoor meetup.", {
+        single: ["walking trail", "bike trail", "multi-use trail", "rail trail"],
+        district: ["trail district", "walkable trail area", "bike trail area", "greenway district"]
+      }),
+      category("gardens", "Gardens", "Botanical gardens, public gardens, and peaceful green spaces.", "Best Outdoors Match", "A garden match near the midpoint with a calmer outdoor setting.", {
+        single: ["botanical garden", "public garden", "arboretum", "garden"],
+        district: ["botanical garden area", "public gardens downtown", "walkable garden area", "arboretum district"]
+      }),
+      category("waterfronts", "Waterfronts", "Water views, walks, restaurants, and destination energy.", "Best Outdoors Match", "A waterfront match near the midpoint with places to walk, eat, and linger.", {
+        single: ["waterfront", "waterfront park", "riverwalk", "marina"],
+        district: ["waterfront district", "riverwalk district", "walkable waterfront", "downtown waterfront"]
+      }),
+      category("scenic_walks", "Scenic Walks", "Memorable walks, overlooks, and low-pressure outdoor plans.", "Best Outdoors Match", "A scenic walk match near the midpoint with a more memorable setting.", {
+        single: ["scenic walk", "scenic overlook", "viewpoint", "walking path"],
+        district: ["scenic walking area", "waterfront scenic walk", "walkable scenic area", "scenic main street"]
+      }),
+      category("dog_parks", "Dog Parks", "Dog-friendly parks and easy outdoor meetups.", "Best Outdoors Match", "A dog park match near the midpoint with an easy outdoor plan.", {
+        single: ["dog park", "off leash dog park", "dog friendly park", "pet friendly park"],
+        district: ["dog park area", "dog friendly park district", "walkable dog parks", "pet friendly outdoor area"]
+      }),
+      category("playgrounds", "Playgrounds", "Simple outdoor meet-ups with low planning overhead.", "Best Outdoors Match", "A playground match near the midpoint for an easy, flexible meet-up.", {
+        single: ["playground", "public playground", "inclusive playground", "kids playground"],
+        district: ["playgrounds near downtown", "park with playground", "walkable playground area", "family park district"]
+      }),
+      category("nature_preserves", "Nature Preserves", "Protected natural areas, quiet trails, and fresh air.", "Best Outdoors Match", "A nature preserve match near the midpoint for a quieter outdoor plan.", {
+        single: ["nature preserve", "wildlife preserve", "conservation area", "nature reserve"],
+        district: ["nature preserve area", "wildlife preserve district", "conservation area", "nature reserve area"]
+      }),
+      category("picnic_areas", "Picnic Areas", "Picnic spots, shelters, and relaxed outdoor gathering places.", "Best Outdoors Match", "A picnic area match near the midpoint for a relaxed outdoor plan.", {
+        single: ["picnic area", "picnic shelter", "park picnic area", "picnic tables"],
+        district: ["picnic area district", "parks with picnic areas", "walkable picnic spots", "outdoor picnic area"]
+      })
+    ]
   }
 ];
 
 const LEGACY_CATEGORIES: SubcategoryConfig[] = [
+  category("restaurant", "Restaurants", "A classic sit-down plan for lunch or dinner.", "Best Food Match", "A strong restaurant match near the midpoint, with fair drive times for both people.", {
+    single: ["restaurant", "casual restaurant", "highly rated restaurant", "dinner restaurant"],
+    district: ["restaurant district", "downtown restaurants", "walkable dining district", "main street restaurants"]
+  }),
+  category("brunch", "Brunch", "Daytime meals with room to linger.", "Best Food Match", "A balanced brunch option near the midpoint with enough flexibility for both schedules.", {
+    single: ["brunch restaurant", "breakfast restaurant", "brunch cafe", "all day cafe"],
+    district: ["brunch downtown", "walkable brunch area", "main street brunch", "restaurant district brunch"]
+  }),
+  category("dessert", "Dessert", "Short, sweet plans that do not overcomplicate the day.", "Best Food Match", "A dessert-focused spot near the midpoint for an easy, low-commitment meet-up.", {
+    single: ["dessert shop", "ice cream shop", "bakery", "gelato shop"],
+    district: ["downtown dessert shops", "walkable dessert area", "main street bakery", "town center dessert"]
+  }),
   category("shopping", "Shopping", "Legacy shopping category.", "Best Shopping Match", "A shopping match near the midpoint with places worth browsing together.", {
     single: ["shopping mall", "shopping center", "retail center", "stores"],
     district: ["shopping district", "walkable shopping district", "main street shops", "retail district"]
@@ -291,7 +406,8 @@ export function getCategoryConfig(category: VenueCategory) {
 
 export function getPrimaryCategory(category: VenueCategory) {
   category = normalizeCategory(category);
-  if (category === "bar") return CATEGORY_GROUPS[0];
+  if (category === "bar") return CATEGORY_GROUPS.find((group) => group.id === "drinks") ?? CATEGORY_GROUPS[0];
+  if (category === "restaurant" || category === "brunch" || category === "dessert") return CATEGORY_GROUPS.find((group) => group.id === "food") ?? CATEGORY_GROUPS[0];
   if (category === "shopping") return CATEGORY_GROUPS.find((group) => group.id === "shopping") ?? CATEGORY_GROUPS[0];
   if (category === "activities") return CATEGORY_GROUPS.find((group) => group.id === "activities") ?? CATEGORY_GROUPS[0];
   if (category === "family") return CATEGORY_GROUPS.find((group) => group.id === "family") ?? CATEGORY_GROUPS[0];
@@ -309,8 +425,119 @@ export function getDefaultCategoryForPrimary(primaryId: PrimaryCategoryId): Venu
 
 export function normalizeCategory(category: VenueCategory): VenueCategory {
   if (category === "colleges" || category === "universities") return "engineering_stem";
+  if (String(category) === "food_drink") return "coffee";
   if (String(category) === "real_estate" || String(category).startsWith("real_estate_")) return "downtowns";
   return category;
+}
+
+export function mapCategoryIntent(input: string | null | undefined): { category: VenueCategory; customQuery?: string } {
+  const raw = input?.trim();
+  if (!raw) return { category: "coffee" };
+
+  const normalized = raw.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, " ").trim();
+  const compact = normalized.replace(/\s+/g, "_");
+  const exact = CATEGORIES.find((item) => item.id === compact || item.label.toLowerCase() === normalized);
+  if (exact) return { category: normalizeCategory(exact.id) };
+
+  const aliases: Record<string, VenueCategory> = {
+    cafe: "coffee",
+    cafes: "coffee",
+    coffee_shop: "coffee",
+    coffee_shops: "coffee",
+    dinner: "restaurant",
+    lunch: "restaurant",
+    food: "restaurant",
+    cuisine: "restaurant",
+    dining: "restaurant",
+    italian_food: "italian",
+    barbecue: "bbq",
+    barbeque: "bbq",
+    mexican_food: "mexican",
+    tacos: "mexican",
+    taco: "mexican",
+    japanese: "sushi",
+    sushi_bar: "sushi",
+    asian_food: "asian",
+    american_food: "american",
+    indian_food: "indian",
+    mediterranean_food: "mediterranean",
+    greek: "mediterranean",
+    thai_food: "thai",
+    pizzeria: "pizza",
+    pizza_place: "pizza",
+    seafood_restaurant: "seafood",
+    steak: "steakhouse",
+    steak_house: "steakhouse",
+    breakfast: "breakfast",
+    vegan_food: "vegan",
+    vegetarian: "vegan",
+    drinks: "cocktail_bars",
+    cocktails: "cocktail_bars",
+    cocktail: "cocktail_bars",
+    cocktail_bar: "cocktail_bars",
+    bar: "cocktail_bars",
+    bars: "cocktail_bars",
+    pub: "pubs",
+    pubs: "pubs",
+    tavern: "pubs",
+    beer: "breweries",
+    brewery: "breweries",
+    wine: "wine_bars",
+    wine_bar: "wine_bars",
+    lounge: "lounges",
+    lounges: "lounges",
+    rooftop: "rooftop_bars",
+    rooftop_bar: "rooftop_bars",
+    distillery: "distilleries",
+    sports_bar: "sports_bars",
+    cigar: "cigar_lounges",
+    cigar_lounge: "cigar_lounges",
+    shopping_mall: "malls",
+    mall: "malls",
+    thrift: "thrifting",
+    antique: "antiques",
+    books: "bookstore",
+    books_store: "bookstore",
+    golf_course: "golf",
+    golf_range: "driving_range",
+    museum: "museums",
+    kids_museum: "childrens_museums",
+    children_museum: "childrens_museums",
+    childrens_museum: "childrens_museums",
+    outdoors: "park",
+    outdoor: "park",
+    parks: "park",
+    hiking: "hiking",
+    hike: "hiking",
+    trail: "trails",
+    trails: "trails",
+    garden: "gardens",
+    gardens: "gardens",
+    botanical_garden: "gardens",
+    playground: "playgrounds",
+    playgrounds: "playgrounds",
+    dog_park: "dog_parks",
+    dog_parks: "dog_parks",
+    nature: "nature_preserves",
+    nature_preserve: "nature_preserves",
+    picnic: "picnic_areas",
+    picnic_area: "picnic_areas",
+    zoo: "zoos",
+    aquarium: "aquariums",
+    hotel: "hotels",
+    main_street: "walkable_main_streets",
+    downtown: "downtowns",
+    waterfront: "waterfronts",
+    college: "engineering_stem",
+    colleges: "engineering_stem",
+    university: "engineering_stem",
+    universities: "engineering_stem"
+  };
+
+  const alias = aliases[compact];
+  if (alias) return { category: normalizeCategory(alias) };
+
+  return { category: "custom", customQuery: raw };
 }
 
 export function parseSearchMode(value: string | null | undefined): SearchMode {

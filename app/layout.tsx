@@ -21,8 +21,11 @@ export const metadata: Metadata = {
     "fair meeting place"
   ],
   icons: {
-    icon: "/icon",
-    apple: "/apple-icon"
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/branding/koi-favicon.png", sizes: "512x512", type: "image/png" }
+    ],
+    apple: "/branding/koi-app-icon-1024.png"
   },
   openGraph: {
     title: BRAND.seoTitle,
@@ -32,9 +35,9 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/halfway-hero-logo.png",
-        width: 1774,
-        height: 887,
+        url: "/branding/koi-logo-horizontal.png",
+        width: 940,
+        height: 360,
         alt: BRAND.name
       }
     ]
@@ -43,20 +46,20 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: BRAND.seoTitle,
     description: BRAND.description,
-    images: ["/halfway-hero-logo.png"]
+    images: ["/branding/koi-logo-horizontal.png"]
   }
 };
 
 const webApplicationJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  name: "Meet Me Halfway App",
-  alternateName: BRAND.name,
+  name: BRAND.name,
+  alternateName: "Ask Koi",
   url: BRAND.url,
   applicationCategory: "LifestyleApplication",
   operatingSystem: "Web",
   description: BRAND.description,
-  image: `${BRAND.url}/halfway-hero-logo.png`,
+  image: `${BRAND.url}/branding/koi-logo-horizontal.png`,
   offers: {
     "@type": "Offer",
     price: "0",

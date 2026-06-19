@@ -9,7 +9,7 @@ export default async function SharedMeetupPage({ params }: { params: Promise<{ i
     return (
       <main className="grid min-h-screen place-items-center bg-white px-4 text-center text-ink">
         <div className="max-w-md rounded-lg border border-line bg-paper p-6 shadow-soft">
-          <p className="text-sm font-bold uppercase tracking-wide text-clay">Halfway</p>
+          <p className="text-sm font-bold uppercase tracking-wide text-clay">Koi</p>
           <h1 className="mt-3 text-3xl font-black tracking-tight">Meetup link unavailable</h1>
           <p className="mt-3 text-sm leading-6 text-slate">
             This shared meetup may have expired or storage may not be configured.

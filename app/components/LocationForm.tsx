@@ -22,7 +22,7 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
   const [showInviteTools, setShowInviteTools] = useState(false);
   const [locationError, setLocationError] = useState("");
   const [isLocating, setIsLocating] = useState(false);
-  const inviteText = "Want to meet halfway? Add your starting point and we’ll find somewhere that works for both of us.";
+  const inviteText = "Want to meet in the middle? Add your starting point and Koi will find somewhere that works for both of us.";
 
   useEffect(() => {
     setInviteUrl(window.location.origin);
@@ -72,14 +72,14 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
   const searchMode = form.searchMode ?? "midpoint";
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-lg border border-line bg-paper p-5 shadow-soft sm:p-7">
+    <form onSubmit={handleSubmit} className="w-full min-w-0 overflow-hidden rounded-lg border border-line bg-paper p-5 shadow-soft sm:p-7">
       <div className="mb-6">
         <Logo size="sm" />
         <h2 className="mt-2 text-2xl font-black tracking-tight text-ink sm:text-3xl">
-          Where should you meet?
+          Where should Koi look?
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate">
-          Enter two locations for a midpoint search, or search around one place.
+          One place is enough for nearby ideas. Add a second place when you want Koi to balance the trip.
         </p>
       </div>
 
@@ -203,7 +203,7 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
       <button
         type="submit"
         disabled={loading}
-        className="mt-6 h-11 w-full rounded-full bg-clay px-5 font-bold text-white shadow-[0_10px_24px_rgba(255,107,107,0.22)] transition hover:bg-[#E55757] focus:outline-none focus:ring-4 focus:ring-clay/25 disabled:cursor-not-allowed disabled:bg-ink/30 sm:h-12"
+        className="mt-6 h-11 w-full rounded-full bg-clay px-5 font-bold text-white shadow-[0_10px_24px_rgba(214,90,46,0.24)] transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25 disabled:cursor-not-allowed disabled:bg-ink/30 sm:h-12"
       >
         {loading ? `${submitCopy.replace("Find", "Finding")}...` : submitCopy}
       </button>
@@ -312,7 +312,11 @@ function getSubmitCopy(primaryId: ReturnType<typeof getPrimaryCategoryId>) {
       return "Find places";
     case "colleges":
       return "Find campus spots";
-    case "food_drink":
+    case "drinks":
+      return "Find drinks";
+    case "outdoors":
+      return "Find outdoor spots";
+    case "food":
     default:
       return "Find a place";
   }

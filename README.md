@@ -1,8 +1,8 @@
-# Halfway
+# Koi
 
-Find the perfect place for two people to meet.
+Find the best place to meet.
 
-Halfway is a mobile-first Next.js MVP that helps two people find high-quality meeting places near a balanced travel-time midpoint. It searches restaurants, bars, coffee shops, bookstores, driving ranges, parks, dessert spots, or a custom venue type, then ranks venues by travel-time balance and venue quality.
+Koi is a mobile-first Next.js MVP for an intelligent local meeting assistant. Ask Koi where everyone is coming from, what kind of spot you want, and what matters most; the app still handles geocoding, midpoint calculation, Google Places search, and venue ranking itself.
 
 ## Stack
 
@@ -33,8 +33,18 @@ Set:
 
 ```bash
 GOOGLE_MAPS_API_KEY=your_google_maps_key
+NLP_PROVIDER=ollama
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=qwen3:8b
+OLLAMA_TIMEOUT_MS=30000
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
+
+`GOOGLE_MAPS_API_KEY` is used only by the server-side Google Maps, Places, Geocoding, and Routes calls. `NLP_PROVIDER`, `OLLAMA_BASE_URL`, and `OLLAMA_MODEL` are used only by the server-side natural-language parser. The browser never receives the model endpoint.
+
+For production hosting, `OLLAMA_BASE_URL` must point to an Ollama endpoint reachable from the server. `http://localhost:11434` works for local development only.
+
+For production on Vercel, set `NLP_PROVIDER=gemini` and add `GOOGLE_API_KEY` or `GEMINI_API_KEY` if you want full cloud parsing. Without either parser provider, Koi falls back to a limited deterministic parser for common "between A and B" prompts.
 
 Then run:
 
@@ -48,10 +58,67 @@ Open `http://localhost:3000`.
 
 - `POST /api/geocode`
 - `POST /api/places`
+- `POST /api/parse-search`
 - `POST /api/route-matrix`
 - `POST /api/search-halfway`
 
 The browser calls `/api/search-halfway`; the server handles Google API calls so the Google Maps API key is not exposed to client code.
+
+The browser can also call `/api/parse-search` with `{ "query": "Find a coffee shop between Hoboken and Edison with easy parking" }`. That route calls Ollama/Qwen server-side to parse user intent into structured JSON only:
+
+```json
+{
+  "location_a": "Hoboken, NJ",
+  "location_b": "Edison, NJ",
+  "category": "coffee"
+}
+```
+
+Qwen does not geocode, calculate midpoints, search Places, or rank venues. After parsing, the app fills the existing `SearchHalfwayRequest` form and sends it through `/api/search-halfway`, so Koi's own Google Maps and scoring logic remains the source of truth.
+
+## Local Test Checklist
+
+Run type checking:
+
+```bash
+npm run typecheck
+```
+
+Run the app:
+
+```bash
+npm run dev
+```
+
+Test the parser route:
+
+```bash
+curl -s http://localhost:3000/api/parse-search \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"Find a coffee shop between Hoboken and Edison with easy parking"}'
+```
+
+Expected response shape:
+
+```json
+{
+  "parsed": {
+    "location_a": "Hoboken, NJ",
+    "location_b": "Edison, NJ",
+    "category": "coffee"
+  },
+  "form": {
+    "locationA": "Hoboken, NJ",
+    "locationB": "Edison, NJ",
+    "category": "coffee",
+    "searchMode": "midpoint",
+    "meetupMode": "single",
+    "customQuery": ""
+  }
+}
+```
+
+In the UI, enter the same sentence in the Ask Koi box. It should populate the classic form underneath and then run the existing search.
 
 ## Scoring
 

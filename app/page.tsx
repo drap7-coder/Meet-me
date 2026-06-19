@@ -1,6 +1,7 @@
 "use client";
 
 import { EmptyState } from "@/app/components/EmptyState";
+import { AiSearchBox } from "@/app/components/AiSearchBox";
 import { CategoryIcon } from "@/app/components/CategoryIcon";
 import { LocationForm } from "@/app/components/LocationForm";
 import { Logo } from "@/app/components/Logo";
@@ -163,6 +164,11 @@ export default function HomePage() {
     submitSearch(nextForm);
   }
 
+  function runParsedSearch(nextForm: SearchHalfwayRequest) {
+    setForm(nextForm);
+    submitSearch(nextForm);
+  }
+
   function clearRecent() {
     clearRecentMeetups();
     setRecentMeetups([]);
@@ -244,7 +250,7 @@ export default function HomePage() {
       }
       const result = await shareWithFallback({
         title: `${BRAND.name} meetup`,
-        text: "Here is the Halfway search.",
+        text: "Here is the Koi search.",
         url: fallbackUrl
       });
       if (result === "shared" || result === "copied") setShareMessage("Search link copied.");
@@ -254,19 +260,21 @@ export default function HomePage() {
   }
 
   return (
-    <main className="min-h-screen bg-mint text-ink">
+    <main className="min-h-screen overflow-x-hidden bg-mint text-ink">
       <SiteHeader />
 
       {!hasSearched && !results && !loading ? (
         <>
-          <section id="search" className="relative isolate overflow-hidden bg-paper px-4 pb-8 pt-4 sm:px-6 sm:pt-6 lg:px-8">
-            <div className="relative z-10 mx-auto grid max-w-5xl gap-6 py-8 lg:py-12">
+          <section id="search" className="relative isolate overflow-hidden bg-ink px-4 pb-8 pt-4 sm:px-6 sm:pt-6 lg:px-8">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_28%_18%,rgba(214,90,46,0.24),transparent_28%),radial-gradient(circle_at_72%_8%,rgba(242,239,231,0.10),transparent_24%)]" />
+            <div className="relative z-10 mx-auto grid w-full max-w-5xl gap-6 py-8 lg:py-12">
               <MarketingHero />
-              <LocationForm form={form} loading={loading} onChange={setForm} onSubmit={submitSearch} />
+              <AiSearchBox loading={loading} onParsed={runParsedSearch} />
+              <ClassicSearchPanel form={form} loading={loading} onChange={setForm} onSubmit={submitSearch} />
             </div>
           </section>
           <section className="bg-mint px-4 pb-10 pt-5 sm:px-6 lg:px-8">
-            <div className="mx-auto grid max-w-5xl gap-5">
+            <div className="mx-auto grid w-full max-w-5xl gap-5">
               <RecentMeetupsSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
             </div>
           </section>
@@ -294,7 +302,7 @@ export default function HomePage() {
           ) : null}
 
           {hasSearched || results || loading || showRoadDividerPreview ? (
-            <RoadDivider className="relative left-1/2 mt-5 w-screen -translate-x-1/2 px-4 sm:px-6 lg:px-8" />
+            <RoadDivider className="mt-5 w-full" />
           ) : null}
 
           {error ? (
@@ -304,8 +312,9 @@ export default function HomePage() {
           ) : null}
 
           {error && !loading && !results ? (
-            <section id="search" className="mt-5 grid max-w-5xl gap-5">
-              <LocationForm form={form} loading={loading} onChange={setForm} onSubmit={submitSearch} />
+          <section id="search" className="mt-5 grid w-full max-w-5xl gap-5">
+              <AiSearchBox loading={loading} onParsed={runParsedSearch} />
+              <ClassicSearchPanel form={form} loading={loading} onChange={setForm} onSubmit={submitSearch} />
               <RecentMeetupsSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
             </section>
           ) : null}
@@ -339,7 +348,7 @@ export default function HomePage() {
             <div className="results-panel-enter order-2 grid gap-5 lg:order-1">
               {shareMessage ? <p className="mb-4 text-sm font-semibold text-clay">{shareMessage}</p> : null}
 
-              <WeatherCard midpoint={results.midpoint} />
+              <WeatherCard midpoint={results.midpoint} searchMode={results.searchMode} />
 
               {results.venues.length ? (
                 <div className="results-list-enter grid gap-4">
@@ -392,34 +401,34 @@ export default function HomePage() {
 }
 
 function MarketingHero() {
-  const trustItems = ["Equal travel times", "Local recommendations", "Weather at the midpoint"];
+  const trustItems = ["Nearby or balanced search", "Local recommendations", "Weather-aware planning"];
 
   return (
       <div className="max-w-4xl">
-        <p className="mb-4 text-sm font-black uppercase tracking-[0.18em] text-clay">
-          Meet me halfway app
+        <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-clay sm:mb-4 sm:text-sm">
+          Intelligent local meeting assistant
         </p>
-        <h1 className="max-w-4xl text-[clamp(48px,8vw,72px)] font-black leading-[0.96] tracking-[-0.04em] text-[#0f2537]">
-          The easiest way to meet halfway.
+        <h1 className="max-w-4xl text-[2.8rem] font-black leading-[0.96] tracking-[-0.04em] text-[#FFFDF8] sm:text-[clamp(48px,8vw,72px)]">
+          Koi finds the best place to meet.
         </h1>
-        <p className="mt-6 max-w-2xl text-lg font-medium leading-8 text-slate sm:text-xl">
-          Find the best place to meet in the middle, from restaurants and coffee shops to easy local meeting spots that work for everyone.
+        <p className="mt-5 max-w-2xl text-base font-medium leading-7 text-[#D7D0C4] sm:mt-6 sm:text-xl sm:leading-8">
+          Tell Koi where you are, what kind of spot you want, and what matters most — parking, vibe, distance, timing, or convenience.
         </p>
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:gap-4">
+        <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:gap-4">
           <a
-            href="#search"
-            className="inline-flex h-12 items-center justify-center rounded-full bg-clay px-7 text-base font-bold text-white shadow-glow transition hover:bg-[#E55757] focus:outline-none focus:ring-4 focus:ring-clay/25"
+            href="#ask-koi"
+            className="inline-flex h-12 items-center justify-center rounded-full bg-clay px-7 text-base font-bold text-white shadow-glow transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25"
           >
-            Start Planning
+            Ask Koi
           </a>
           <a
-            href="#how-it-works"
-            className="inline-flex h-12 items-center justify-center rounded-full border border-line bg-paper px-7 text-base font-bold text-ink shadow-[0_8px_22px_rgba(17,24,39,0.04)] transition hover:border-ink/30 focus:outline-none focus:ring-4 focus:ring-ink/10"
+            href="#classic-search"
+            className="inline-flex h-12 items-center justify-center rounded-full border border-white/15 bg-white/10 px-7 text-base font-bold text-white shadow-[0_8px_22px_rgba(10,19,35,0.18)] transition hover:border-clay/60 hover:bg-white/15 focus:outline-none focus:ring-4 focus:ring-white/10"
           >
-            See How It Works
+            Use classic search
           </a>
         </div>
-        <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm font-bold text-slate">
+        <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm font-bold text-[#D7D0C4] sm:mt-6">
           {trustItems.map((item) => (
             <span key={item} className="inline-flex items-center gap-2">
               <span className="text-clay" aria-hidden="true">✓</span>
@@ -465,7 +474,7 @@ function CompactResultsHeader({
               <button
                 type="button"
                 onClick={onShareOptions}
-                className="inline-flex h-10 items-center justify-center rounded-full bg-clay px-4 text-sm font-bold text-white transition hover:bg-[#E55757] focus:outline-none focus:ring-4 focus:ring-clay/25"
+                className="inline-flex h-10 items-center justify-center rounded-full bg-clay px-4 text-sm font-bold text-white transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25"
               >
                 Share this meetup
               </button>
@@ -522,7 +531,7 @@ function ShareDialog({
           <button
             type="button"
             onClick={copyLink}
-            className="inline-flex h-11 items-center justify-center rounded-full bg-clay px-4 text-sm font-bold text-white transition hover:bg-[#E55757] focus:outline-none focus:ring-4 focus:ring-clay/25"
+            className="inline-flex h-11 items-center justify-center rounded-full bg-clay px-4 text-sm font-bold text-white transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25"
           >
             Copy Link
           </button>
@@ -540,18 +549,50 @@ function ShareDialog({
   );
 }
 
+function ClassicSearchPanel({
+  form,
+  loading,
+  onChange,
+  onSubmit
+}: {
+  form: SearchHalfwayRequest;
+  loading: boolean;
+  onChange: (form: SearchHalfwayRequest) => void;
+  onSubmit: () => void;
+}) {
+  return (
+    <section id="classic-search" className="scroll-mt-24">
+      <p className="mb-3 text-sm font-black uppercase tracking-[0.14em] text-clay">Use classic search</p>
+      <LocationForm form={form} loading={loading} onChange={onChange} onSubmit={onSubmit} />
+    </section>
+  );
+}
+
 function SiteHeader() {
   return (
-    <header className="sticky top-0 z-50 border-b border-line bg-paper/90 pt-[env(safe-area-inset-top)] backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <a href="/" className="inline-flex min-w-0 items-center gap-2.5" aria-label={`${BRAND.name} home`}>
-          <Logo size="sm" />
+    <header className="sticky top-0 z-50 border-b border-line bg-paper/95 pt-[env(safe-area-inset-top)] shadow-[0_10px_28px_rgba(10,19,35,0.08)] backdrop-blur">
+      <div className="mx-auto flex h-[64px] w-full max-w-7xl items-center justify-between gap-2 px-3 sm:h-[72px] sm:gap-4 sm:px-6 lg:px-8">
+        <a href="/" className="group inline-flex min-w-0 flex-1 items-center gap-2 sm:gap-3" aria-label={`${BRAND.name} home`}>
+          <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-2xl border border-line bg-white shadow-[0_10px_24px_rgba(10,19,35,0.08)] ring-1 ring-clay/10 transition group-hover:ring-clay/40 sm:h-11 sm:w-11">
+            <img
+              src="/branding/koi-mark.png"
+              alt=""
+              aria-hidden="true"
+              className="h-full w-full object-contain"
+            />
+          </span>
+          <span className="grid min-w-0 leading-none">
+            <span className="truncate font-serif text-xl font-semibold tracking-wide text-ink sm:text-2xl">Koi</span>
+            <span className="mt-1 hidden text-[0.62rem] font-black uppercase tracking-[0.26em] text-clay sm:block">
+              Meet smarter
+            </span>
+          </span>
         </a>
         <a
-          href="#search"
-          className="inline-flex h-10 items-center justify-center rounded-full bg-ink px-5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(17,24,39,0.12)] transition hover:bg-ink/85 focus:outline-none focus:ring-4 focus:ring-ink/10"
+          href="#ask-koi"
+          className="inline-flex h-10 shrink-0 items-center justify-center rounded-full bg-clay px-3 text-xs font-black text-white shadow-[0_10px_24px_rgba(214,90,46,0.28)] transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25 sm:h-11 sm:px-6 sm:text-sm"
         >
-          Start Planning
+          Ask Koi
         </a>
       </div>
     </header>
@@ -568,7 +609,7 @@ function MeetInMiddleLoader() {
     >
       <div className="relative mx-auto h-20 max-w-md overflow-hidden rounded-full bg-sky/80 px-8">
         <div className="absolute left-8 right-8 top-1/2 h-px -translate-y-1/2 bg-line" />
-        <div className="meet-middle-dot meet-middle-dot-left absolute left-8 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-[#4F46E5] shadow-[0_0_0_8px_rgba(79,70,229,0.10)]" />
+        <div className="meet-middle-dot meet-middle-dot-left absolute left-8 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-[#2D3E57] shadow-[0_0_0_8px_rgba(45,62,87,0.12)]" />
         <div className="meet-middle-dot meet-middle-dot-right absolute right-8 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-ink shadow-[0_0_0_8px_rgba(18,50,74,0.10)]" />
         <div className="meet-middle-pin absolute left-1/2 top-1/2 grid h-10 w-10 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-clay text-white shadow-[0_12px_28px_rgba(255,107,95,0.28)] ring-8 ring-clay/10">
           <span className="h-3 w-3 rounded-full bg-white" />
@@ -584,9 +625,9 @@ function MeetInMiddleLoader() {
 
 function HowItWorks() {
   const steps = [
-    ["Add two locations", "Start with where each person is coming from."],
+    ["Tell Koi where to look", "Use one location for nearby options, or two when you want a balanced meeting point."],
     ["Choose the vibe", "Coffee, dinner, drinks, parks, or something different."],
-    ["Meet in the middle", "Pick a spot that feels easy for both of you."]
+    ["Pick somewhere good", "Koi compares local options so the plan feels easy to act on."]
   ];
 
   return (
@@ -594,7 +635,7 @@ function HowItWorks() {
       <div className="mx-auto max-w-7xl">
         <div className="max-w-2xl">
           <p className="text-sm font-bold uppercase tracking-wide text-clay">How it works</p>
-          <h2 className="mt-3 text-4xl font-black tracking-tight text-ink sm:text-5xl">Put in two places. Pick somewhere good.</h2>
+          <h2 className="mt-3 text-4xl font-black tracking-tight text-ink sm:text-5xl">Tell Koi the plan. Pick somewhere good.</h2>
         </div>
         <div className="mt-10 grid gap-4 md:grid-cols-3">
           {steps.map(([title, copy], index) => (
@@ -614,9 +655,9 @@ function HowItWorks() {
 
 function UseCases() {
   const cards = [
-    ["Fair for Both People", "Nearly equal travel times so nobody gets stuck with the long drive."],
-    ["Best Local Places", "Restaurants, coffee shops, bars, bookstores, golf courses, and more."],
-    ["Save Time", "Stop comparing locations manually. Pick a place and go."]
+    ["Smart Nearby Search", "One location plus preferences is enough to find strong nearby options."],
+    ["Fair for Two People", "Add a second location when you want balanced travel times."],
+    ["Best Local Places", "Restaurants, coffee shops, bars, bookstores, golf courses, and more."]
   ];
 
   return (
@@ -644,10 +685,10 @@ function UseCases() {
 function BrandSection() {
   return (
     <section className="px-4 py-16 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl rounded-lg bg-ink px-6 py-14 text-white shadow-soft sm:px-10 lg:px-14">
-        <h2 className="max-w-3xl text-4xl font-black tracking-tight sm:text-6xl">Halfway isn’t compromise.</h2>
+      <div className="mx-auto max-w-7xl rounded-lg bg-ink px-6 py-14 text-white shadow-soft ring-1 ring-clay/20 sm:px-10 lg:px-14">
+        <h2 className="max-w-3xl text-4xl font-black tracking-tight sm:text-6xl">Meeting in the middle should feel intentional.</h2>
         <p className="mt-5 max-w-2xl text-xl leading-8 text-white/70">
-          It’s the simplest way to make plans easier, faster, and actually happen.
+          Koi helps turn fuzzy plans into a place that feels easy, fair, and worth the trip.
         </p>
       </div>
     </section>
@@ -661,7 +702,7 @@ function FaqSection() {
         <div className="max-w-2xl">
           <p className="text-sm font-bold uppercase tracking-wide text-clay">FAQ</p>
           <h2 className="mt-3 text-4xl font-black tracking-tight text-ink sm:text-5xl">
-            Meet me halfway, without the guesswork.
+            Ask Koi, without losing the classic controls.
           </h2>
           <p className="mt-4 text-base font-semibold leading-7 text-slate">
             Answers for people searching for a meet me halfway app or trying to find the best place to meet in the middle.
@@ -710,7 +751,7 @@ function FeedbackSection() {
           </div>
           <a
             href={feedbackHref}
-            className="inline-flex h-11 items-center justify-center rounded-full bg-clay px-5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(255,107,107,0.22)] transition hover:bg-[#E55757] focus:outline-none focus:ring-4 focus:ring-clay/25"
+            className="inline-flex h-11 items-center justify-center rounded-full bg-clay px-5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(214,90,46,0.24)] transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25"
           >
             Send Feedback
           </a>
@@ -736,7 +777,7 @@ function Footer() {
         <div className="sm:text-right">
           <p className="leading-6">Questions, ideas, or feedback?</p>
           <p className="leading-6">We'd love to hear from you.</p>
-          <a href={feedbackHref} className="mt-3 inline-flex font-bold text-clay hover:text-[#E55757]">
+          <a href={feedbackHref} className="mt-3 inline-flex font-bold text-clay hover:text-[#B94A22]">
             Send Feedback -&gt;
           </a>
         </div>
@@ -757,39 +798,39 @@ function RecentMeetupsSection({
   if (!meetups.length) return null;
 
   return (
-    <section className="rounded-lg border border-line bg-paper p-5 shadow-soft sm:p-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
+    <section className="w-full min-w-0 overflow-hidden rounded-lg border border-line bg-paper p-4 shadow-soft sm:p-6">
+      <div className="flex min-w-0 items-start justify-between gap-3 sm:items-center sm:gap-4">
+        <div className="min-w-0 flex-1">
           <p className="text-sm font-bold uppercase tracking-wide text-clay">Recent Meetups</p>
-          <h2 className="mt-1 text-2xl font-black tracking-tight text-ink">Pick up where you left off.</h2>
+          <h2 className="mt-1 truncate text-xl font-black tracking-tight text-ink sm:text-2xl">Pick up where you left off.</h2>
         </div>
         <button
           type="button"
           onClick={onClear}
-          className="rounded-lg border border-line bg-mint px-3 py-2 text-sm font-bold text-slate transition hover:border-clay hover:text-clay"
+          className="shrink-0 rounded-lg border border-line bg-mint px-3 py-2 text-sm font-bold text-slate transition hover:border-clay hover:text-clay"
         >
           Clear
         </button>
       </div>
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+      <div className="mt-5 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
         {meetups.slice(0, 5).map((meetup) => (
           <button
             key={meetup.id}
             type="button"
             onClick={() => onSelect(meetup)}
-            className="rounded-lg border border-line bg-mint p-4 text-left shadow-[0_8px_22px_rgba(17,24,39,0.04)] transition hover:-translate-y-0.5 hover:border-clay hover:bg-white hover:shadow-soft"
+            className="w-full min-w-0 overflow-hidden rounded-lg border border-line bg-mint p-4 text-left shadow-[0_8px_22px_rgba(17,24,39,0.04)] transition hover:border-clay hover:bg-white hover:shadow-soft"
           >
-            <div className="flex items-start gap-3">
+            <div className="flex min-w-0 items-start gap-3">
               <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-sky" aria-hidden="true">
                 <CategoryIcon category={meetup.category} className="h-5 w-5" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="truncate text-base font-black text-ink">
                   {meetup.searchMode === "single"
                     ? `Near ${shortLocationLabel(meetup.originA)}`
                     : `${shortLocationLabel(meetup.originA)} ↔ ${shortLocationLabel(meetup.originB)}`}
                 </p>
-                <p className="mt-1 text-sm font-semibold text-slate">
+                <p className="mt-1 truncate text-sm font-semibold text-slate">
                   {getRecentMeetupCategoryLabel(meetup)} · {(meetup.meetupMode ?? "single") === "district" ? "District" : "Single place"} · {formatRecentMeetupDate(meetup.timestamp)}
                 </p>
                 {meetup.preferences?.length ? (
@@ -849,7 +890,7 @@ function formatMinutes(value: number | null) {
 
 function buildSingleVenueEmailBody(venue: ScoredVenue, currentUrl: string) {
   return [
-    "I found a halfway meetup option:",
+    "Koi found a meetup option:",
     "",
     venue.name,
     venue.address,
@@ -870,7 +911,7 @@ function buildMeetupEmailBody(results: SearchHalfwayResponse, currentUrl: string
   });
 
   return [
-    results.searchMode === "single" ? "I found meetup options nearby:" : "I found a halfway meetup option:",
+    results.searchMode === "single" ? "Koi found meetup options nearby:" : "Koi found a meetup option:",
     "",
     ...recommendations,
     "",

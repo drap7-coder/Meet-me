@@ -1,21 +1,21 @@
 export const FAQ_ITEMS = [
   {
-    question: "What is the Meet Me Halfway app?",
+    question: "What is Koi?",
     answer:
-      "Halfway is a meet me halfway app that helps you find the best place to meet in the middle between two locations, with balanced travel times and local recommendations."
+      "Koi is an intelligent local meeting assistant that helps you find the best place to meet in the middle between two locations, with balanced travel times and local recommendations."
   },
   {
     question: "How do I find a place halfway between two people?",
     answer:
-      "Enter both starting locations, choose the kind of meet-up you want, and Halfway recommends places near the midpoint that are convenient for both people."
+      "Tell Koi where each person is coming from, choose the kind of meet-up you want, and Koi recommends places near the midpoint that are convenient for both people."
   },
   {
-    question: "Can Halfway find restaurants and coffee shops between two locations?",
+    question: "Can Koi find restaurants and coffee shops between two locations?",
     answer:
-      "Yes. Halfway can search for restaurants, coffee shops, brunch spots, breweries, wine bars, shopping, activities, family spots, colleges, and places to explore."
+      "Yes. Koi can search for restaurants, coffee shops, brunch spots, breweries, wine bars, shopping, activities, family spots, colleges, and places to explore."
   },
   {
-    question: "Does Halfway compare drive times?",
+    question: "Does Koi compare drive times?",
     answer:
       "Yes. Result cards show drive time from each starting point, the difference between drive times, and a short explanation for why each recommendation works."
   },

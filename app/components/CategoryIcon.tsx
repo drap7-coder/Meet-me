@@ -28,10 +28,31 @@ export function CategoryIcon({ category, active = false, className = "h-4 w-4" }
 
 function getIconKey(category: VenueCategory | string) {
   const value = category.toLowerCase();
-  if (["restaurant", "brunch", "dessert"].includes(value)) return "utensils";
+  if (
+    [
+      "food",
+      "restaurant",
+      "brunch",
+      "dessert",
+      "italian",
+      "bbq",
+      "mexican",
+      "sushi",
+      "asian",
+      "american",
+      "indian",
+      "mediterranean",
+      "thai",
+      "pizza",
+      "seafood",
+      "steakhouse",
+      "breakfast",
+      "vegan"
+    ].includes(value)
+  ) return "utensils";
   if (value === "coffee") return "coffee";
-  if (value === "breweries" || value === "bar") return "beer";
-  if (value === "wine_bars") return "wine";
+  if (["drinks", "breweries", "bar", "pubs", "sports_bars"].includes(value)) return "beer";
+  if (["wine_bars", "cocktail_bars", "lounges", "rooftop_bars", "distilleries", "cigar_lounges"].includes(value)) return "wine";
   if (value === "events") return "calendar";
   if (value === "engineering_stem") return "flask";
   if (value === "business_finance") return "briefcase";
@@ -42,7 +63,23 @@ function getIconKey(category: VenueCategory | string) {
   if (value === "college_towns") return "trees";
   if (["sports", "golf", "driving_range", "pickleball", "bowling"].includes(value)) return "trophy";
   if (value === "hotels") return "bed";
-  if (["park", "parks", "playgrounds", "scenic_spots", "waterfronts"].includes(value)) return "trees";
+  if (
+    [
+      "outdoors",
+      "park",
+      "parks",
+      "hiking",
+      "trails",
+      "gardens",
+      "waterfronts",
+      "scenic_walks",
+      "dog_parks",
+      "playgrounds",
+      "nature_preserves",
+      "picnic_areas",
+      "scenic_spots"
+    ].includes(value)
+  ) return "trees";
   if (["museums", "childrens_museums", "aquariums", "zoos"].includes(value)) return "landmark";
   if (
     [

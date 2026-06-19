@@ -4,30 +4,47 @@
 
 :root {
   color-scheme: light;
-  background: #f8fafc;
-  --mmh-navy: #12324a;
-  --mmh-coral: #ff6b5f;
+  background: #f2efe7;
+  --mmh-navy: #0a1323;
+  --mmh-coral: #d65a2e;
+  --mmh-paper: #fffdf8;
+  --mmh-muted: #5f6f82;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  width: 100%;
+  overflow-x: hidden;
+}
+
 body {
+  width: 100%;
   margin: 0;
-  background: #f8fafc;
+  overflow-x: hidden;
+  background: #f2efe7;
   color: var(--mmh-navy);
   font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
 }
 
 button,
 input,
 select {
   font: inherit;
+  max-width: 100%;
 }
 
 ::selection {
-  background: #ff6b6b;
+  background: #d65a2e;
   color: #ffffff;
 }
 
@@ -116,7 +133,7 @@ select {
   justify-content: center;
   border: 1px solid #d8dee8;
   border-radius: 999px;
-  background: #f6f8fb;
+  background: #fff7ed;
   color: var(--mmh-navy);
   padding: 10px 14px;
   font-size: 0.9rem;
@@ -130,6 +147,13 @@ select {
 
 .college-research-links a:hover {
   transform: translateY(-1px);
+}
+
+@media (hover: none), (pointer: coarse) {
+  .category-card,
+  .college-research-links a {
+    transform: none !important;
+  }
 }
 
 .college-research-links a:first-child {
@@ -147,16 +171,16 @@ select {
   display: block;
 }
 
-.road-divider-track {
+.road-divider-track,
+.road-divider-depth {
   stroke-dasharray: 980;
   stroke-dashoffset: 980;
   animation: road-divider-draw 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-.road-divider-dashes {
-  opacity: 0;
-  transform: translateX(-18px);
-  animation: road-divider-dashes 0.7s ease-out 0.22s forwards;
+.road-divider-depth {
+  opacity: 0.46;
+  animation-delay: 0.08s;
 }
 
 @keyframes road-divider-draw {
@@ -165,20 +189,11 @@ select {
   }
 }
 
-@keyframes road-divider-dashes {
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .road-divider-track,
-  .road-divider-dashes {
+  .road-divider-depth {
     animation: none;
-    opacity: 1;
     stroke-dashoffset: 0;
-    transform: none;
   }
 }
 

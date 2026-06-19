@@ -8,17 +8,17 @@ export default function manifest(): MetadataRoute.Manifest {
     description: BRAND.description,
     start_url: "/",
     display: "standalone",
-    background_color: "#F8FAFC",
-    theme_color: "#12324A",
+    background_color: "#F2EFE7",
+    theme_color: "#0A1323",
     icons: [
       {
-        src: "/icon",
+        src: "/branding/koi-favicon.png",
         sizes: "512x512",
         type: "image/png"
       },
       {
-        src: "/apple-icon",
-        sizes: "512x512",
+        src: "/branding/koi-app-icon-1024.png",
+        sizes: "1024x1024",
         type: "image/png"
       }
     ]

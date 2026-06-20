@@ -101,7 +101,7 @@ export default function HomePage() {
 
   const resultCountLabel = useMemo(() => {
     if (watchEventsResult) {
-      const label = watchEventsResult.preview ? "preview option" : "movie pick";
+      const label = watchEventsResult.preview ? "preview option" : "watch pick";
       return `${watchEventsResult.resultCount} ${label}${watchEventsResult.resultCount === 1 ? "" : "s"}`;
     }
     if (!results) return "";

@@ -11,7 +11,7 @@ export const WATCH_EVENTS_DESCRIPTION = "Find movies, sports, live events, and w
 export const WATCH_EVENTS_PREVIEW_MESSAGE =
   "Preview results below are curated by Koi from your ask. Live listings and ticket data is coming soon.";
 export const WATCH_EVENTS_LIVE_MOVIE_MESSAGE =
-  "Movie picks below come from TMDB based on your ask. Streaming availability is coming soon.";
+  "Movie and TV picks below come from TMDB based on your ask. Streaming availability is coming soon.";
 
 export const WATCH_EVENTS_FUTURE_PROVIDERS = [
   "TMDB",

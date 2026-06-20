@@ -107,6 +107,7 @@ export type WatchEventsRecommendation = {
   rating?: string;
   overview?: string;
   runtime?: string;
+  mediaType?: "movie" | "tv";
 };
 
 export type WatchEventsResult = {

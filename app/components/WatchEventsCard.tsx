@@ -48,7 +48,9 @@ export function WatchEventsCard({ item }: Props) {
             {item.preview ? (
               <span className="inline-flex rounded-full bg-sky px-2.5 py-1 text-xs font-bold text-slate">Preview</span>
             ) : (
-              <span className="inline-flex rounded-full bg-[#E8F5EE] px-2.5 py-1 text-xs font-bold text-[#176644]">Live pick</span>
+              <span className="inline-flex rounded-full bg-[#E8F5EE] px-2.5 py-1 text-xs font-bold text-[#176644]">
+                {item.mediaType === "tv" ? "Live TV pick" : "Live pick"}
+              </span>
             )}
           </div>
           <h3 className="text-xl font-black leading-tight text-ink">{item.title}</h3>

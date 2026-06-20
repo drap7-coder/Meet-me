@@ -73,8 +73,8 @@ export const WATCH_CATEGORY_GROUPS: WatchCategoryGroup[] = [
     iconCategory: "events",
     options: [
       { id: "whats-on-tv", label: "What's on TV", query: "What's on TV tonight?", iconCategory: "events" },
-      { id: "trending-shows", label: "Trending Shows", query: "What should we watch tonight?", iconCategory: "events" },
-      { id: "new-releases", label: "New Releases", query: "What new releases should we watch tonight?", iconCategory: "events" }
+      { id: "trending-shows", label: "Trending Shows", query: "Best trending TV shows tonight", iconCategory: "events" },
+      { id: "new-releases", label: "New Releases", query: "What new TV series should we watch tonight?", iconCategory: "events" }
     ]
   }
 ];
@@ -106,6 +106,13 @@ export function getWatchCategoryGroupForQuery(query: string) {
     /\b(?:movie|movies|film|films|tonight)\b/i.test(normalized)
   ) {
     return WATCH_CATEGORY_GROUPS.find((group) => group.id === "movies") ?? DEFAULT_WATCH_CATEGORY_GROUP;
+  }
+
+  if (
+    /\b(?:tv|television|series|shows?)\b/i.test(normalized) ||
+    /\bwhat(?:'s| is) on (?:tv|television)\b/i.test(normalized)
+  ) {
+    return WATCH_CATEGORY_GROUPS.find((group) => group.id === "tv_shows") ?? DEFAULT_WATCH_CATEGORY_GROUP;
   }
 
   return DEFAULT_WATCH_CATEGORY_GROUP;

@@ -1,12 +1,13 @@
 import type { WatchEventsIntent, WatchEventsRecommendation } from "@/lib/types";
 import {
-  discoverMoviesByGenre,
-  fetchNewReleaseMovies,
-  fetchSimilarMovies,
-  fetchTrendingMovies,
+  discoverMediaByGenre,
+  fetchNewReleaseMedia,
+  fetchSimilarMedia,
+  fetchTrendingMedia,
   isTmdbConfigured,
-  searchMovies,
-  type TmdbMovie
+  searchMedia,
+  type TmdbMediaKind,
+  type TmdbPick
 } from "@/lib/tmdb";
 
 type MovieRecommendationContext = {
@@ -17,7 +18,7 @@ type MovieRecommendationContext = {
   genre: string;
 };
 
-const LIVE_MOVIE_BADGES = ["Best match", "Highly rated", "Worth a look"] as const;
+const LIVE_BADGES = ["Best match", "Highly rated", "Worth a look"] as const;
 
 export async function tryBuildLiveMovieRecommendations(
   context: MovieRecommendationContext
@@ -28,21 +29,29 @@ export async function tryBuildLiveMovieRecommendations(
     return null;
   }
 
+  const mediaKind = detectMediaKind(context.query);
+
   try {
     if (context.intent === "stream" && context.topic && context.topic !== "movies") {
-      return buildTitleSearchRecommendations(context.topic, context.timeframe);
+      return buildTitleSearchRecommendations(context.topic, context.timeframe, mediaKind);
     }
 
     if (context.genre) {
-      return buildGenreRecommendations(context.genre, context.timeframe);
+      return buildGenreRecommendations(context.genre, context.timeframe, mediaKind);
     }
 
     if (/\bnew releases?\b/i.test(context.query)) {
-      return buildSimpleRecommendations(await fetchNewReleaseMovies(3), context.timeframe, "New releases");
+      return buildSimpleRecommendations(
+        await fetchNewReleaseMedia(mediaKind, 3),
+        context.timeframe,
+        mediaKind === "tv" ? "New series" : "New releases",
+        mediaKind
+      );
     }
 
     if (context.intent === "general" || context.intent === "stream") {
-      return buildSimpleRecommendations(await fetchTrendingMovies(3), context.timeframe, "Trending");
+      const lane = mediaKind === "tv" ? "Trending TV" : "Trending";
+      return buildSimpleRecommendations(await fetchTrendingMedia(mediaKind, 3), context.timeframe, lane, mediaKind);
     }
 
     return null;
@@ -51,80 +60,117 @@ export async function tryBuildLiveMovieRecommendations(
   }
 }
 
-async function buildGenreRecommendations(genre: string, timeframe: string) {
-  const movies = await discoverMoviesByGenre(genre, 3);
-  if (!movies.length) return null;
+export function detectMediaKind(query: string): TmdbMediaKind {
+  const normalized = query.trim().toLowerCase();
+
+  if (/\b(?:movie|movies|film|films)\b/i.test(normalized)) return "movie";
+  if (/\b(?:tv show|tv shows|television show|television series)\b/i.test(normalized)) return "tv";
+  if (/\bwhat(?:'s| is) on (?:tv|television)\b/i.test(normalized)) return "tv";
+  if (/\b(?:trending shows?|binge|series|tv|television)\b/i.test(normalized)) return "tv";
+  if (
+    /\b(?:show|shows)\b/i.test(normalized) &&
+    !/\b(?:comedy show|live show|game show|talk show|talent show|concert)\b/i.test(normalized)
+  ) {
+    return "tv";
+  }
+
+  return "movie";
+}
+
+async function buildGenreRecommendations(genre: string, timeframe: string, mediaKind: TmdbMediaKind) {
+  const picks = await discoverMediaByGenre(genre, mediaKind, 3);
+  if (!picks.length) return null;
 
   const label = genre === "sci-fi" ? "Sci-Fi" : capitalizeWords(genre);
-  return movies.map((movie, index) =>
-    movieRecommendation({
-      movie,
+  const formatLabel = mediaKind === "tv" ? "TV series" : "Movie";
+  return picks.map((pick, index) =>
+    mediaRecommendation({
+      pick,
       rank: index + 1,
       kind: "general",
-      badge: LIVE_MOVIE_BADGES[index] ?? "Pick",
-      subtitle: `${timeframe} · ${label}`,
+      badge: LIVE_BADGES[index] ?? "Pick",
+      subtitle: `${timeframe} · ${label} ${mediaKind === "tv" ? "series" : "movies"}`,
       explanation:
         index === 0
-          ? `Koi matched your ${label.toLowerCase()} ask to a strong crowd-pleaser in that genre.`
+          ? `Koi matched your ${label.toLowerCase()} ask to a strong ${formatLabel.toLowerCase()} in that genre.`
           : index === 1
-            ? `A well-rated ${label.toLowerCase()} option when you want something with more acclaim.`
-            : `A fresher ${label.toLowerCase()} pick if you want something newer or less obvious.`,
-      tags: [label, timeframe, formatRating(movie.rating)],
-      meta: buildMovieMeta(movie, label)
+            ? `A well-rated ${label.toLowerCase()} ${formatLabel.toLowerCase()} when you want something with more acclaim.`
+            : `A fresher ${label.toLowerCase()} ${formatLabel.toLowerCase()} if you want something newer or less obvious.`,
+      tags: [label, timeframe, formatRating(pick.rating)],
+      meta: buildMediaMeta(pick, label)
     })
   );
 }
 
-async function buildTitleSearchRecommendations(title: string, timeframe: string) {
-  const matches = await searchMovies(title, 1);
+async function buildTitleSearchRecommendations(title: string, timeframe: string, mediaKind: TmdbMediaKind) {
+  const matches = await searchMedia(title, mediaKind, 1);
   const primary = matches[0];
-  if (!primary) return null;
+  if (!primary) {
+    const fallbackKind: TmdbMediaKind = mediaKind === "movie" ? "tv" : "movie";
+    const fallbackMatches = await searchMedia(title, fallbackKind, 1);
+    if (!fallbackMatches[0]) return null;
+    return buildTitleResults(fallbackMatches[0], timeframe, fallbackKind);
+  }
 
-  const similar = await fetchSimilarMovies(primary.id, 2);
-  const movies = [primary, ...similar.filter((movie) => movie.id !== primary.id)].slice(0, 3);
-  if (!movies.length) return null;
+  return buildTitleResults(primary, timeframe, mediaKind);
+}
 
-  return movies.map((movie, index) =>
-    movieRecommendation({
-      movie,
+async function buildTitleResults(primary: TmdbPick, timeframe: string, mediaKind: TmdbMediaKind) {
+  const similar = await fetchSimilarMedia(primary.id, mediaKind, 2);
+  const picks = [primary, ...similar.filter((pick) => pick.id !== primary.id)].slice(0, 3);
+  if (!picks.length) return null;
+
+  const formatLabel = mediaKind === "tv" ? "series" : "movie";
+
+  return picks.map((pick, index) =>
+    mediaRecommendation({
+      pick,
       rank: index + 1,
       kind: "stream",
       badge: index === 0 ? "Title match" : "Similar pick",
       subtitle: index === 0 ? `${timeframe} · Matches your title ask` : `${timeframe} · If you want something like it`,
       explanation:
         index === 0
-          ? `Koi found the movie you named and pulled real details from TMDB. Streaming availability is coming later.`
-          : `A related pick if ${primary.title} is not the mood or already watched.`,
-      tags: index === 0 ? ["Title match", timeframe, formatRating(movie.rating)] : ["Similar", timeframe, formatRating(movie.rating)],
-      meta: buildMovieMeta(movie, index === 0 ? "Title match" : "Similar")
+          ? `Koi found the ${formatLabel} you named and pulled real details from TMDB. Streaming availability is coming later.`
+          : `A related ${formatLabel} if ${primary.title} is not the mood or already watched.`,
+      tags:
+        index === 0
+          ? ["Title match", timeframe, formatRating(pick.rating)]
+          : ["Similar", timeframe, formatRating(pick.rating)],
+      meta: buildMediaMeta(pick, index === 0 ? "Title match" : "Similar")
     })
   );
 }
 
-function buildSimpleRecommendations(movies: TmdbMovie[], timeframe: string, lane: string) {
-  if (!movies.length) return null;
+function buildSimpleRecommendations(
+  picks: TmdbPick[],
+  timeframe: string,
+  lane: string,
+  mediaKind: TmdbMediaKind
+) {
+  if (!picks.length) return null;
 
-  return movies.map((movie, index) =>
-    movieRecommendation({
-      movie,
+  return picks.map((pick, index) =>
+    mediaRecommendation({
+      pick,
       rank: index + 1,
       kind: "general",
-      badge: LIVE_MOVIE_BADGES[index] ?? "Pick",
+      badge: LIVE_BADGES[index] ?? "Pick",
       subtitle: `${timeframe} · ${lane}`,
       explanation:
         index === 0
-          ? `Koi pulled tonight-friendly picks from TMDB based on your broad watch ask.`
+          ? `Koi pulled ${mediaKind === "tv" ? "TV series" : "movie"} picks from TMDB based on your watch ask.`
           : index === 1
             ? `Another strong option when the first pick does not land with the group.`
             : `A backup pick to keep decision time short.`,
-      tags: [lane, timeframe, formatRating(movie.rating)],
-      meta: buildMovieMeta(movie, lane)
+      tags: [lane, timeframe, formatRating(pick.rating)],
+      meta: buildMediaMeta(pick, lane)
     })
   );
 }
 
-function movieRecommendation(input: {
-  movie: TmdbMovie;
+function mediaRecommendation(input: {
+  pick: TmdbPick;
   rank: number;
   kind: WatchEventsRecommendation["kind"];
   badge: string;
@@ -133,11 +179,11 @@ function movieRecommendation(input: {
   tags: string[];
   meta: Array<{ label: string; value: string }>;
 }): WatchEventsRecommendation {
-  const { movie, rank } = input;
+  const { pick, rank } = input;
   return {
-    id: `tmdb-${movie.id}-${rank}`,
+    id: `tmdb-${pick.kind}-${pick.id}-${rank}`,
     rank,
-    title: movie.title,
+    title: pick.title,
     subtitle: input.subtitle,
     kind: input.kind,
     badge: input.badge,
@@ -145,22 +191,27 @@ function movieRecommendation(input: {
     tags: input.tags,
     meta: input.meta,
     actionLabel: "View on TMDB",
-    actionUrl: movie.tmdbUrl,
+    actionUrl: pick.tmdbUrl,
     provider: "TMDB",
     preview: false,
-    posterUrl: movie.posterUrl,
-    year: movie.year,
-    rating: formatRating(movie.rating),
-    overview: trimOverview(movie.overview),
-    runtime: formatRuntime(movie.runtimeMinutes)
+    mediaType: pick.kind,
+    posterUrl: pick.posterUrl,
+    year: pick.year,
+    rating: formatRating(pick.rating),
+    overview: trimOverview(pick.overview),
+    runtime: formatDuration(pick)
   };
 }
 
-function buildMovieMeta(movie: TmdbMovie, genreLabel: string) {
+function buildMediaMeta(pick: TmdbPick, genreLabel: string) {
   return [
-    { label: "Rating", value: formatRating(movie.rating) },
-    { label: "Year", value: movie.year || "—" },
-    { label: "Runtime", value: formatRuntime(movie.runtimeMinutes) },
+    { label: "Type", value: pick.kind === "tv" ? "TV series" : "Movie" },
+    { label: "Rating", value: formatRating(pick.rating) },
+    { label: "Year", value: pick.year || "—" },
+    {
+      label: pick.kind === "tv" ? "Seasons" : "Runtime",
+      value: pick.kind === "tv" ? formatSeasons(pick.seasonCount) : formatRuntime(pick.runtimeMinutes)
+    },
     { label: "Genre lane", value: genreLabel }
   ];
 }
@@ -176,6 +227,24 @@ function formatRuntime(minutes: number | null) {
   const mins = minutes % 60;
   if (!hours) return `${mins}m`;
   return mins ? `${hours}h ${mins}m` : `${hours}h`;
+}
+
+function formatSeasons(value: number | null) {
+  if (!value || value <= 0) return "—";
+  return value === 1 ? "1 season" : `${value} seasons`;
+}
+
+function formatDuration(pick: TmdbPick) {
+  if (pick.kind === "tv") {
+    const seasons = formatSeasons(pick.seasonCount);
+    const episodeLength = formatRuntime(pick.runtimeMinutes);
+    if (seasons === "—" && episodeLength === "—") return "—";
+    if (episodeLength === "—") return seasons;
+    if (seasons === "—") return `${episodeLength}/ep`;
+    return `${seasons} · ${episodeLength}/ep`;
+  }
+
+  return formatRuntime(pick.runtimeMinutes);
 }
 
 function trimOverview(value: string) {

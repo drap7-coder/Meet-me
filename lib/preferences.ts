@@ -61,7 +61,7 @@ export const PREFERENCES: Array<{
     label: "Quick Stop",
     helper: "Bias toward easy, low-commitment places.",
     badge: "Best Quick Stop",
-    terms: ["quick", "casual", "cafe", "coffee", "grab and go", "easy", "counter service", "parking"]
+    terms: ["quick stop", "grab and go", "counter service", "low commitment"]
   }
 ];
 
@@ -80,6 +80,21 @@ export function parsePreferences(value: string | null): Preference[] {
     .split(",")
     .map((item) => item.trim())
     .filter((item): item is Preference => valid.has(item as Preference));
+}
+
+export function detectPreferencesFromQuery(query: string): Preference[] {
+  const normalized = query.toLowerCase();
+  const matches: Preference[] = [];
+
+  for (const preference of PREFERENCES) {
+    const matched = preference.terms.some((term) => {
+      const pattern = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+");
+      return new RegExp(`\\b${pattern}\\b`, "i").test(normalized);
+    });
+    if (matched) matches.push(preference.id);
+  }
+
+  return Array.from(new Set(matches));
 }
 
 export function preferenceLabels(preferences: Preference[]) {

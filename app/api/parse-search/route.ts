@@ -1,4 +1,5 @@
 import { mapCategoryIntent } from "@/lib/categories";
+import { detectPreferencesFromQuery } from "@/lib/preferences";
 import type { SearchHalfwayRequest } from "@/lib/types";
 import { NextResponse } from "next/server";
 
@@ -54,13 +55,15 @@ export async function POST(request: Request) {
       );
     }
 
+    const preferences = detectPreferencesFromQuery(query);
     const form: SearchHalfwayRequest = {
       locationA,
       locationB: searchMode === "single" ? "" : locationB,
       category: categoryIntent.category,
       searchMode,
       meetupMode: "single",
-      customQuery: categoryIntent.customQuery ?? ""
+      customQuery: categoryIntent.customQuery ?? "",
+      ...(preferences.length ? { preferences } : {})
     };
 
     const response: ParseSearchResponse = {

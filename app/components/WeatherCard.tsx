@@ -148,7 +148,7 @@ export function WeatherCard({ midpoint, searchMode = "midpoint" }: Props) {
             <WeatherMetric label="Feels like" value={`${weatherState.weather.feelsLike}°F`} />
             <WeatherMetric label="Rain" value={formatRainChance(weatherState.weather.rainChance)} />
             <WeatherMetric label="Wind" value={`${weatherState.weather.windSpeed} mph`} />
-            <WeatherMetric label="Plan" value={shortPlanLabel(weatherState.weather)} />
+            <WeatherMetric label="Plan" value={shortPlanLabel(weatherState.weather, areaLabel)} />
           </div>
         </>
       ) : null}
@@ -208,11 +208,17 @@ function getWeatherRecommendation(weather: WeatherSummary, areaLabel = "near the
   return "Good to know before you pick the final meeting spot.";
 }
 
-function shortPlanLabel(weather: WeatherSummary) {
-  const recommendation = getWeatherRecommendation(weather);
-  if (recommendation.includes("outdoor")) return "Outside";
-  if (recommendation.includes("jacket")) return "Layer";
-  return "Indoors";
+function shortPlanLabel(weather: WeatherSummary, areaLabel = "near the midpoint") {
+  const rainChance = weather.rainChance ?? 0;
+  if (rainChance >= 45 || [61, 63, 65, 80, 81, 82, 95, 96, 99].includes(weather.weatherCode)) {
+    return "Indoors";
+  }
+  if (weather.feelsLike <= 50 || weather.windSpeed >= 18) return "Layer";
+  if (weather.feelsLike >= 58 && weather.feelsLike <= 82 && rainChance < 25) {
+    return "Outside";
+  }
+  if (getWeatherRecommendation(weather, areaLabel).includes("Indoor")) return "Indoors";
+  return "Flexible";
 }
 
 function formatRainChance(value: number | null) {

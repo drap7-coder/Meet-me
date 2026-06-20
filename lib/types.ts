@@ -84,6 +84,17 @@ export type MeetupMode = "single" | "district";
 
 export type SearchMode = "single" | "midpoint";
 
+export type KoiBotMode = "places" | "watch_events";
+
+export type WatchEventsResult = {
+  botMode: "watch_events";
+  query: string;
+  title: string;
+  description: string;
+  message: string;
+  futureProviders: string[];
+};
+
 export type Preference =
   | "downtown"
   | "walkable"

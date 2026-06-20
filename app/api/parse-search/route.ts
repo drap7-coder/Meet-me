@@ -1,6 +1,7 @@
 import { resolveSearchCategoryFromQuery } from "@/lib/categories";
 import { detectPreferencesFromQuery } from "@/lib/preferences";
-import type { SearchHalfwayRequest } from "@/lib/types";
+import type { KoiBotMode, SearchHalfwayRequest, WatchEventsResult } from "@/lib/types";
+import { buildWatchEventsResult, resolveKoiBotMode } from "@/lib/watchEvents";
 import { NextResponse } from "next/server";
 
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || (process.env.VERCEL ? "" : "http://localhost:11434");
@@ -11,6 +12,7 @@ const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 const NLP_PROVIDER = process.env.NLP_PROVIDER || "";
 
 type ParseSearchResponse = {
+  botMode: "places";
   parsed: {
     location_a: string;
     location_b: string;
@@ -18,6 +20,11 @@ type ParseSearchResponse = {
     search_mode: "single" | "midpoint";
   };
   form: SearchHalfwayRequest;
+};
+
+type ParseWatchEventsResponse = {
+  botMode: "watch_events";
+  watchEvents: WatchEventsResult;
 };
 
 type ParsedSearchIntent = {
@@ -31,8 +38,18 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const query = typeof body.query === "string" ? body.query.trim() : "";
+    const requestedMode = parseRequestedBotMode(body.botMode);
     if (!query) {
       return NextResponse.json({ error: "Tell Koi where you are and what kind of spot you need." }, { status: 400 });
+    }
+
+    const botMode = resolveKoiBotMode(query, requestedMode);
+    if (botMode === "watch_events") {
+      const response: ParseWatchEventsResponse = {
+        botMode: "watch_events",
+        watchEvents: buildWatchEventsResult(query)
+      };
+      return NextResponse.json(response);
     }
 
     const parsed = await parseSearchQuery(query);
@@ -67,6 +84,7 @@ export async function POST(request: Request) {
     };
 
     const response: ParseSearchResponse = {
+      botMode: "places",
       parsed: {
         location_a: locationA,
         location_b: searchMode === "single" ? "" : locationB,
@@ -289,6 +307,10 @@ function parseJsonObject(value: unknown): Record<string, unknown> {
 
 function stringField(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function parseRequestedBotMode(value: unknown): KoiBotMode | undefined {
+  return value === "watch_events" || value === "places" ? value : undefined;
 }
 
 function windowlessTimeout(callback: () => void, ms: number) {

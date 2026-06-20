@@ -8,6 +8,7 @@ import { Logo } from "@/app/components/Logo";
 import { RoadDivider } from "@/app/components/BrandRoad";
 import { ResultsMap } from "@/app/components/ResultsMap";
 import { VenueCard } from "@/app/components/VenueCard";
+import { WatchEventsPlaceholder } from "@/app/components/WatchEventsPlaceholder";
 import { WeatherCard } from "@/app/components/WeatherCard";
 import {
   clearRecentMeetups,
@@ -23,7 +24,7 @@ import { normalizeCategory, parseMeetupMode, parseSearchMode } from "@/lib/categ
 import { getPreferenceLabel, parsePreferences } from "@/lib/preferences";
 import { copyTextToClipboard, shareWithFallback, shouldUseNativeShare } from "@/lib/share";
 import { trackEvent } from "@/lib/analytics";
-import type { LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory } from "@/lib/types";
+import type { LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory, WatchEventsResult } from "@/lib/types";
 import { BRAND } from "@/src/config/branding";
 import { FAQ_ITEMS } from "@/src/config/seo";
 import { useEffect, useMemo, useState } from "react";
@@ -47,6 +48,7 @@ type ShareDialogState = {
 export default function HomePage() {
   const [form, setForm] = useState<SearchHalfwayRequest>(initialForm);
   const [results, setResults] = useState<SearchHalfwayResponse | null>(null);
+  const [watchEventsResult, setWatchEventsResult] = useState<WatchEventsResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [shareMessage, setShareMessage] = useState("");
@@ -150,6 +152,7 @@ export default function HomePage() {
 
   function startNewSearch() {
     setResults(null);
+    setWatchEventsResult(null);
     setError("");
     setShareMessage("");
     setCurrentShareUrl("");
@@ -165,8 +168,21 @@ export default function HomePage() {
   }
 
   function runParsedSearch(nextForm: SearchHalfwayRequest) {
+    setWatchEventsResult(null);
     setForm(nextForm);
     submitSearch(nextForm);
+  }
+
+  function runWatchEventsSearch(result: WatchEventsResult) {
+    setResults(null);
+    setWatchEventsResult(result);
+    setError("");
+    setShareMessage("");
+    setCurrentShareUrl("");
+    setHasSearched(true);
+    trackEvent("watch_events_opened", {
+      queryLength: result.query.length
+    });
   }
 
   function clearRecent() {
@@ -263,13 +279,13 @@ export default function HomePage() {
     <main className="min-h-screen overflow-x-hidden bg-mint text-ink">
       <SiteHeader />
 
-      {!hasSearched && !results && !loading ? (
+      {!hasSearched && !results && !watchEventsResult && !loading ? (
         <>
           <section id="search" className="relative isolate overflow-hidden bg-ink px-4 pb-8 pt-4 sm:px-6 sm:pt-6 lg:px-8">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_28%_18%,rgba(214,90,46,0.24),transparent_28%),radial-gradient(circle_at_72%_8%,rgba(242,239,231,0.10),transparent_24%)]" />
             <div className="relative z-10 mx-auto grid w-full max-w-5xl gap-6 py-8 lg:py-12">
               <MarketingHero />
-              <AiSearchBox loading={loading} onParsed={runParsedSearch} />
+              <AiSearchBox loading={loading} onParsed={runParsedSearch} onWatchEvents={runWatchEventsSearch} />
               <ClassicSearchPanel form={form} loading={loading} onChange={setForm} onSubmit={submitSearch} />
             </div>
           </section>
@@ -283,13 +299,15 @@ export default function HomePage() {
 
       <div className="bg-mint px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          {hasSearched || results || loading ? (
+          {hasSearched || results || watchEventsResult || loading ? (
             <CompactResultsHeader
               loading={loading}
               resultCountLabel={resultCountLabel}
-              title="Recommended places"
+              title={watchEventsResult ? watchEventsResult.title : "Recommended places"}
               originSummary={
-                results
+                watchEventsResult
+                  ? watchEventsResult.description
+                  : results
                   ? results.searchMode === "single"
                     ? `Near ${results.originA.formattedAddress}`
                     : `${results.originA.formattedAddress} → ${results.originB.formattedAddress}`
@@ -301,7 +319,7 @@ export default function HomePage() {
             />
           ) : null}
 
-          {hasSearched || results || loading || showRoadDividerPreview ? (
+          {hasSearched || results || watchEventsResult || loading || showRoadDividerPreview ? (
             <RoadDivider className="mt-5 w-full" />
           ) : null}
 
@@ -311,9 +329,9 @@ export default function HomePage() {
             </div>
           ) : null}
 
-          {error && !loading && !results ? (
+          {error && !loading && !results && !watchEventsResult ? (
           <section id="search" className="mt-5 grid w-full max-w-5xl gap-5">
-              <AiSearchBox loading={loading} onParsed={runParsedSearch} />
+              <AiSearchBox loading={loading} onParsed={runParsedSearch} onWatchEvents={runWatchEventsSearch} />
               <ClassicSearchPanel form={form} loading={loading} onChange={setForm} onSubmit={submitSearch} />
               <RecentMeetupsSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
             </section>
@@ -329,6 +347,10 @@ export default function HomePage() {
             </div>
             <div className="h-[420px] animate-pulse rounded-lg bg-sky shadow-soft" />
           </section>
+        ) : null}
+
+        {watchEventsResult && !loading ? (
+          <WatchEventsPlaceholder result={watchEventsResult} onNewSearch={startNewSearch} />
         ) : null}
 
         {results && !loading ? (
@@ -378,7 +400,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {!hasSearched && !results && !loading ? (
+      {!hasSearched && !results && !watchEventsResult && !loading ? (
         <>
           <HowItWorks />
           <UseCases />

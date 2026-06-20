@@ -6,6 +6,8 @@ type Props = {
 };
 
 export function WatchEventsResults({ result }: Props) {
+  const sidebarTitle = result.preview ? "Preview mode" : "Live movie picks";
+
   return (
     <section className="search-results-enter mt-5 grid gap-5 pb-16 lg:grid-cols-[1fr_320px] lg:items-start">
       <div className="results-list-enter order-2 grid gap-4 lg:order-1">
@@ -25,24 +27,30 @@ export function WatchEventsResults({ result }: Props) {
             <p className="mt-2 text-sm font-semibold leading-6 text-ink">“{result.query}”</p>
           </div>
 
-          <div className="mt-4 rounded-lg border border-clay/25 bg-[#FFF4EC] p-4">
-            <p className="text-sm font-black text-ink">Preview mode</p>
+          <div
+            className={`mt-4 rounded-lg border p-4 ${
+              result.preview ? "border-clay/25 bg-[#FFF4EC]" : "border-[#B7E4C7] bg-[#F3FBF6]"
+            }`}
+          >
+            <p className="text-sm font-black text-ink">{sidebarTitle}</p>
             <p className="mt-2 text-sm leading-6 text-slate">{result.message}</p>
           </div>
 
-          <div className="mt-4">
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-slate">Planned integrations</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {result.futureProviders.map((provider) => (
-                <span
-                  key={provider}
-                  className="rounded-full border border-line bg-white px-3 py-1.5 text-xs font-semibold text-slate"
-                >
-                  {provider}
-                </span>
-              ))}
+          {result.futureProviders.length ? (
+            <div className="mt-4">
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-slate">Coming next</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {result.futureProviders.map((provider) => (
+                  <span
+                    key={provider}
+                    className="rounded-full border border-line bg-white px-3 py-1.5 text-xs font-semibold text-slate"
+                  >
+                    {provider}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : null}
         </div>
       </aside>
     </section>

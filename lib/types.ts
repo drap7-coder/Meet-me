@@ -101,7 +101,12 @@ export type WatchEventsRecommendation = {
   actionLabel: string;
   actionUrl: string;
   provider: string;
-  preview: true;
+  preview: boolean;
+  posterUrl?: string;
+  year?: string;
+  rating?: string;
+  overview?: string;
+  runtime?: string;
 };
 
 export type WatchEventsResult = {
@@ -119,7 +124,7 @@ export type WatchEventsResult = {
   resultCount: number;
   recommendations: WatchEventsRecommendation[];
   futureProviders: string[];
-  preview: true;
+  preview: boolean;
 };
 
 export type WatchEventsPlacesRedirect = {

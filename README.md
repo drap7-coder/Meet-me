@@ -33,6 +33,7 @@ Set:
 
 ```bash
 GOOGLE_MAPS_API_KEY=your_google_maps_key
+TMDB_API_KEY=your_tmdb_api_key
 NLP_PROVIDER=ollama
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=qwen3:8b
@@ -40,7 +41,7 @@ OLLAMA_TIMEOUT_MS=30000
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-`GOOGLE_MAPS_API_KEY` is used only by the server-side Google Maps, Places, Geocoding, and Routes calls. `NLP_PROVIDER`, `OLLAMA_BASE_URL`, and `OLLAMA_MODEL` are used only by the server-side natural-language parser. The browser never receives the model endpoint.
+`GOOGLE_MAPS_API_KEY` is used only by the server-side Google Maps, Places, Geocoding, and Routes calls. `TMDB_API_KEY` powers live movie picks in Watch & Events. `NLP_PROVIDER`, `OLLAMA_BASE_URL`, and `OLLAMA_MODEL` are used only by the server-side natural-language parser. The browser never receives the model endpoint.
 
 For production hosting, `OLLAMA_BASE_URL` must point to an Ollama endpoint reachable from the server. `http://localhost:11434` works for local development only.
 

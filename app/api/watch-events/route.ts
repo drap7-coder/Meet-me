@@ -32,7 +32,7 @@ export async function POST(request: Request) {
       return NextResponse.json(response);
     }
 
-    return NextResponse.json(buildWatchEventsResult(query));
+    return NextResponse.json(await buildWatchEventsResult(query));
   } catch {
     return NextResponse.json({ error: "Watch & Events search failed." }, { status: 400 });
   }

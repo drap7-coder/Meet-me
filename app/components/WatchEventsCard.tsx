@@ -33,16 +33,37 @@ export function WatchEventsCard({ item }: Props) {
 
   return (
     <article ref={cardRef} className="rounded-lg border border-line bg-paper p-5 shadow-soft sm:p-6">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+      <div className="flex items-start gap-4">
+        {item.posterUrl ? (
+          <img
+            src={item.posterUrl}
+            alt={`${item.title} poster`}
+            className="h-36 w-24 shrink-0 rounded-lg border border-line object-cover shadow-soft"
+            loading="lazy"
+          />
+        ) : null}
+        <div className="min-w-0 flex-1">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <span className="inline-flex rounded-lg bg-clay px-3 py-1 text-xs font-bold text-white">{item.badge}</span>
-            <span className="inline-flex rounded-full bg-sky px-2.5 py-1 text-xs font-bold text-slate">Preview</span>
+            {item.preview ? (
+              <span className="inline-flex rounded-full bg-sky px-2.5 py-1 text-xs font-bold text-slate">Preview</span>
+            ) : (
+              <span className="inline-flex rounded-full bg-[#E8F5EE] px-2.5 py-1 text-xs font-bold text-[#176644]">Live pick</span>
+            )}
           </div>
           <h3 className="text-xl font-black leading-tight text-ink">{item.title}</h3>
           <p className="mt-1 text-sm font-semibold text-slate">{item.subtitle}</p>
+          {item.rating || item.year || item.runtime ? (
+            <p className="mt-2 text-xs font-bold uppercase tracking-[0.12em] text-slate">
+              {[item.rating, item.year, item.runtime].filter(Boolean).join(" · ")}
+            </p>
+          ) : null}
         </div>
       </div>
+
+      {item.overview ? (
+        <p className="mt-4 text-sm leading-6 text-slate">{item.overview}</p>
+      ) : null}
 
       <div className="mt-4 rounded-lg border border-line bg-mint p-4">
         <p className="text-sm font-black text-ink">Why Koi picked it</p>

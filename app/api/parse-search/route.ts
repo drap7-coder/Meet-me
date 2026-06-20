@@ -61,7 +61,7 @@ export async function POST(request: Request) {
 
       const response: ParseWatchEventsResponse = {
         botMode: "watch_events",
-        watchEvents: buildWatchEventsResult(query)
+        watchEvents: await buildWatchEventsResult(query)
       };
       return NextResponse.json(response);
     }

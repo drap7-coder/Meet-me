@@ -4,11 +4,14 @@ import type {
   WatchEventsRecommendation,
   WatchEventsResult
 } from "@/lib/types";
+import { tryBuildLiveMovieRecommendations } from "@/lib/watchMovies";
 
 export const WATCH_EVENTS_TITLE = "Watch & Events";
 export const WATCH_EVENTS_DESCRIPTION = "Find movies, sports, live events, and what to watch tonight.";
 export const WATCH_EVENTS_PREVIEW_MESSAGE =
   "Preview results below are curated by Koi from your ask. Live listings and ticket data is coming soon.";
+export const WATCH_EVENTS_LIVE_MOVIE_MESSAGE =
+  "Movie picks below come from TMDB based on your ask. Streaming availability is coming soon.";
 
 export const WATCH_EVENTS_FUTURE_PROVIDERS = [
   "TMDB",
@@ -91,21 +94,30 @@ export function resolveKoiBotMode(query: string, requestedMode?: KoiBotMode): Ko
   return "places";
 }
 
-export function buildWatchEventsResult(query: string): WatchEventsResult {
+export async function buildWatchEventsResult(query: string): Promise<WatchEventsResult> {
   const trimmed = query.trim();
   const intent = classifyWatchEventsIntent(trimmed);
   const location = extractWatchEventsLocation(trimmed);
   const timeframe = extractWatchEventsTimeframe(trimmed);
   const topic = extractWatchEventsTopic(trimmed, intent);
-  const recommendations = buildWatchEventsRecommendations({ query: trimmed, intent, location, timeframe, topic });
+  const genre = extractMovieGenre(trimmed);
+  const recommendations = await buildWatchEventsRecommendations({
+    query: trimmed,
+    intent,
+    location,
+    timeframe,
+    topic,
+    genre
+  });
   const contextSummary = buildContextSummary({ intent, location, timeframe, topic });
+  const hasLiveMovies = recommendations.some((item) => !item.preview);
 
   return {
     botMode: "watch_events",
     query: trimmed,
     title: WATCH_EVENTS_TITLE,
     description: WATCH_EVENTS_DESCRIPTION,
-    message: WATCH_EVENTS_PREVIEW_MESSAGE,
+    message: hasLiveMovies ? WATCH_EVENTS_LIVE_MOVIE_MESSAGE : WATCH_EVENTS_PREVIEW_MESSAGE,
     intent,
     intentLabel: INTENT_LABELS[intent],
     location,
@@ -114,8 +126,10 @@ export function buildWatchEventsResult(query: string): WatchEventsResult {
     contextSummary,
     resultCount: recommendations.length,
     recommendations,
-    futureProviders: [...WATCH_EVENTS_FUTURE_PROVIDERS],
-    preview: true
+    futureProviders: hasLiveMovies
+      ? WATCH_EVENTS_FUTURE_PROVIDERS.filter((provider) => provider !== "TMDB")
+      : [...WATCH_EVENTS_FUTURE_PROVIDERS],
+    preview: !hasLiveMovies
   };
 }
 
@@ -227,6 +241,10 @@ function extractMovieGenre(query: string) {
   return match[1].toLowerCase() === "science fiction" ? "sci-fi" : match[1].toLowerCase();
 }
 
+export function parseMovieGenre(query: string) {
+  return extractMovieGenre(query);
+}
+
 function buildContextSummary({
   intent,
   location,
@@ -245,19 +263,24 @@ function buildContextSummary({
   return parts.join(" · ");
 }
 
-function buildWatchEventsRecommendations({
+async function buildWatchEventsRecommendations({
   query,
   intent,
   location,
   timeframe,
-  topic
+  topic,
+  genre
 }: {
   query: string;
   intent: WatchEventsIntent;
   location: string;
   timeframe: string;
   topic: string;
+  genre: string;
 }) {
+  const liveMovies = await tryBuildLiveMovieRecommendations({ query, intent, timeframe, topic, genre });
+  if (liveMovies?.length) return liveMovies;
+
   switch (intent) {
     case "stream":
       return buildStreamRecommendations(topic || "movies");

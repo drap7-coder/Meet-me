@@ -817,12 +817,14 @@ export default function HomePage() {
 function MarketingHero() {
   return (
       <div className="max-w-4xl">
-        <div className="mb-5 inline-flex rounded-[20px] border border-white/10 bg-paper/95 p-3 shadow-[0_16px_40px_rgba(10,19,35,0.22)] sm:mb-6 sm:p-4">
-          <Logo size="lg" />
+        <div className="flex items-center gap-4 sm:gap-6">
+          <h1 className="min-w-0 flex-1 text-[2.4rem] font-black leading-[0.96] tracking-[-0.04em] text-[#FFFDF8] sm:text-[clamp(48px,8vw,72px)]">
+            {BRAND.heroHeadline}
+          </h1>
+          <div className="shrink-0 rounded-[20px] border border-white/10 bg-paper/95 p-2 shadow-[0_16px_40px_rgba(10,19,35,0.22)] sm:p-3">
+            <Logo size="lg" />
+          </div>
         </div>
-        <h1 className="max-w-4xl text-[2.8rem] font-black leading-[0.96] tracking-[-0.04em] text-[#FFFDF8] sm:text-[clamp(48px,8vw,72px)]">
-          {BRAND.heroHeadline}
-        </h1>
         <p className="mt-5 max-w-2xl text-base font-medium leading-7 text-[#D7D0C4] sm:mt-6 sm:text-xl sm:leading-8">
           {BRAND.heroSubheadline}
         </p>

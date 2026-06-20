@@ -638,11 +638,12 @@ function SiteHeader() {
               className="h-full w-full object-contain"
             />
           </span>
-          <img
-            src="/branding/koibot-wordmark-transparent.png"
-            alt={BRAND.displayName}
-            className="h-7 w-auto max-w-[min(100%,176px)] object-contain object-left sm:h-8 sm:max-w-[210px]"
-          />
+          <span className="grid min-w-0 leading-none">
+            <span className="truncate font-serif text-xl font-semibold tracking-wide text-ink sm:text-2xl">{BRAND.displayName}</span>
+            <span className="mt-1 hidden text-[0.62rem] font-black uppercase tracking-[0.26em] text-clay sm:block">
+              Meet smarter
+            </span>
+          </span>
         </a>
         <a
           href="#ask-koi"

@@ -1,10 +1,18 @@
 export const BRAND = {
+  /** Conversational assistant name used in product copy ("Ask Koi", "Tell Koi"). */
   name: "Koi",
+  /** Product/brand name for hero, SEO, and footer. */
+  displayName: "Koi bot",
+  /** Primary CTA label — the user asks Koi, not "Koi bot". */
+  askLabel: "Ask Koi",
   url: "https://askkoibot.com",
   tagline: "Find the best place to meet.",
-  seoTitle: "Koi — Find the best place to meet",
+  heroHeadline: "Koi bot finds the best place to meet.",
+  seoTitle: "Koi bot — Find the best place to meet",
   description:
-    "Ask Koi to find convenient places to meet between two or more locations.",
-  footerDescription: "Ask Koi to find convenient places to meet between two or more locations.",
-  heroSubheadline: "Tell Koi where everyone is coming from, what kind of spot you want, and what matters most."
+    "Koi bot helps you find places to meet, things to watch, and events nearby. Ask Koi where to go or what to do.",
+  footerDescription:
+    "Koi bot helps you find places to meet, things to watch, and events nearby. Ask Koi where to go or what to do.",
+  heroSubheadline:
+    "Tell Koi where you are, what kind of spot you want, and what matters most — parking, vibe, distance, timing, or convenience."
 };

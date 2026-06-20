@@ -458,25 +458,30 @@ export default function HomePage() {
 }
 
 function MarketingHero() {
-  const trustItems = ["Nearby or balanced search", "Local recommendations", "Weather-aware planning"];
+  const trustItems = ["Places, watch & events", "Local recommendations", "Weather-aware planning"];
 
   return (
       <div className="max-w-4xl">
         <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-clay sm:mb-4 sm:text-sm">
-          Intelligent local meeting assistant
+          Intelligent local discovery assistant
         </p>
-        <h1 className="max-w-4xl text-[2.8rem] font-black leading-[0.96] tracking-[-0.04em] text-[#FFFDF8] sm:text-[clamp(48px,8vw,72px)]">
-          Koi finds the best place to meet.
-        </h1>
+        <div className="max-w-3xl">
+          <img
+            src="/branding/koi-bot-wordmark.png"
+            alt={BRAND.displayName}
+            className="h-auto w-full max-w-[min(100%,520px)] object-contain object-left"
+          />
+        </div>
+        <h1 className="sr-only">{BRAND.heroHeadline}</h1>
         <p className="mt-5 max-w-2xl text-base font-medium leading-7 text-[#D7D0C4] sm:mt-6 sm:text-xl sm:leading-8">
-          Tell Koi where you are, what kind of spot you want, and what matters most — parking, vibe, distance, timing, or convenience.
+          {BRAND.heroSubheadline}
         </p>
         <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:gap-4">
           <a
             href="#ask-koi"
             className="inline-flex h-12 items-center justify-center rounded-full bg-clay px-7 text-base font-bold text-white shadow-glow transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25"
           >
-            Ask Koi
+            {BRAND.askLabel}
           </a>
           <a
             href="#classic-search"
@@ -649,7 +654,7 @@ function SiteHeader() {
           href="#ask-koi"
           className="inline-flex h-10 shrink-0 items-center justify-center rounded-full bg-clay px-3 text-xs font-black text-white shadow-[0_10px_24px_rgba(214,90,46,0.28)] transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25 sm:h-11 sm:px-6 sm:text-sm"
         >
-          Ask Koi
+          {BRAND.askLabel}
         </a>
       </div>
     </header>
@@ -787,7 +792,7 @@ function FaqSection() {
         <div className="max-w-2xl">
           <p className="text-sm font-bold uppercase tracking-wide text-clay">FAQ</p>
           <h2 className="mt-3 text-4xl font-black tracking-tight text-ink sm:text-5xl">
-            Ask Koi, without losing the classic controls.
+            {BRAND.askLabel}, without losing the classic controls.
           </h2>
           <p className="mt-4 text-base font-semibold leading-7 text-slate">
             Answers for people searching for a meet me halfway app or trying to find the best place to meet in the middle.
@@ -855,7 +860,7 @@ function Footer() {
     <footer className="border-t border-line px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 text-sm text-slate sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-base font-black text-ink">{BRAND.name}</p>
+          <p className="text-base font-black text-ink">{BRAND.displayName}</p>
           <p className="mt-1 font-semibold">Currently in Beta</p>
           <p className="mt-3 max-w-sm leading-6">{BRAND.footerDescription}</p>
         </div>

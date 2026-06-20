@@ -2,6 +2,7 @@
 
 import type { KoiBotMode, SearchHalfwayRequest } from "@/lib/types";
 import { WATCH_EVENTS_DESCRIPTION, WATCH_EVENTS_TITLE } from "@/lib/watchEvents";
+import { BRAND } from "@/src/config/branding";
 import { FormEvent, useState } from "react";
 
 type Props = {
@@ -29,7 +30,7 @@ const BOT_MODES = [
   }
 ];
 
-const EXAMPLE_QUERY = "Ask Koi what you're looking for…";
+const EXAMPLE_QUERY = `${BRAND.askLabel} what you're looking for…`;
 const PLACE_PROMPTS = [
   "Find coffee near Hoboken with easy parking.",
   "Find a coffee shop between Hoboken and Edison with easy parking.",
@@ -90,12 +91,12 @@ export function AiSearchBox({ loading, onParsed, onWatchEvents }: Props) {
   return (
     <section id="ask-koi" className="w-full min-w-0 scroll-mt-24 overflow-hidden rounded-lg border border-line bg-paper p-5 shadow-soft sm:p-7" aria-labelledby="ai-search-title">
       <div className="mb-4">
-        <p className="text-sm font-black uppercase tracking-[0.14em] text-clay">Ask Koi</p>
+        <p className="text-sm font-black uppercase tracking-[0.14em] text-clay">{BRAND.askLabel}</p>
         <h2 id="ai-search-title" className="mt-2 text-2xl font-black tracking-tight text-ink sm:text-3xl">
-          Tell Koi what you want to find.
+          Tell {BRAND.name} what you want to find.
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate">
-          Koi can help with places to meet or entertainment to watch and do. Pick a mode, then describe what you need in plain language.
+          {BRAND.name} can help with places to meet or entertainment to watch and do. Pick a mode, then describe what you need in plain language.
         </p>
       </div>
 
@@ -143,7 +144,7 @@ export function AiSearchBox({ loading, onParsed, onWatchEvents }: Props) {
           disabled={busy}
           className="h-11 rounded-full bg-ink px-5 font-bold text-white shadow-[0_10px_24px_rgba(17,24,39,0.14)] transition hover:bg-ink/85 focus:outline-none focus:ring-4 focus:ring-ink/15 disabled:cursor-not-allowed disabled:bg-ink/30 sm:h-12"
         >
-          {parsing ? "Understanding..." : loading ? "Finding places..." : "Ask Koi"}
+          {parsing ? "Understanding..." : loading ? "Finding places..." : BRAND.askLabel}
         </button>
       </form>
 

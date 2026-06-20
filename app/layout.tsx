@@ -6,7 +6,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: BRAND.seoTitle,
-  applicationName: BRAND.name,
+  applicationName: BRAND.displayName,
   description: BRAND.description,
   metadataBase: new URL(BRAND.url),
   alternates: {
@@ -31,14 +31,14 @@ export const metadata: Metadata = {
     title: BRAND.seoTitle,
     description: BRAND.description,
     url: BRAND.url,
-    siteName: BRAND.name,
+    siteName: BRAND.displayName,
     type: "website",
     images: [
       {
         url: "/branding/koi-logo-horizontal.png",
         width: 940,
         height: 360,
-        alt: BRAND.name
+        alt: BRAND.displayName
       }
     ]
   },
@@ -53,8 +53,8 @@ export const metadata: Metadata = {
 const webApplicationJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  name: BRAND.name,
-  alternateName: "Ask Koi",
+  name: BRAND.displayName,
+  alternateName: ["Koi", "Ask Koi"],
   url: BRAND.url,
   applicationCategory: "LifestyleApplication",
   operatingSystem: "Web",

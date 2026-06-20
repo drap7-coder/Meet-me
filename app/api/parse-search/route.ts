@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     const parsed = await parseSearchQuery(query);
     const locationA = parsed.location_a.trim();
     const locationB = parsed.location_b.trim();
-    const categoryIntent = mapCategoryIntent(parsed.category);
+    const categoryIntent = mapCategoryIntent(resolveParsedCategory(query, parsed.category));
     const searchMode =
       parsed.search_mode === "single" || (locationA && !locationB && !looksLikeMidpointQuery(query))
         ? "single"
@@ -264,32 +264,61 @@ function cleanupLocation(value: string) {
 }
 
 function guessCategory(query: string) {
+  return detectCategoryFromQuery(query) ?? "coffee";
+}
+
+function detectCategoryFromQuery(query: string) {
   const normalized = query.toLowerCase();
   const categoryHints = [
-    "coffee",
-    "lunch",
-    "brunch",
-    "restaurant",
-    "dinner",
-    "bar",
-    "drinks",
-    "brewery",
-    "wine bar",
+    "quiet place",
     "cocktail bar",
-    "park",
+    "wine bar",
+    "restaurant",
+    "bookstore",
+    "steakhouse",
+    "brewery",
+    "brunch",
+    "breakfast",
+    "mexican",
+    "mediterranean",
+    "seafood",
+    "outdoors",
     "hiking",
     "trails",
-    "outdoors",
-    "bookstore",
-    "ramen",
     "italian",
-    "bbq",
-    "mexican",
+    "dinner",
+    "lunch",
+    "coffee",
+    "ramen",
     "pizza",
     "sushi",
-    "quiet place"
+    "drinks",
+    "bbq",
+    "bar",
+    "park",
+    "thai"
   ];
-  return categoryHints.find((hint) => normalized.includes(hint)) ?? "coffee";
+
+  const sorted = [...new Set(categoryHints)].sort((a, b) => b.length - a.length);
+  const match = sorted.find((hint) => categoryHintMatches(normalized, hint));
+  return match ?? null;
+}
+
+function categoryHintMatches(normalizedQuery: string, hint: string) {
+  const pattern = hint.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+");
+  return new RegExp(`\\b${pattern}\\b`, "i").test(normalizedQuery);
+}
+
+function resolveParsedCategory(query: string, parsedCategory: string) {
+  const detected = detectCategoryFromQuery(query);
+  if (detected) return detected;
+
+  const normalized = parsedCategory.trim().toLowerCase();
+  if (normalized === "park" && /\bparking\b/i.test(query) && !categoryHintMatches(query.toLowerCase(), "park")) {
+    return "restaurant";
+  }
+
+  return parsedCategory.trim() || "coffee";
 }
 
 function looksLikeMidpointQuery(query: string) {

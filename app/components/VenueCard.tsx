@@ -55,6 +55,8 @@ export function VenueCard({
   const showReservationLinks = isRestaurantReservationEligible(searchCategory, venue);
   const openTableUrl = showReservationLinks ? buildOpenTableSearchUrl(venue.name, venue.address) : null;
   const resyUrl = showReservationLinks ? buildResySearchUrl(venue.name, venue.address) : null;
+  const primaryVenueAction =
+    showReservationLinks && (openTableUrl || resyUrl) && venueAction?.label === "Reserve Table" ? null : venueAction;
   const collegeResearchLinks = getPrimaryCategoryId(searchCategory) === "colleges" ? getCollegeResearchLinks(venue) : null;
   const reviewSnippet = venue.reviewQuote || venue.reviewSummary;
   const match = getMatchExplanation({
@@ -173,22 +175,22 @@ export function VenueCard({
         </span>
       </div>
 
-      {venueAction ? (
+      {primaryVenueAction ? (
         <div className="mt-4">
           <a
-            href={venueAction.url}
+            href={primaryVenueAction.url}
             target="_blank"
             rel="noreferrer"
             onClick={() =>
               trackEvent("venue_action_clicked", {
                 category: venue.category,
-                action: venueAction.label,
+                action: primaryVenueAction.label,
                 placeType: venue.types?.[0] ?? venue.category
               })
             }
             className="inline-flex h-10 items-center justify-center rounded-full border border-clay/25 bg-clay/10 px-4 text-sm font-black text-ink transition hover:border-clay hover:bg-clay hover:text-white focus:outline-none focus:ring-4 focus:ring-clay/20"
           >
-            {venueAction.label}
+            {primaryVenueAction.label}
           </a>
         </div>
       ) : null}

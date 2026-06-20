@@ -80,11 +80,22 @@ export function buildOpenTableSearchUrl(name: string, address: string) {
   return `https://www.opentable.com/s/?${params.toString()}`;
 }
 
+const RESY_METRO_FALLBACKS: Record<string, string> = {
+  "hoboken-nj": "new-york-ny",
+  "jersey-city-nj": "new-york-ny",
+  "staten-island-ny": "new-york-ny",
+  "brooklyn-ny": "new-york-ny",
+  "queens-ny": "new-york-ny",
+  "bronx-ny": "new-york-ny",
+  "manhattan-ny": "new-york-ny"
+};
+
 export function buildResySearchUrl(name: string, address: string) {
   const trimmedName = name.trim();
   const { city, state } = extractCityStateFromAddress(address);
   const slug = buildResyCitySlug(city, state);
-  if (!trimmedName || !slug) return null;
+  const metroSlug = slug ? RESY_METRO_FALLBACKS[slug] ?? slug : "";
+  if (!trimmedName || !metroSlug) return null;
 
   const params = new URLSearchParams({
     query: trimmedName,
@@ -92,7 +103,7 @@ export function buildResySearchUrl(name: string, address: string) {
     date: buildDefaultReservationDate()
   });
 
-  return `https://resy.com/cities/${slug}/search?${params.toString()}`;
+  return `https://resy.com/cities/${metroSlug}/search?${params.toString()}`;
 }
 
 export function isRestaurantReservationEligible(

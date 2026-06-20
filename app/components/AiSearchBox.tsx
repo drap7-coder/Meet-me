@@ -166,13 +166,6 @@ export function AiSearchBox({
     }
   }, [botMode]);
 
-  useEffect(() => {
-    if (botMode !== "watch" || watchFlowStep !== "categories" || !watchActiveSubcategory) return;
-    if (!watchSubcategoryHasGenres(watchActiveSubcategory)) return;
-
-    genrePanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [botMode, watchActiveSubcategory, watchFlowStep]);
-
   function handleModeSelect(mode: KoiBotMode) {
     onBotModeChange(mode);
     setError("");
@@ -191,6 +184,9 @@ export function AiSearchBox({
     if (watchSubcategoryHasGenres(subcategory)) {
       setWatchSubcategory(null);
       setQuery("");
+      requestAnimationFrame(() => {
+        genrePanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
       return;
     }
 
@@ -365,22 +361,25 @@ export function AiSearchBox({
             <div>
               <h3 className="text-lg font-black text-ink">What do you want to watch?</h3>
               <p className="mt-1 text-sm leading-6 text-slate">
-                Pick a lane, then choose a genre — just like picking a restaurant type under Food.
+                Describe a mood, or browse lanes and genres below — just like picking a restaurant type under Food.
               </p>
             </div>
-            <WatchBrowseSelector
-              genrePanelRef={genrePanelRef}
-              activeSubcategory={watchActiveSubcategory}
-              selectedGenreQuery={query}
-              busy={busy}
-              onSubcategorySelect={handleWatchSubcategorySelect}
-              onGenreSelect={handleWatchGenreSelect}
-            />
             <SearchPanel
               {...searchPanelProps}
               placeholder={WATCH_PLACEHOLDER}
               examplePrompts={WATCH_EXAMPLE_PROMPTS}
             />
+            <div className="grid gap-2 border-t border-line/70 pt-4">
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-slate">Browse by lane</p>
+              <WatchBrowseSelector
+                genrePanelRef={genrePanelRef}
+                activeSubcategory={watchActiveSubcategory}
+                selectedGenreQuery={query}
+                busy={busy}
+                onSubcategorySelect={handleWatchSubcategorySelect}
+                onGenreSelect={handleWatchGenreSelect}
+              />
+            </div>
           </div>
         ) : null}
 

@@ -76,16 +76,16 @@ export function getWatchGenresForSubcategory(subcategory: WatchSubcategory) {
 export const WATCH_PLACEHOLDER = "Ask Koi what you want to watch…";
 
 export const EVENTS_EXAMPLE_PROMPTS = [
+  "Movie theaters near me tonight",
   "Any comedy shows near Philly this weekend?",
   "Concerts near Hoboken this month",
-  "Sports games near me tonight",
-  "Local festivals this weekend"
+  "Sports games near me tonight"
 ];
 
-export const EVENTS_PLACEHOLDER = "Ask Koi about sports, concerts, festivals, or local happenings…";
+export const EVENTS_PLACEHOLDER = "Ask Koi about movie theaters, sports, concerts, festivals, or local happenings…";
 
 export const EVENTS_DESCRIPTION =
-  "Sports, concerts, festivals, and local happenings.";
+  "Movie theaters, sports, concerts, festivals, and local happenings.";
 
 export type EventsCategoryOption = {
   id: string;
@@ -134,9 +134,10 @@ export const EVENTS_CATEGORY_GROUPS: EventsCategoryGroup[] = [
   },
   {
     id: "local",
-    label: "Local Happenings",
-    description: "Comedy, things to do, and nearby plans.",
+    label: "Live Events",
+    description: "Movie theaters, comedy, things to do, and nearby plans.",
     options: [
+      { id: "movie-theaters", label: "Movie Theaters", query: "Movie theaters near me tonight" },
       { id: "comedy", label: "Comedy", query: "Any comedy shows near me this weekend?" },
       { id: "things-to-do", label: "Things To Do", query: "Things to do near me tonight" },
       { id: "weekend-plans", label: "Weekend Plans", query: "What's happening near me this weekend?" }
@@ -154,6 +155,10 @@ export function getEventsCategoryGroupForQuery(query: string) {
     if (group.options.some((option) => option.query.trim().toLowerCase() === normalized)) {
       return group;
     }
+  }
+
+  if (/\b(?:movie theater|movie theatre|cinema|cinemas|movies in theaters?)\b/i.test(normalized)) {
+    return EVENTS_CATEGORY_GROUPS.find((group) => group.id === "local") ?? EVENTS_CATEGORY_GROUPS[0];
   }
 
   if (/\b(?:concert|concerts|live music)\b/i.test(normalized)) {

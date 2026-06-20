@@ -1,6 +1,8 @@
+import { buildLiveEventsFromPlaces, canUseLiveEventsSearch } from "@/lib/eventsPlaces";
 import type { SearchHalfwayRequest, WatchEventsResult } from "@/lib/types";
 import { EVENTS_DESCRIPTION } from "@/lib/watchBrowse";
 import {
+  EVENTS_LIVE_MESSAGE,
   EVENTS_PREVIEW_MESSAGE,
   EVENTS_TITLE,
   classifyEventsIntent,
@@ -21,30 +23,43 @@ export async function buildEventsResult(
   const location = extractedLocation || formLocation;
   const timeframe = extractWatchEventsTimeframe(trimmed);
   const topic = extractWatchEventsTopic(trimmed, intent);
-  const recommendations = buildEventsPreviewRecommendations({
-    query: trimmed,
-    intent,
-    location,
-    timeframe,
-    topic
-  });
+  const liveRecommendations =
+    locationContext && canUseLiveEventsSearch(locationContext)
+      ? await buildLiveEventsFromPlaces({
+          query: trimmed,
+          intent,
+          topic,
+          timeframe,
+          locationContext
+        })
+      : null;
+  const isLive = Boolean(liveRecommendations?.length);
+  const recommendations =
+    liveRecommendations ??
+    buildEventsPreviewRecommendations({
+      query: trimmed,
+      intent,
+      location,
+      timeframe,
+      topic
+    });
 
   return {
     botMode: "events",
     query: trimmed,
     title: EVENTS_TITLE,
     description: EVENTS_DESCRIPTION,
-    message: EVENTS_PREVIEW_MESSAGE,
+    message: isLive ? EVENTS_LIVE_MESSAGE : EVENTS_PREVIEW_MESSAGE,
     intent,
     intentLabel: intentLabel(intent),
     location,
     timeframe,
     topic,
-    contextSummary: buildEventsContextSummary(location, timeframe, topic),
+    contextSummary: buildEventsContextSummary(location, timeframe, topic, isLive),
     resultCount: recommendations.length,
     recommendations,
     futureProviders: ["Ticketmaster", "SeatGeek", "ESPN", "SportsDataIO"],
-    preview: true,
+    preview: !isLive,
     hasMore: false
   };
 }
@@ -73,8 +88,8 @@ function intentLabel(intent: WatchEventsResult["intent"]) {
   }
 }
 
-function buildEventsContextSummary(location: string, timeframe: string, topic: string) {
-  const parts = ["Location-based"];
+function buildEventsContextSummary(location: string, timeframe: string, topic: string, isLive: boolean) {
+  const parts = [isLive ? "Live venues" : "Location-based"];
   if (topic) parts.push(topic);
   if (location) parts.push(location);
   if (timeframe) parts.push(timeframe);

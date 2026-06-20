@@ -14,7 +14,9 @@ export const WATCH_LIVE_MESSAGE =
 
 export const EVENTS_TITLE = "Events";
 export const EVENTS_PREVIEW_MESSAGE =
-  "Preview results below are location-based and curated by Koi. Live listings and ticket data from Ticketmaster and SeatGeek are coming soon.";
+  "Preview results below are location-based and curated by Koi. Add locations in classic search below for real venues ranked by drive time.";
+export const EVENTS_LIVE_MESSAGE =
+  "Venues below are real places from Google Maps, ranked by drive time from your location(s). Event schedules and tickets from Ticketmaster and SeatGeek are coming soon.";
 
 /** @deprecated Use WATCH_TITLE */
 export const WATCH_EVENTS_TITLE = WATCH_TITLE;
@@ -65,6 +67,7 @@ export function detectEventsIntent(query: string) {
   if (SHOW_ME_PLACES_PATTERN.test(trimmed)) return false;
 
   const eventPatterns = [
+    /\b(?:movie theater|movie theatre|cinema|cinemas)\b/i,
     /\b(?:comedy|concert|concerts|stand[- ]?up|festival|festivals)\b/i,
     /\b(?:live sports|game tonight|watch the .* game|watch .* game tonight)\b/i,
     /\b(?:tickets?|box office)\b/i,
@@ -125,11 +128,19 @@ export function classifyWatchIntent(query: string): WatchEventsIntent {
   return classifyWatchEventsIntent(query);
 }
 
+export function isMovieTheaterEventsQuery(query: string) {
+  return /\b(?:movie theater|movie theatre|cinema|cinemas|movies in theaters?|movies in theatres?)\b/i.test(query);
+}
+
 export function classifyEventsIntent(query: string): WatchEventsIntent {
   const value = query.toLowerCase();
 
   if (/\b(?:game tonight|watch the .* game|phillies|yankees|eagles|nba|nfl|mlb|nhl|football|baseball|soccer)\b/i.test(value)) {
     return "sports";
+  }
+
+  if (isMovieTheaterEventsQuery(value)) {
+    return "live_event";
   }
 
   if (/\b(?:comedy show|stand[- ]?up|concert|concerts|festival|festivals|tickets?|box office)\b/i.test(value)) {
@@ -186,6 +197,9 @@ export function buildEventsPreviewRecommendations({
     case "sports":
       return buildSportsRecommendations(topic || "local team", location, timeframe);
     case "live_event":
+      if (isMovieTheaterEventsQuery(query)) {
+        return buildMovieTheaterRecommendations(location || "your area", timeframe);
+      }
       return buildLiveEventRecommendations(location || "your area", topic || "live events", timeframe);
     default:
       return buildThingsToDoRecommendations(location || "your area", topic || "events", timeframe);
@@ -281,6 +295,7 @@ export function extractWatchEventsTopic(query: string, intent: WatchEventsIntent
   const watchMatch = query.match(/\bwatch(?:ing)?\s+(?:the\s+)?(.+?)(?:\s+game\b|\?|$)/i);
   if (watchMatch?.[1] && intent === "sports") return cleanupWatchEventsFragment(watchMatch[1]);
 
+  if (isMovieTheaterEventsQuery(query)) return "movie theaters";
   if (/\bcomedy\b/i.test(query) && !/\b(?:movie|movies|film)\b/i.test(query)) return "comedy";
   if (/\bconcert/i.test(query)) return "concerts";
   if (/\bfamily[- ]friendly events\b/i.test(query)) return "family-friendly events";
@@ -592,7 +607,7 @@ function buildMovieTheaterRecommendations(location: string, timeframe: string) {
       rank: 1,
       title: "Movie theater nearby",
       subtitle: `${timeframe} · Out to watch`,
-      kind: "general",
+      kind: "live_event",
       badge: "Best theater match",
       explanation: `Koi read this as a movie theater search ${area} and prioritized easy out-of-home options first.`,
       tags: ["Movie theater", timeframe, "Out tonight"],
@@ -609,7 +624,7 @@ function buildMovieTheaterRecommendations(location: string, timeframe: string) {
       rank: 2,
       title: "New releases in theaters",
       subtitle: "If the group wants something current",
-      kind: "general",
+      kind: "live_event",
       badge: "Now playing",
       explanation: "A strong backup when you want a definite plan with showtimes instead of picking a title at home.",
       tags: ["Now playing", "New releases", timeframe],
@@ -625,7 +640,7 @@ function buildMovieTheaterRecommendations(location: string, timeframe: string) {
       rank: 3,
       title: "Dinner and a movie",
       subtitle: "Easy meetup plan nearby",
-      kind: "general",
+      kind: "live_event",
       badge: "Meetup-friendly",
       explanation: "Helpful when the group wants a full night out with food and a film in the same area.",
       tags: ["Dinner + movie", "Group-friendly", "Night out"],

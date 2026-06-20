@@ -350,7 +350,7 @@ export function AiSearchBox({
           <div className="grid gap-2">
             <h3 className="text-lg font-black text-ink">Find local events</h3>
             <p className="text-sm leading-6 text-slate">
-              Sports, concerts, festivals, and happenings near you. Include a location in your ask, or use classic search below.
+              Movie theaters, sports, concerts, festivals, and happenings near you. Include a location in your ask, or use classic search below.
             </p>
             <SearchPanel {...searchPanelProps} />
           </div>

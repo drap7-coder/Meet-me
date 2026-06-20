@@ -20,7 +20,7 @@ export function EventsCategorySelector({ value, onChange }: Props) {
       <div>
         <span className="text-sm font-bold text-ink">Choose the kind of event</span>
         <p className="mt-1 text-xs font-semibold leading-5 text-slate">
-          Events use your location to find sports, concerts, festivals, and local happenings nearby.
+          Events use your location to find movie theaters, sports, concerts, festivals, and local happenings nearby.
         </p>
       </div>
       <div className="grid grid-cols-2 gap-3">

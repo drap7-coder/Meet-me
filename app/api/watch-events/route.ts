@@ -1,4 +1,5 @@
 import { buildEventsResult } from "@/lib/eventsSearch";
+import { isMovieTheaterEventsQuery } from "@/lib/watchEvents";
 import { resolveWatchPlaceSearchForm } from "@/lib/watchPlaceSearch";
 import type { SearchHalfwayRequest, WatchEventsPlacesRedirect } from "@/lib/types";
 import { NextResponse } from "next/server";
@@ -13,7 +14,7 @@ export async function POST(request: Request) {
 
     const locationContext = readLocationContext(body);
     const placeForm = resolveWatchPlaceSearchForm(query, locationContext);
-    if (placeForm) {
+    if (placeForm && !isMovieTheaterEventsQuery(query)) {
       const locationA = placeForm.locationA.trim();
       const searchMode = placeForm.searchMode ?? "midpoint";
       if (!locationA || (searchMode === "midpoint" && !placeForm.locationB.trim())) {

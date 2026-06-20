@@ -10,7 +10,7 @@ type Props = {
 };
 
 export function WatchEventsResults({ result, loadingMore = false, onLoadMore }: Props) {
-  const sidebarTitle = result.preview ? "Preview mode" : "Live watch picks";
+  const sidebarTitle = result.preview ? "Preview mode" : "Live streaming picks";
 
   return (
     <section className="search-results-enter mt-5 grid gap-5 pb-16 lg:grid-cols-[1fr_320px] lg:items-start">

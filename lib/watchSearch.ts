@@ -15,9 +15,7 @@ import {
 const SUBCATEGORY_INTENT_LABELS: Record<WatchSubcategory, string> = {
   movies: "Movies",
   tv_shows: "TV Shows",
-  trending: "Trending",
-  genres: "Genres",
-  streaming: "Streaming"
+  trending: "Trending"
 };
 
 export async function buildWatchSearchResult(
@@ -44,7 +42,7 @@ export async function buildWatchSearchResult(
     description: WATCH_DESCRIPTION,
     message: hasLivePicks ? WATCH_LIVE_MESSAGE : WATCH_PREVIEW_MESSAGE,
     intent: context.intent,
-    intentLabel: subcategory ? SUBCATEGORY_INTENT_LABELS[subcategory] : "Watch",
+    intentLabel: subcategory ? SUBCATEGORY_INTENT_LABELS[subcategory] : "Streaming",
     location: "",
     timeframe: context.timeframe,
     topic: context.topic,
@@ -107,18 +105,13 @@ function augmentQueryForSubcategory(query: string, subcategory?: WatchSubcategor
       return /\btrending\b/i.test(query)
         ? query
         : `Trending ${detectMediaKind(query) === "tv" ? "TV shows" : "movies"} ${query}`.trim();
-    case "genres":
-      return query;
-    case "streaming":
-      return /\b(?:stream|streaming)\b/i.test(query) ? query : `Where can I stream ${query}`;
     default:
       return query;
   }
 }
 
 function steerIntentForSubcategory(intent: ReturnType<typeof classifyWatchIntent>, subcategory?: WatchSubcategory) {
-  if (subcategory === "streaming") return "stream";
-  if (subcategory === "movies" || subcategory === "tv_shows" || subcategory === "trending" || subcategory === "genres") {
+  if (subcategory === "movies" || subcategory === "tv_shows" || subcategory === "trending") {
     return "general";
   }
   return intent;
@@ -129,7 +122,7 @@ function buildWatchContextSummary(
   timeframe: string,
   topic: string
 ) {
-  const parts = [subcategory ? SUBCATEGORY_INTENT_LABELS[subcategory] : "Watch"];
+  const parts = [subcategory ? SUBCATEGORY_INTENT_LABELS[subcategory] : "Streaming"];
   if (topic) parts.push(topic);
   if (timeframe) parts.push(timeframe);
   return parts.join(" · ");

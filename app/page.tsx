@@ -103,7 +103,7 @@ export default function HomePage() {
 
   const resultCountLabel = useMemo(() => {
     if (watchEventsResult) {
-      const label = watchEventsResult.preview ? "preview option" : "watch pick";
+      const label = watchEventsResult.preview ? "preview option" : "streaming pick";
       return `${watchEventsResult.resultCount} ${label}${watchEventsResult.resultCount === 1 ? "" : "s"}`;
     }
     if (!results) return "";
@@ -526,7 +526,7 @@ export default function HomePage() {
               loading={loading}
               loadingLabel={
                 searchKind === "watch"
-                  ? "Finding watch picks"
+                  ? "Finding streaming picks"
                   : searchKind === "events"
                     ? "Finding local events"
                     : "Finding places"
@@ -670,7 +670,7 @@ export default function HomePage() {
 }
 
 function MarketingHero() {
-  const trustItems = ["Find places", "Watch picks", "Local events"];
+  const trustItems = ["Find places", "Streaming picks", "Local events"];
 
   return (
       <div className="max-w-4xl">
@@ -942,7 +942,7 @@ function HowItWorks() {
     ],
     [
       "Pick your lane",
-      "Choose Find Places, Watch, or Events, then narrow with categories like cuisine or genre."
+      "Choose Find Places, Streaming, or Events, then narrow with categories like cuisine or genre."
     ],
     [
       "Get picks you can act on",
@@ -981,7 +981,7 @@ function UseCases() {
       "Find Places",
       "Restaurants, coffee, activities, and meet-up spots — nearby or balanced between two people."
     ],
-    ["Watch Picks", "Movies, TV, genres, and streaming ideas powered by TMDB. No location needed."],
+    ["Streaming Picks", "Movies, TV, and trending ideas powered by TMDB. No location needed."],
     ["Local Events", "Sports, concerts, comedy, festivals, and happenings near you."]
   ];
 
@@ -1032,7 +1032,7 @@ function FaqSection() {
             {BRAND.askLabel}, without losing the classic controls.
           </h2>
           <p className="mt-4 text-base font-semibold leading-7 text-slate">
-            Answers about finding places, watch picks, local events, and meet-in-the-middle search.
+            Answers about finding places, streaming picks, local events, and meet-in-the-middle search.
           </p>
         </div>
         <div className="mt-8 grid gap-3">

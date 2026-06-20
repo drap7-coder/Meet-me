@@ -86,7 +86,7 @@ export type SearchMode = "single" | "midpoint";
 
 export type KoiBotMode = "places" | "watch" | "events";
 
-export type WatchSubcategory = "movies" | "tv_shows" | "trending" | "genres" | "streaming";
+export type WatchSubcategory = "movies" | "tv_shows" | "trending";
 
 export type WatchEventsIntent = "stream" | "live_event" | "sports" | "things_to_do" | "general";
 

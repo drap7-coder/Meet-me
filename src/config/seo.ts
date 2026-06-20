@@ -12,7 +12,7 @@ export const FAQ_ITEMS = [
   {
     question: "Can Koi help me decide what to watch?",
     answer:
-      "Yes. Choose Watch, pick movies or TV, browse by genre, or describe the mood you want. Koi pulls real picks from TMDB — no location needed."
+      "Yes. Choose Streaming, pick movies or TV, browse by genre, or describe the mood you want. Koi pulls real picks from TMDB — no location needed."
   },
   {
     question: "Can Koi find local events near me?",

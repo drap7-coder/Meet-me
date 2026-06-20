@@ -43,8 +43,8 @@ const BOT_MODES = [
   },
   {
     id: "watch" as const,
-    title: "Watch",
-    description: "Movies, TV shows, streaming, and what to watch tonight."
+    title: "Streaming",
+    description: "Movies, TV shows, and trending picks."
   },
   {
     id: "events" as const,
@@ -272,7 +272,7 @@ export function AiSearchBox({
     ? "Understanding..."
     : loading
       ? botMode === "watch"
-        ? "Finding watch picks..."
+        ? "Finding streaming picks..."
         : botMode === "events"
           ? "Finding events..."
           : "Finding places..."
@@ -359,9 +359,9 @@ export function AiSearchBox({
         {botMode === "watch" && watchFlowStep === "categories" ? (
           <div className="grid gap-4">
             <div>
-              <h3 className="text-lg font-black text-ink">What do you want to watch?</h3>
+              <h3 className="text-lg font-black text-ink">What do you want to stream?</h3>
               <p className="mt-1 text-sm leading-6 text-slate">
-                Describe a mood, or browse lanes and genres below — just like picking a restaurant type under Food.
+                Describe a mood, or browse Movies, TV, and Trending below — just like picking a restaurant type under Food.
               </p>
             </div>
             <SearchPanel
@@ -370,7 +370,7 @@ export function AiSearchBox({
               examplePrompts={WATCH_EXAMPLE_PROMPTS}
             />
             <div className="grid gap-2 border-t border-line/70 pt-4">
-              <p className="text-xs font-black uppercase tracking-[0.14em] text-slate">Browse by lane</p>
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-slate">Browse by type</p>
               <WatchBrowseSelector
                 genrePanelRef={genrePanelRef}
                 activeSubcategory={watchActiveSubcategory}
@@ -390,7 +390,7 @@ export function AiSearchBox({
                 <h3 className="text-lg font-black text-ink">{getWatchSubcategoryLabel(watchSubcategory)}</h3>
                 <p className="mt-1 text-sm leading-6 text-slate">{getWatchSubcategoryDescription(watchSubcategory)}</p>
               </div>
-              <FlowBackButton label="Back to watch categories" onClick={backToWatchCategories} />
+              <FlowBackButton label="Back to streaming categories" onClick={backToWatchCategories} />
             </div>
             <SearchPanel
               {...searchPanelProps}

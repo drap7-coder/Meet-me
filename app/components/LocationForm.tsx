@@ -78,7 +78,7 @@ export function LocationForm({ form, loading, discoveryMode = "places", onChange
   const isEventsMode = discoveryMode === "events";
   const needsLocation = !isWatchMode;
   const submitCopy = isWatchMode
-    ? "Find watch picks"
+    ? "Find streaming picks"
     : isEventsMode
       ? "Find events"
       : getSubmitCopy(activePrimaryId);

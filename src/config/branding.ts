@@ -6,10 +6,10 @@ export const BRAND = {
   /** Primary CTA label — the user asks Koi, not "Koi bot". */
   askLabel: "Ask Koi",
   url: "https://askkoibot.com",
-  tagline: "Places, watch picks, and local events.",
+  tagline: "Places, streaming picks, and local events.",
   headerEyebrow: "Discover locally",
   heroHeadline: "Ask Koi what to do tonight.",
-  seoTitle: "Koi bot — Places, watch picks & local events",
+  seoTitle: "Koi bot — Places, streaming picks & local events",
   description:
     "Koi bot helps you find places to meet, things to watch, and events nearby. Ask Koi where to go or what to do.",
   footerDescription:

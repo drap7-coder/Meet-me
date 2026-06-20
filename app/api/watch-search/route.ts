@@ -23,13 +23,7 @@ export async function POST(request: Request) {
 }
 
 function parseSubcategory(value: unknown): WatchSubcategory | undefined {
-  if (
-    value === "movies" ||
-    value === "tv_shows" ||
-    value === "trending" ||
-    value === "genres" ||
-    value === "streaming"
-  ) {
+  if (value === "movies" || value === "tv_shows" || value === "trending") {
     return value;
   }
   return undefined;

@@ -5,8 +5,8 @@ import type {
   WatchEventsResult
 } from "@/lib/types";
 
-export const WATCH_TITLE = "Watch";
-export const WATCH_DESCRIPTION = "Movies, TV shows, streaming, and what to watch tonight.";
+export const WATCH_TITLE = "Streaming";
+export const WATCH_DESCRIPTION = "Movies, TV shows, and trending picks.";
 export const WATCH_PREVIEW_MESSAGE =
   "Preview results below are curated by Koi from your ask. Live TMDB picks appear when configured.";
 export const WATCH_LIVE_MESSAGE =

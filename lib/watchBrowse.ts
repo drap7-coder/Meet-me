@@ -9,9 +9,7 @@ export type WatchSubcategoryOption = {
 export const WATCH_SUBCATEGORIES: WatchSubcategoryOption[] = [
   { id: "movies", label: "Movies", description: "Films, date nights, and movie picks." },
   { id: "tv_shows", label: "TV Shows", description: "Series, binge picks, and what's on TV." },
-  { id: "trending", label: "Trending", description: "Popular movies and shows right now." },
-  { id: "genres", label: "Genres", description: "Comedy, sci-fi, drama, and more." },
-  { id: "streaming", label: "Streaming", description: "What to stream tonight." }
+  { id: "trending", label: "Trending", description: "Popular movies and shows right now." }
 ];
 
 export const DEFAULT_WATCH_SUBCATEGORY: WatchSubcategory = "movies";
@@ -26,13 +24,11 @@ export const WATCH_EXAMPLE_PROMPTS = [
 export const WATCH_PROMPTS_BY_SUBCATEGORY: Record<WatchSubcategory, string[]> = {
   movies: ["Funny movies like Superbad", "Movies like The Dark Knight", "Best action movies tonight", "Highly rated dramas"],
   tv_shows: ["Best sci-fi shows from the last 5 years", "Comfort rewatch series", "New TV series to start tonight", "Limited series under 8 episodes"],
-  trending: ["Trending TV shows tonight", "Trending movies this week", "What everyone is watching now", "Popular new releases"],
-  genres: ["Best sci-fi movies", "Funny comedies tonight", "Scary horror picks", "Romantic movies for date night"],
-  streaming: ["What should I stream tonight?", "Where can I stream Interstellar?", "Best movies on streaming tonight", "Easy crowd-pleasers to stream"]
+  trending: ["Trending TV shows tonight", "Trending movies this week", "What everyone is watching now", "Popular new releases"]
 };
 
 export function getWatchSubcategoryLabel(subcategory: WatchSubcategory) {
-  return WATCH_SUBCATEGORIES.find((option) => option.id === subcategory)?.label ?? "Watch";
+  return WATCH_SUBCATEGORIES.find((option) => option.id === subcategory)?.label ?? "Streaming";
 }
 
 export function getWatchSubcategoryDescription(subcategory: WatchSubcategory) {
@@ -66,17 +62,6 @@ export const WATCH_GENRES_BY_SUBCATEGORY: Partial<Record<WatchSubcategory, Watch
     { id: "sci-fi", label: "Sci-Fi & Fantasy", query: "Best sci-fi TV shows tonight" },
     { id: "documentary", label: "Documentary", query: "Best documentary series tonight" },
     { id: "family", label: "Family", query: "Best family TV shows tonight" }
-  ],
-  genres: [
-    { id: "comedy", label: "Comedy", query: "Best comedy movies and shows tonight" },
-    { id: "sci-fi", label: "Sci-Fi", query: "Best sci-fi movies and shows tonight" },
-    { id: "drama", label: "Drama", query: "Best drama movies and shows tonight" },
-    { id: "horror", label: "Horror", query: "Best horror movies and shows tonight" },
-    { id: "romance", label: "Romance", query: "Best romance movies and shows tonight" },
-    { id: "action", label: "Action", query: "Best action movies and shows tonight" },
-    { id: "thriller", label: "Thriller", query: "Best thriller movies and shows tonight" },
-    { id: "documentary", label: "Documentary", query: "Best documentaries tonight" },
-    { id: "family", label: "Family", query: "Best family-friendly picks tonight" }
   ]
 };
 

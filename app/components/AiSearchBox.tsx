@@ -175,11 +175,11 @@ export function AiSearchBox({ loading, onParsed, onWatchEvents }: Props) {
             <button
               key={prompt}
               type="button"
-              disabled={busy}
               onClick={() => {
-                void runSearch(prompt, botMode);
+                setQuery(prompt);
+                if (error) setError("");
               }}
-              className="rounded-full border border-line bg-white px-3 py-1.5 text-left text-xs font-semibold text-slate transition hover:border-clay hover:text-clay disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-full border border-line bg-white px-3 py-1.5 text-left text-xs font-semibold text-slate transition hover:border-clay hover:text-clay"
             >
               {prompt}
             </button>

@@ -8,12 +8,12 @@ export const BRAND = {
   url: "https://askkoibot.com",
   tagline: "Places, streaming picks, and local events.",
   headerEyebrow: "Discover locally",
-  heroHeadline: "Ask Koi what to do tonight.",
+  heroHeadline: "Ask Koi what to do.",
   seoTitle: "Koi bot — Places, streaming picks & local events",
   description:
     "Koi bot helps you find places to meet, things to watch, and events nearby. Ask Koi where to go or what to do.",
   footerDescription:
     "Koi bot helps you find places to meet, things to watch, and events nearby. Ask Koi where to go or what to do.",
   heroSubheadline:
-    "Find meet-up spots, movie and TV picks, and local happenings — nearby or halfway."
+    "Find the right place, movie, or event without sorting through tabs, filters, and maybes."
 };

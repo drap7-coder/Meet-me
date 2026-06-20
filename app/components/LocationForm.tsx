@@ -15,11 +15,22 @@ type Props = {
   form: SearchHalfwayRequest;
   loading: boolean;
   discoveryMode?: KoiBotMode;
+  variant?: "full" | "location-only";
+  submitLabel?: string;
   onChange: (form: SearchHalfwayRequest) => void;
   onSubmit: () => void;
 };
 
-export function LocationForm({ form, loading, discoveryMode = "places", onChange, onSubmit }: Props) {
+export function LocationForm({
+  form,
+  loading,
+  discoveryMode = "places",
+  variant = "full",
+  submitLabel,
+  onChange,
+  onSubmit
+}: Props) {
+  const locationOnly = variant === "location-only";
   const [inviteStatus, setInviteStatus] = useState("");
   const [inviteUrl, setInviteUrl] = useState("");
   const [showInviteTools, setShowInviteTools] = useState(false);
@@ -89,14 +100,22 @@ export function LocationForm({ form, loading, discoveryMode = "places", onChange
       <div className="mb-6">
         <Logo size="sm" />
         <h2 className="mt-2 text-2xl font-black tracking-tight text-ink sm:text-3xl">
-          {isWatchMode ? "What do you want to watch?" : isEventsMode ? "Where should Koi look for events?" : "Where should Koi look?"}
+          {locationOnly
+            ? "Where are you?"
+            : isWatchMode
+              ? "What do you want to watch?"
+              : isEventsMode
+                ? "Where should Koi look for events?"
+                : "Where should Koi look?"}
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate">
-          {isWatchMode
-            ? "No location needed — pick a watch category and describe what you want to stream or watch tonight."
-            : isEventsMode
-              ? "Events are location-based. One place is enough for nearby ideas. Add a second place when you want Koi to balance the trip."
-              : "One place is enough for nearby ideas. Add a second place when you want Koi to balance the trip."}
+          {locationOnly
+            ? "Add one place for nearby results, or two when you want a fair midpoint. Tap Use my location if that is easier."
+            : isWatchMode
+              ? "No location needed — pick a watch category and describe what you want to stream or watch tonight."
+              : isEventsMode
+                ? "Events are location-based. One place is enough for nearby ideas. Add a second place when you want Koi to balance the trip."
+                : "One place is enough for nearby ideas. Add a second place when you want Koi to balance the trip."}
         </p>
       </div>
 
@@ -166,6 +185,8 @@ export function LocationForm({ form, loading, discoveryMode = "places", onChange
         </>
       ) : null}
 
+      {!locationOnly ? (
+      <>
       <div className="mt-5 grid gap-3">
         <div>
           <span className="text-sm font-bold text-ink">
@@ -252,14 +273,19 @@ export function LocationForm({ form, loading, discoveryMode = "places", onChange
           />
         </label>
       ) : null}
+      </>
+      ) : null}
 
       <button
         type="submit"
         disabled={loading}
         className="mt-6 h-11 w-full rounded-full bg-clay px-5 font-bold text-white shadow-[0_10px_24px_rgba(214,90,46,0.24)] transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25 disabled:cursor-not-allowed disabled:bg-ink/30 sm:h-12"
       >
-        {loading ? `${submitCopy.replace("Find", "Finding")}...` : submitCopy}
+        {loading
+          ? `${(submitLabel ?? submitCopy).replace("Find", "Finding")}...`
+          : submitLabel ?? submitCopy}
       </button>
+      {!locationOnly ? (
       <button
         type="button"
         onClick={shareInvite}
@@ -267,6 +293,7 @@ export function LocationForm({ form, loading, discoveryMode = "places", onChange
       >
         Invite someone to plan with you
       </button>
+      ) : null}
       {showInviteTools ? (
         <div className="mt-3 rounded-lg border border-line bg-mint p-3">
           <p className="text-xs font-semibold leading-5 text-slate">Send this link to invite someone to plan with you.</p>

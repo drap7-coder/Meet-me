@@ -1,4 +1,11 @@
 import { resolveSearchCategoryFromQuery } from "@/lib/categories";
+import {
+  isCurrentLocationReference,
+  looksLikeCurrentLocationQuery,
+  needsCurrentLocationResolution,
+  resolveCurrentLocationInForm,
+  type CurrentLocationContext
+} from "@/lib/currentLocation";
 import { detectPreferencesFromQuery } from "@/lib/preferences";
 import type { KoiBotMode, SearchHalfwayRequest, WatchEventsResult } from "@/lib/types";
 import { buildEventsResult } from "@/lib/eventsSearch";
@@ -73,8 +80,12 @@ export async function POST(request: Request) {
     }
 
     const parsed = await parseSearchQuery(query);
-    const locationA = parsed.location_a.trim();
+    const locationContext = readLocationContext(body);
+    let locationA = parsed.location_a.trim();
     const locationB = parsed.location_b.trim();
+    if ((!locationA && looksLikeCurrentLocationQuery(query)) || isCurrentLocationReference(locationA)) {
+      locationA = "me";
+    }
     const categoryIntent = resolveSearchCategoryFromQuery(query, parsed.category);
     const searchMode =
       parsed.search_mode === "single" || (locationA && !locationB && !looksLikeMidpointQuery(query))
@@ -102,8 +113,20 @@ export async function POST(request: Request) {
       customQuery: categoryIntent.customQuery ?? "",
       ...(preferences.length ? { preferences } : {})
     };
+    const resolvedForm = resolveCurrentLocationInForm(form, locationContext);
 
-    const placeResponse = buildPlacesParseResponse(query, form, parsed.category.trim());
+    if (needsCurrentLocationResolution(resolvedForm)) {
+      return NextResponse.json(
+        {
+          error: "Turn on location or add a city to search nearby.",
+          needsLocation: true,
+          form: resolvedForm
+        },
+        { status: 422 }
+      );
+    }
+
+    const placeResponse = buildPlacesParseResponse(query, resolvedForm, parsed.category.trim());
     if (!placeResponse) {
       return NextResponse.json(
         { error: "Where should Koi search? Try: coffee near Hoboken, or coffee between Hoboken and Edison." },
@@ -173,6 +196,7 @@ async function parseWithOllama(query: string): Promise<ParsedSearchIntent> {
               "Use category as the requested venue/activity type, such as coffee, Italian, breweries, cocktail bars, park, hiking, bookstore, bowling, or ramen.",
               "Use search_mode midpoint when the user wants a place between two locations.",
               "Use search_mode single when the user wants places near, in, or around one location. For single searches, put the place in location_a and leave location_b empty.",
+              "When the user says near me, around me, or my location, set location_a to me and search_mode to single.",
               "If a value is missing, return an empty string for that key.",
               "Example: Meet for coffee halfway between Hoboken and Edison -> {\"location_a\":\"Hoboken, NJ\",\"location_b\":\"Edison, NJ\",\"category\":\"coffee\",\"search_mode\":\"midpoint\"}.",
               "Example: Find coffee near Hoboken -> {\"location_a\":\"Hoboken, NJ\",\"location_b\":\"\",\"category\":\"coffee\",\"search_mode\":\"single\"}."
@@ -263,6 +287,7 @@ function buildParserPrompt(query: string) {
     "Use category as the requested venue/activity type, such as coffee, Italian, breweries, cocktail bars, park, hiking, bookstore, bowling, or ramen.",
     "Use search_mode midpoint when the user wants a place between two locations.",
     "Use search_mode single when the user wants places near, in, or around one location. For single searches, put the place in location_a and leave location_b empty.",
+    "When the user says near me, around me, or my location, set location_a to me and search_mode to single.",
     "If a value is missing, return an empty string for that key.",
     "Example: Meet for coffee halfway between Hoboken and Edison -> {\"location_a\":\"Hoboken, NJ\",\"location_b\":\"Edison, NJ\",\"category\":\"coffee\",\"search_mode\":\"midpoint\"}.",
     "Example: Find coffee near Hoboken -> {\"location_a\":\"Hoboken, NJ\",\"location_b\":\"\",\"category\":\"coffee\",\"search_mode\":\"single\"}.",
@@ -275,11 +300,13 @@ function parseWithFallback(query: string): ParsedSearchIntent {
   const match = query.match(/\bbetween\s+(.+?)\s+(?:and|&)\s+(.+?)(?:\s+(?:with|for|near|that|where|$).*)?$/i);
   if (!match) {
     const singleMatch = query.match(/\b(?:near|around|in)\s+(.+?)(?:\s+(?:with|that|where|open|$).*)?$/i);
+    const captured = singleMatch ? cleanupLocation(singleMatch[1]) : "";
+    const useCurrentLocation = looksLikeCurrentLocationQuery(query) || isCurrentLocationReference(captured);
     return {
-      location_a: singleMatch ? cleanupLocation(singleMatch[1]) : "",
+      location_a: useCurrentLocation ? "me" : captured,
       location_b: "",
       category: guessCategory(query),
-      search_mode: singleMatch ? "single" : "midpoint"
+      search_mode: useCurrentLocation || singleMatch ? "single" : "midpoint"
     };
   }
 
@@ -305,6 +332,18 @@ function guessCategory(query: string) {
 
 function looksLikeMidpointQuery(query: string) {
   return /\b(?:between|halfway|midway|middle)\b/i.test(query);
+}
+
+function readLocationContext(body: Record<string, unknown>): CurrentLocationContext | undefined {
+  const context = body.context;
+  if (!context || typeof context !== "object" || Array.isArray(context)) return undefined;
+  const value = context as Partial<CurrentLocationContext>;
+  if (!value.locationA && !value.locationACoordinates) return undefined;
+  return {
+    locationA: typeof value.locationA === "string" ? value.locationA : "",
+    locationAPlaceId: typeof value.locationAPlaceId === "string" ? value.locationAPlaceId : undefined,
+    locationACoordinates: value.locationACoordinates
+  };
 }
 
 function parseJsonObject(value: unknown): Record<string, unknown> {

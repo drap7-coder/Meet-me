@@ -24,11 +24,15 @@ import { normalizeCategory, parseMeetupMode, parseSearchMode } from "@/lib/categ
 import { getPreferenceLabel, parsePreferences } from "@/lib/preferences";
 import { copyTextToClipboard, shareWithFallback, shouldUseNativeShare } from "@/lib/share";
 import { trackEvent } from "@/lib/analytics";
-import { DEFAULT_EVENTS_QUERY, DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
-import { resolveWatchPlaceSearchForm, watchPlaceSearchNeedsLocation } from "@/lib/watchPlaceSearch";
+import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
+import {
+  looksLikeCurrentLocationQuery,
+  needsCurrentLocationResolution,
+  resolveCurrentLocationInForm
+} from "@/lib/currentLocation";
+import { getCurrentPosition, reverseGeocodeCoordinates } from "@/lib/geolocation";
 import type { KoiBotMode, LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory, WatchEventsApiResponse, WatchEventsMoreResult, WatchEventsResult, WatchSubcategory } from "@/lib/types";
 import { BRAND } from "@/src/config/branding";
-import { FAQ_ITEMS } from "@/src/config/seo";
 import { useEffect, useMemo, useState } from "react";
 
 const initialForm: SearchHalfwayRequest = {
@@ -47,13 +51,23 @@ type ShareDialogState = {
   body: string;
 };
 
+type FallbackKind = "none" | "location" | "full";
+
+type PendingRetry =
+  | { kind: "events"; query: string }
+  | { kind: "places"; form: SearchHalfwayRequest };
+
 export default function HomePage() {
   const [form, setForm] = useState<SearchHalfwayRequest>(initialForm);
   const [results, setResults] = useState<SearchHalfwayResponse | null>(null);
   const [watchEventsResult, setWatchEventsResult] = useState<WatchEventsResult | null>(null);
   const [searchKind, setSearchKind] = useState<"places" | "watch" | "events" | null>(null);
   const [activeWatchSubcategory, setActiveWatchSubcategory] = useState<WatchSubcategory>(DEFAULT_WATCH_SUBCATEGORY);
-  const [askKoiMode, setAskKoiMode] = useState<KoiBotMode>("places");
+  const [showClassicFallback, setShowClassicFallback] = useState(false);
+  const [fallbackKind, setFallbackKind] = useState<FallbackKind>("none");
+  const [pendingRetry, setPendingRetry] = useState<PendingRetry | null>(null);
+  const [locationStatus, setLocationStatus] = useState("");
+  const [locating, setLocating] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingMoreWatchEvents, setLoadingMoreWatchEvents] = useState(false);
   const [error, setError] = useState("");
@@ -100,6 +114,90 @@ export default function HomePage() {
   useEffect(() => {
     setRecentMeetups(getRecentMeetups());
   }, []);
+
+  function scrollToFallback() {
+    window.requestAnimationFrame(() => {
+      document.getElementById("location-fallback")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById("classic-search")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
+  function openLocationFallback(retry: PendingRetry, message: string) {
+    setPendingRetry(retry);
+    setFallbackKind("location");
+    setShowClassicFallback(true);
+    setError(message);
+    scrollToFallback();
+  }
+
+  function openFullFallback(message?: string) {
+    setPendingRetry(null);
+    setFallbackKind("full");
+    setShowClassicFallback(true);
+    if (message) setError(message);
+    scrollToFallback();
+  }
+
+  async function requestUserLocation(retry?: PendingRetry | null) {
+    if (typeof window === "undefined" || !window.navigator?.geolocation) {
+      setError("Location is not available in this browser.");
+      if (retry ?? pendingRetry) {
+        openLocationFallback(
+          retry ?? pendingRetry!,
+          "Add where you are to continue."
+        );
+      }
+      return;
+    }
+
+    setLocating(true);
+    setLocationStatus("Checking your location...");
+    try {
+      const coordinates = await getCurrentPosition();
+      const resolved = await reverseGeocodeCoordinates(coordinates);
+      const nextForm: SearchHalfwayRequest = {
+        ...form,
+        locationA: resolved.locationA,
+        locationAPlaceId: resolved.locationAPlaceId,
+        locationACoordinates: coordinates,
+        searchMode: "single"
+      };
+      setForm(nextForm);
+      setLocationStatus(`Using your location: ${shortLocationLabel(resolved.locationA)}`);
+
+      const activeRetry = retry ?? pendingRetry;
+      if (activeRetry?.kind === "events") {
+        setShowClassicFallback(false);
+        setFallbackKind("none");
+        setPendingRetry(null);
+        await submitEventsSearch(activeRetry.query, nextForm);
+        return;
+      }
+      if (activeRetry?.kind === "places") {
+        setShowClassicFallback(false);
+        setFallbackKind("none");
+        setPendingRetry(null);
+        runParsedSearch({
+          ...activeRetry.form,
+          locationA: nextForm.locationA,
+          locationAPlaceId: nextForm.locationAPlaceId,
+          locationACoordinates: nextForm.locationACoordinates,
+          searchMode: "single"
+        });
+      }
+    } catch {
+      setLocationStatus("");
+      setError("Couldn’t access your location. Type a city or address below.");
+      if (retry ?? pendingRetry) {
+        openLocationFallback(
+          retry ?? pendingRetry!,
+          "Couldn’t access your location. Add where you are to continue."
+        );
+      }
+    } finally {
+      setLocating(false);
+    }
+  }
 
   const resultCountLabel = useMemo(() => {
     if (watchEventsResult) {
@@ -170,6 +268,9 @@ export default function HomePage() {
     setShareMessage("");
     setCurrentShareUrl("");
     setHasSearched(false);
+    setShowClassicFallback(false);
+    setFallbackKind("none");
+    setPendingRetry(null);
     window.history.replaceState(null, "", "/");
     window.requestAnimationFrame(() => document.getElementById("search")?.scrollIntoView({ behavior: "smooth" }));
   }
@@ -182,8 +283,22 @@ export default function HomePage() {
 
   function runParsedSearch(nextForm: SearchHalfwayRequest) {
     setWatchEventsResult(null);
-    setForm(nextForm);
-    submitSearch(nextForm);
+    const resolvedForm = resolveCurrentLocationInForm(nextForm, form);
+    if (needsCurrentLocationResolution(resolvedForm)) {
+      setPendingRetry({ kind: "places", form: resolvedForm });
+      void requestUserLocation({ kind: "places", form: resolvedForm });
+      return;
+    }
+    setShowClassicFallback(false);
+    setFallbackKind("none");
+    setPendingRetry(null);
+    setForm(resolvedForm);
+    submitSearch(resolvedForm);
+  }
+
+  function handleNeedsLocation(pendingForm: SearchHalfwayRequest) {
+    setPendingRetry({ kind: "places", form: pendingForm });
+    void requestUserLocation({ kind: "places", form: pendingForm });
   }
 
   async function submitWatchSearch(query: string, subcategory: WatchSubcategory = activeWatchSubcategory) {
@@ -230,6 +345,21 @@ export default function HomePage() {
     const startedAt = Date.now();
     const shouldPlayMotion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let redirectedToPlaces = false;
+    let eventLocationContext = resolveCurrentLocationInForm(locationContext ?? form, form);
+    if (looksLikeCurrentLocationQuery(query) && needsCurrentLocationResolution({ ...eventLocationContext, locationA: "me", searchMode: "single" })) {
+      setPendingRetry({ kind: "events", query });
+      await requestUserLocation({ kind: "events", query });
+      return;
+    }
+    if (!eventLocationContext.locationA.trim() || needsCurrentLocationResolution(eventLocationContext)) {
+      setSearchKind("events");
+      setHasSearched(true);
+      setResults(null);
+      setWatchEventsResult(null);
+      openLocationFallback({ kind: "events", query }, "Add your location to discover nearby events.");
+      return;
+    }
+
     setSearchKind("events");
     setHasSearched(true);
     setLoading(true);
@@ -246,7 +376,7 @@ export default function HomePage() {
       const response = await fetch("/api/watch-events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, form: locationContext ?? form })
+        body: JSON.stringify({ query, form: eventLocationContext })
       });
       const data = (await response.json()) as WatchEventsApiResponse & { error?: string };
       if (!response.ok) throw new Error(data.error ?? "Events search failed.");
@@ -263,6 +393,13 @@ export default function HomePage() {
       }
 
       const result = data as WatchEventsResult;
+      if (result.preview) {
+        openLocationFallback({ kind: "events", query }, "Add your location to discover nearby events.");
+        throw new Error("Add your location to discover nearby events.");
+      }
+      setShowClassicFallback(false);
+      setFallbackKind("none");
+      setPendingRetry(null);
       setWatchEventsResult(result);
       trackEvent("watch_events_completed", {
         intent: result.intent,
@@ -271,6 +408,7 @@ export default function HomePage() {
     } catch (searchError) {
       setWatchEventsResult(null);
       setError(searchError instanceof Error ? searchError.message : "Events search failed.");
+      scrollToFallback();
     } finally {
       if (!redirectedToPlaces) {
         const remainingMotionTime = 650 - (Date.now() - startedAt);
@@ -286,6 +424,90 @@ export default function HomePage() {
 
   function runEventsSearch(query: string) {
     void submitEventsSearch(query);
+  }
+
+  async function runExamplePrompt(query: string) {
+    setError("");
+    try {
+      const response = await fetch("/api/parse-search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query,
+          context: {
+            locationA: form.locationA,
+            locationAPlaceId: form.locationAPlaceId,
+            locationACoordinates: form.locationACoordinates
+          }
+        })
+      });
+      const data = (await response.json()) as {
+        botMode?: "places" | "watch" | "events";
+        form?: SearchHalfwayRequest;
+        error?: string;
+        needsLocation?: boolean;
+      };
+      if (!response.ok) {
+        if (response.status === 422 && data.needsLocation && data.form) {
+          handleNeedsLocation(data.form);
+        }
+        throw new Error(data.error ?? "Koi could not understand that example.");
+      }
+      if (data.botMode === "watch") {
+        runWatchSearch(query, DEFAULT_WATCH_SUBCATEGORY);
+        return;
+      }
+      if (data.botMode === "events") {
+        runEventsSearch(query);
+        return;
+      }
+      if (!data.form) throw new Error(data.error ?? "Koi could not understand that example.");
+      runParsedSearch(data.form);
+    } catch (exampleError) {
+      openFullFallback(exampleError instanceof Error ? exampleError.message : "Koi could not understand that example.");
+    }
+  }
+
+  function submitLocationFallback() {
+    if (!form.locationA.trim()) {
+      setError("Add where you are, or tap Use my location.");
+      scrollToFallback();
+      return;
+    }
+
+    const searchMode = form.searchMode ?? "midpoint";
+    if (searchMode === "midpoint" && !form.locationB.trim() && pendingRetry?.kind === "places") {
+      setError("Add a second location for a fair midpoint search.");
+      scrollToFallback();
+      return;
+    }
+
+    if (!pendingRetry) {
+      setError("Ask Koi what you want up above, then try again.");
+      return;
+    }
+
+    setShowClassicFallback(false);
+    setFallbackKind("none");
+    const retry = pendingRetry;
+    setPendingRetry(null);
+    setError("");
+
+    if (retry.kind === "events") {
+      void submitEventsSearch(retry.query, form);
+      return;
+    }
+
+    runParsedSearch({
+      ...retry.form,
+      locationA: form.locationA,
+      locationAPlaceId: form.locationAPlaceId,
+      locationACoordinates: form.locationACoordinates,
+      locationB: form.locationB,
+      locationBPlaceId: form.locationBPlaceId,
+      locationBCoordinates: form.locationBCoordinates,
+      searchMode: form.searchMode ?? retry.form.searchMode
+    });
   }
 
   async function loadMoreWatchEvents() {
@@ -331,65 +553,7 @@ export default function HomePage() {
     }
   }
 
-  function handleAskKoiModeChange(mode: KoiBotMode) {
-    setAskKoiMode(mode);
-    if (mode === "watch") {
-      setForm((current) => ({
-        ...current,
-        category: "events",
-        customQuery: current.customQuery?.trim() || "Funny movies like Superbad",
-        watchSubcategory: current.watchSubcategory ?? DEFAULT_WATCH_SUBCATEGORY
-      }));
-    }
-    if (mode === "events") {
-      setForm((current) => ({
-        ...current,
-        category: "events",
-        customQuery: current.customQuery?.trim() || DEFAULT_EVENTS_QUERY
-      }));
-    }
-  }
-
   function submitClassicSearch() {
-    if (askKoiMode === "watch") {
-      const query = form.customQuery?.trim();
-      if (!query) {
-        setError("Describe what you want to watch.");
-        return;
-      }
-      runWatchSearch(query, form.watchSubcategory ?? DEFAULT_WATCH_SUBCATEGORY);
-      return;
-    }
-
-    if (askKoiMode === "events") {
-      const query = form.customQuery?.trim();
-      if (!query) {
-        setError("Choose an event option to search.");
-        return;
-      }
-
-      const locationA = form.locationA.trim();
-      const searchMode = form.searchMode ?? "midpoint";
-      if (!locationA || (searchMode === "midpoint" && !form.locationB.trim())) {
-        setError("Add a location above — events are location-based.");
-        return;
-      }
-
-      const placeForm = resolveWatchPlaceSearchForm(query, form);
-      if (placeForm) {
-        if (watchPlaceSearchNeedsLocation(query, form)) {
-          setError("Add a location above, or include a place in your ask.");
-          return;
-        }
-        setForm(placeForm);
-        void submitSearch(placeForm);
-        return;
-      }
-
-      void submitEventsSearch(query, form);
-      return;
-    }
-
     submitSearch();
   }
 
@@ -495,19 +659,35 @@ export default function HomePage() {
               <MarketingHero />
               <AiSearchBox
                 loading={loading}
-                botMode={askKoiMode}
-                onBotModeChange={handleAskKoiModeChange}
+                locationStatus={locationStatus}
+                locationContext={{
+                  locationA: form.locationA,
+                  locationAPlaceId: form.locationAPlaceId,
+                  locationACoordinates: form.locationACoordinates
+                }}
+                locating={locating}
                 onParsed={runParsedSearch}
                 onWatchSearch={runWatchSearch}
                 onEventsSearch={runEventsSearch}
+                onNeedsFullFallback={() => openFullFallback()}
+                onNeedsLocation={handleNeedsLocation}
+                onUseLocation={() => void requestUserLocation()}
+              />
+              <LocationFallbackPanel
+                form={form}
+                loading={loading}
+                pendingQuery={pendingRetry?.kind === "events" ? pendingRetry.query : undefined}
+                hidden={!showClassicFallback || fallbackKind !== "location"}
+                onChange={setForm}
+                onSubmit={submitLocationFallback}
               />
               <ClassicSearchPanel
                 form={form}
                 loading={loading}
-                discoveryMode={askKoiMode}
+                discoveryMode="places"
                 onChange={setForm}
                 onSubmit={submitClassicSearch}
-                hidden={askKoiMode === "watch"}
+                hidden={!showClassicFallback || fallbackKind !== "full"}
               />
             </div>
           </section>
@@ -562,19 +742,35 @@ export default function HomePage() {
           <section id="search" className="mt-5 grid w-full max-w-5xl gap-5">
               <AiSearchBox
                 loading={loading}
-                botMode={askKoiMode}
-                onBotModeChange={handleAskKoiModeChange}
+                locationStatus={locationStatus}
+                locationContext={{
+                  locationA: form.locationA,
+                  locationAPlaceId: form.locationAPlaceId,
+                  locationACoordinates: form.locationACoordinates
+                }}
+                locating={locating}
                 onParsed={runParsedSearch}
                 onWatchSearch={runWatchSearch}
                 onEventsSearch={runEventsSearch}
+                onNeedsFullFallback={() => openFullFallback()}
+                onNeedsLocation={handleNeedsLocation}
+                onUseLocation={() => void requestUserLocation()}
+              />
+              <LocationFallbackPanel
+                form={form}
+                loading={loading}
+                pendingQuery={pendingRetry?.kind === "events" ? pendingRetry.query : undefined}
+                hidden={!showClassicFallback || fallbackKind !== "location"}
+                onChange={setForm}
+                onSubmit={submitLocationFallback}
               />
               <ClassicSearchPanel
                 form={form}
                 loading={loading}
-                discoveryMode={askKoiMode}
+                discoveryMode="places"
                 onChange={setForm}
                 onSubmit={submitClassicSearch}
-                hidden={askKoiMode === "watch"}
+                hidden={!showClassicFallback || fallbackKind !== "full"}
               />
               <RecentMeetupsSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
             </section>
@@ -652,7 +848,7 @@ export default function HomePage() {
           <HowItWorks />
           <UseCases />
           <BrandSection />
-          <FaqSection />
+          <ExamplePromptsSection onExample={(prompt) => void runExamplePrompt(prompt)} />
         </>
       ) : null}
 
@@ -689,12 +885,6 @@ function MarketingHero() {
             className="inline-flex h-12 items-center justify-center rounded-full bg-clay px-7 text-base font-bold text-white shadow-glow transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25"
           >
             {BRAND.askLabel}
-          </a>
-          <a
-            href="#classic-search"
-            className="inline-flex h-12 items-center justify-center rounded-full border border-white/15 bg-white/10 px-7 text-base font-bold text-white shadow-[0_8px_22px_rgba(10,19,35,0.18)] transition hover:border-clay/60 hover:bg-white/15 focus:outline-none focus:ring-4 focus:ring-white/10"
-          >
-            Use classic search
           </a>
         </div>
         <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm font-bold text-[#D7D0C4] sm:mt-6">
@@ -817,6 +1007,44 @@ function ShareDialog({
         {status ? <p className="mt-3 text-center text-xs font-semibold text-slate">{status}</p> : null}
       </div>
     </div>
+  );
+}
+
+function LocationFallbackPanel({
+  form,
+  loading,
+  pendingQuery,
+  onChange,
+  onSubmit,
+  hidden = false
+}: {
+  form: SearchHalfwayRequest;
+  loading: boolean;
+  pendingQuery?: string;
+  onChange: (form: SearchHalfwayRequest) => void;
+  onSubmit: () => void;
+  hidden?: boolean;
+}) {
+  if (hidden) return null;
+
+  return (
+    <section id="location-fallback" className="scroll-mt-24">
+      <p className="mb-3 text-sm font-black uppercase tracking-[0.14em] text-clay">Add your location</p>
+      {pendingQuery ? (
+        <p className="mb-4 rounded-lg border border-line bg-mint px-4 py-3 text-sm font-semibold text-ink">
+          Looking for: “{pendingQuery}”
+        </p>
+      ) : null}
+      <LocationForm
+        form={form}
+        loading={loading}
+        discoveryMode="events"
+        variant="location-only"
+        submitLabel={pendingQuery ? "Find events" : "Search nearby"}
+        onChange={onChange}
+        onSubmit={onSubmit}
+      />
+    </section>
   );
 }
 
@@ -1022,30 +1250,43 @@ function BrandSection() {
   );
 }
 
-function FaqSection() {
+function ExamplePromptsSection({ onExample }: { onExample: (prompt: string) => void }) {
+  const examples = [
+    ["☕", "Coffee between us", "Coffee between Hoboken and Edison"],
+    ["🍺", "Brewery halfway between Philly and Princeton", "Brewery halfway between Philly and Princeton"],
+    ["🍕", "Pizza near me", "Pizza near me"],
+    ["🎬", "Funny movies like Superbad", "Funny movies like Superbad"],
+    ["🎵", "Concerts this weekend", "Concerts this weekend"]
+  ];
+
   return (
     <section className="bg-sky px-4 py-16 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
         <div className="max-w-2xl">
-          <p className="text-sm font-bold uppercase tracking-wide text-clay">FAQ</p>
+          <p className="text-sm font-bold uppercase tracking-wide text-clay">Ask once</p>
           <h2 className="mt-3 text-4xl font-black tracking-tight text-ink sm:text-5xl">
-            {BRAND.askLabel}, without losing the classic controls.
+            Koi finds the plan.
           </h2>
           <p className="mt-4 text-base font-semibold leading-7 text-slate">
-            Answers about finding places, streaming picks, local events, and meet-in-the-middle search.
+            Places to meet. Movies to watch. Events nearby. Just say what you&apos;re looking for.
           </p>
         </div>
-        <div className="mt-8 grid gap-3">
-          {FAQ_ITEMS.map((item) => (
-            <details key={item.question} className="group rounded-[22px] border border-line bg-paper p-5 shadow-[0_12px_30px_rgba(17,24,39,0.05)]">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left text-lg font-black text-ink">
-                {item.question}
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-line text-xl leading-none text-slate transition group-open:rotate-45 group-open:text-clay">
-                  +
+        <div className="mt-8 grid gap-3 sm:grid-cols-2">
+          {examples.map(([icon, label, prompt]) => (
+            <button
+              key={prompt}
+              type="button"
+              onClick={() => onExample(prompt)}
+              className="group flex items-center gap-4 rounded-[22px] border border-line bg-paper p-5 text-left shadow-[0_12px_30px_rgba(17,24,39,0.05)] transition hover:border-clay hover:shadow-soft focus:outline-none focus:ring-4 focus:ring-clay/15"
+            >
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#FFF4EC] text-xl">{icon}</span>
+              <span className="min-w-0">
+                <span className="block text-lg font-black text-ink">{label}</span>
+                <span className="mt-1 block text-sm font-semibold leading-6 text-slate group-hover:text-clay">
+                  Ask Koi
                 </span>
-              </summary>
-              <p className="mt-4 max-w-3xl text-sm font-semibold leading-6 text-slate">{item.answer}</p>
-            </details>
+              </span>
+            </button>
           ))}
         </div>
       </div>

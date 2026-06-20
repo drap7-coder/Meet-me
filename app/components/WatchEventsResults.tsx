@@ -29,9 +29,7 @@ export function WatchEventsResults({ result, loadingMore = false, onLoadMore }: 
             >
               {loadingMore ? "Loading more picks..." : "Show more picks"}
             </button>
-            <p className="text-center text-xs font-semibold text-slate">
-              Loads more results here. Use View on TMDB on a card only when you want full details.
-            </p>
+            <p className="text-center text-xs font-semibold text-slate">Loads more picks without leaving Koi.</p>
           </div>
         ) : null}
       </div>

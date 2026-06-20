@@ -253,7 +253,7 @@ function mediaRecommendation(input: {
     posterUrl: pick.posterUrl,
     year: pick.year,
     rating: formatRating(pick.rating),
-    overview: trimOverview(pick.overview),
+    overview: pick.overview.trim(),
     runtime: formatDuration(pick)
   };
 }
@@ -300,12 +300,6 @@ function formatDuration(pick: TmdbPick) {
   }
 
   return formatRuntime(pick.runtimeMinutes);
-}
-
-function trimOverview(value: string) {
-  const trimmed = value.trim();
-  if (trimmed.length <= 220) return trimmed;
-  return `${trimmed.slice(0, 217).trimEnd()}...`;
 }
 
 function capitalizeWords(value: string) {

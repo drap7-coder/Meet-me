@@ -26,7 +26,7 @@ import { copyTextToClipboard, shareWithFallback, shouldUseNativeShare } from "@/
 import { trackEvent } from "@/lib/analytics";
 import { DEFAULT_WATCH_QUERY } from "@/lib/watchCategories";
 import { resolveWatchPlaceSearchForm, watchPlaceSearchNeedsLocation } from "@/lib/watchPlaceSearch";
-import type { KoiBotMode, LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory, WatchEventsApiResponse, WatchEventsResult } from "@/lib/types";
+import type { KoiBotMode, LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory, WatchEventsApiResponse, WatchEventsMoreResult, WatchEventsResult } from "@/lib/types";
 import { BRAND } from "@/src/config/branding";
 import { FAQ_ITEMS } from "@/src/config/seo";
 import { useEffect, useMemo, useState } from "react";
@@ -54,6 +54,7 @@ export default function HomePage() {
   const [searchKind, setSearchKind] = useState<"places" | "watch_events" | null>(null);
   const [askKoiMode, setAskKoiMode] = useState<KoiBotMode>("places");
   const [loading, setLoading] = useState(false);
+  const [loadingMoreWatchEvents, setLoadingMoreWatchEvents] = useState(false);
   const [error, setError] = useState("");
   const [shareMessage, setShareMessage] = useState("");
   const [currentShareUrl, setCurrentShareUrl] = useState("");
@@ -216,10 +217,15 @@ export default function HomePage() {
         return;
       }
 
-      setWatchEventsResult(data);
+      if ("append" in data && data.append) {
+        throw new Error("Unexpected load-more response.");
+      }
+
+      const result = data as WatchEventsResult;
+      setWatchEventsResult(result);
       trackEvent("watch_events_completed", {
-        intent: data.intent,
-        resultCount: data.resultCount
+        intent: result.intent,
+        resultCount: result.resultCount
       });
     } catch (searchError) {
       setWatchEventsResult(null);
@@ -235,6 +241,44 @@ export default function HomePage() {
 
   function runWatchEventsSearch(query: string) {
     void submitWatchEventsSearch(query);
+  }
+
+  async function loadMoreWatchEvents() {
+    if (!watchEventsResult?.hasMore || loadingMoreWatchEvents) return;
+
+    const excludeKeys = watchEventsResult.recommendations
+      .filter((item) => typeof item.tmdbId === "number")
+      .map((item) => `${item.mediaType ?? "movie"}:${item.tmdbId}`);
+
+    setLoadingMoreWatchEvents(true);
+    setError("");
+    try {
+      const response = await fetch("/api/watch-events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: watchEventsResult.query, excludeKeys })
+      });
+      const data = (await response.json()) as WatchEventsMoreResult & { error?: string };
+      if (!response.ok) throw new Error(data.error ?? "Could not load more picks.");
+
+      setWatchEventsResult((current) => {
+        if (!current || data.append !== true) return current;
+        const recommendations = [...current.recommendations, ...data.recommendations].map((item, index) => ({
+          ...item,
+          rank: index + 1
+        }));
+        return {
+          ...current,
+          recommendations,
+          hasMore: data.hasMore,
+          resultCount: recommendations.length
+        };
+      });
+    } catch (loadMoreError) {
+      setError(loadMoreError instanceof Error ? loadMoreError.message : "Could not load more picks.");
+    } finally {
+      setLoadingMoreWatchEvents(false);
+    }
   }
 
   function handleAskKoiModeChange(mode: KoiBotMode) {
@@ -463,7 +507,13 @@ export default function HomePage() {
           </section>
         ) : null}
 
-        {watchEventsResult && !loading ? <WatchEventsResults result={watchEventsResult} /> : null}
+        {watchEventsResult && !loading ? (
+          <WatchEventsResults
+            result={watchEventsResult}
+            loadingMore={loadingMoreWatchEvents}
+            onLoadMore={watchEventsResult.hasMore ? loadMoreWatchEvents : undefined}
+          />
+        ) : null}
 
         {results && !loading ? (
           <section className="search-results-enter mt-5 grid gap-5 pb-16 lg:grid-cols-[1fr_420px] lg:items-start">

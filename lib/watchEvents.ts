@@ -101,14 +101,23 @@ export async function buildWatchEventsResult(query: string): Promise<WatchEvents
   const timeframe = extractWatchEventsTimeframe(trimmed);
   const topic = extractWatchEventsTopic(trimmed, intent);
   const genre = extractMovieGenre(trimmed);
-  const recommendations = await buildWatchEventsRecommendations({
+  const liveBatch = await tryBuildLiveMovieRecommendations({
     query: trimmed,
     intent,
-    location,
     timeframe,
     topic,
     genre
   });
+  const recommendations =
+    liveBatch?.recommendations ??
+    (await buildWatchEventsRecommendations({
+      query: trimmed,
+      intent,
+      location,
+      timeframe,
+      topic,
+      genre
+    }));
   const contextSummary = buildContextSummary({ intent, location, timeframe, topic });
   const hasLiveMovies = recommendations.some((item) => !item.preview);
 
@@ -129,7 +138,27 @@ export async function buildWatchEventsResult(query: string): Promise<WatchEvents
     futureProviders: hasLiveMovies
       ? WATCH_EVENTS_FUTURE_PROVIDERS.filter((provider) => provider !== "TMDB")
       : [...WATCH_EVENTS_FUTURE_PROVIDERS],
-    preview: !hasLiveMovies
+    preview: !hasLiveMovies,
+    hasMore: liveBatch?.hasMore ?? false
+  };
+}
+
+export async function buildWatchEventsMore(query: string, excludeKeys: string[]) {
+  const trimmed = query.trim();
+  const intent = classifyWatchEventsIntent(trimmed);
+  const timeframe = extractWatchEventsTimeframe(trimmed);
+  const topic = extractWatchEventsTopic(trimmed, intent);
+  const genre = extractMovieGenre(trimmed);
+  const liveBatch = await tryBuildLiveMovieRecommendations(
+    { query: trimmed, intent, timeframe, topic, genre },
+    { excludeKeys, startRank: excludeKeys.length + 1 }
+  );
+
+  return {
+    botMode: "watch_events" as const,
+    append: true as const,
+    recommendations: liveBatch?.recommendations ?? [],
+    hasMore: liveBatch?.hasMore ?? false
   };
 }
 
@@ -278,8 +307,14 @@ async function buildWatchEventsRecommendations({
   topic: string;
   genre: string;
 }) {
-  const liveMovies = await tryBuildLiveMovieRecommendations({ query, intent, timeframe, topic, genre });
-  if (liveMovies?.length) return liveMovies;
+  const liveMovies = await tryBuildLiveMovieRecommendations({
+    query,
+    intent,
+    timeframe,
+    topic,
+    genre
+  });
+  if (liveMovies?.recommendations.length) return liveMovies.recommendations;
 
   switch (intent) {
     case "stream":

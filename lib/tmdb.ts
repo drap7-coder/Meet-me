@@ -1,5 +1,6 @@
 const TMDB_API_BASE = "https://api.themoviedb.org/3";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w342";
+const TMDB_MAX_DISCOVER_PAGE = 5;
 
 export type TmdbMediaKind = "movie" | "tv";
 
@@ -93,7 +94,16 @@ export function buildTmdbUrl(kind: TmdbMediaKind, id: number) {
   return kind === "tv" ? `https://www.themoviedb.org/tv/${id}` : `https://www.themoviedb.org/movie/${id}`;
 }
 
-export async function discoverMediaByGenre(genre: string, kind: TmdbMediaKind, limit = 3) {
+function pickKey(pick: TmdbPick) {
+  return `${pick.kind}:${pick.id}`;
+}
+
+export async function discoverMediaByGenre(
+  genre: string,
+  kind: TmdbMediaKind,
+  limit = 5,
+  excludeKeys: string[] = []
+) {
   const genreId = resolveTmdbGenreId(genre, kind);
   if (!genreId) return [];
 
@@ -109,21 +119,28 @@ export async function discoverMediaByGenre(genre: string, kind: TmdbMediaKind, l
     }
   ];
 
+  const seen = new Set(excludeKeys);
   const picks: TmdbPick[] = [];
-  const seen = new Set<number>();
 
-  for (const params of queries) {
-    const batch =
-      kind === "tv" ? await discoverTv(params) : await discoverMovies(params);
-    for (const pick of batch) {
-      if (seen.has(pick.id)) continue;
-      seen.add(pick.id);
-      picks.push(await enrichPick(pick));
-      if (picks.length >= limit) return picks;
+  for (const baseParams of queries) {
+    for (let page = 1; page <= TMDB_MAX_DISCOVER_PAGE && picks.length < limit; page += 1) {
+      const batch =
+        kind === "tv"
+          ? await discoverTv(baseParams, page)
+          : await discoverMovies(baseParams, page);
+      if (!batch.length) break;
+
+      for (const pick of batch) {
+        const key = pickKey(pick);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        picks.push(await enrichPick(pick));
+        if (picks.length >= limit) return picks;
+      }
     }
   }
 
-  return picks.slice(0, limit);
+  return picks;
 }
 
 export async function discoverMoviesByGenre(genre: string, limit = 3) {
@@ -134,17 +151,35 @@ export async function discoverTvByGenre(genre: string, limit = 3) {
   return discoverMediaByGenre(genre, "tv", limit);
 }
 
-export async function fetchTrendingMedia(kind: TmdbMediaKind, limit = 3) {
+export async function fetchTrendingMedia(
+  kind: TmdbMediaKind,
+  limit = 5,
+  excludeKeys: string[] = []
+) {
   const path = kind === "tv" ? "/trending/tv/week" : "/trending/movie/week";
+  const excluded = new Set(excludeKeys);
+  const picks: TmdbPick[] = [];
+
   if (kind === "tv") {
     const data = await tmdbFetch<TmdbTvListResponse>(path);
-    const picks = (data.results ?? []).slice(0, limit).map(normalizeTv);
-    return Promise.all(picks.map(enrichPick));
+    for (const show of data.results ?? []) {
+      const pick = normalizeTv(show);
+      if (excluded.has(pickKey(pick))) continue;
+      picks.push(await enrichPick(pick));
+      if (picks.length >= limit) return picks;
+    }
+    return picks;
   }
 
   const data = await tmdbFetch<TmdbMovieListResponse>(path);
-  const picks = (data.results ?? []).slice(0, limit).map(normalizeMovie);
-  return Promise.all(picks.map(enrichPick));
+  for (const movie of data.results ?? []) {
+    const pick = normalizeMovie(movie);
+    if (excluded.has(pickKey(pick))) continue;
+    picks.push(await enrichPick(pick));
+    if (picks.length >= limit) return picks;
+  }
+
+  return picks;
 }
 
 export async function fetchTrendingMovies(limit = 3) {
@@ -155,21 +190,39 @@ export async function fetchTrendingTv(limit = 3) {
   return fetchTrendingMedia("tv", limit);
 }
 
-export async function fetchNewReleaseMedia(kind: TmdbMediaKind, limit = 3) {
+export async function fetchNewReleaseMedia(
+  kind: TmdbMediaKind,
+  limit = 5,
+  excludeKeys: string[] = []
+) {
   const today = new Date();
   const past = new Date(today);
   past.setDate(past.getDate() - 120);
   const dateField = kind === "tv" ? "first_air_date" : "primary_release_date";
-  const params = {
+  const baseParams = {
     sort_by: "popularity.desc",
     [`${dateField}.gte`]: formatTmdbDate(past),
     [`${dateField}.lte`]: formatTmdbDate(today),
     "vote_count.gte": "20"
   };
 
-  const picks =
-    kind === "tv" ? await discoverTv(params) : await discoverMovies(params);
-  return Promise.all(picks.slice(0, limit).map(enrichPick));
+  const seen = new Set(excludeKeys);
+  const picks: TmdbPick[] = [];
+
+  for (let page = 1; page <= TMDB_MAX_DISCOVER_PAGE && picks.length < limit; page += 1) {
+    const batch = kind === "tv" ? await discoverTv(baseParams, page) : await discoverMovies(baseParams, page);
+    if (!batch.length) break;
+
+    for (const pick of batch) {
+      const key = pickKey(pick);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      picks.push(await enrichPick(pick));
+      if (picks.length >= limit) return picks;
+    }
+  }
+
+  return picks;
 }
 
 export async function fetchNewReleaseMovies(limit = 3) {
@@ -227,13 +280,19 @@ export async function fetchSimilarTv(tvId: number, limit = 2) {
   return fetchSimilarMedia(tvId, "tv", limit);
 }
 
-async function discoverMovies(params: Record<string, string>) {
-  const data = await tmdbFetch<TmdbMovieListResponse>("/discover/movie", params);
+async function discoverMovies(params: Record<string, string>, page = 1) {
+  const data = await tmdbFetch<TmdbMovieListResponse>("/discover/movie", {
+    ...params,
+    page: String(page)
+  });
   return (data.results ?? []).map(normalizeMovie);
 }
 
-async function discoverTv(params: Record<string, string>) {
-  const data = await tmdbFetch<TmdbTvListResponse>("/discover/tv", params);
+async function discoverTv(params: Record<string, string>, page = 1) {
+  const data = await tmdbFetch<TmdbTvListResponse>("/discover/tv", {
+    ...params,
+    page: String(page)
+  });
   return (data.results ?? []).map(normalizeTv);
 }
 

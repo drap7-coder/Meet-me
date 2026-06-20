@@ -1,4 +1,5 @@
 import type { WatchEventsIntent, WatchEventsRecommendation } from "@/lib/types";
+import { WATCH_PICK_PAGE_SIZE } from "@/lib/watchMedia";
 import {
   discoverMediaByGenre,
   fetchNewReleaseMedia,
@@ -18,40 +19,63 @@ type MovieRecommendationContext = {
   genre: string;
 };
 
-const LIVE_BADGES = ["Best match", "Highly rated", "Worth a look"] as const;
+type LiveRecommendationOptions = {
+  limit?: number;
+  excludeKeys?: string[];
+  startRank?: number;
+};
+
+export type LiveWatchRecommendationBatch = {
+  recommendations: WatchEventsRecommendation[];
+  hasMore: boolean;
+};
 
 export async function tryBuildLiveMovieRecommendations(
-  context: MovieRecommendationContext
-): Promise<WatchEventsRecommendation[] | null> {
+  context: MovieRecommendationContext,
+  options: LiveRecommendationOptions = {}
+): Promise<LiveWatchRecommendationBatch | null> {
   if (!isTmdbConfigured()) return null;
   if (/\b(?:movie theater|movie theatre|cinema|cinemas)\b/i.test(context.query)) return null;
   if (context.intent === "sports" || context.intent === "live_event" || context.intent === "things_to_do") {
     return null;
   }
 
+  const limit = options.limit ?? WATCH_PICK_PAGE_SIZE;
+  const excludeKeys = options.excludeKeys ?? [];
+  const startRank = options.startRank ?? 1;
   const mediaKind = detectMediaKind(context.query);
 
   try {
     if (context.intent === "stream" && context.topic && context.topic !== "movies") {
-      return buildTitleSearchRecommendations(context.topic, context.timeframe, mediaKind);
+      const recommendations = await buildTitleSearchRecommendations(context.topic, context.timeframe, mediaKind, startRank);
+      return recommendations ? { recommendations, hasMore: false } : null;
     }
 
     if (context.genre) {
-      return buildGenreRecommendations(context.genre, context.timeframe, mediaKind);
+      return buildGenreRecommendations(context.genre, context.timeframe, mediaKind, limit, excludeKeys, startRank);
     }
 
     if (/\bnew releases?\b/i.test(context.query)) {
       return buildSimpleRecommendations(
-        await fetchNewReleaseMedia(mediaKind, 3),
+        await fetchNewReleaseMedia(mediaKind, limit, excludeKeys),
         context.timeframe,
         mediaKind === "tv" ? "New series" : "New releases",
-        mediaKind
+        mediaKind,
+        limit,
+        startRank
       );
     }
 
     if (context.intent === "general" || context.intent === "stream") {
       const lane = mediaKind === "tv" ? "Trending TV" : "Trending";
-      return buildSimpleRecommendations(await fetchTrendingMedia(mediaKind, 3), context.timeframe, lane, mediaKind);
+      return buildSimpleRecommendations(
+        await fetchTrendingMedia(mediaKind, limit, excludeKeys),
+        context.timeframe,
+        lane,
+        mediaKind,
+        limit,
+        startRank
+      );
     }
 
     return null;
@@ -77,45 +101,66 @@ export function detectMediaKind(query: string): TmdbMediaKind {
   return "movie";
 }
 
-async function buildGenreRecommendations(genre: string, timeframe: string, mediaKind: TmdbMediaKind) {
-  const picks = await discoverMediaByGenre(genre, mediaKind, 3);
+async function buildGenreRecommendations(
+  genre: string,
+  timeframe: string,
+  mediaKind: TmdbMediaKind,
+  limit: number,
+  excludeKeys: string[],
+  startRank: number
+): Promise<LiveWatchRecommendationBatch | null> {
+  const picks = await discoverMediaByGenre(genre, mediaKind, limit, excludeKeys);
   if (!picks.length) return null;
 
   const label = genre === "sci-fi" ? "Sci-Fi" : capitalizeWords(genre);
   const formatLabel = mediaKind === "tv" ? "TV series" : "Movie";
-  return picks.map((pick, index) =>
+  const recommendations = picks.map((pick, index) =>
     mediaRecommendation({
       pick,
-      rank: index + 1,
+      rank: startRank + index,
       kind: "general",
-      badge: LIVE_BADGES[index] ?? "Pick",
+      badge: badgeForIndex(index),
       subtitle: `${timeframe} · ${label} ${mediaKind === "tv" ? "series" : "movies"}`,
       explanation:
-        index === 0
+        index === 0 && startRank === 1
           ? `Koi matched your ${label.toLowerCase()} ask to a strong ${formatLabel.toLowerCase()} in that genre.`
-          : index === 1
+          : index === 1 && startRank === 1
             ? `A well-rated ${label.toLowerCase()} ${formatLabel.toLowerCase()} when you want something with more acclaim.`
-            : `A fresher ${label.toLowerCase()} ${formatLabel.toLowerCase()} if you want something newer or less obvious.`,
+            : startRank === 1
+              ? `A fresher ${label.toLowerCase()} ${formatLabel.toLowerCase()} if you want something newer or less obvious.`
+              : `Another ${label.toLowerCase()} ${formatLabel.toLowerCase()} worth adding to your list.`,
       tags: [label, timeframe, formatRating(pick.rating)],
       meta: buildMediaMeta(pick, label)
     })
   );
+
+  return { recommendations, hasMore: picks.length >= limit };
 }
 
-async function buildTitleSearchRecommendations(title: string, timeframe: string, mediaKind: TmdbMediaKind) {
+async function buildTitleSearchRecommendations(
+  title: string,
+  timeframe: string,
+  mediaKind: TmdbMediaKind,
+  startRank: number
+) {
   const matches = await searchMedia(title, mediaKind, 1);
   const primary = matches[0];
   if (!primary) {
     const fallbackKind: TmdbMediaKind = mediaKind === "movie" ? "tv" : "movie";
     const fallbackMatches = await searchMedia(title, fallbackKind, 1);
     if (!fallbackMatches[0]) return null;
-    return buildTitleResults(fallbackMatches[0], timeframe, fallbackKind);
+    return buildTitleResults(fallbackMatches[0], timeframe, fallbackKind, startRank);
   }
 
-  return buildTitleResults(primary, timeframe, mediaKind);
+  return buildTitleResults(primary, timeframe, mediaKind, startRank);
 }
 
-async function buildTitleResults(primary: TmdbPick, timeframe: string, mediaKind: TmdbMediaKind) {
+async function buildTitleResults(
+  primary: TmdbPick,
+  timeframe: string,
+  mediaKind: TmdbMediaKind,
+  startRank: number
+) {
   const similar = await fetchSimilarMedia(primary.id, mediaKind, 2);
   const picks = [primary, ...similar.filter((pick) => pick.id !== primary.id)].slice(0, 3);
   if (!picks.length) return null;
@@ -125,7 +170,7 @@ async function buildTitleResults(primary: TmdbPick, timeframe: string, mediaKind
   return picks.map((pick, index) =>
     mediaRecommendation({
       pick,
-      rank: index + 1,
+      rank: startRank + index,
       kind: "stream",
       badge: index === 0 ? "Title match" : "Similar pick",
       subtitle: index === 0 ? `${timeframe} · Matches your title ask` : `${timeframe} · If you want something like it`,
@@ -146,27 +191,36 @@ function buildSimpleRecommendations(
   picks: TmdbPick[],
   timeframe: string,
   lane: string,
-  mediaKind: TmdbMediaKind
-) {
+  mediaKind: TmdbMediaKind,
+  limit: number,
+  startRank: number
+): LiveWatchRecommendationBatch | null {
   if (!picks.length) return null;
 
-  return picks.map((pick, index) =>
+  const recommendations = picks.map((pick, index) =>
     mediaRecommendation({
       pick,
-      rank: index + 1,
+      rank: startRank + index,
       kind: "general",
-      badge: LIVE_BADGES[index] ?? "Pick",
+      badge: badgeForIndex(index),
       subtitle: `${timeframe} · ${lane}`,
       explanation:
-        index === 0
+        index === 0 && startRank === 1
           ? `Koi pulled ${mediaKind === "tv" ? "TV series" : "movie"} picks from TMDB based on your watch ask.`
-          : index === 1
-            ? `Another strong option when the first pick does not land with the group.`
-            : `A backup pick to keep decision time short.`,
+          : `Another strong option when the first pick does not land with the group.`,
       tags: [lane, timeframe, formatRating(pick.rating)],
       meta: buildMediaMeta(pick, lane)
     })
   );
+
+  return { recommendations, hasMore: picks.length >= limit };
+}
+
+function badgeForIndex(index: number) {
+  if (index === 0) return "Best match";
+  if (index === 1) return "Highly rated";
+  if (index === 2) return "Worth a look";
+  return "More to explore";
 }
 
 function mediaRecommendation(input: {
@@ -181,7 +235,7 @@ function mediaRecommendation(input: {
 }): WatchEventsRecommendation {
   const { pick, rank } = input;
   return {
-    id: `tmdb-${pick.kind}-${pick.id}-${rank}`,
+    id: `tmdb-${pick.kind}-${pick.id}`,
     rank,
     title: pick.title,
     subtitle: input.subtitle,
@@ -195,6 +249,7 @@ function mediaRecommendation(input: {
     provider: "TMDB",
     preview: false,
     mediaType: pick.kind,
+    tmdbId: pick.id,
     posterUrl: pick.posterUrl,
     year: pick.year,
     rating: formatRating(pick.rating),

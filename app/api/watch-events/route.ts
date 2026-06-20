@@ -1,4 +1,4 @@
-import { buildWatchEventsResult } from "@/lib/watchEvents";
+import { buildWatchEventsMore, buildWatchEventsResult } from "@/lib/watchEvents";
 import { resolveWatchPlaceSearchForm } from "@/lib/watchPlaceSearch";
 import type { SearchHalfwayRequest, WatchEventsPlacesRedirect } from "@/lib/types";
 import { NextResponse } from "next/server";
@@ -32,10 +32,20 @@ export async function POST(request: Request) {
       return NextResponse.json(response);
     }
 
+    const excludeKeys = parseExcludeKeys(body.excludeKeys);
+    if (excludeKeys.length) {
+      return NextResponse.json(await buildWatchEventsMore(query, excludeKeys));
+    }
+
     return NextResponse.json(await buildWatchEventsResult(query));
   } catch {
     return NextResponse.json({ error: "Watch & Events search failed." }, { status: 400 });
   }
+}
+
+function parseExcludeKeys(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((key): key is string => typeof key === "string" && /^[a-z]+:\d+$/i.test(key));
 }
 
 function readLocationContext(body: Record<string, unknown>): SearchHalfwayRequest | undefined {

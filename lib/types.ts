@@ -108,6 +108,7 @@ export type WatchEventsRecommendation = {
   overview?: string;
   runtime?: string;
   mediaType?: "movie" | "tv";
+  tmdbId?: number;
 };
 
 export type WatchEventsResult = {
@@ -126,6 +127,14 @@ export type WatchEventsResult = {
   recommendations: WatchEventsRecommendation[];
   futureProviders: string[];
   preview: boolean;
+  hasMore?: boolean;
+};
+
+export type WatchEventsMoreResult = {
+  botMode: "watch_events";
+  append: true;
+  recommendations: WatchEventsRecommendation[];
+  hasMore: boolean;
 };
 
 export type WatchEventsPlacesRedirect = {
@@ -133,7 +142,7 @@ export type WatchEventsPlacesRedirect = {
   form: SearchHalfwayRequest;
 };
 
-export type WatchEventsApiResponse = WatchEventsResult | WatchEventsPlacesRedirect;
+export type WatchEventsApiResponse = WatchEventsResult | WatchEventsPlacesRedirect | WatchEventsMoreResult;
 
 export type Preference =
   | "downtown"

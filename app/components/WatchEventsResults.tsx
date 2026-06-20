@@ -1,11 +1,15 @@
+"use client";
+
 import type { WatchEventsResult } from "@/lib/types";
 import { WatchEventsCard } from "@/app/components/WatchEventsCard";
 
 type Props = {
   result: WatchEventsResult;
+  loadingMore?: boolean;
+  onLoadMore?: () => void;
 };
 
-export function WatchEventsResults({ result }: Props) {
+export function WatchEventsResults({ result, loadingMore = false, onLoadMore }: Props) {
   const sidebarTitle = result.preview ? "Preview mode" : "Live watch picks";
 
   return (
@@ -14,6 +18,22 @@ export function WatchEventsResults({ result }: Props) {
         {result.recommendations.map((item) => (
           <WatchEventsCard key={item.id} item={item} />
         ))}
+
+        {result.hasMore && onLoadMore ? (
+          <div className="grid gap-2">
+            <button
+              type="button"
+              onClick={onLoadMore}
+              disabled={loadingMore}
+              className="h-12 rounded-full border border-clay bg-white px-5 text-sm font-black text-clay transition hover:bg-[#FFF4EC] focus:outline-none focus:ring-4 focus:ring-clay/15 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loadingMore ? "Loading more picks..." : "Show more picks"}
+            </button>
+            <p className="text-center text-xs font-semibold text-slate">
+              Loads more results here. Use View on TMDB on a card only when you want full details.
+            </p>
+          </div>
+        ) : null}
       </div>
 
       <aside className="results-panel-enter order-1 lg:order-2">

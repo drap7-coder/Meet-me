@@ -29,7 +29,7 @@ type ParseSearchResult = {
 
 const EXAMPLE_PROMPTS = [
   "Coffee between Hoboken and Edison",
-  "Brewery halfway between Philly and Princeton",
+  "Shopping between Hoboken and Edison",
   "Dinner near me",
   "Funny movies like Superbad",
   "Concerts this weekend"
@@ -84,6 +84,8 @@ export function AiSearchBox({
       if (!response.ok) {
         if (response.status === 422 && data.needsLocation && data.form) {
           onNeedsLocation(data.form);
+          setError(data.error ?? "Add your location to search nearby.");
+          return;
         }
         throw new Error(data.error ?? "I could not understand that search.");
       }

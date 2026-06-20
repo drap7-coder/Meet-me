@@ -51,12 +51,22 @@ export function detectWatchIntent(query: string) {
     /\bwhere (?:can|to|should) (?:i|we) (?:watch|stream)\b/i,
     /\bwhat(?:'s| is) on (?:tv|television)\b/i,
     /\b(?:stream(?:ing)?|watch(?:ing)?) (?:on|via)\b/i,
-    /\b(?:movie|movies|film|films|tv show|tv shows|television show)\b/i
+    /\b(?:movie|movies|film|films|tv show|tv shows|television show)\b/i,
+    /\b(?:movies?|films?|shows?|series|tv)\s+(?:like|similar to)\b/i,
+    /\b(?:best|good|funny|scary|new)\s+(?:movie|movies|show|shows|series)\b/i,
+    /\b(?:binge[\s-]?watch|netflix|hulu|disney\+|peacock|apple tv|hbo max)\b/i
   ];
 
   if (watchPatterns.some((pattern) => pattern.test(trimmed))) return true;
   if (/\bwhere can i watch\b/i.test(trimmed)) return true;
   if (/\bstream\b/i.test(trimmed) && !/\b(?:concert|festival|game)\b/i.test(trimmed)) return true;
+  if (
+    /\b(?:similar to|like)\s+.+/i.test(trimmed) &&
+    /\b(?:watch|stream|movie|movies|film|films|show|shows|series|tv|binge|netflix|hulu)\b/i.test(trimmed) &&
+    !/\b(?:coffee|restaurant|bar|brewery|mall|shop|dinner|lunch|brunch|food|pizza|sushi)\b/i.test(trimmed)
+  ) {
+    return true;
+  }
 
   return false;
 }

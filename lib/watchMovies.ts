@@ -1,4 +1,5 @@
 import type { WatchEventsIntent, WatchEventsRecommendation } from "@/lib/types";
+import { extractSimilarMediaTitle } from "@/lib/watchQuery";
 import { WATCH_PICK_PAGE_SIZE } from "@/lib/watchMedia";
 import {
   discoverMediaByGenre,
@@ -46,6 +47,19 @@ export async function tryBuildLiveMovieRecommendations(
   const mediaKind = detectMediaKind(context.query);
 
   try {
+    const similarTitle = extractSimilarMediaTitle(context.query);
+    if (similarTitle) {
+      const recommendations = await buildTitleSearchRecommendations(
+        similarTitle,
+        context.timeframe,
+        mediaKind,
+        startRank
+      );
+      if (recommendations?.length) {
+        return { recommendations, hasMore: false };
+      }
+    }
+
     if (context.intent === "stream" && context.topic && context.topic !== "movies") {
       const recommendations = await buildTitleSearchRecommendations(context.topic, context.timeframe, mediaKind, startRank);
       return recommendations ? { recommendations, hasMore: false } : null;

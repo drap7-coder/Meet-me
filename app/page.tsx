@@ -450,6 +450,8 @@ export default function HomePage() {
       if (!response.ok) {
         if (response.status === 422 && data.needsLocation && data.form) {
           handleNeedsLocation(data.form);
+          setError(data.error ?? "Add your location to search nearby.");
+          return;
         }
         throw new Error(data.error ?? "Koi could not understand that example.");
       }

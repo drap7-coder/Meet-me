@@ -499,6 +499,14 @@ export function mapCategoryIntent(input: string | null | undefined): { category:
     cigar_lounge: "cigar_lounges",
     shopping_mall: "malls",
     mall: "malls",
+    malls: "malls",
+    shopping: "shopping",
+    shopping_center: "malls",
+    retail: "malls",
+    stores: "shopping",
+    store: "shopping",
+    outlet: "outlets",
+    outlets: "outlets",
     thrift: "thrifting",
     antique: "antiques",
     books: "bookstore",
@@ -565,7 +573,11 @@ export function resolveSearchCategoryFromQuery(
     return { category: "restaurant" };
   }
 
-  return { category: "restaurant" };
+  if (parsed) {
+    return { category: "custom", customQuery: parsed };
+  }
+
+  return { category: "custom", customQuery: query.trim() };
 }
 
 function matchCategoryInQuery(query: string): VenueCategory | null {
@@ -589,6 +601,8 @@ function matchCategoryInQuery(query: string): VenueCategory | null {
     { pattern: /\bseafood restaurants?\b|\boyster bars?\b|\bseafood\b/, category: "seafood" },
     { pattern: /\bbbq\b|\bbarbecue\b|\bsmokehouses?\b/, category: "bbq" },
     { pattern: /\bbookstores?\b|\bbook shops?\b/, category: "bookstore" },
+    { pattern: /\bshopping malls?\b|\bshopping centers?\b|\bretail centers?\b|\boutlet malls?\b|\boutlets?\b/, category: "malls" },
+    { pattern: /\bshopping\b|\bretail\b|\bstores?\b|\bmall\b|\bmalls\b/, category: "shopping" },
     { pattern: /\bgolf courses?\b|\bgolf\b/, category: "golf" },
     { pattern: /\bdog parks?\b/, category: "dog_parks" },
     { pattern: /\bhiking trails?\b|\bhiking\b|\btrails?\b/, category: "hiking" },

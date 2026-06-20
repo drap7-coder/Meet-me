@@ -48,11 +48,6 @@ select {
   color: #ffffff;
 }
 
-.hero-headline-line {
-  paint-order: stroke fill;
-  -webkit-text-stroke: 0.055em #fffdf8;
-}
-
 /* Category selector */
 .category-card {
   gap: 12px;

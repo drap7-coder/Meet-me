@@ -29,7 +29,7 @@ const MARK_SIZE: Record<LogoSize, { image: string; tagline: string }> = {
     tagline: "text-base sm:text-lg"
   },
   xl: {
-    image: "h-40 w-40 sm:h-48 sm:w-48",
+    image: "h-60 w-60 sm:h-72 sm:w-72",
     tagline: "text-lg sm:text-xl"
   }
 };

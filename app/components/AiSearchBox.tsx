@@ -1,6 +1,12 @@
 "use client";
 
+import { PLACE_UI_GROUPS } from "@/lib/askKoiPlaceGroups";
 import type { KoiBotMode, SearchHalfwayRequest } from "@/lib/types";
+import {
+  WATCH_EVENTS_EXAMPLE_PROMPTS,
+  WATCH_EVENTS_PLACEHOLDER,
+  WATCH_UI_GROUPS
+} from "@/lib/watchCategories";
 import { WATCH_EVENTS_DESCRIPTION, WATCH_EVENTS_TITLE } from "@/lib/watchEvents";
 import { BRAND } from "@/src/config/branding";
 import { FormEvent, useState } from "react";
@@ -21,7 +27,7 @@ const BOT_MODES = [
   {
     id: "places" as const,
     title: "Find places",
-    description: "Restaurants, coffee, parks, and halfway meetup spots."
+    description: "Food, drinks, coffee, activities, and halfway meetup spots."
   },
   {
     id: "watch_events" as const,
@@ -30,16 +36,10 @@ const BOT_MODES = [
   }
 ];
 
-const EXAMPLE_QUERY = `${BRAND.askLabel} what you're looking for…`;
-const PLACE_PROMPTS = [
+const PLACE_EXAMPLE_PROMPTS = [
   "Find coffee near Hoboken with easy parking.",
   "Find a coffee shop between Hoboken and Edison with easy parking.",
   "Where should we meet between NYC and Princeton?"
-];
-const WATCH_EVENTS_PROMPTS = [
-  "What should I watch tonight?",
-  "Where can I stream Interstellar?",
-  "Any comedy shows near Philly this weekend?"
 ];
 
 export function AiSearchBox({ loading, onParsed, onWatchEvents }: Props) {
@@ -48,12 +48,17 @@ export function AiSearchBox({ loading, onParsed, onWatchEvents }: Props) {
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState("");
 
+  const isWatchMode = botMode === "watch_events";
+  const activeMode = BOT_MODES.find((mode) => mode.id === botMode) ?? BOT_MODES[0];
+  const examplePrompts = isWatchMode ? WATCH_EVENTS_EXAMPLE_PROMPTS : PLACE_EXAMPLE_PROMPTS;
+  const placeholder = isWatchMode ? WATCH_EVENTS_PLACEHOLDER : `${BRAND.askLabel} what you're looking for…`;
+
   async function runSearch(searchQuery: string, mode: KoiBotMode = botMode) {
     const trimmed = searchQuery.trim();
     if (!trimmed) {
       setError(
         mode === "watch_events"
-          ? "Try a sentence like: What should I watch tonight?"
+          ? "Try a sentence like: What should we watch tonight?"
           : "Try a sentence like: Find coffee near Hoboken with easy parking."
       );
       return;
@@ -93,11 +98,10 @@ export function AiSearchBox({ loading, onParsed, onWatchEvents }: Props) {
   }
 
   const busy = loading || parsing;
-  const examplePrompts = botMode === "watch_events" ? WATCH_EVENTS_PROMPTS : PLACE_PROMPTS;
   const submitLabel = parsing
     ? "Understanding..."
     : loading
-      ? botMode === "watch_events"
+      ? isWatchMode
         ? "Finding watch & events..."
         : "Finding places..."
       : BRAND.askLabel;
@@ -110,7 +114,9 @@ export function AiSearchBox({ loading, onParsed, onWatchEvents }: Props) {
           Tell {BRAND.name} what you want to find.
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate">
-          {BRAND.name} can help with places to meet or entertainment to watch and do. Pick a mode, then describe what you need in plain language.
+          {isWatchMode
+            ? `${BRAND.name} helps with ${WATCH_EVENTS_DESCRIPTION} Pick a category, then describe what you want in plain language.`
+            : `Tell ${BRAND.name} where you're coming from and what kind of spot you want — nearby or halfway between two people. Pick a category, then describe what you need.`}
         </p>
       </div>
 
@@ -139,6 +145,60 @@ export function AiSearchBox({ loading, onParsed, onWatchEvents }: Props) {
         })}
       </div>
 
+      <div className="mb-4 rounded-lg border border-line bg-mint p-4">
+        <p className="text-sm font-black text-ink">{activeMode.title}</p>
+        <p className="mt-1 text-xs leading-5 text-slate">{activeMode.description}</p>
+
+        {isWatchMode ? (
+          <div className="mt-4 grid gap-4">
+            {WATCH_UI_GROUPS.map((group) => (
+              <div key={group.label}>
+                <p className="text-xs font-black uppercase tracking-[0.14em] text-slate">{group.label}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {group.options.map((option) => (
+                    <button
+                      key={option.label}
+                      type="button"
+                      disabled={busy}
+                      onClick={() => {
+                        void runSearch(option.query, "watch_events");
+                      }}
+                      className="rounded-full border border-line bg-white px-3 py-1.5 text-left text-xs font-semibold text-slate transition hover:border-clay hover:text-clay disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-4 grid gap-4">
+            {PLACE_UI_GROUPS.map((group) => (
+              <div key={group.label}>
+                <p className="text-xs font-black uppercase tracking-[0.14em] text-slate">{group.label}</p>
+                <p className="mt-1 text-xs leading-5 text-slate">{group.description}</p>
+                <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {group.options.map((option) => (
+                    <button
+                      key={option.label}
+                      type="button"
+                      disabled={busy}
+                      onClick={() => {
+                        void runSearch(option.query, "places");
+                      }}
+                      className="rounded-[16px] border border-line bg-white px-3 py-2.5 text-left text-xs font-semibold text-ink transition hover:border-clay hover:bg-[#FFF4EC] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <form onSubmit={handleSubmit} className="grid gap-3">
         <label className="grid gap-2">
           <span className="sr-only">Natural language search</span>
@@ -148,7 +208,7 @@ export function AiSearchBox({ loading, onParsed, onWatchEvents }: Props) {
               setQuery(event.target.value);
               if (error) setError("");
             }}
-            placeholder={EXAMPLE_QUERY}
+            placeholder={placeholder}
             rows={3}
             className="min-h-24 resize-none rounded-lg border border-line bg-mint px-4 py-3 text-base text-ink outline-none transition placeholder:text-slate/70 focus:border-clay focus:ring-4 focus:ring-clay/10"
           />

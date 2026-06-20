@@ -1,17 +1,7 @@
 "use client";
 
-import {
-  ASK_KOI_PLACE_TABS,
-  getAskKoiPlaceOptions,
-  getAskKoiPlaceTabConfig,
-  type AskKoiPlaceTab
-} from "@/lib/askKoiCategories";
 import type { KoiBotMode, SearchHalfwayRequest } from "@/lib/types";
-import {
-  WATCH_EVENTS_EXAMPLE_PROMPTS,
-  WATCH_EVENTS_PLACEHOLDER,
-  WATCH_UI_GROUPS
-} from "@/lib/watchCategories";
+import { WATCH_EVENTS_EXAMPLE_PROMPTS, WATCH_EVENTS_PLACEHOLDER } from "@/lib/watchCategories";
 import { WATCH_EVENTS_DESCRIPTION, WATCH_EVENTS_TITLE } from "@/lib/watchEvents";
 import { BRAND } from "@/src/config/branding";
 import { FormEvent, useState } from "react";
@@ -50,13 +40,10 @@ const PLACE_EXAMPLE_PROMPTS = [
 export function AiSearchBox({ loading, onParsed, onWatchEvents }: Props) {
   const [query, setQuery] = useState("");
   const [botMode, setBotMode] = useState<KoiBotMode>("places");
-  const [placeTab, setPlaceTab] = useState<AskKoiPlaceTab>("food");
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState("");
 
   const isWatchMode = botMode === "watch_events";
-  const activePlaceConfig = getAskKoiPlaceTabConfig(placeTab);
-  const placeOptions = getAskKoiPlaceOptions(placeTab);
   const examplePrompts = isWatchMode ? WATCH_EVENTS_EXAMPLE_PROMPTS : PLACE_EXAMPLE_PROMPTS;
   const placeholder = isWatchMode ? WATCH_EVENTS_PLACEHOLDER : `${BRAND.askLabel} what you're looking for…`;
 
@@ -122,8 +109,8 @@ export function AiSearchBox({ loading, onParsed, onWatchEvents }: Props) {
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate">
           {isWatchMode
-            ? `${BRAND.name} helps with ${WATCH_EVENTS_DESCRIPTION} Pick a category, then describe what you want in plain language.`
-            : `Tell ${BRAND.name} where you're coming from and what kind of spot you want — nearby or halfway between two people. Pick a category, then describe what you need.`}
+            ? `${BRAND.name} helps with ${WATCH_EVENTS_DESCRIPTION} Describe what you want in plain language.`
+            : `Tell ${BRAND.name} where you're coming from and what kind of spot you want — nearby or halfway between two people.`}
         </p>
       </div>
 
@@ -180,84 +167,6 @@ export function AiSearchBox({ loading, onParsed, onWatchEvents }: Props) {
           {error}
         </p>
       ) : null}
-
-      <div className="mt-4 rounded-lg border border-line bg-mint p-4">
-        {isWatchMode ? (
-          <>
-            <p className="text-sm font-black text-ink">{WATCH_EVENTS_TITLE}</p>
-            <p className="mt-1 text-xs leading-5 text-slate">{WATCH_EVENTS_DESCRIPTION}</p>
-            <div className="mt-4 grid gap-4">
-              {WATCH_UI_GROUPS.map((group) => (
-                <div key={group.label}>
-                  <p className="text-xs font-black uppercase tracking-[0.14em] text-slate">{group.label}</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {group.options.map((option) => (
-                      <button
-                        key={option.label}
-                        type="button"
-                        disabled={busy}
-                        onClick={() => {
-                          void runSearch(option.query, "watch_events");
-                        }}
-                        className="rounded-full border border-line bg-white px-3 py-1.5 text-left text-xs font-semibold text-slate transition hover:border-clay hover:text-clay disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-              {ASK_KOI_PLACE_TABS.map((tab) => {
-                const selected = placeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => {
-                      setPlaceTab(tab.id);
-                      if (error) setError("");
-                    }}
-                    className={`shrink-0 rounded-full border px-4 py-2 text-sm font-black transition focus:outline-none focus:ring-4 focus:ring-clay/10 ${
-                      selected
-                        ? "border-clay bg-[#FFF4EC] text-ink shadow-[inset_0_0_0_1px_rgba(214,90,46,0.12)]"
-                        : "border-line bg-white text-slate hover:border-clay/40 hover:text-clay"
-                    }`}
-                    aria-pressed={selected}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            <p className="mt-4 text-sm font-black text-ink">{activePlaceConfig.label}</p>
-            <p className="mt-1 text-xs leading-5 text-slate">{activePlaceConfig.description}</p>
-            <div className="mt-4">
-              <p className="text-xs font-black uppercase tracking-[0.14em] text-slate">Popular picks</p>
-              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {placeOptions.map((option) => (
-                  <button
-                    key={option.label}
-                    type="button"
-                    disabled={busy}
-                    onClick={() => {
-                      void runSearch(option.query, "places");
-                    }}
-                    className="rounded-[16px] border border-line bg-white px-3 py-2.5 text-left text-xs font-semibold text-ink transition hover:border-clay hover:bg-[#FFF4EC] disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-      </div>
 
       <div className="mt-4 grid gap-2">
         <p className="text-xs font-black uppercase tracking-[0.14em] text-slate">Example prompts</p>

@@ -199,11 +199,14 @@ export function AiSearchBox({
   }
 
   function handleWatchGenreSelect(subcategory: WatchSubcategory, option: WatchGenreOption) {
+    if (loading || parsing) return;
+
     setWatchActiveSubcategory(subcategory);
     setWatchSubcategory(subcategory);
     setQuery(option.query);
     setWatchFlowStep("search");
     setError("");
+    onWatchSearch(option.query, subcategory);
   }
 
   function backToWatchCategories() {
@@ -290,6 +293,9 @@ export function AiSearchBox({
     onExampleSelect: (prompt) => {
       setQuery(prompt);
       if (error) setError("");
+      if (botMode === "watch" && watchSubcategory && watchFlowStep === "search") {
+        onWatchSearch(prompt, watchSubcategory);
+      }
     },
     submitLabel,
     placeholder:
@@ -364,6 +370,7 @@ export function AiSearchBox({
               genrePanelRef={genrePanelRef}
               activeSubcategory={watchActiveSubcategory}
               selectedGenreQuery={query}
+              busy={busy}
               onSubcategorySelect={handleWatchSubcategorySelect}
               onGenreSelect={handleWatchGenreSelect}
             />

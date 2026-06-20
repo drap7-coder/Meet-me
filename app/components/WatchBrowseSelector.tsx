@@ -15,6 +15,7 @@ import type { RefObject } from "react";
 type Props = {
   activeSubcategory: WatchSubcategory | null;
   selectedGenreQuery: string;
+  busy?: boolean;
   genrePanelRef?: RefObject<HTMLDivElement | null>;
   onSubcategorySelect: (subcategory: WatchSubcategory) => void;
   onGenreSelect: (subcategory: WatchSubcategory, option: WatchGenreOption) => void;
@@ -23,6 +24,7 @@ type Props = {
 export function WatchBrowseSelector({
   activeSubcategory,
   selectedGenreQuery,
+  busy = false,
   genrePanelRef,
   onSubcategorySelect,
   onGenreSelect
@@ -41,6 +43,7 @@ export function WatchBrowseSelector({
               key={option.id}
               type="button"
               onClick={() => onSubcategorySelect(option.id)}
+              disabled={busy}
               aria-pressed={selected}
               aria-selected={selected}
               className={`category-card group flex min-w-0 items-center rounded-[20px] border-2 bg-white px-4 py-5 text-left shadow-[0_10px_26px_rgba(17,24,39,0.04)] transition hover:border-ink/25 hover:shadow-soft focus:outline-none focus:ring-4 focus:ring-clay/10 sm:px-5 sm:py-6 ${
@@ -86,6 +89,7 @@ export function WatchBrowseSelector({
                   key={option.id}
                   type="button"
                   onClick={() => onGenreSelect(activeOption.id, option)}
+                  disabled={busy}
                   aria-pressed={selected}
                   aria-selected={selected}
                   className={`category-card group flex min-w-0 flex-col items-center justify-center rounded-[16px] border-2 bg-white px-3 py-3 text-center transition sm:flex-row sm:justify-start sm:text-left ${

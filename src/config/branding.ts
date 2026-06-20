@@ -14,5 +14,5 @@ export const BRAND = {
   footerDescription:
     "Koi bot helps you find places to meet, things to watch, and events nearby. Ask Koi where to go or what to do.",
   heroSubheadline:
-    "Tell Koi where you are, what kind of spot you want, and what matters most — parking, vibe, distance, timing, or convenience."
+    "Find places, watch picks, and local events — nearby or halfway."
 };

@@ -23,6 +23,22 @@ export const WATCH_EXAMPLE_PROMPTS = [
   "Movies like The Dark Knight"
 ];
 
+export const WATCH_PROMPTS_BY_SUBCATEGORY: Record<WatchSubcategory, string[]> = {
+  movies: ["Funny movies like Superbad", "Movies like The Dark Knight", "Best action movies tonight", "Highly rated dramas"],
+  tv_shows: ["Best sci-fi shows from the last 5 years", "Comfort rewatch series", "New TV series to start tonight", "Limited series under 8 episodes"],
+  trending: ["Trending TV shows tonight", "Trending movies this week", "What everyone is watching now", "Popular new releases"],
+  genres: ["Best sci-fi movies", "Funny comedies tonight", "Scary horror picks", "Romantic movies for date night"],
+  streaming: ["What should I stream tonight?", "Where can I stream Interstellar?", "Best movies on streaming tonight", "Easy crowd-pleasers to stream"]
+};
+
+export function getWatchSubcategoryLabel(subcategory: WatchSubcategory) {
+  return WATCH_SUBCATEGORIES.find((option) => option.id === subcategory)?.label ?? "Watch";
+}
+
+export function getWatchSubcategoryDescription(subcategory: WatchSubcategory) {
+  return WATCH_SUBCATEGORIES.find((option) => option.id === subcategory)?.description ?? "";
+}
+
 export const WATCH_PLACEHOLDER = "Ask Koi what you want to watch…";
 
 export const EVENTS_EXAMPLE_PROMPTS = [

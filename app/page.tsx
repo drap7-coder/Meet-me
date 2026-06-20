@@ -507,6 +507,7 @@ export default function HomePage() {
                 discoveryMode={askKoiMode}
                 onChange={setForm}
                 onSubmit={submitClassicSearch}
+                hidden={askKoiMode === "watch"}
               />
             </div>
           </section>
@@ -566,6 +567,7 @@ export default function HomePage() {
                 discoveryMode={askKoiMode}
                 onChange={setForm}
                 onSubmit={submitClassicSearch}
+                hidden={askKoiMode === "watch"}
               />
               <RecentMeetupsSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
             </section>
@@ -661,7 +663,7 @@ export default function HomePage() {
 }
 
 function MarketingHero() {
-  const trustItems = ["Places, watch & events", "Local recommendations", "Weather-aware planning"];
+  const trustItems = ["Find places", "Watch picks", "Local events"];
 
   return (
       <div className="max-w-4xl">
@@ -814,14 +816,18 @@ function ClassicSearchPanel({
   loading,
   discoveryMode,
   onChange,
-  onSubmit
+  onSubmit,
+  hidden = false
 }: {
   form: SearchHalfwayRequest;
   loading: boolean;
   discoveryMode: KoiBotMode;
   onChange: (form: SearchHalfwayRequest) => void;
   onSubmit: () => void;
+  hidden?: boolean;
 }) {
+  if (hidden) return null;
+
   return (
     <section id="classic-search" className="scroll-mt-24">
       <p className="mb-3 text-sm font-black uppercase tracking-[0.14em] text-clay">Use classic search</p>

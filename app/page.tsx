@@ -24,7 +24,8 @@ import { normalizeCategory, parseMeetupMode, parseSearchMode } from "@/lib/categ
 import { getPreferenceLabel, parsePreferences } from "@/lib/preferences";
 import { copyTextToClipboard, shareWithFallback, shouldUseNativeShare } from "@/lib/share";
 import { trackEvent } from "@/lib/analytics";
-import type { LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory, WatchEventsResult } from "@/lib/types";
+import { WATCH_CATEGORY_GROUPS } from "@/lib/watchCategories";
+import type { KoiBotMode, LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory, WatchEventsResult } from "@/lib/types";
 import { BRAND } from "@/src/config/branding";
 import { FAQ_ITEMS } from "@/src/config/seo";
 import { useEffect, useMemo, useState } from "react";
@@ -50,6 +51,7 @@ export default function HomePage() {
   const [results, setResults] = useState<SearchHalfwayResponse | null>(null);
   const [watchEventsResult, setWatchEventsResult] = useState<WatchEventsResult | null>(null);
   const [searchKind, setSearchKind] = useState<"places" | "watch_events" | null>(null);
+  const [askKoiMode, setAskKoiMode] = useState<KoiBotMode>("places");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [shareMessage, setShareMessage] = useState("");
@@ -180,10 +182,6 @@ export default function HomePage() {
     submitSearch(nextForm);
   }
 
-  function runWatchEventsSearch(query: string) {
-    void submitWatchEventsSearch(query);
-  }
-
   async function submitWatchEventsSearch(query: string) {
     const startedAt = Date.now();
     const shouldPlayMotion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -220,6 +218,34 @@ export default function HomePage() {
       if (shouldPlayMotion && remainingMotionTime > 0) await wait(remainingMotionTime);
       setLoading(false);
     }
+  }
+
+  function runWatchEventsSearch(query: string) {
+    void submitWatchEventsSearch(query);
+  }
+
+  function handleAskKoiModeChange(mode: KoiBotMode) {
+    setAskKoiMode(mode);
+    if (mode === "watch_events") {
+      setForm((current) => ({
+        ...current,
+        category: "events",
+        customQuery: current.customQuery?.trim() || WATCH_CATEGORY_GROUPS[0].options[0].query
+      }));
+    }
+  }
+
+  function submitClassicSearch() {
+    if (askKoiMode === "watch_events") {
+      const query = form.customQuery?.trim();
+      if (!query) {
+        setError("Choose a watch option to search.");
+        return;
+      }
+      runWatchEventsSearch(query);
+      return;
+    }
+    submitSearch();
   }
 
   function clearRecent() {
@@ -322,8 +348,20 @@ export default function HomePage() {
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_28%_18%,rgba(214,90,46,0.24),transparent_28%),radial-gradient(circle_at_72%_8%,rgba(242,239,231,0.10),transparent_24%)]" />
             <div className="relative z-10 mx-auto grid w-full max-w-5xl gap-6 py-8 lg:py-12">
               <MarketingHero />
-              <AiSearchBox loading={loading} onParsed={runParsedSearch} onWatchEvents={runWatchEventsSearch} />
-              <ClassicSearchPanel form={form} loading={loading} onChange={setForm} onSubmit={submitSearch} />
+              <AiSearchBox
+                loading={loading}
+                botMode={askKoiMode}
+                onBotModeChange={handleAskKoiModeChange}
+                onParsed={runParsedSearch}
+                onWatchEvents={runWatchEventsSearch}
+              />
+              <ClassicSearchPanel
+                form={form}
+                loading={loading}
+                discoveryMode={askKoiMode}
+                onChange={setForm}
+                onSubmit={submitClassicSearch}
+              />
             </div>
           </section>
           <section className="bg-mint px-4 pb-10 pt-5 sm:px-6 lg:px-8">
@@ -368,8 +406,20 @@ export default function HomePage() {
 
           {error && !loading && !results && !watchEventsResult ? (
           <section id="search" className="mt-5 grid w-full max-w-5xl gap-5">
-              <AiSearchBox loading={loading} onParsed={runParsedSearch} onWatchEvents={runWatchEventsSearch} />
-              <ClassicSearchPanel form={form} loading={loading} onChange={setForm} onSubmit={submitSearch} />
+              <AiSearchBox
+                loading={loading}
+                botMode={askKoiMode}
+                onBotModeChange={handleAskKoiModeChange}
+                onParsed={runParsedSearch}
+                onWatchEvents={runWatchEventsSearch}
+              />
+              <ClassicSearchPanel
+                form={form}
+                loading={loading}
+                discoveryMode={askKoiMode}
+                onChange={setForm}
+                onSubmit={submitClassicSearch}
+              />
               <RecentMeetupsSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
             </section>
           ) : null}
@@ -609,18 +659,26 @@ function ShareDialog({
 function ClassicSearchPanel({
   form,
   loading,
+  discoveryMode,
   onChange,
   onSubmit
 }: {
   form: SearchHalfwayRequest;
   loading: boolean;
+  discoveryMode: KoiBotMode;
   onChange: (form: SearchHalfwayRequest) => void;
   onSubmit: () => void;
 }) {
   return (
     <section id="classic-search" className="scroll-mt-24">
       <p className="mb-3 text-sm font-black uppercase tracking-[0.14em] text-clay">Use classic search</p>
-      <LocationForm form={form} loading={loading} onChange={onChange} onSubmit={onSubmit} />
+      <LocationForm
+        form={form}
+        loading={loading}
+        discoveryMode={discoveryMode}
+        onChange={onChange}
+        onSubmit={onSubmit}
+      />
     </section>
   );
 }

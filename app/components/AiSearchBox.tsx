@@ -8,6 +8,8 @@ import { FormEvent, useState } from "react";
 
 type Props = {
   loading: boolean;
+  botMode: KoiBotMode;
+  onBotModeChange: (mode: KoiBotMode) => void;
   onParsed: (form: SearchHalfwayRequest) => void;
   onWatchEvents: (query: string) => void;
 };
@@ -37,9 +39,8 @@ const PLACE_EXAMPLE_PROMPTS = [
   "Where should we meet between NYC and Princeton?"
 ];
 
-export function AiSearchBox({ loading, onParsed, onWatchEvents }: Props) {
+export function AiSearchBox({ loading, botMode, onBotModeChange, onParsed, onWatchEvents }: Props) {
   const [query, setQuery] = useState("");
-  const [botMode, setBotMode] = useState<KoiBotMode>("places");
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState("");
 
@@ -122,7 +123,7 @@ export function AiSearchBox({ loading, onParsed, onWatchEvents }: Props) {
               key={mode.id}
               type="button"
               onClick={() => {
-                setBotMode(mode.id);
+                onBotModeChange(mode.id);
                 if (error) setError("");
               }}
               className={`rounded-lg border px-4 py-3 text-left transition focus:outline-none focus:ring-4 focus:ring-clay/10 ${

@@ -1,10 +1,11 @@
 "use client";
 
 import { CategorySelector } from "@/app/components/CategorySelector";
+import { WatchCategorySelector } from "@/app/components/WatchCategorySelector";
 import { Logo } from "@/app/components/Logo";
 import { getPrimaryCategoryId } from "@/lib/categories";
 import { PREFERENCES } from "@/lib/preferences";
-import type { LatLng, PlaceSuggestion, Preference, SearchHalfwayRequest, VenueCategory } from "@/lib/types";
+import type { KoiBotMode, LatLng, PlaceSuggestion, Preference, SearchHalfwayRequest, VenueCategory } from "@/lib/types";
 import { copyTextToClipboard, shareWithFallback } from "@/lib/share";
 import { BRAND } from "@/src/config/branding";
 import { FormEvent, useEffect, useRef, useState } from "react";
@@ -12,11 +13,12 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 type Props = {
   form: SearchHalfwayRequest;
   loading: boolean;
+  discoveryMode?: KoiBotMode;
   onChange: (form: SearchHalfwayRequest) => void;
   onSubmit: () => void;
 };
 
-export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
+export function LocationForm({ form, loading, discoveryMode = "places", onChange, onSubmit }: Props) {
   const [inviteStatus, setInviteStatus] = useState("");
   const [inviteUrl, setInviteUrl] = useState("");
   const [showInviteTools, setShowInviteTools] = useState(false);
@@ -68,7 +70,8 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
   }
 
   const activePrimaryId = getPrimaryCategoryId(form.category);
-  const submitCopy = getSubmitCopy(activePrimaryId);
+  const isWatchMode = discoveryMode === "watch_events";
+  const submitCopy = isWatchMode ? "Find watch options" : getSubmitCopy(activePrimaryId);
   const searchMode = form.searchMode ?? "midpoint";
 
   return (
@@ -147,16 +150,25 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
 
       <div className="mt-5 grid gap-3">
         <div>
-          <span className="text-sm font-bold text-ink">Choose the kind of meet-up</span>
+          <span className="text-sm font-bold text-ink">
+            {isWatchMode ? "Choose what to watch" : "Choose the kind of meet-up"}
+          </span>
           <p className="mt-1 text-xs font-semibold leading-5 text-slate">
             Start broad, then pick the exact style you want.
           </p>
         </div>
-        <CategorySelector
-          value={form.category}
-          mode={form.meetupMode}
-          onChange={(category: VenueCategory) => update("category", category)}
-        />
+        {isWatchMode ? (
+          <WatchCategorySelector
+            value={form.customQuery ?? ""}
+            onChange={(option) => onChange({ ...form, customQuery: option.query, category: "events" })}
+          />
+        ) : (
+          <CategorySelector
+            value={form.category}
+            mode={form.meetupMode}
+            onChange={(category: VenueCategory) => update("category", category)}
+          />
+        )}
       </div>
 
       <div className="mt-4 grid gap-3 rounded-[18px] border border-line/80 bg-white/70 p-3 sm:p-4">
@@ -188,7 +200,7 @@ export function LocationForm({ form, loading, onChange, onSubmit }: Props) {
         </div>
       </div>
 
-      {form.category === "custom" ? (
+      {form.category === "custom" && !isWatchMode ? (
         <label className="mt-4 grid gap-2">
           <span className="text-sm font-bold text-ink">Something different</span>
           <input

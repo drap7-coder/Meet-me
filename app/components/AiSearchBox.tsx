@@ -48,25 +48,27 @@ export function AiSearchBox({ loading, onParsed, onWatchEvents }: Props) {
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const trimmed = query.trim();
+  async function runSearch(searchQuery: string, mode: KoiBotMode = botMode) {
+    const trimmed = searchQuery.trim();
     if (!trimmed) {
       setError(
-        botMode === "watch_events"
+        mode === "watch_events"
           ? "Try a sentence like: What should I watch tonight?"
           : "Try a sentence like: Find coffee near Hoboken with easy parking."
       );
       return;
     }
 
+    if (loading || parsing) return;
+
+    setQuery(trimmed);
     setParsing(true);
     setError("");
     try {
       const response = await fetch("/api/parse-search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: trimmed, botMode })
+        body: JSON.stringify({ query: trimmed, botMode: mode })
       });
       const data = (await response.json()) as ParseSearchResult;
       if (!response.ok) throw new Error(data.error ?? "I could not understand that search.");
@@ -85,8 +87,20 @@ export function AiSearchBox({ loading, onParsed, onWatchEvents }: Props) {
     }
   }
 
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await runSearch(query);
+  }
+
   const busy = loading || parsing;
   const examplePrompts = botMode === "watch_events" ? WATCH_EVENTS_PROMPTS : PLACE_PROMPTS;
+  const submitLabel = parsing
+    ? "Understanding..."
+    : loading
+      ? botMode === "watch_events"
+        ? "Finding watch & events..."
+        : "Finding places..."
+      : BRAND.askLabel;
 
   return (
     <section id="ask-koi" className="w-full min-w-0 scroll-mt-24 overflow-hidden rounded-lg border border-line bg-paper p-5 shadow-soft sm:p-7" aria-labelledby="ai-search-title">
@@ -144,7 +158,7 @@ export function AiSearchBox({ loading, onParsed, onWatchEvents }: Props) {
           disabled={busy}
           className="h-11 rounded-full bg-ink px-5 font-bold text-white shadow-[0_10px_24px_rgba(17,24,39,0.14)] transition hover:bg-ink/85 focus:outline-none focus:ring-4 focus:ring-ink/15 disabled:cursor-not-allowed disabled:bg-ink/30 sm:h-12"
         >
-          {parsing ? "Understanding..." : loading ? "Finding places..." : BRAND.askLabel}
+          {submitLabel}
         </button>
       </form>
 
@@ -161,11 +175,11 @@ export function AiSearchBox({ loading, onParsed, onWatchEvents }: Props) {
             <button
               key={prompt}
               type="button"
+              disabled={busy}
               onClick={() => {
-                setQuery(prompt);
-                if (error) setError("");
+                void runSearch(prompt, botMode);
               }}
-              className="rounded-full border border-line bg-white px-3 py-1.5 text-left text-xs font-semibold text-slate transition hover:border-clay hover:text-clay"
+              className="rounded-full border border-line bg-white px-3 py-1.5 text-left text-xs font-semibold text-slate transition hover:border-clay hover:text-clay disabled:cursor-not-allowed disabled:opacity-50"
             >
               {prompt}
             </button>

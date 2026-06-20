@@ -426,50 +426,6 @@ export default function HomePage() {
     void submitEventsSearch(query);
   }
 
-  async function runExamplePrompt(query: string) {
-    setError("");
-    try {
-      const response = await fetch("/api/parse-search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query,
-          context: {
-            locationA: form.locationA,
-            locationAPlaceId: form.locationAPlaceId,
-            locationACoordinates: form.locationACoordinates
-          }
-        })
-      });
-      const data = (await response.json()) as {
-        botMode?: "places" | "watch" | "events";
-        form?: SearchHalfwayRequest;
-        error?: string;
-        needsLocation?: boolean;
-      };
-      if (!response.ok) {
-        if (response.status === 422 && data.needsLocation && data.form) {
-          handleNeedsLocation(data.form);
-          setError(data.error ?? "Add your location to search nearby.");
-          return;
-        }
-        throw new Error(data.error ?? "Koi could not understand that example.");
-      }
-      if (data.botMode === "watch") {
-        runWatchSearch(query, DEFAULT_WATCH_SUBCATEGORY);
-        return;
-      }
-      if (data.botMode === "events") {
-        runEventsSearch(query);
-        return;
-      }
-      if (!data.form) throw new Error(data.error ?? "Koi could not understand that example.");
-      runParsedSearch(data.form);
-    } catch (exampleError) {
-      openFullFallback(exampleError instanceof Error ? exampleError.message : "Koi could not understand that example.");
-    }
-  }
-
   function submitLocationFallback() {
     if (!form.locationA.trim()) {
       setError("Add where you are, or tap Use my location.");
@@ -845,15 +801,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      {!hasSearched && !results && !watchEventsResult && !loading ? (
-        <>
-          <HowItWorks />
-          <UseCases />
-          <BrandSection />
-          <ExamplePromptsSection onExample={(prompt) => void runExamplePrompt(prompt)} />
-        </>
-      ) : null}
-
       <FeedbackSection />
       <Footer />
       {shareDialog ? (
@@ -868,16 +815,11 @@ export default function HomePage() {
 }
 
 function MarketingHero() {
-  const trustItems = ["Find places", "Streaming picks", "Local events"];
-
   return (
       <div className="max-w-4xl">
         <div className="mb-5 inline-flex rounded-[20px] border border-white/10 bg-paper/95 p-3 shadow-[0_16px_40px_rgba(10,19,35,0.22)] sm:mb-6 sm:p-4">
           <Logo size="lg" />
         </div>
-        <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-clay sm:mb-4 sm:text-sm">
-          {BRAND.tagline}
-        </p>
         <h1 className="max-w-4xl text-[2.8rem] font-black leading-[0.96] tracking-[-0.04em] text-[#FFFDF8] sm:text-[clamp(48px,8vw,72px)]">
           {BRAND.heroHeadline}
         </h1>
@@ -891,14 +833,6 @@ function MarketingHero() {
           >
             {BRAND.askLabel}
           </a>
-        </div>
-        <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm font-bold text-[#D7D0C4] sm:mt-6">
-          {trustItems.map((item) => (
-            <span key={item} className="inline-flex items-center gap-2">
-              <span className="text-clay" aria-hidden="true">✓</span>
-              {item}
-            </span>
-          ))}
         </div>
       </div>
   );
@@ -1151,138 +1085,6 @@ function MeetInMiddleLoader() {
         <p className="mt-1 text-xs font-semibold text-slate">Balancing drive times and local options.</p>
       </div>
     </div>
-  );
-}
-
-function HowItWorks() {
-  const steps = [
-    [
-      "Ask Koi in plain English",
-      "Describe a meet-up spot, a watch mood, or local events near you — nearby or halfway."
-    ],
-    [
-      "Pick your lane",
-      "Choose Find Places, Streaming, or Events, then narrow with categories like cuisine or genre."
-    ],
-    [
-      "Get picks you can act on",
-      "Koi surfaces real recommendations with context, not just a list of links."
-    ]
-  ];
-
-  return (
-    <section id="how-it-works" className="bg-sky px-4 py-16 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="max-w-2xl">
-          <p className="text-sm font-bold uppercase tracking-wide text-clay">How it works</p>
-          <h2 className="mt-3 text-4xl font-black tracking-tight text-ink sm:text-5xl">
-            Tell Koi the plan. Get something worth doing.
-          </h2>
-        </div>
-        <div className="mt-10 grid gap-4 md:grid-cols-3">
-          {steps.map(([title, copy], index) => (
-            <article key={title} className="rounded-lg border border-line bg-paper p-6 shadow-soft">
-              <div className="grid h-9 w-9 place-items-center rounded-full bg-ink text-sm font-black text-white">
-                {index + 1}
-              </div>
-              <h3 className="mt-8 text-xl font-black text-ink">{title}</h3>
-              <p className="mt-3 leading-7 text-slate">{copy}</p>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function UseCases() {
-  const cards = [
-    [
-      "Find Places",
-      "Restaurants, coffee, activities, and meet-up spots — nearby or balanced between two people."
-    ],
-    ["Streaming Picks", "Movies, TV, and trending ideas powered by TMDB. No location needed."],
-    ["Local Events", "Sports, concerts, comedy, festivals, and happenings near you."]
-  ];
-
-  return (
-    <section className="px-4 py-16 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="max-w-2xl">
-          <p className="text-sm font-bold uppercase tracking-wide text-clay">Why it works</p>
-          <h2 className="mt-3 text-4xl font-black tracking-tight text-ink sm:text-5xl">
-            One assistant, three ways to plan.
-          </h2>
-        </div>
-        <div className="mt-8 grid gap-2.5 sm:grid-cols-3 sm:gap-3">
-          {cards.map(([title, copy]) => (
-            <article key={title} className="rounded-[22px] border border-line bg-paper p-5 shadow-[0_12px_30px_rgba(17,24,39,0.05)] sm:p-6">
-              <p className="text-xl font-black text-ink">{title}</p>
-              <p className="mt-3 text-sm font-semibold leading-6 text-slate">{copy}</p>
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function BrandSection() {
-  return (
-    <section className="px-4 py-16 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl rounded-lg bg-ink px-6 py-14 text-white shadow-soft ring-1 ring-clay/20 sm:px-10 lg:px-14">
-        <h2 className="max-w-3xl text-4xl font-black tracking-tight sm:text-6xl">
-          Good plans should feel easy to start.
-        </h2>
-        <p className="mt-5 max-w-2xl text-xl leading-8 text-white/70">
-          Koi turns fuzzy ideas into places to meet, things to watch, and events worth checking out.
-        </p>
-      </div>
-    </section>
-  );
-}
-
-function ExamplePromptsSection({ onExample }: { onExample: (prompt: string) => void }) {
-  const examples = [
-    ["☕", "Coffee between us", "Coffee between Hoboken and Edison"],
-    ["🍺", "Brewery halfway between Philly and Princeton", "Brewery halfway between Philly and Princeton"],
-    ["🍕", "Pizza near me", "Pizza near me"],
-    ["🎬", "Funny movies like Superbad", "Funny movies like Superbad"],
-    ["🎵", "Concerts this weekend", "Concerts this weekend"]
-  ];
-
-  return (
-    <section className="bg-sky px-4 py-16 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-5xl">
-        <div className="max-w-2xl">
-          <p className="text-sm font-bold uppercase tracking-wide text-clay">Ask once</p>
-          <h2 className="mt-3 text-4xl font-black tracking-tight text-ink sm:text-5xl">
-            {BRAND.heroHeadline}
-          </h2>
-          <p className="mt-4 text-base font-semibold leading-7 text-slate">
-            {BRAND.tagline} Just say what you&apos;re looking for.
-          </p>
-        </div>
-        <div className="mt-8 grid gap-3 sm:grid-cols-2">
-          {examples.map(([icon, label, prompt]) => (
-            <button
-              key={prompt}
-              type="button"
-              onClick={() => onExample(prompt)}
-              className="group flex items-center gap-4 rounded-[22px] border border-line bg-paper p-5 text-left shadow-[0_12px_30px_rgba(17,24,39,0.05)] transition hover:border-clay hover:shadow-soft focus:outline-none focus:ring-4 focus:ring-clay/15"
-            >
-              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#FFF4EC] text-xl">{icon}</span>
-              <span className="min-w-0">
-                <span className="block text-lg font-black text-ink">{label}</span>
-                <span className="mt-1 block text-sm font-semibold leading-6 text-slate group-hover:text-clay">
-                  {BRAND.askLabel}
-                </span>
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-    </section>
   );
 }
 

@@ -23,16 +23,16 @@ export const KOI_BROWSE_LANES: KoiBrowseLane[] = [
   {
     id: "places",
     label: "Places",
-    description: "Fair meetups, coffee, food, drinks, shopping, and activities.",
+    description: "Meetups, coffee, food, and activities.",
     iconCategory: "coffee",
     featured: true,
     options: [
-      { id: "coffee", label: "Coffee", query: "Coffee between Hoboken and Edison" },
-      { id: "dinner", label: "Dinner", query: "Dinner near me" },
-      { id: "brewery", label: "Breweries", query: "Brewery halfway between Philly and Princeton" },
-      { id: "shopping", label: "Shopping", query: "Shopping between Hoboken and Edison" },
-      { id: "brunch", label: "Brunch", query: "Brunch near me" },
-      { id: "activities", label: "Activities", query: "Bowling between Hoboken and Edison" }
+      { id: "coffee", label: "Coffee between us", query: "Coffee between Hoboken and Edison" },
+      { id: "dinner", label: "Dinner near me", query: "Dinner near me" },
+      { id: "brewery", label: "Brewery halfway", query: "Brewery halfway between Philly and Princeton" },
+      { id: "shopping", label: "Shopping nearby", query: "Shopping between Hoboken and Edison" },
+      { id: "brunch", label: "Brunch near me", query: "Brunch near me" },
+      { id: "activities", label: "Something fun", query: "Bowling between Hoboken and Edison" }
     ]
   },
   {
@@ -43,7 +43,7 @@ export const KOI_BROWSE_LANES: KoiBrowseLane[] = [
     options: [
       {
         id: "funny-movies",
-        label: "Funny movies",
+        label: "Funny movies like Superbad",
         query: "Funny movies like Superbad",
         watchSubcategory: "movies"
       },
@@ -86,13 +86,37 @@ export const KOI_BROWSE_LANES: KoiBrowseLane[] = [
     iconCategory: "sports",
     options: [
       { id: "movie-theaters", label: "Movie theaters", query: "Movie theaters near me tonight" },
-      { id: "concerts", label: "Concerts", query: "Any concerts near me this weekend?" },
+      { id: "concerts", label: "Concerts this weekend", query: "Concerts this weekend" },
       { id: "comedy", label: "Comedy", query: "Any comedy shows near me this weekend?" },
       { id: "sports", label: "Sports", query: "Sports games near me tonight" },
       { id: "festivals", label: "Festivals", query: "Festivals near me this weekend" },
       { id: "things-to-do", label: "Things to do", query: "Things to do near me tonight" }
     ]
   }
+];
+
+export type KoiFeaturedExample = KoiBrowseOption & {
+  emoji: string;
+};
+
+/** Human, tappable starters — one row under the ask box. */
+export const KOI_FEATURED_EXAMPLES: KoiFeaturedExample[] = [
+  { id: "coffee", emoji: "☕", label: "Coffee between us", query: "Coffee between Hoboken and Edison" },
+  {
+    id: "brewery",
+    emoji: "🍺",
+    label: "Brewery halfway",
+    query: "Brewery halfway between Philly and Princeton"
+  },
+  { id: "pizza", emoji: "🍕", label: "Pizza near me", query: "Pizza near me" },
+  {
+    id: "funny-movies",
+    emoji: "🎬",
+    label: "Funny movies like Superbad",
+    query: "Funny movies like Superbad",
+    watchSubcategory: "movies"
+  },
+  { id: "concerts", emoji: "🎵", label: "Concerts this weekend", query: "Concerts this weekend" }
 ];
 
 export const DEFAULT_BROWSE_LANE_ID: KoiBrowseLaneId = "places";

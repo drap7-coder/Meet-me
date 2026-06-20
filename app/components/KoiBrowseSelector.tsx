@@ -36,13 +36,6 @@ export function KoiBrowseSelector({
 
   return (
     <div className="grid gap-4">
-      <div>
-        <p className="text-xs font-black uppercase tracking-[0.14em] text-slate">Browse</p>
-        <p className="mt-1 text-sm font-semibold leading-6 text-slate">
-          Pick a lane, then tap a starter — Koi runs the search for you.
-        </p>
-      </div>
-
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {KOI_BROWSE_LANES.map((lane) => {
           const selected = lane.id === activeLaneId;
@@ -89,10 +82,6 @@ export function KoiBrowseSelector({
         ref={chipPanelRef}
         className="grid gap-2 rounded-[22px] border border-[#D8DDE6] bg-white p-3 shadow-[0_12px_30px_rgba(18,50,74,0.05)] sm:p-4"
       >
-        <div>
-          <p className="text-sm font-black text-ink">{activeLane.label}</p>
-          <p className="mt-1 text-xs font-semibold leading-5 text-slate">{activeLane.description}</p>
-        </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {activeLane.options.map((option) => {
             const selected = option.query.trim().toLowerCase() === normalizedSelection;

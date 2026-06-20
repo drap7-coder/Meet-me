@@ -11,6 +11,7 @@ import {
   DEFAULT_WATCH_SUBCATEGORY,
   watchSubcategoryHasGenres,
   WATCH_PLACEHOLDER,
+  WATCH_EXAMPLE_PROMPTS,
   WATCH_PROMPTS_BY_SUBCATEGORY,
   type WatchGenreOption
 } from "@/lib/watchBrowse";
@@ -238,8 +239,8 @@ export function AiSearchBox({
 
     try {
       if (mode === "watch") {
-        if (!watchSubcategory) return;
-        onWatchSearch(trimmed, watchSubcategory);
+        const subcategory = watchSubcategory ?? watchActiveSubcategory ?? DEFAULT_WATCH_SUBCATEGORY;
+        onWatchSearch(trimmed, subcategory);
         return;
       }
 
@@ -293,8 +294,9 @@ export function AiSearchBox({
     onExampleSelect: (prompt) => {
       setQuery(prompt);
       if (error) setError("");
-      if (botMode === "watch" && watchSubcategory && watchFlowStep === "search") {
-        onWatchSearch(prompt, watchSubcategory);
+      if (botMode === "watch" && !loading && !parsing) {
+        const subcategory = watchSubcategory ?? watchActiveSubcategory ?? DEFAULT_WATCH_SUBCATEGORY;
+        onWatchSearch(prompt, subcategory);
       }
     },
     submitLabel,
@@ -373,6 +375,11 @@ export function AiSearchBox({
               busy={busy}
               onSubcategorySelect={handleWatchSubcategorySelect}
               onGenreSelect={handleWatchGenreSelect}
+            />
+            <SearchPanel
+              {...searchPanelProps}
+              placeholder={WATCH_PLACEHOLDER}
+              examplePrompts={WATCH_EXAMPLE_PROMPTS}
             />
           </div>
         ) : null}

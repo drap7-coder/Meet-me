@@ -6,8 +6,7 @@ import { NextResponse } from "next/server";
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || (process.env.VERCEL ? "" : "http://localhost:11434");
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "qwen3:8b";
 const OLLAMA_TIMEOUT_MS = Number(process.env.OLLAMA_TIMEOUT_MS || 30000);
-const GEMINI_API_KEY =
-  process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_MAPS_API_KEY || "";
+const DEDICATED_GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "";
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 const NLP_PROVIDER = process.env.NLP_PROVIDER || "";
 
@@ -86,14 +85,11 @@ export async function POST(request: Request) {
 }
 
 async function parseSearchQuery(query: string): Promise<ParsedSearchIntent> {
-  if (NLP_PROVIDER === "gemini" || (!NLP_PROVIDER && GEMINI_API_KEY)) {
+  if (shouldUseGeminiParser()) {
     try {
       return await parseWithGemini(query);
-    } catch (error) {
-      if (NLP_PROVIDER === "gemini" || process.env.VERCEL) {
-        return parseWithFallback(query);
-      }
-      throw error;
+    } catch {
+      return parseWithFallback(query);
     }
   }
 
@@ -102,6 +98,11 @@ async function parseSearchQuery(query: string): Promise<ParsedSearchIntent> {
   }
 
   return parseWithFallback(query);
+}
+
+function shouldUseGeminiParser() {
+  if (NLP_PROVIDER === "ollama") return false;
+  return Boolean(DEDICATED_GEMINI_KEY);
 }
 
 async function parseWithOllama(query: string): Promise<ParsedSearchIntent> {
@@ -175,10 +176,10 @@ async function parseWithOllama(query: string): Promise<ParsedSearchIntent> {
 }
 
 async function parseWithGemini(query: string): Promise<ParsedSearchIntent> {
-  if (!GEMINI_API_KEY) throw new Error("Gemini parser is not configured. Set GOOGLE_API_KEY or GEMINI_API_KEY.");
+  if (!DEDICATED_GEMINI_KEY) throw new Error("Gemini parser is not configured. Set GOOGLE_API_KEY or GEMINI_API_KEY.");
 
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(DEDICATED_GEMINI_KEY)}`,
     {
       method: "POST",
       cache: "no-store",
@@ -213,7 +214,7 @@ async function parseWithGemini(query: string): Promise<ParsedSearchIntent> {
   return {
     location_a: stringField(parsed.location_a),
     location_b: stringField(parsed.location_b),
-    category: stringField(parsed.category) || "coffee",
+    category: stringField(parsed.category),
     search_mode: stringField(parsed.search_mode) === "single" ? "single" : "midpoint"
   };
 }

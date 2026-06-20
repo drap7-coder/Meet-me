@@ -44,7 +44,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 For production hosting, `OLLAMA_BASE_URL` must point to an Ollama endpoint reachable from the server. `http://localhost:11434` works for local development only.
 
-For production on Vercel, set `NLP_PROVIDER=gemini`. Koi will use `GEMINI_API_KEY`, `GOOGLE_API_KEY`, or fall back to `GOOGLE_MAPS_API_KEY` when a dedicated Gemini key is not set. Enable the Generative Language API on that Google Cloud key, or add a separate Gemini key.
+For production on Vercel, set `NLP_PROVIDER=gemini` only when `GEMINI_API_KEY` or `GOOGLE_API_KEY` is configured for the Generative Language API. Without a dedicated Gemini key, Koi uses the rule-based parser in `/api/parse-search`.
 
 Then run:
 

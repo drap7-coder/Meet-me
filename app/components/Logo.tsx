@@ -1,5 +1,7 @@
 import { BRAND } from "@/src/config/branding";
 
+const MARK_SRC = "/branding/koi-mark-transparent.png";
+
 type LogoSize = "sm" | "md" | "lg" | "xl";
 type LogoVariant = "mark" | "lockup";
 
@@ -60,7 +62,7 @@ export function Logo({
           className={`grid shrink-0 place-items-center overflow-hidden rounded-2xl border border-line bg-white shadow-[0_10px_24px_rgba(10,19,35,0.08)] ring-1 ring-clay/10 ${LOCKUP_MARK_FRAME[size]}`}
         >
           <img
-            src="/branding/koi-mark.png"
+            src={MARK_SRC}
             alt=""
             aria-hidden="true"
             className="h-full w-full object-contain"
@@ -93,7 +95,7 @@ export function Logo({
   return (
     <div className={`inline-grid min-w-0 gap-2 ${className}`}>
       <img
-        src="/branding/koi-mark.png"
+        src={MARK_SRC}
         alt={`${BRAND.displayName} mark`}
         className={imageClassName}
       />
@@ -108,6 +110,6 @@ export function Logo({
 
 export function PinIcon({ className = "" }: { className?: string }) {
   return (
-    <img src="/branding/koi-mark.png" alt={`${BRAND.displayName} mark`} className={className} />
+    <img src={MARK_SRC} alt={`${BRAND.displayName} mark`} className={className} />
   );
 }

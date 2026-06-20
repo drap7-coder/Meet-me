@@ -823,11 +823,11 @@ function MarketingHero() {
           <Logo
             size="xl"
             bare
-            className="shrink-0 [&_img]:h-28 [&_img]:w-28 [&_img]:mix-blend-multiply sm:[&_img]:h-48 sm:[&_img]:w-48"
+            className="shrink-0 [&_img]:h-28 [&_img]:w-28 sm:[&_img]:h-48 sm:[&_img]:w-48"
           />
-          <h1 className="flex min-h-28 min-w-0 flex-1 flex-col justify-center gap-0 font-semibold tracking-[-0.04em] text-[#FFFDF8] sm:min-h-48">
-            <span className="text-[clamp(2.25rem,9vw,3.75rem)] leading-[0.88]">{headlineLead}</span>
-            <span className="text-[clamp(2.25rem,9vw,3.75rem)] leading-[0.88]">{headlineTail}</span>
+          <h1 className="flex min-h-[10.5rem] min-w-0 flex-1 flex-col justify-center gap-0 rounded-md bg-paper px-3 py-2 font-semibold tracking-[-0.04em] sm:min-h-[18rem] sm:px-4 sm:py-3">
+            <span className="text-[clamp(3.375rem,13.5vw,5.625rem)] leading-[0.88] text-ink">{headlineLead}</span>
+            <span className="text-[clamp(3.375rem,13.5vw,5.625rem)] leading-[0.88] text-clay">{headlineTail}</span>
           </h1>
         </div>
         <p className="mt-3 max-w-xl text-sm font-medium leading-6 text-[#C8C2B6] sm:mt-3.5 sm:text-[0.9375rem] sm:leading-6">

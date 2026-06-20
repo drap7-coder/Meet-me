@@ -60,19 +60,39 @@ const RESTAURANT_FALLBACK_TERMS = [
 ];
 
 export function buildReservationSearchQuery(name: string, address: string) {
-  const city = extractCityFromAddress(address);
+  const trimmedName = name.trim();
+  const { city } = extractCityStateFromAddress(address);
   const location = city || address.trim();
-  return [name.trim(), location].filter(Boolean).join(" ");
+  const query = [trimmedName, location].filter(Boolean).join(" ");
+  return query.trim();
 }
 
 export function buildOpenTableSearchUrl(name: string, address: string) {
   const query = buildReservationSearchQuery(name, address);
-  return `https://www.opentable.com/s?term=${encodeURIComponent(query)}`;
+  if (!query) return null;
+
+  const params = new URLSearchParams({
+    covers: "2",
+    dateTime: buildDefaultOpenTableDateTime(),
+    term: query
+  });
+
+  return `https://www.opentable.com/s/?${params.toString()}`;
 }
 
 export function buildResySearchUrl(name: string, address: string) {
-  const query = buildReservationSearchQuery(name, address);
-  return `https://resy.com/find?query=${encodeURIComponent(query)}`;
+  const trimmedName = name.trim();
+  const { city, state } = extractCityStateFromAddress(address);
+  const slug = buildResyCitySlug(city, state);
+  if (!trimmedName || !slug) return null;
+
+  const params = new URLSearchParams({
+    query: trimmedName,
+    seats: "2",
+    date: buildDefaultReservationDate()
+  });
+
+  return `https://resy.com/cities/${slug}/search?${params.toString()}`;
 }
 
 export function isRestaurantReservationEligible(
@@ -97,15 +117,56 @@ export function isRestaurantReservationEligible(
   return RESTAURANT_FALLBACK_TERMS.some((term) => haystack.includes(term));
 }
 
-function extractCityFromAddress(address: string) {
+function extractCityStateFromAddress(address: string) {
   const parts = address
     .split(",")
     .map((part) => part.trim())
     .filter(Boolean);
-  if (parts.length <= 1) return parts[0] ?? "";
+  if (parts.length === 0) return { city: "", state: "" };
+
   const withoutCountry =
     parts[parts.length - 1].match(/^(USA|United States)$/i) ? parts.slice(0, -1) : parts;
-  if (withoutCountry.length >= 3) return withoutCountry[1];
-  if (withoutCountry.length === 2) return withoutCountry[0];
-  return withoutCountry[0];
+
+  if (withoutCountry.length >= 3) {
+    return {
+      city: withoutCountry[1],
+      state: extractStateAbbrev(withoutCountry[2])
+    };
+  }
+
+  if (withoutCountry.length === 2) {
+    return {
+      city: withoutCountry[0],
+      state: extractStateAbbrev(withoutCountry[1])
+    };
+  }
+
+  return { city: withoutCountry[0], state: "" };
+}
+
+function extractStateAbbrev(value: string) {
+  const match = value.match(/\b([A-Z]{2})\b/);
+  return match?.[1]?.toLowerCase() ?? "";
+}
+
+function buildResyCitySlug(city: string, state: string) {
+  const citySlug = city
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  if (!citySlug) return "";
+  return state ? `${citySlug}-${state}` : citySlug;
+}
+
+function buildDefaultReservationDate() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(new Date());
+}
+
+function buildDefaultOpenTableDateTime() {
+  return `${buildDefaultReservationDate()}T19:00`;
 }

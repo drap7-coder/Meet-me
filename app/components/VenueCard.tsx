@@ -193,8 +193,9 @@ export function VenueCard({
         </div>
       ) : null}
 
-      {openTableUrl && resyUrl ? (
+      {(openTableUrl || resyUrl) ? (
         <div className="mt-4 flex flex-wrap gap-2">
+          {openTableUrl ? (
           <a
             href={openTableUrl}
             target="_blank"
@@ -210,6 +211,8 @@ export function VenueCard({
           >
             Reserve on OpenTable
           </a>
+          ) : null}
+          {resyUrl ? (
           <a
             href={resyUrl}
             target="_blank"
@@ -225,6 +228,7 @@ export function VenueCard({
           >
             Check Resy
           </a>
+          ) : null}
         </div>
       ) : null}
 

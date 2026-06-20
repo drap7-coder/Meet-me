@@ -465,14 +465,9 @@ function MarketingHero() {
         <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-clay sm:mb-4 sm:text-sm">
           Intelligent local discovery assistant
         </p>
-        <div className="max-w-3xl">
-          <img
-            src="/branding/koi-bot-wordmark.png"
-            alt={BRAND.displayName}
-            className="h-auto w-full max-w-[min(100%,520px)] object-contain object-left"
-          />
-        </div>
-        <h1 className="sr-only">{BRAND.heroHeadline}</h1>
+        <h1 className="max-w-4xl text-[2.8rem] font-black leading-[0.96] tracking-[-0.04em] text-[#FFFDF8] sm:text-[clamp(48px,8vw,72px)]">
+          {BRAND.heroHeadline}
+        </h1>
         <p className="mt-5 max-w-2xl text-base font-medium leading-7 text-[#D7D0C4] sm:mt-6 sm:text-xl sm:leading-8">
           {BRAND.heroSubheadline}
         </p>
@@ -634,7 +629,7 @@ function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-paper/95 pt-[env(safe-area-inset-top)] shadow-[0_10px_28px_rgba(10,19,35,0.08)] backdrop-blur">
       <div className="mx-auto flex h-[64px] w-full max-w-7xl items-center justify-between gap-2 px-3 sm:h-[72px] sm:gap-4 sm:px-6 lg:px-8">
-        <a href="/" className="group inline-flex min-w-0 flex-1 items-center gap-2 sm:gap-3" aria-label={`${BRAND.name} home`}>
+        <a href="/" className="group inline-flex min-w-0 flex-1 items-center gap-2 sm:gap-3" aria-label={`${BRAND.displayName} home`}>
           <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-2xl border border-line bg-white shadow-[0_10px_24px_rgba(10,19,35,0.08)] ring-1 ring-clay/10 transition group-hover:ring-clay/40 sm:h-11 sm:w-11">
             <img
               src="/branding/koi-mark.png"
@@ -643,12 +638,11 @@ function SiteHeader() {
               className="h-full w-full object-contain"
             />
           </span>
-          <span className="grid min-w-0 leading-none">
-            <span className="truncate font-serif text-xl font-semibold tracking-wide text-ink sm:text-2xl">Koi</span>
-            <span className="mt-1 hidden text-[0.62rem] font-black uppercase tracking-[0.26em] text-clay sm:block">
-              Meet smarter
-            </span>
-          </span>
+          <img
+            src="/branding/koibot-wordmark-transparent.png"
+            alt={BRAND.displayName}
+            className="h-7 w-auto max-w-[min(100%,176px)] object-contain object-left sm:h-8 sm:max-w-[210px]"
+          />
         </a>
         <a
           href="#ask-koi"

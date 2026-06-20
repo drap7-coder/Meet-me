@@ -6,9 +6,9 @@ import type {
 } from "@/lib/types";
 
 export const WATCH_EVENTS_TITLE = "Watch & Events";
-export const WATCH_EVENTS_DESCRIPTION = "Find shows, movies, sports, concerts, comedy, and things to do.";
+export const WATCH_EVENTS_DESCRIPTION = "Find movies, sports, live events, and what to watch tonight.";
 export const WATCH_EVENTS_PREVIEW_MESSAGE =
-  "Preview results below are curated by Koi from your ask. Live streaming, ticket, and broadcast data is coming soon.";
+  "Preview results below are curated by Koi from your ask. Live listings and ticket data is coming soon.";
 
 export const WATCH_EVENTS_FUTURE_PROVIDERS = [
   "TMDB",

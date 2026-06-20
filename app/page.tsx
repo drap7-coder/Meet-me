@@ -24,7 +24,7 @@ import { normalizeCategory, parseMeetupMode, parseSearchMode } from "@/lib/categ
 import { getPreferenceLabel, parsePreferences } from "@/lib/preferences";
 import { copyTextToClipboard, shareWithFallback, shouldUseNativeShare } from "@/lib/share";
 import { trackEvent } from "@/lib/analytics";
-import { WATCH_CATEGORY_GROUPS } from "@/lib/watchCategories";
+import { DEFAULT_WATCH_QUERY } from "@/lib/watchCategories";
 import type { KoiBotMode, LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory, WatchEventsResult } from "@/lib/types";
 import { BRAND } from "@/src/config/branding";
 import { FAQ_ITEMS } from "@/src/config/seo";
@@ -230,7 +230,7 @@ export default function HomePage() {
       setForm((current) => ({
         ...current,
         category: "events",
-        customQuery: current.customQuery?.trim() || WATCH_CATEGORY_GROUPS[0].options[0].query
+        customQuery: current.customQuery?.trim() || DEFAULT_WATCH_QUERY
       }));
     }
   }
@@ -724,7 +724,7 @@ function WatchEventsLoader() {
     >
       <div className="mx-auto grid max-w-md gap-3">
         <div className="grid grid-cols-3 gap-2">
-          {["Stream", "Live", "Tickets"].map((label) => (
+          {["Movies", "Sports", "Live"].map((label) => (
             <div key={label} className="rounded-lg bg-sky px-3 py-4 text-center text-xs font-black uppercase tracking-[0.12em] text-slate">
               {label}
             </div>
@@ -736,7 +736,7 @@ function WatchEventsLoader() {
       </div>
       <div className="mt-4 text-center">
         <p className="text-sm font-black text-ink">Finding watch & event options</p>
-        <p className="mt-1 text-xs font-semibold text-slate">Matching your ask to streaming, live events, and sports plans.</p>
+        <p className="mt-1 text-xs font-semibold text-slate">Matching your ask to movies, sports, and live plans.</p>
       </div>
     </div>
   );

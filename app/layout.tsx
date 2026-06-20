@@ -37,9 +37,9 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/branding/koi-logo-horizontal.png",
-        width: 940,
-        height: 360,
+        url: "/branding/koi-app-icon-1024.png",
+        width: 1024,
+        height: 1024,
         alt: BRAND.displayName
       }
     ]
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: BRAND.seoTitle,
     description: BRAND.description,
-    images: ["/branding/koi-logo-horizontal.png"]
+    images: ["/branding/koi-app-icon-1024.png"]
   }
 };
 
@@ -61,7 +61,7 @@ const webApplicationJsonLd = {
   applicationCategory: "LifestyleApplication",
   operatingSystem: "Web",
   description: BRAND.description,
-  image: `${BRAND.url}/branding/koi-logo-horizontal.png`,
+  image: `${BRAND.url}/branding/koi-app-icon-1024.png`,
   offers: {
     "@type": "Offer",
     price: "0",

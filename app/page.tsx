@@ -873,7 +873,7 @@ function MarketingHero() {
   return (
       <div className="max-w-4xl">
         <div className="mb-5 inline-flex rounded-[20px] border border-white/10 bg-paper/95 p-3 shadow-[0_16px_40px_rgba(10,19,35,0.22)] sm:mb-6 sm:p-4">
-          <Logo variant="horizontal" size="lg" />
+          <Logo size="lg" />
         </div>
         <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-clay sm:mb-4 sm:text-sm">
           {BRAND.tagline}
@@ -1089,12 +1089,7 @@ function SiteHeader() {
     <header className="sticky top-0 z-50 border-b border-line bg-paper/95 pt-[env(safe-area-inset-top)] shadow-[0_10px_28px_rgba(10,19,35,0.08)] backdrop-blur">
       <div className="mx-auto flex h-[64px] w-full max-w-7xl items-center justify-between gap-2 px-3 sm:h-[72px] sm:gap-4 sm:px-6 lg:px-8">
         <a href="/" className="group inline-flex min-w-0 flex-1 items-center gap-2 sm:gap-3" aria-label={`${BRAND.displayName} home`}>
-          <Logo variant="horizontal" size="md" className="transition group-hover:opacity-90" />
-          <span className="hidden min-w-0 leading-none sm:grid">
-            <span className="truncate text-[0.62rem] font-black uppercase tracking-[0.26em] text-clay">
-              {BRAND.headerEyebrow}
-            </span>
-          </span>
+          <Logo variant="lockup" size="md" showEyebrow className="transition group-hover:opacity-90" />
         </a>
         <a
           href="#ask-koi"
@@ -1335,7 +1330,7 @@ function Footer() {
     <footer className="border-t border-line px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 text-sm text-slate sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <Logo variant="horizontal" size="sm" />
+          <Logo variant="lockup" size="sm" />
           <p className="mt-3 font-semibold">Currently in Beta</p>
           <p className="mt-3 max-w-sm leading-6">{BRAND.footerDescription}</p>
         </div>

@@ -1,55 +1,78 @@
 import { BRAND } from "@/src/config/branding";
 
 type LogoSize = "sm" | "md" | "lg";
-type LogoVariant = "mark" | "horizontal";
+type LogoVariant = "mark" | "lockup";
 
 type LogoProps = {
   variant?: LogoVariant;
   showTagline?: boolean;
+  showEyebrow?: boolean;
   size?: LogoSize;
   className?: string;
 };
 
 const MARK_SIZE: Record<LogoSize, { image: string; tagline: string }> = {
   sm: {
-    image: "h-14 w-14",
+    image: "h-12 w-12 sm:h-14 sm:w-14",
     tagline: "text-[0.65rem]"
   },
   md: {
-    image: "h-16 w-16",
+    image: "h-14 w-14 sm:h-16 sm:w-16",
     tagline: "text-xs"
   },
   lg: {
-    image: "h-20 w-20",
+    image: "h-20 w-20 sm:h-24 sm:w-24",
     tagline: "text-base sm:text-lg"
   }
 };
 
-const HORIZONTAL_SIZE: Record<LogoSize, string> = {
-  sm: "h-9 w-auto sm:h-10",
-  md: "h-10 w-auto sm:h-11",
-  lg: "h-12 w-auto sm:h-14"
+const LOCKUP_MARK_FRAME: Record<LogoSize, string> = {
+  sm: "h-10 w-10 sm:h-11 sm:w-11",
+  md: "h-10 w-10 sm:h-11 sm:w-11",
+  lg: "h-14 w-14 sm:h-16 sm:w-16"
+};
+
+const LOCKUP_TITLE: Record<LogoSize, string> = {
+  sm: "text-lg sm:text-xl",
+  md: "text-xl sm:text-2xl",
+  lg: "text-2xl sm:text-3xl"
 };
 
 export function Logo({
   variant = "mark",
   showTagline = false,
+  showEyebrow = false,
   size = "md",
   className = ""
 }: LogoProps) {
-  if (variant === "horizontal") {
+  if (variant === "lockup") {
     return (
-      <div className={`inline-flex min-w-0 flex-col gap-1 ${className}`}>
-        <img
-          src="/branding/koi-logo-horizontal.png"
-          alt={BRAND.displayName}
-          className={`${HORIZONTAL_SIZE[size]} max-w-full object-contain object-left`}
-        />
-        {showTagline ? (
-          <span className={`font-bold leading-tight text-slate ${MARK_SIZE[size].tagline}`}>
-            {BRAND.tagline}
+      <div className={`inline-flex min-w-0 items-center gap-2 sm:gap-3 ${className}`}>
+        <span
+          className={`grid shrink-0 place-items-center overflow-hidden rounded-2xl border border-line bg-white shadow-[0_10px_24px_rgba(10,19,35,0.08)] ring-1 ring-clay/10 ${LOCKUP_MARK_FRAME[size]}`}
+        >
+          <img
+            src="/branding/koi-mark.png"
+            alt=""
+            aria-hidden="true"
+            className="h-full w-full object-contain"
+          />
+        </span>
+        <span className="grid min-w-0 leading-none">
+          <span className={`truncate font-serif font-semibold tracking-wide text-ink ${LOCKUP_TITLE[size]}`}>
+            {BRAND.displayName}
           </span>
-        ) : null}
+          {showEyebrow ? (
+            <span className="mt-1 hidden text-[0.62rem] font-black uppercase tracking-[0.26em] text-clay sm:block">
+              {BRAND.headerEyebrow}
+            </span>
+          ) : null}
+          {showTagline ? (
+            <span className={`mt-1 font-bold leading-tight text-slate ${MARK_SIZE[size].tagline}`}>
+              {BRAND.tagline}
+            </span>
+          ) : null}
+        </span>
       </div>
     );
   }

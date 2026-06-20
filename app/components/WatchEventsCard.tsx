@@ -69,9 +69,9 @@ export function WatchEventsCard({ item }: Props) {
           </div>
           <h3 className="text-xl font-black leading-tight text-ink">{item.title}</h3>
           <p className="mt-1 text-sm font-semibold text-slate">{item.subtitle}</p>
-          {item.rating || item.year || item.runtime ? (
+          {item.rating || item.year || item.runtime || item.genre ? (
             <p className="mt-2 text-xs font-bold uppercase tracking-[0.12em] text-slate">
-              {[item.rating, item.year, item.runtime].filter(Boolean).join(" · ")}
+              {[item.rating, item.year, item.genre, item.runtime].filter(Boolean).join(" · ")}
             </p>
           ) : null}
         </div>

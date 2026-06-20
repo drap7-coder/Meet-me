@@ -24,9 +24,9 @@ import { normalizeCategory, parseMeetupMode, parseSearchMode } from "@/lib/categ
 import { getPreferenceLabel, parsePreferences } from "@/lib/preferences";
 import { copyTextToClipboard, shareWithFallback, shouldUseNativeShare } from "@/lib/share";
 import { trackEvent } from "@/lib/analytics";
-import { DEFAULT_WATCH_QUERY } from "@/lib/watchCategories";
+import { DEFAULT_EVENTS_QUERY, DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
 import { resolveWatchPlaceSearchForm, watchPlaceSearchNeedsLocation } from "@/lib/watchPlaceSearch";
-import type { KoiBotMode, LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory, WatchEventsApiResponse, WatchEventsMoreResult, WatchEventsResult } from "@/lib/types";
+import type { KoiBotMode, LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory, WatchEventsApiResponse, WatchEventsMoreResult, WatchEventsResult, WatchSubcategory } from "@/lib/types";
 import { BRAND } from "@/src/config/branding";
 import { FAQ_ITEMS } from "@/src/config/seo";
 import { useEffect, useMemo, useState } from "react";
@@ -51,7 +51,8 @@ export default function HomePage() {
   const [form, setForm] = useState<SearchHalfwayRequest>(initialForm);
   const [results, setResults] = useState<SearchHalfwayResponse | null>(null);
   const [watchEventsResult, setWatchEventsResult] = useState<WatchEventsResult | null>(null);
-  const [searchKind, setSearchKind] = useState<"places" | "watch_events" | null>(null);
+  const [searchKind, setSearchKind] = useState<"places" | "watch" | "events" | null>(null);
+  const [activeWatchSubcategory, setActiveWatchSubcategory] = useState<WatchSubcategory>(DEFAULT_WATCH_SUBCATEGORY);
   const [askKoiMode, setAskKoiMode] = useState<KoiBotMode>("places");
   const [loading, setLoading] = useState(false);
   const [loadingMoreWatchEvents, setLoadingMoreWatchEvents] = useState(false);
@@ -185,11 +186,51 @@ export default function HomePage() {
     submitSearch(nextForm);
   }
 
-  async function submitWatchEventsSearch(query: string, locationContext?: SearchHalfwayRequest) {
+  async function submitWatchSearch(query: string, subcategory: WatchSubcategory = activeWatchSubcategory) {
+    const startedAt = Date.now();
+    const shouldPlayMotion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setSearchKind("watch");
+    setActiveWatchSubcategory(subcategory);
+    setHasSearched(true);
+    setLoading(true);
+    setResults(null);
+    setWatchEventsResult(null);
+    setError("");
+    setShareMessage("");
+    setCurrentShareUrl("");
+    trackEvent("watch_events_opened", {
+      queryLength: query.length
+    });
+
+    try {
+      const response = await fetch("/api/watch-search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, subcategory })
+      });
+      const data = (await response.json()) as WatchEventsResult & { error?: string };
+      if (!response.ok) throw new Error(data.error ?? "Watch search failed.");
+
+      setWatchEventsResult(data);
+      trackEvent("watch_events_completed", {
+        intent: data.intent,
+        resultCount: data.resultCount
+      });
+    } catch (searchError) {
+      setWatchEventsResult(null);
+      setError(searchError instanceof Error ? searchError.message : "Watch search failed.");
+    } finally {
+      const remainingMotionTime = 650 - (Date.now() - startedAt);
+      if (shouldPlayMotion && remainingMotionTime > 0) await wait(remainingMotionTime);
+      setLoading(false);
+    }
+  }
+
+  async function submitEventsSearch(query: string, locationContext?: SearchHalfwayRequest) {
     const startedAt = Date.now();
     const shouldPlayMotion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let redirectedToPlaces = false;
-    setSearchKind("watch_events");
+    setSearchKind("events");
     setHasSearched(true);
     setLoading(true);
     setResults(null);
@@ -208,7 +249,7 @@ export default function HomePage() {
         body: JSON.stringify({ query, form: locationContext ?? form })
       });
       const data = (await response.json()) as WatchEventsApiResponse & { error?: string };
-      if (!response.ok) throw new Error(data.error ?? "Watch & Events search failed.");
+      if (!response.ok) throw new Error(data.error ?? "Events search failed.");
 
       if (data.botMode === "places") {
         setForm(data.form);
@@ -229,7 +270,7 @@ export default function HomePage() {
       });
     } catch (searchError) {
       setWatchEventsResult(null);
-      setError(searchError instanceof Error ? searchError.message : "Watch & Events search failed.");
+      setError(searchError instanceof Error ? searchError.message : "Events search failed.");
     } finally {
       if (!redirectedToPlaces) {
         const remainingMotionTime = 650 - (Date.now() - startedAt);
@@ -239,8 +280,12 @@ export default function HomePage() {
     }
   }
 
-  function runWatchEventsSearch(query: string) {
-    void submitWatchEventsSearch(query);
+  function runWatchSearch(query: string, subcategory: WatchSubcategory) {
+    void submitWatchSearch(query, subcategory);
+  }
+
+  function runEventsSearch(query: string) {
+    void submitEventsSearch(query);
   }
 
   async function loadMoreWatchEvents() {
@@ -253,10 +298,15 @@ export default function HomePage() {
     setLoadingMoreWatchEvents(true);
     setError("");
     try {
-      const response = await fetch("/api/watch-events", {
+      const endpoint = searchKind === "watch" ? "/api/watch-search" : "/api/watch-events";
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: watchEventsResult.query, excludeKeys })
+        body: JSON.stringify({
+          query: watchEventsResult.query,
+          excludeKeys,
+          ...(searchKind === "watch" ? { subcategory: activeWatchSubcategory } : {})
+        })
       });
       const data = (await response.json()) as WatchEventsMoreResult & { error?: string };
       if (!response.ok) throw new Error(data.error ?? "Could not load more picks.");
@@ -283,29 +333,52 @@ export default function HomePage() {
 
   function handleAskKoiModeChange(mode: KoiBotMode) {
     setAskKoiMode(mode);
-    if (mode === "watch_events") {
+    if (mode === "watch") {
       setForm((current) => ({
         ...current,
         category: "events",
-        customQuery: current.customQuery?.trim() || DEFAULT_WATCH_QUERY
+        customQuery: current.customQuery?.trim() || "Funny movies like Superbad",
+        watchSubcategory: current.watchSubcategory ?? DEFAULT_WATCH_SUBCATEGORY
+      }));
+    }
+    if (mode === "events") {
+      setForm((current) => ({
+        ...current,
+        category: "events",
+        customQuery: current.customQuery?.trim() || DEFAULT_EVENTS_QUERY
       }));
     }
   }
 
   function submitClassicSearch() {
-    if (askKoiMode === "watch_events") {
+    if (askKoiMode === "watch") {
       const query = form.customQuery?.trim();
       if (!query) {
-        setError("Choose a watch option to search.");
+        setError("Describe what you want to watch.");
+        return;
+      }
+      runWatchSearch(query, form.watchSubcategory ?? DEFAULT_WATCH_SUBCATEGORY);
+      return;
+    }
+
+    if (askKoiMode === "events") {
+      const query = form.customQuery?.trim();
+      if (!query) {
+        setError("Choose an event option to search.");
+        return;
+      }
+
+      const locationA = form.locationA.trim();
+      const searchMode = form.searchMode ?? "midpoint";
+      if (!locationA || (searchMode === "midpoint" && !form.locationB.trim())) {
+        setError("Add a location above — events are location-based.");
         return;
       }
 
       const placeForm = resolveWatchPlaceSearchForm(query, form);
       if (placeForm) {
         if (watchPlaceSearchNeedsLocation(query, form)) {
-          setError(
-            "Add a location above, or include a place in your ask — e.g. sports bar between Hoboken and Edison."
-          );
+          setError("Add a location above, or include a place in your ask.");
           return;
         }
         setForm(placeForm);
@@ -313,9 +386,10 @@ export default function HomePage() {
         return;
       }
 
-      runWatchEventsSearch(query);
+      void submitEventsSearch(query, form);
       return;
     }
+
     submitSearch();
   }
 
@@ -424,7 +498,8 @@ export default function HomePage() {
                 botMode={askKoiMode}
                 onBotModeChange={handleAskKoiModeChange}
                 onParsed={runParsedSearch}
-                onWatchEvents={runWatchEventsSearch}
+                onWatchSearch={runWatchSearch}
+                onEventsSearch={runEventsSearch}
               />
               <ClassicSearchPanel
                 form={form}
@@ -482,7 +557,8 @@ export default function HomePage() {
                 botMode={askKoiMode}
                 onBotModeChange={handleAskKoiModeChange}
                 onParsed={runParsedSearch}
-                onWatchEvents={runWatchEventsSearch}
+                onWatchSearch={runWatchSearch}
+                onEventsSearch={runEventsSearch}
               />
               <ClassicSearchPanel
                 form={form}
@@ -498,7 +574,7 @@ export default function HomePage() {
         {loading ? (
           <section className="mt-8 grid gap-4 lg:grid-cols-[1fr_420px]">
             <div className="grid gap-3">
-              {searchKind === "watch_events" ? <WatchEventsLoader /> : <MeetInMiddleLoader />}
+              {searchKind === "watch" || searchKind === "events" ? <WatchEventsLoader /> : <MeetInMiddleLoader />}
               {[0, 1, 2].map((item) => (
                 <div key={item} className="h-48 animate-pulse rounded-lg bg-sky shadow-soft" />
               ))}

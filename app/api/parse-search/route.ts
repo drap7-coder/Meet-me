@@ -1,7 +1,8 @@
 import { resolveSearchCategoryFromQuery } from "@/lib/categories";
 import { detectPreferencesFromQuery } from "@/lib/preferences";
 import type { KoiBotMode, SearchHalfwayRequest, WatchEventsResult } from "@/lib/types";
-import { buildWatchEventsResult, resolveKoiBotMode } from "@/lib/watchEvents";
+import { buildEventsResult } from "@/lib/eventsSearch";
+import { resolveKoiBotMode } from "@/lib/watchEvents";
 import { resolveWatchPlaceSearchForm } from "@/lib/watchPlaceSearch";
 import { NextResponse } from "next/server";
 
@@ -23,8 +24,8 @@ type ParseSearchResponse = {
   form: SearchHalfwayRequest;
 };
 
-type ParseWatchEventsResponse = {
-  botMode: "watch_events";
+type ParseEventsResponse = {
+  botMode: "events";
   watchEvents: WatchEventsResult;
 };
 
@@ -45,7 +46,12 @@ export async function POST(request: Request) {
     }
 
     const botMode = resolveKoiBotMode(query, requestedMode);
-    if (botMode === "watch_events") {
+
+    if (botMode === "watch" || requestedMode === "watch") {
+      return NextResponse.json({ botMode: "watch" });
+    }
+
+    if (botMode === "events") {
       const placeForm = resolveWatchPlaceSearchForm(query);
       if (placeForm) {
         const placeResponse = buildPlacesParseResponse(query, placeForm);
@@ -53,15 +59,15 @@ export async function POST(request: Request) {
         return NextResponse.json(
           {
             error:
-              "Add a location in classic search below, or include a place in your ask — e.g. sports bar between Hoboken and Edison."
+              "Add a location in classic search below, or include a place in your ask — e.g. comedy shows near Philly this weekend."
           },
           { status: 422 }
         );
       }
 
-      const response: ParseWatchEventsResponse = {
-        botMode: "watch_events",
-        watchEvents: await buildWatchEventsResult(query)
+      const response: ParseEventsResponse = {
+        botMode: "events",
+        watchEvents: await buildEventsResult(query)
       };
       return NextResponse.json(response);
     }
@@ -321,7 +327,9 @@ function stringField(value: unknown) {
 }
 
 function parseRequestedBotMode(value: unknown): KoiBotMode | undefined {
-  return value === "watch_events" || value === "places" ? value : undefined;
+  if (value === "places" || value === "watch" || value === "events") return value;
+  if (value === "watch_events") return "events";
+  return undefined;
 }
 
 function buildPlacesParseResponse(

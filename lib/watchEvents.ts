@@ -4,14 +4,24 @@ import type {
   WatchEventsRecommendation,
   WatchEventsResult
 } from "@/lib/types";
-import { tryBuildLiveMovieRecommendations } from "@/lib/watchMovies";
 
-export const WATCH_EVENTS_TITLE = "Watch & Events";
-export const WATCH_EVENTS_DESCRIPTION = "Find movies, sports, live events, and what to watch tonight.";
-export const WATCH_EVENTS_PREVIEW_MESSAGE =
-  "Preview results below are curated by Koi from your ask. Live listings and ticket data is coming soon.";
-export const WATCH_EVENTS_LIVE_MOVIE_MESSAGE =
+export const WATCH_TITLE = "Watch";
+export const WATCH_DESCRIPTION = "Movies, TV shows, streaming, and what to watch tonight.";
+export const WATCH_PREVIEW_MESSAGE =
+  "Preview results below are curated by Koi from your ask. Live TMDB picks appear when configured.";
+export const WATCH_LIVE_MESSAGE =
   "Movie and TV picks below come from TMDB based on your ask. Streaming availability is coming soon.";
+
+export const EVENTS_TITLE = "Events";
+export const EVENTS_PREVIEW_MESSAGE =
+  "Preview results below are location-based and curated by Koi. Live listings and ticket data from Ticketmaster and SeatGeek are coming soon.";
+
+/** @deprecated Use WATCH_TITLE */
+export const WATCH_EVENTS_TITLE = WATCH_TITLE;
+/** @deprecated Use WATCH_DESCRIPTION */
+export const WATCH_EVENTS_DESCRIPTION = WATCH_DESCRIPTION;
+export const WATCH_EVENTS_PREVIEW_MESSAGE = EVENTS_PREVIEW_MESSAGE;
+export const WATCH_EVENTS_LIVE_MOVIE_MESSAGE = WATCH_LIVE_MESSAGE;
 
 export const WATCH_EVENTS_FUTURE_PROVIDERS = [
   "TMDB",
@@ -29,41 +39,44 @@ const PLACE_CATEGORY_PATTERN =
 const SHOW_ME_PLACES_PATTERN =
   /\bshow me\b.*\b(?:coffee|restaurant|place|spot|bar|brewery|food|lunch|dinner|brunch|hotel|park)\b/i;
 
-const STRONG_WATCH_EVENTS_PATTERNS = [
-  /\bwhat (?:should|can|do) (?:i|we) watch\b/i,
-  /\bwhere (?:can|to|should) (?:i|we) (?:watch|stream)\b/i,
-  /\bwhat(?:'s| is) on (?:tv|television)\b/i,
-  /\b(?:stream(?:ing)?|watch(?:ing)?) (?:on|via)\b/i,
-  /\b(?:movie|movies|film|films|tv show|tv shows|television show)\b/i,
-  /\b(?:comedy|concert|concerts|stand[- ]?up|festival|festivals)\b/i,
-  /\b(?:live sports|sports on tv|game tonight|watch the .* game|watch .* game tonight)\b/i,
-  /\b(?:tickets?|box office)\b/i,
-  /\bfamily[- ]friendly events\b/i,
-  /\blocal events\b/i,
-  /\bevents near\b/i,
-  /\bthings to do\b/i,
-  /\bthis weekend\b.*\b(?:show|shows|concert|comedy|event|events|game)\b/i,
-  /\b(?:show|shows|concert|comedy|event|events|game)\b.*\bthis weekend\b/i
-];
-
-const WATCH_EVENTS_KEYWORDS =
-  /\b(?:watch|stream|streaming|movie|movies|film|concert|comedy|festival|tickets?|tv|television|game tonight|on tv|events)\b/i;
-
-const INTENT_LABELS: Record<WatchEventsIntent, string> = {
-  stream: "Streaming",
-  live_event: "Live events",
-  sports: "Sports",
-  things_to_do: "Things to do",
-  general: "Tonight's picks"
-};
-
-export function detectWatchEventsIntent(query: string) {
+export function detectWatchIntent(query: string) {
   const trimmed = query.trim();
   if (!trimmed) return false;
-
   if (SHOW_ME_PLACES_PATTERN.test(trimmed)) return false;
 
-  if (STRONG_WATCH_EVENTS_PATTERNS.some((pattern) => pattern.test(trimmed))) {
+  const watchPatterns = [
+    /\bwhat (?:should|can|do) (?:i|we) watch\b/i,
+    /\bwhere (?:can|to|should) (?:i|we) (?:watch|stream)\b/i,
+    /\bwhat(?:'s| is) on (?:tv|television)\b/i,
+    /\b(?:stream(?:ing)?|watch(?:ing)?) (?:on|via)\b/i,
+    /\b(?:movie|movies|film|films|tv show|tv shows|television show)\b/i
+  ];
+
+  if (watchPatterns.some((pattern) => pattern.test(trimmed))) return true;
+  if (/\bwhere can i watch\b/i.test(trimmed)) return true;
+  if (/\bstream\b/i.test(trimmed) && !/\b(?:concert|festival|game)\b/i.test(trimmed)) return true;
+
+  return false;
+}
+
+export function detectEventsIntent(query: string) {
+  const trimmed = query.trim();
+  if (!trimmed) return false;
+  if (SHOW_ME_PLACES_PATTERN.test(trimmed)) return false;
+
+  const eventPatterns = [
+    /\b(?:comedy|concert|concerts|stand[- ]?up|festival|festivals)\b/i,
+    /\b(?:live sports|game tonight|watch the .* game|watch .* game tonight)\b/i,
+    /\b(?:tickets?|box office)\b/i,
+    /\bfamily[- ]friendly events\b/i,
+    /\blocal events\b/i,
+    /\bevents near\b/i,
+    /\bthings to do\b/i,
+    /\bthis weekend\b.*\b(?:show|shows|concert|comedy|event|events|game)\b/i,
+    /\b(?:show|shows|concert|comedy|event|events|game)\b.*\bthis weekend\b/i
+  ];
+
+  if (eventPatterns.some((pattern) => pattern.test(trimmed))) {
     if (
       PLACE_MEETUP_PATTERN.test(trimmed) &&
       PLACE_CATEGORY_PATTERN.test(trimmed) &&
@@ -74,13 +87,9 @@ export function detectWatchEventsIntent(query: string) {
     return true;
   }
 
-  if (/\bwhere can i watch\b/i.test(trimmed)) return true;
-  if (/\bstream\b/i.test(trimmed)) return true;
-
   if (
-    WATCH_EVENTS_KEYWORDS.test(trimmed) &&
-    /\bnear\b/i.test(trimmed) &&
-    /\b(?:show|shows|concert|comedy|event|events|game)\b/i.test(trimmed)
+    /\b(?:sports|concert|festival|events?|game|games)\b/i.test(trimmed) &&
+    /\bnear\b/i.test(trimmed)
   ) {
     return true;
   }
@@ -88,78 +97,99 @@ export function detectWatchEventsIntent(query: string) {
   return false;
 }
 
+/** @deprecated Use detectWatchIntent or detectEventsIntent */
+export function detectWatchEventsIntent(query: string) {
+  return detectWatchIntent(query) || detectEventsIntent(query);
+}
+
 export function resolveKoiBotMode(query: string, requestedMode?: KoiBotMode): KoiBotMode {
-  if (requestedMode === "watch_events") return "watch_events";
-  if (detectWatchEventsIntent(query)) return "watch_events";
+  if (requestedMode === "places") return "places";
+  if (requestedMode === "watch") return "watch";
+  if (requestedMode === "events") return "events";
+  if (detectEventsIntent(query)) return "events";
+  if (detectWatchIntent(query)) return "watch";
   return "places";
 }
 
 export async function buildWatchEventsResult(query: string): Promise<WatchEventsResult> {
-  const trimmed = query.trim();
-  const intent = classifyWatchEventsIntent(trimmed);
-  const location = extractWatchEventsLocation(trimmed);
-  const timeframe = extractWatchEventsTimeframe(trimmed);
-  const topic = extractWatchEventsTopic(trimmed, intent);
-  const genre = extractMovieGenre(trimmed);
-  const liveBatch = await tryBuildLiveMovieRecommendations({
-    query: trimmed,
-    intent,
-    timeframe,
-    topic,
-    genre
-  });
-  const recommendations =
-    liveBatch?.recommendations ??
-    (await buildWatchEventsRecommendations({
-      query: trimmed,
-      intent,
-      location,
-      timeframe,
-      topic,
-      genre
-    }));
-  const contextSummary = buildContextSummary({ intent, location, timeframe, topic });
-  const hasLiveMovies = recommendations.some((item) => !item.preview);
-
-  return {
-    botMode: "watch_events",
-    query: trimmed,
-    title: WATCH_EVENTS_TITLE,
-    description: WATCH_EVENTS_DESCRIPTION,
-    message: hasLiveMovies ? WATCH_EVENTS_LIVE_MOVIE_MESSAGE : WATCH_EVENTS_PREVIEW_MESSAGE,
-    intent,
-    intentLabel: INTENT_LABELS[intent],
-    location,
-    timeframe,
-    topic,
-    contextSummary,
-    resultCount: recommendations.length,
-    recommendations,
-    futureProviders: hasLiveMovies
-      ? WATCH_EVENTS_FUTURE_PROVIDERS.filter((provider) => provider !== "TMDB")
-      : [...WATCH_EVENTS_FUTURE_PROVIDERS],
-    preview: !hasLiveMovies,
-    hasMore: liveBatch?.hasMore ?? false
-  };
+  const { buildWatchSearchResult } = await import("@/lib/watchSearch");
+  return buildWatchSearchResult(query);
 }
 
 export async function buildWatchEventsMore(query: string, excludeKeys: string[]) {
-  const trimmed = query.trim();
-  const intent = classifyWatchEventsIntent(trimmed);
-  const timeframe = extractWatchEventsTimeframe(trimmed);
-  const topic = extractWatchEventsTopic(trimmed, intent);
-  const genre = extractMovieGenre(trimmed);
-  const liveBatch = await tryBuildLiveMovieRecommendations(
-    { query: trimmed, intent, timeframe, topic, genre },
-    { excludeKeys, startRank: excludeKeys.length + 1 }
-  );
+  const { buildWatchSearchMore } = await import("@/lib/watchSearch");
+  return buildWatchSearchMore(query, excludeKeys);
+}
 
-  return {
-    botMode: "watch_events" as const,
-    append: true as const,
-    recommendations: liveBatch?.recommendations ?? [],
-    hasMore: liveBatch?.hasMore ?? false
-  };
+export function classifyWatchIntent(query: string): WatchEventsIntent {
+  return classifyWatchEventsIntent(query);
+}
+
+export function classifyEventsIntent(query: string): WatchEventsIntent {
+  const value = query.toLowerCase();
+
+  if (/\b(?:game tonight|watch the .* game|phillies|yankees|eagles|nba|nfl|mlb|nhl|football|baseball|soccer)\b/i.test(value)) {
+    return "sports";
+  }
+
+  if (/\b(?:comedy show|stand[- ]?up|concert|concerts|festival|festivals|tickets?|box office)\b/i.test(value)) {
+    return "live_event";
+  }
+
+  if (/\b(?:family[- ]friendly events|things to do|local events|events near)\b/i.test(value)) {
+    return "things_to_do";
+  }
+
+  if (/\bnear\b/i.test(value) && /\b(?:show|shows|event|events|game)\b/i.test(value)) {
+    return "live_event";
+  }
+
+  return "things_to_do";
+}
+
+export function buildWatchPreviewRecommendations({
+  query,
+  intent,
+  timeframe,
+  topic,
+  genre
+}: {
+  query: string;
+  intent: WatchEventsIntent;
+  location?: string;
+  timeframe: string;
+  topic: string;
+  genre: string;
+}) {
+  if (intent === "stream") return buildStreamRecommendations(topic || "movies");
+  if (genre) return buildMovieGenreRecommendations(genre, timeframe);
+  if (/\bnew releases?\b/i.test(query)) {
+    return buildGeneralRecommendations("new releases", timeframe);
+  }
+  return buildGeneralRecommendations(query, timeframe);
+}
+
+export function buildEventsPreviewRecommendations({
+  query,
+  intent,
+  location,
+  timeframe,
+  topic
+}: {
+  query: string;
+  intent: WatchEventsIntent;
+  location: string;
+  timeframe: string;
+  topic: string;
+}) {
+  switch (intent) {
+    case "sports":
+      return buildSportsRecommendations(topic || "local team", location, timeframe);
+    case "live_event":
+      return buildLiveEventRecommendations(location || "your area", topic || "live events", timeframe);
+    default:
+      return buildThingsToDoRecommendations(location || "your area", topic || "events", timeframe);
+  }
 }
 
 function classifyWatchEventsIntent(query: string): WatchEventsIntent {
@@ -207,7 +237,7 @@ function classifyWatchEventsIntent(query: string): WatchEventsIntent {
   return "general";
 }
 
-function extractWatchEventsLocation(query: string) {
+export function extractWatchEventsLocation(query: string) {
   const patterns = [
     /\bnear\s+(.+?)(?:\s+(?:this|on|with|for|that|where|tonight|today|tomorrow|saturday|sunday|weekend)\b|[?.!,]|$)/i,
     /\bin\s+(.+?)(?:\s+(?:this|on|with|for|that|where|tonight|today|tomorrow|saturday|sunday|weekend)\b|[?.!,]|$)/i
@@ -226,7 +256,7 @@ function extractWatchEventsLocation(query: string) {
   return "";
 }
 
-function extractWatchEventsTimeframe(query: string) {
+export function extractWatchEventsTimeframe(query: string) {
   const patterns: Array<[RegExp, string]> = [
     [/\bthis weekend\b/i, "This weekend"],
     [/\btonight\b/i, "Tonight"],
@@ -244,7 +274,7 @@ function extractWatchEventsTimeframe(query: string) {
   return "Soon";
 }
 
-function extractWatchEventsTopic(query: string, intent: WatchEventsIntent) {
+export function extractWatchEventsTopic(query: string, intent: WatchEventsIntent) {
   const streamMatch = query.match(/\bstream(?:ing)?\s+(.+?)(?:\?|$)/i);
   if (streamMatch?.[1]) return cleanupWatchEventsFragment(streamMatch[1]);
 
@@ -262,7 +292,7 @@ function extractWatchEventsTopic(query: string, intent: WatchEventsIntent) {
   return "";
 }
 
-function extractMovieGenre(query: string) {
+export function extractMovieGenre(query: string) {
   const match = query.match(
     /\b(drama|sci-fi|science fiction|comedy|action|horror|romance|thriller|documentary|family)\b/i
   );
@@ -272,68 +302,6 @@ function extractMovieGenre(query: string) {
 
 export function parseMovieGenre(query: string) {
   return extractMovieGenre(query);
-}
-
-function buildContextSummary({
-  intent,
-  location,
-  timeframe,
-  topic
-}: {
-  intent: WatchEventsIntent;
-  location: string;
-  timeframe: string;
-  topic: string;
-}) {
-  const parts = [INTENT_LABELS[intent]];
-  if (topic) parts.push(topic);
-  if (location) parts.push(location);
-  if (timeframe) parts.push(timeframe);
-  return parts.join(" · ");
-}
-
-async function buildWatchEventsRecommendations({
-  query,
-  intent,
-  location,
-  timeframe,
-  topic,
-  genre
-}: {
-  query: string;
-  intent: WatchEventsIntent;
-  location: string;
-  timeframe: string;
-  topic: string;
-  genre: string;
-}) {
-  const liveMovies = await tryBuildLiveMovieRecommendations({
-    query,
-    intent,
-    timeframe,
-    topic,
-    genre
-  });
-  if (liveMovies?.recommendations.length) return liveMovies.recommendations;
-
-  switch (intent) {
-    case "stream":
-      return buildStreamRecommendations(topic || "movies");
-    case "live_event":
-      return buildLiveEventRecommendations(location || "your area", topic || "live events", timeframe);
-    case "sports":
-      return buildSportsRecommendations(topic || "local team", location, timeframe);
-    case "things_to_do":
-      return buildThingsToDoRecommendations(location || "your area", topic || "events", timeframe);
-    default:
-      if (/\b(?:movie theater|movie theatre|cinema|cinemas)\b/i.test(query)) {
-        return buildMovieTheaterRecommendations(location || "near you", timeframe);
-      }
-      if (extractMovieGenre(query)) {
-        return buildMovieGenreRecommendations(extractMovieGenre(query), timeframe);
-      }
-      return buildGeneralRecommendations(query, timeframe);
-  }
 }
 
 function buildStreamRecommendations(topic: string) {

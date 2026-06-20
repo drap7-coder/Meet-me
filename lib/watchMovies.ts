@@ -254,7 +254,8 @@ function mediaRecommendation(input: {
     year: pick.year,
     rating: formatRating(pick.rating),
     overview: pick.overview.trim(),
-    runtime: formatDuration(pick)
+    runtime: formatDuration(pick),
+    genre: input.meta.find((item) => item.label === "Genre lane")?.value
   };
 }
 

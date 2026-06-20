@@ -7,18 +7,21 @@ const PLACE_EXAMPLES = [
   { query: "where should we meet between Hoboken and Edison", expectedBotMode: "places", expectedCategory: "restaurant" }
 ];
 
-const WATCH_EVENTS_EXAMPLES = [
-  { query: "What should I watch tonight?", expectedBotMode: "watch_events", expectedIntent: "general" },
-  { query: "Any comedy shows near Philly this weekend?", expectedBotMode: "watch_events", expectedIntent: "live_event" },
-  { query: "Where can I stream Interstellar?", expectedBotMode: "watch_events", expectedIntent: "stream" },
-  { query: "Where can I watch the Phillies game tonight?", expectedBotMode: "watch_events", expectedIntent: "sports" }
+const WATCH_EXAMPLES = [
+  { query: "What should I watch tonight?", expectedBotMode: "watch" },
+  { query: "Where can I stream Interstellar?", expectedBotMode: "watch" },
+  { query: "Funny movies like Superbad", expectedBotMode: "watch" }
+];
+
+const EVENTS_EXAMPLES = [
+  { query: "Any comedy shows near Philly this weekend?", expectedBotMode: "events", expectedIntent: "live_event" },
+  { query: "Where can I watch the Phillies game tonight?", expectedBotMode: "events", expectedIntent: "sports" }
 ];
 
 async function runParseExample(example: {
   query: string;
   expectedBotMode: string;
   expectedCategory?: string;
-  expectedIntent?: string;
 }) {
   const response = await fetch(`${BASE_URL}/api/parse-search`, {
     method: "POST",
@@ -44,7 +47,7 @@ async function runParseExample(example: {
   return ok;
 }
 
-async function runWatchEventsExample(example: { query: string; expectedIntent: string }) {
+async function runEventsExample(example: { query: string; expectedIntent: string }) {
   const response = await fetch(`${BASE_URL}/api/watch-events`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -53,7 +56,7 @@ async function runWatchEventsExample(example: { query: string; expectedIntent: s
   const json = await response.json();
   const ok =
     response.ok &&
-    json?.botMode === "watch_events" &&
+    json?.botMode === "events" &&
     json?.intent === example.expectedIntent &&
     Array.isArray(json?.recommendations) &&
     json.recommendations.length >= 3;
@@ -77,10 +80,15 @@ async function run() {
     if (!ok) failed += 1;
   }
 
-  for (const example of WATCH_EVENTS_EXAMPLES) {
+  for (const example of WATCH_EXAMPLES) {
+    const ok = await runParseExample(example);
+    if (!ok) failed += 1;
+  }
+
+  for (const example of EVENTS_EXAMPLES) {
     const parseOk = await runParseExample(example);
-    const watchOk = await runWatchEventsExample(example);
-    if (!parseOk || !watchOk) failed += 1;
+    const eventsOk = await runEventsExample(example);
+    if (!parseOk || !eventsOk) failed += 1;
   }
 
   if (failed > 0) {

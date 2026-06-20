@@ -84,7 +84,9 @@ export type MeetupMode = "single" | "district";
 
 export type SearchMode = "single" | "midpoint";
 
-export type KoiBotMode = "places" | "watch_events";
+export type KoiBotMode = "places" | "watch" | "events";
+
+export type WatchSubcategory = "movies" | "tv_shows" | "trending" | "genres" | "streaming";
 
 export type WatchEventsIntent = "stream" | "live_event" | "sports" | "things_to_do" | "general";
 
@@ -107,12 +109,13 @@ export type WatchEventsRecommendation = {
   rating?: string;
   overview?: string;
   runtime?: string;
+  genre?: string;
   mediaType?: "movie" | "tv";
   tmdbId?: number;
 };
 
 export type WatchEventsResult = {
-  botMode: "watch_events";
+  botMode: "watch" | "events";
   query: string;
   title: string;
   description: string;
@@ -131,7 +134,7 @@ export type WatchEventsResult = {
 };
 
 export type WatchEventsMoreResult = {
-  botMode: "watch_events";
+  botMode: "watch" | "events";
   append: true;
   recommendations: WatchEventsRecommendation[];
   hasMore: boolean;
@@ -213,6 +216,7 @@ export type SearchHalfwayRequest = {
   searchMode?: SearchMode;
   meetupMode?: MeetupMode;
   customQuery?: string;
+  watchSubcategory?: WatchSubcategory;
   preferences?: Preference[];
 };
 

@@ -77,7 +77,7 @@ const TV_GENRE_IDS: Record<string, number> = {
 };
 
 export function isTmdbConfigured() {
-  return Boolean(process.env.TMDB_API_KEY?.trim());
+  return Boolean(process.env.TMDB_API_KEY?.trim() || process.env.TMDB_READ_ACCESS_TOKEN?.trim());
 }
 
 export function resolveTmdbGenreId(genre: string, kind: TmdbMediaKind = "movie") {
@@ -367,15 +367,21 @@ function normalizeTv(show: TmdbTvResponse): TmdbPick {
 
 async function tmdbFetch<T>(path: string, params: Record<string, string> = {}) {
   const apiKey = process.env.TMDB_API_KEY?.trim();
-  if (!apiKey) throw new Error("TMDB is not configured. Set TMDB_API_KEY.");
+  const readToken = process.env.TMDB_READ_ACCESS_TOKEN?.trim();
+  if (!apiKey && !readToken) {
+    throw new Error("TMDB is not configured. Set TMDB_API_KEY or TMDB_READ_ACCESS_TOKEN.");
+  }
 
   const url = new URL(`${TMDB_API_BASE}${path}`);
-  url.searchParams.set("api_key", apiKey);
+  if (apiKey) url.searchParams.set("api_key", apiKey);
   for (const [key, value] of Object.entries(params)) {
     url.searchParams.set(key, value);
   }
 
-  const response = await fetch(url, { cache: "no-store" });
+  const headers: HeadersInit = {};
+  if (readToken) headers.Authorization = `Bearer ${readToken}`;
+
+  const response = await fetch(url, { cache: "no-store", headers });
   if (!response.ok) {
     const text = await response.text();
     throw new Error(`TMDB request failed with ${response.status}: ${text.slice(0, 180)}`);

@@ -1,8 +1,14 @@
 "use client";
 
-import type { KoiBotMode, SearchHalfwayRequest } from "@/lib/types";
-import { WATCH_EVENTS_EXAMPLE_PROMPTS, WATCH_EVENTS_PLACEHOLDER } from "@/lib/watchCategories";
-import { WATCH_EVENTS_DESCRIPTION, WATCH_EVENTS_TITLE } from "@/lib/watchEvents";
+import { WatchSubcategorySelector, DEFAULT_WATCH_SUBCATEGORY } from "@/app/components/WatchSubcategorySelector";
+import type { KoiBotMode, SearchHalfwayRequest, WatchSubcategory } from "@/lib/types";
+import {
+  EVENTS_DESCRIPTION,
+  EVENTS_EXAMPLE_PROMPTS,
+  EVENTS_PLACEHOLDER,
+  WATCH_EXAMPLE_PROMPTS,
+  WATCH_PLACEHOLDER
+} from "@/lib/watchBrowse";
 import { BRAND } from "@/src/config/branding";
 import { FormEvent, useState } from "react";
 
@@ -11,7 +17,8 @@ type Props = {
   botMode: KoiBotMode;
   onBotModeChange: (mode: KoiBotMode) => void;
   onParsed: (form: SearchHalfwayRequest) => void;
-  onWatchEvents: (query: string) => void;
+  onWatchSearch: (query: string, subcategory: WatchSubcategory) => void;
+  onEventsSearch: (query: string) => void;
 };
 
 type ParseSearchResult = {
@@ -23,13 +30,18 @@ type ParseSearchResult = {
 const BOT_MODES = [
   {
     id: "places" as const,
-    title: "Find places",
+    title: "Find Places",
     description: "Food, drinks, coffee, activities, and halfway meetup spots."
   },
   {
-    id: "watch_events" as const,
-    title: WATCH_EVENTS_TITLE,
-    description: WATCH_EVENTS_DESCRIPTION
+    id: "watch" as const,
+    title: "Watch",
+    description: "Movies, TV shows, streaming, and what to watch tonight."
+  },
+  {
+    id: "events" as const,
+    title: "Events",
+    description: EVENTS_DESCRIPTION
   }
 ];
 
@@ -39,22 +51,41 @@ const PLACE_EXAMPLE_PROMPTS = [
   "Where should we meet between NYC and Princeton?"
 ];
 
-export function AiSearchBox({ loading, botMode, onBotModeChange, onParsed, onWatchEvents }: Props) {
+export function AiSearchBox({
+  loading,
+  botMode,
+  onBotModeChange,
+  onParsed,
+  onWatchSearch,
+  onEventsSearch
+}: Props) {
   const [query, setQuery] = useState("");
+  const [watchSubcategory, setWatchSubcategory] = useState<WatchSubcategory>(DEFAULT_WATCH_SUBCATEGORY);
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState("");
 
-  const isWatchMode = botMode === "watch_events";
-  const examplePrompts = isWatchMode ? WATCH_EVENTS_EXAMPLE_PROMPTS : PLACE_EXAMPLE_PROMPTS;
-  const placeholder = isWatchMode ? WATCH_EVENTS_PLACEHOLDER : `${BRAND.askLabel} what you're looking for…`;
+  const isWatchMode = botMode === "watch";
+  const isEventsMode = botMode === "events";
+  const examplePrompts = isWatchMode
+    ? WATCH_EXAMPLE_PROMPTS
+    : isEventsMode
+      ? EVENTS_EXAMPLE_PROMPTS
+      : PLACE_EXAMPLE_PROMPTS;
+  const placeholder = isWatchMode
+    ? WATCH_PLACEHOLDER
+    : isEventsMode
+      ? EVENTS_PLACEHOLDER
+      : `${BRAND.askLabel} what you're looking for…`;
 
   async function runSearch(searchQuery: string, mode: KoiBotMode = botMode) {
     const trimmed = searchQuery.trim();
     if (!trimmed) {
       setError(
-        mode === "watch_events"
-          ? "Try a sentence like: What should we watch tonight?"
-          : "Try a sentence like: Find coffee near Hoboken with easy parking."
+        mode === "watch"
+          ? "Try a sentence like: Funny movies like Superbad"
+          : mode === "events"
+            ? "Try a sentence like: Any comedy shows near Philly this weekend?"
+            : "Try a sentence like: Find coffee near Hoboken with easy parking."
       );
       return;
     }
@@ -64,7 +95,13 @@ export function AiSearchBox({ loading, botMode, onBotModeChange, onParsed, onWat
     setQuery(trimmed);
     setParsing(true);
     setError("");
+
     try {
+      if (mode === "watch") {
+        onWatchSearch(trimmed, watchSubcategory);
+        return;
+      }
+
       const response = await fetch("/api/parse-search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -73,8 +110,8 @@ export function AiSearchBox({ loading, botMode, onBotModeChange, onParsed, onWat
       const data = (await response.json()) as ParseSearchResult;
       if (!response.ok) throw new Error(data.error ?? "I could not understand that search.");
 
-      if (data.botMode === "watch_events") {
-        onWatchEvents(trimmed);
+      if (mode === "events" || data.botMode === "events") {
+        onEventsSearch(trimmed);
         return;
       }
 
@@ -97,8 +134,10 @@ export function AiSearchBox({ loading, botMode, onBotModeChange, onParsed, onWat
     ? "Understanding..."
     : loading
       ? isWatchMode
-        ? "Finding watch & events..."
-        : "Finding places..."
+        ? "Finding watch picks..."
+        : isEventsMode
+          ? "Finding events..."
+          : "Finding places..."
       : BRAND.askLabel;
 
   return (
@@ -110,12 +149,14 @@ export function AiSearchBox({ loading, botMode, onBotModeChange, onParsed, onWat
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate">
           {isWatchMode
-            ? `${BRAND.name} helps with ${WATCH_EVENTS_DESCRIPTION} Describe what you want in plain language.`
-            : `Tell ${BRAND.name} where you're coming from and what kind of spot you want — nearby or halfway between two people.`}
+            ? `${BRAND.name} helps with movies, TV, streaming, and tonight's watch picks — no location needed.`
+            : isEventsMode
+              ? `${BRAND.name} finds sports, concerts, festivals, and local happenings near you. Add a location in classic search for sharper results.`
+              : `Tell ${BRAND.name} where you're coming from and what kind of spot you want — nearby or halfway between two people.`}
         </p>
       </div>
 
-      <div className="mb-4 grid gap-2 sm:grid-cols-2">
+      <div className="mb-4 grid gap-2 sm:grid-cols-3">
         {BOT_MODES.map((mode) => {
           const selected = botMode === mode.id;
           return (
@@ -139,6 +180,12 @@ export function AiSearchBox({ loading, botMode, onBotModeChange, onParsed, onWat
           );
         })}
       </div>
+
+      {isWatchMode ? (
+        <div className="mb-4">
+          <WatchSubcategorySelector value={watchSubcategory} onChange={setWatchSubcategory} />
+        </div>
+      ) : null}
 
       <form onSubmit={handleSubmit} className="grid gap-3">
         <label className="grid gap-2">

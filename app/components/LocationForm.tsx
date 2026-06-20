@@ -1,11 +1,12 @@
 "use client";
 
 import { CategorySelector } from "@/app/components/CategorySelector";
-import { WatchCategorySelector } from "@/app/components/WatchCategorySelector";
+import { EventsCategorySelector } from "@/app/components/EventsCategorySelector";
+import { WatchSubcategorySelector, DEFAULT_WATCH_SUBCATEGORY } from "@/app/components/WatchSubcategorySelector";
 import { Logo } from "@/app/components/Logo";
 import { getPrimaryCategoryId } from "@/lib/categories";
 import { PREFERENCES } from "@/lib/preferences";
-import type { KoiBotMode, LatLng, PlaceSuggestion, Preference, SearchHalfwayRequest, VenueCategory } from "@/lib/types";
+import type { KoiBotMode, LatLng, PlaceSuggestion, Preference, SearchHalfwayRequest, VenueCategory, WatchSubcategory } from "@/lib/types";
 import { copyTextToClipboard, shareWithFallback } from "@/lib/share";
 import { BRAND } from "@/src/config/branding";
 import { FormEvent, useEffect, useRef, useState } from "react";
@@ -69,9 +70,18 @@ export function LocationForm({ form, loading, discoveryMode = "places", onChange
     onChange({ ...form, preferences });
   }
 
+  const [watchSubcategory, setWatchSubcategory] = useState<WatchSubcategory>(
+    form.watchSubcategory ?? DEFAULT_WATCH_SUBCATEGORY
+  );
   const activePrimaryId = getPrimaryCategoryId(form.category);
-  const isWatchMode = discoveryMode === "watch_events";
-  const submitCopy = isWatchMode ? "Find watch options" : getSubmitCopy(activePrimaryId);
+  const isWatchMode = discoveryMode === "watch";
+  const isEventsMode = discoveryMode === "events";
+  const needsLocation = !isWatchMode;
+  const submitCopy = isWatchMode
+    ? "Find watch picks"
+    : isEventsMode
+      ? "Find events"
+      : getSubmitCopy(activePrimaryId);
   const searchMode = form.searchMode ?? "midpoint";
 
   return (
@@ -79,13 +89,19 @@ export function LocationForm({ form, loading, discoveryMode = "places", onChange
       <div className="mb-6">
         <Logo size="sm" />
         <h2 className="mt-2 text-2xl font-black tracking-tight text-ink sm:text-3xl">
-          Where should Koi look?
+          {isWatchMode ? "What do you want to watch?" : isEventsMode ? "Where should Koi look for events?" : "Where should Koi look?"}
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate">
-          One place is enough for nearby ideas. Add a second place when you want Koi to balance the trip.
+          {isWatchMode
+            ? "No location needed — pick a watch category and describe what you want to stream or watch tonight."
+            : isEventsMode
+              ? "Events are location-based. One place is enough for nearby ideas. Add a second place when you want Koi to balance the trip."
+              : "One place is enough for nearby ideas. Add a second place when you want Koi to balance the trip."}
         </p>
       </div>
 
+      {needsLocation ? (
+        <>
       <div className="mb-4 rounded-full border border-line bg-mint p-1">
         <div className="grid grid-cols-2 gap-1">
           {[
@@ -147,18 +163,41 @@ export function LocationForm({ form, loading, discoveryMode = "places", onChange
           />
         ) : null}
       </div>
+        </>
+      ) : null}
 
       <div className="mt-5 grid gap-3">
         <div>
           <span className="text-sm font-bold text-ink">
-            {isWatchMode ? "Choose what to watch" : "Choose the kind of meet-up"}
+            {isWatchMode ? "Choose what to watch" : isEventsMode ? "Choose the kind of event" : "Choose the kind of meet-up"}
           </span>
           <p className="mt-1 text-xs font-semibold leading-5 text-slate">
-            Start broad, then pick the exact style you want.
+            {isWatchMode
+              ? "Pick a lane, then describe what you want in your own words."
+              : "Start broad, then pick the exact style you want."}
           </p>
         </div>
         {isWatchMode ? (
-          <WatchCategorySelector
+          <>
+            <WatchSubcategorySelector
+              value={watchSubcategory}
+              onChange={(subcategory) => {
+                setWatchSubcategory(subcategory);
+                onChange({ ...form, watchSubcategory: subcategory });
+              }}
+            />
+            <label className="grid gap-2">
+              <span className="text-sm font-bold text-ink">Your watch ask</span>
+              <input
+                value={form.customQuery ?? ""}
+                onChange={(event) => onChange({ ...form, customQuery: event.target.value })}
+                placeholder="Ask Koi what you want to watch…"
+                className="h-11 rounded-lg border border-line bg-mint px-4 text-base outline-none transition focus:border-clay focus:ring-4 focus:ring-clay/10 sm:h-12"
+              />
+            </label>
+          </>
+        ) : isEventsMode ? (
+          <EventsCategorySelector
             value={form.customQuery ?? ""}
             onChange={(option) => onChange({ ...form, customQuery: option.query, category: "events" })}
           />
@@ -171,6 +210,7 @@ export function LocationForm({ form, loading, discoveryMode = "places", onChange
         )}
       </div>
 
+      {!isWatchMode ? (
       <div className="mt-4 grid gap-3 rounded-[18px] border border-line/80 bg-white/70 p-3 sm:p-4">
         <div>
           <span className="text-sm font-bold text-ink">Make it easier</span>
@@ -199,8 +239,9 @@ export function LocationForm({ form, loading, discoveryMode = "places", onChange
           })}
         </div>
       </div>
+      ) : null}
 
-      {form.category === "custom" && !isWatchMode ? (
+      {form.category === "custom" && !isWatchMode && !isEventsMode ? (
         <label className="mt-4 grid gap-2">
           <span className="text-sm font-bold text-ink">Something different</span>
           <input

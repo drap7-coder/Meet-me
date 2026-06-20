@@ -1,4 +1,4 @@
-import { buildWatchEventsMore, buildWatchEventsResult } from "@/lib/watchEvents";
+import { buildEventsResult } from "@/lib/eventsSearch";
 import { resolveWatchPlaceSearchForm } from "@/lib/watchPlaceSearch";
 import type { SearchHalfwayRequest, WatchEventsPlacesRedirect } from "@/lib/types";
 import { NextResponse } from "next/server";
@@ -8,10 +8,11 @@ export async function POST(request: Request) {
     const body = await request.json();
     const query = typeof body.query === "string" ? body.query.trim() : "";
     if (!query) {
-      return NextResponse.json({ error: "Tell Koi what you want to watch or find." }, { status: 400 });
+      return NextResponse.json({ error: "Tell Koi what events you want to find." }, { status: 400 });
     }
 
-    const placeForm = resolveWatchPlaceSearchForm(query, readLocationContext(body));
+    const locationContext = readLocationContext(body);
+    const placeForm = resolveWatchPlaceSearchForm(query, locationContext);
     if (placeForm) {
       const locationA = placeForm.locationA.trim();
       const searchMode = placeForm.searchMode ?? "midpoint";
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
         return NextResponse.json(
           {
             error:
-              "Add a location in classic search below, or include a place in your ask — e.g. sports bar between Hoboken and Edison."
+              "Add a location in classic search below, or include a place in your ask — e.g. comedy shows near Philly this weekend."
           },
           { status: 422 }
         );
@@ -32,20 +33,10 @@ export async function POST(request: Request) {
       return NextResponse.json(response);
     }
 
-    const excludeKeys = parseExcludeKeys(body.excludeKeys);
-    if (excludeKeys.length) {
-      return NextResponse.json(await buildWatchEventsMore(query, excludeKeys));
-    }
-
-    return NextResponse.json(await buildWatchEventsResult(query));
+    return NextResponse.json(await buildEventsResult(query, locationContext));
   } catch {
-    return NextResponse.json({ error: "Watch & Events search failed." }, { status: 400 });
+    return NextResponse.json({ error: "Events search failed." }, { status: 400 });
   }
-}
-
-function parseExcludeKeys(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter((key): key is string => typeof key === "string" && /^[a-z]+:\d+$/i.test(key));
 }
 
 function readLocationContext(body: Record<string, unknown>): SearchHalfwayRequest | undefined {

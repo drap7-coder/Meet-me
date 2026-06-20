@@ -10,9 +10,9 @@ export const BRAND = {
   heroHeadline: "Koi bot finds the best place to meet.",
   seoTitle: "Koi bot — Find the best place to meet",
   description:
-    "Koi bot helps you find places to meet, things to watch, and events nearby. Ask Koi where to go or what to do.",
+    "Koi bot helps you find places to meet and what to watch. Ask Koi where to go or what to stream.",
   footerDescription:
-    "Koi bot helps you find places to meet, things to watch, and events nearby. Ask Koi where to go or what to do.",
+    "Koi bot helps you find places to meet and what to watch. Ask Koi where to go or what to stream.",
   heroSubheadline:
     "Tell Koi where you are, what kind of spot you want, and what matters most — parking, vibe, distance, timing, or convenience."
 };

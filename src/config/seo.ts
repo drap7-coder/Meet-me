@@ -2,7 +2,7 @@ export const FAQ_ITEMS = [
   {
     question: "What is Koi bot?",
     answer:
-      "Koi bot is an intelligent local discovery assistant that helps you find places to meet, things to watch, and events nearby — with balanced travel times and practical recommendations."
+      "Koi bot is an intelligent local discovery assistant that helps you find places to meet and what to watch — with balanced travel times and practical recommendations."
   },
   {
     question: "How do I find a place halfway between two people?",
@@ -23,5 +23,10 @@ export const FAQ_ITEMS = [
     question: "Can I search near one location instead of two?",
     answer:
       "Yes. Use One Location mode to search near a city, town, address, ZIP code, or your current location."
+  },
+  {
+    question: "Can Koi help with what to watch?",
+    answer:
+      "Yes. Use the Watch tab in Ask Koi for streaming picks, movies tonight, live sports, and places like sports bars or movie theaters — including spots between two locations."
   }
 ];

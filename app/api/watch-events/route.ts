@@ -11,6 +11,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json(buildWatchEventsResult(query));
   } catch {
-    return NextResponse.json({ error: "Watch & Events search failed." }, { status: 400 });
+    return NextResponse.json({ error: "Watch search failed." }, { status: 400 });
   }
 }

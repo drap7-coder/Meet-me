@@ -206,7 +206,7 @@ export default function HomePage() {
         body: JSON.stringify({ query })
       });
       const data = (await response.json()) as WatchEventsResult & { error?: string };
-      if (!response.ok) throw new Error(data.error ?? "Watch & Events search failed.");
+      if (!response.ok) throw new Error(data.error ?? "Watch search failed.");
       setWatchEventsResult(data);
       trackEvent("watch_events_completed", {
         intent: data.intent,
@@ -214,7 +214,7 @@ export default function HomePage() {
       });
     } catch (searchError) {
       setWatchEventsResult(null);
-      setError(searchError instanceof Error ? searchError.message : "Watch & Events search failed.");
+      setError(searchError instanceof Error ? searchError.message : "Watch search failed.");
     } finally {
       const remainingMotionTime = 650 - (Date.now() - startedAt);
       if (shouldPlayMotion && remainingMotionTime > 0) await wait(remainingMotionTime);
@@ -458,7 +458,7 @@ export default function HomePage() {
 }
 
 function MarketingHero() {
-  const trustItems = ["Places, watch & events", "Local recommendations", "Weather-aware planning"];
+  const trustItems = ["Food, drinks & watch", "Local recommendations", "Weather-aware planning"];
 
   return (
       <div className="max-w-4xl">
@@ -677,8 +677,8 @@ function WatchEventsLoader() {
         </div>
       </div>
       <div className="mt-4 text-center">
-        <p className="text-sm font-black text-ink">Finding watch & event options</p>
-        <p className="mt-1 text-xs font-semibold text-slate">Matching your ask to streaming, live events, and sports plans.</p>
+        <p className="text-sm font-black text-ink">Finding watch options</p>
+        <p className="mt-1 text-xs font-semibold text-slate">Matching your ask to streaming, movies, and sports.</p>
       </div>
     </div>
   );

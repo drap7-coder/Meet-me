@@ -1,12 +1,13 @@
 import { BRAND } from "@/src/config/branding";
 
-type LogoSize = "sm" | "md" | "lg";
+type LogoSize = "sm" | "md" | "lg" | "xl";
 type LogoVariant = "mark" | "lockup";
 
 type LogoProps = {
   variant?: LogoVariant;
   showTagline?: boolean;
   showEyebrow?: boolean;
+  bare?: boolean;
   size?: LogoSize;
   className?: string;
 };
@@ -23,25 +24,32 @@ const MARK_SIZE: Record<LogoSize, { image: string; tagline: string }> = {
   lg: {
     image: "h-20 w-20 sm:h-24 sm:w-24",
     tagline: "text-base sm:text-lg"
+  },
+  xl: {
+    image: "h-40 w-40 sm:h-48 sm:w-48",
+    tagline: "text-lg sm:text-xl"
   }
 };
 
 const LOCKUP_MARK_FRAME: Record<LogoSize, string> = {
   sm: "h-10 w-10 sm:h-11 sm:w-11",
   md: "h-10 w-10 sm:h-11 sm:w-11",
-  lg: "h-14 w-14 sm:h-16 sm:w-16"
+  lg: "h-14 w-14 sm:h-16 sm:w-16",
+  xl: "h-14 w-14 sm:h-16 sm:w-16"
 };
 
 const LOCKUP_TITLE: Record<LogoSize, string> = {
   sm: "text-lg sm:text-xl",
   md: "text-xl sm:text-2xl",
-  lg: "text-2xl sm:text-3xl"
+  lg: "text-2xl sm:text-3xl",
+  xl: "text-2xl sm:text-3xl"
 };
 
 export function Logo({
   variant = "mark",
   showTagline = false,
   showEyebrow = false,
+  bare = false,
   size = "md",
   className = ""
 }: LogoProps) {
@@ -78,13 +86,16 @@ export function Logo({
   }
 
   const styles = MARK_SIZE[size];
+  const imageClassName = bare
+    ? `${styles.image} object-contain`
+    : `${styles.image} rounded-2xl object-cover shadow-[0_12px_28px_rgba(10,19,35,0.12)]`;
 
   return (
     <div className={`inline-grid min-w-0 gap-2 ${className}`}>
       <img
         src="/branding/koi-mark.png"
         alt={`${BRAND.displayName} mark`}
-        className={`${styles.image} rounded-2xl object-cover shadow-[0_12px_28px_rgba(10,19,35,0.12)]`}
+        className={imageClassName}
       />
       {showTagline ? (
         <span className={`font-bold leading-tight text-slate ${styles.tagline}`}>

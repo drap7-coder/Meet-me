@@ -2,6 +2,7 @@ import { resolveSearchCategoryFromQuery } from "@/lib/categories";
 import { detectPreferencesFromQuery } from "@/lib/preferences";
 import type { KoiBotMode, SearchHalfwayRequest, WatchEventsResult } from "@/lib/types";
 import { buildWatchEventsResult, resolveKoiBotMode } from "@/lib/watchEvents";
+import { resolveWatchPlaceSearchForm } from "@/lib/watchPlaceSearch";
 import { NextResponse } from "next/server";
 
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || (process.env.VERCEL ? "" : "http://localhost:11434");
@@ -45,6 +46,19 @@ export async function POST(request: Request) {
 
     const botMode = resolveKoiBotMode(query, requestedMode);
     if (botMode === "watch_events") {
+      const placeForm = resolveWatchPlaceSearchForm(query);
+      if (placeForm) {
+        const placeResponse = buildPlacesParseResponse(query, placeForm);
+        if (placeResponse) return NextResponse.json(placeResponse);
+        return NextResponse.json(
+          {
+            error:
+              "Add a location in classic search below, or include a place in your ask — e.g. sports bar between Hoboken and Edison."
+          },
+          { status: 422 }
+        );
+      }
+
       const response: ParseWatchEventsResponse = {
         botMode: "watch_events",
         watchEvents: buildWatchEventsResult(query)
@@ -83,18 +97,15 @@ export async function POST(request: Request) {
       ...(preferences.length ? { preferences } : {})
     };
 
-    const response: ParseSearchResponse = {
-      botMode: "places",
-      parsed: {
-        location_a: locationA,
-        location_b: searchMode === "single" ? "" : locationB,
-        category: categoryIntent.category === "custom" ? categoryIntent.customQuery ?? parsed.category.trim() : categoryIntent.category,
-        search_mode: searchMode
-      },
-      form
-    };
+    const placeResponse = buildPlacesParseResponse(query, form, parsed.category.trim());
+    if (!placeResponse) {
+      return NextResponse.json(
+        { error: "Where should Koi search? Try: coffee near Hoboken, or coffee between Hoboken and Edison." },
+        { status: 422 }
+      );
+    }
 
-    return NextResponse.json(response);
+    return NextResponse.json(placeResponse);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Natural language search failed.";
     const status = message.includes("Ollama") ? 500 : 400;
@@ -311,6 +322,40 @@ function stringField(value: unknown) {
 
 function parseRequestedBotMode(value: unknown): KoiBotMode | undefined {
   return value === "watch_events" || value === "places" ? value : undefined;
+}
+
+function buildPlacesParseResponse(
+  query: string,
+  form: SearchHalfwayRequest,
+  parsedCategory = ""
+): ParseSearchResponse | null {
+  const locationA = form.locationA.trim();
+  const locationB = form.locationB.trim();
+  const searchMode = form.searchMode ?? "midpoint";
+
+  if (!locationA || (searchMode === "midpoint" && !locationB)) {
+    return null;
+  }
+
+  const preferences = detectPreferencesFromQuery(query);
+  const nextForm: SearchHalfwayRequest = {
+    ...form,
+    ...(preferences.length ? { preferences } : {})
+  };
+
+  return {
+    botMode: "places",
+    parsed: {
+      location_a: locationA,
+      location_b: searchMode === "single" ? "" : locationB,
+      category:
+        nextForm.category === "custom"
+          ? nextForm.customQuery ?? parsedCategory.trim()
+          : nextForm.category,
+      search_mode: searchMode
+    },
+    form: nextForm
+  };
 }
 
 function windowlessTimeout(callback: () => void, ms: number) {

@@ -122,6 +122,13 @@ export type WatchEventsResult = {
   preview: true;
 };
 
+export type WatchEventsPlacesRedirect = {
+  botMode: "places";
+  form: SearchHalfwayRequest;
+};
+
+export type WatchEventsApiResponse = WatchEventsResult | WatchEventsPlacesRedirect;
+
 export type Preference =
   | "downtown"
   | "walkable"

@@ -25,7 +25,8 @@ import { getPreferenceLabel, parsePreferences } from "@/lib/preferences";
 import { copyTextToClipboard, shareWithFallback, shouldUseNativeShare } from "@/lib/share";
 import { trackEvent } from "@/lib/analytics";
 import { DEFAULT_WATCH_QUERY } from "@/lib/watchCategories";
-import type { KoiBotMode, LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory, WatchEventsResult } from "@/lib/types";
+import { resolveWatchPlaceSearchForm, watchPlaceSearchNeedsLocation } from "@/lib/watchPlaceSearch";
+import type { KoiBotMode, LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory, WatchEventsApiResponse, WatchEventsResult } from "@/lib/types";
 import { BRAND } from "@/src/config/branding";
 import { FAQ_ITEMS } from "@/src/config/seo";
 import { useEffect, useMemo, useState } from "react";
@@ -182,9 +183,10 @@ export default function HomePage() {
     submitSearch(nextForm);
   }
 
-  async function submitWatchEventsSearch(query: string) {
+  async function submitWatchEventsSearch(query: string, locationContext?: SearchHalfwayRequest) {
     const startedAt = Date.now();
     const shouldPlayMotion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let redirectedToPlaces = false;
     setSearchKind("watch_events");
     setHasSearched(true);
     setLoading(true);
@@ -201,10 +203,18 @@ export default function HomePage() {
       const response = await fetch("/api/watch-events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query })
+        body: JSON.stringify({ query, form: locationContext ?? form })
       });
-      const data = (await response.json()) as WatchEventsResult & { error?: string };
+      const data = (await response.json()) as WatchEventsApiResponse & { error?: string };
       if (!response.ok) throw new Error(data.error ?? "Watch & Events search failed.");
+
+      if (data.botMode === "places") {
+        setForm(data.form);
+        await submitSearch(data.form);
+        redirectedToPlaces = true;
+        return;
+      }
+
       setWatchEventsResult(data);
       trackEvent("watch_events_completed", {
         intent: data.intent,
@@ -214,9 +224,11 @@ export default function HomePage() {
       setWatchEventsResult(null);
       setError(searchError instanceof Error ? searchError.message : "Watch & Events search failed.");
     } finally {
-      const remainingMotionTime = 650 - (Date.now() - startedAt);
-      if (shouldPlayMotion && remainingMotionTime > 0) await wait(remainingMotionTime);
-      setLoading(false);
+      if (!redirectedToPlaces) {
+        const remainingMotionTime = 650 - (Date.now() - startedAt);
+        if (shouldPlayMotion && remainingMotionTime > 0) await wait(remainingMotionTime);
+        setLoading(false);
+      }
     }
   }
 
@@ -242,6 +254,20 @@ export default function HomePage() {
         setError("Choose a watch option to search.");
         return;
       }
+
+      const placeForm = resolveWatchPlaceSearchForm(query, form);
+      if (placeForm) {
+        if (watchPlaceSearchNeedsLocation(query, form)) {
+          setError(
+            "Add a location above, or include a place in your ask — e.g. sports bar between Hoboken and Edison."
+          );
+          return;
+        }
+        setForm(placeForm);
+        void submitSearch(placeForm);
+        return;
+      }
+
       runWatchEventsSearch(query);
       return;
     }

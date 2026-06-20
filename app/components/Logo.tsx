@@ -1,4 +1,5 @@
 import { BRAND } from "@/src/config/branding";
+import Image from "next/image";
 
 const MARK_SRC = "/branding/koi-mark-transparent.png";
 
@@ -33,7 +34,7 @@ const MARK_SIZE: Record<LogoSize, { image: string; tagline: string }> = {
   }
 };
 
-const LOCKUP_MARK_FRAME: Record<LogoSize, string> = {
+const LOCKUP_MARK_SIZE: Record<LogoSize, string> = {
   sm: "h-10 w-10 sm:h-11 sm:w-11",
   md: "h-10 w-10 sm:h-11 sm:w-11",
   lg: "h-14 w-14 sm:h-16 sm:w-16",
@@ -51,23 +52,22 @@ export function Logo({
   variant = "mark",
   showTagline = false,
   showEyebrow = false,
-  bare = false,
+  bare = true,
   size = "md",
   className = ""
 }: LogoProps) {
   if (variant === "lockup") {
     return (
       <div className={`inline-flex min-w-0 items-center gap-2 sm:gap-3 ${className}`}>
-        <span
-          className={`grid shrink-0 place-items-center overflow-hidden rounded-2xl border border-line bg-white shadow-[0_10px_24px_rgba(10,19,35,0.08)] ring-1 ring-clay/10 ${LOCKUP_MARK_FRAME[size]}`}
-        >
-          <img
-            src={MARK_SRC}
-            alt=""
-            aria-hidden="true"
-            className="h-full w-full object-contain"
-          />
-        </span>
+        <Image
+          src={MARK_SRC}
+          alt=""
+          aria-hidden="true"
+          width={1024}
+          height={1024}
+          sizes="64px"
+          className={`${LOCKUP_MARK_SIZE[size]} shrink-0 object-contain`}
+        />
         <span className="grid min-w-0 leading-none">
           <span className={`truncate font-serif font-semibold tracking-wide text-ink ${LOCKUP_TITLE[size]}`}>
             {BRAND.displayName}
@@ -90,13 +90,17 @@ export function Logo({
   const styles = MARK_SIZE[size];
   const imageClassName = bare
     ? `${styles.image} object-contain`
-    : `${styles.image} rounded-2xl object-cover shadow-[0_12px_28px_rgba(10,19,35,0.12)]`;
+    : `${styles.image} object-contain drop-shadow-[0_10px_24px_rgba(10,19,35,0.12)]`;
 
   return (
     <div className={`inline-grid min-w-0 gap-2 ${className}`}>
-      <img
+      <Image
         src={MARK_SRC}
         alt={`${BRAND.displayName} mark`}
+        width={1024}
+        height={1024}
+        sizes={size === "xl" ? "(min-width: 640px) 192px, 112px" : "96px"}
+        priority={size === "xl"}
         className={imageClassName}
       />
       {showTagline ? (
@@ -110,6 +114,13 @@ export function Logo({
 
 export function PinIcon({ className = "" }: { className?: string }) {
   return (
-    <img src={MARK_SRC} alt={`${BRAND.displayName} mark`} className={className} />
+    <Image
+      src={MARK_SRC}
+      alt={`${BRAND.displayName} mark`}
+      width={1024}
+      height={1024}
+      sizes="48px"
+      className={className}
+    />
   );
 }

@@ -802,6 +802,7 @@ export default function HomePage() {
       </div>
 
       <FeedbackSection />
+      <SeoContentSection />
       <Footer />
       {shareDialog ? (
         <ShareDialog
@@ -811,6 +812,50 @@ export default function HomePage() {
         />
       ) : null}
     </main>
+  );
+}
+
+function SeoContentSection() {
+  const items = [
+    {
+      title: "Places to meet",
+      text:
+        "Find coffee, dinner, drinks, parks, and activities near one location or balanced between two starting points."
+    },
+    {
+      title: "Movies and TV",
+      text:
+        "Describe the mood, genre, or title you like and Koi turns it into a short list of things worth watching."
+    },
+    {
+      title: "Events nearby",
+      text:
+        "Use your location to discover concerts, comedy, sports, festivals, and other local plans without digging through tabs."
+    }
+  ];
+
+  return (
+    <section className="px-4 pb-12 sm:px-6 lg:px-8" aria-labelledby="what-koi-helps-with">
+      <div className="mx-auto max-w-7xl">
+        <div className="border-t border-line pt-8">
+          <p className="text-sm font-bold uppercase tracking-wide text-clay">What Koi helps with</p>
+          <h2 id="what-koi-helps-with" className="mt-3 max-w-3xl text-3xl font-black tracking-tight text-ink sm:text-4xl">
+            One ask. One useful answer.
+          </h2>
+          <p className="mt-3 max-w-2xl text-base leading-7 text-slate">
+            Koi understands natural-language requests for local meetups, nearby plans, and watch picks, then keeps the search simple.
+          </p>
+          <div className="mt-6 grid gap-3 md:grid-cols-3">
+            {items.map((item) => (
+              <article key={item.title} className="rounded-lg border border-line bg-paper p-5 shadow-[0_10px_28px_rgba(10,19,35,0.05)]">
+                <h3 className="text-lg font-black text-ink">{item.title}</h3>
+                <p className="mt-2 text-sm font-medium leading-6 text-slate">{item.text}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -825,9 +870,13 @@ function MarketingHero() {
             bare
             className="shrink-0 [&_img]:h-28 [&_img]:w-28 sm:[&_img]:h-48 sm:[&_img]:w-48"
           />
-          <h1 className="flex min-h-[10.5rem] min-w-0 flex-1 flex-col justify-center gap-0 rounded-md bg-paper px-3 py-2 font-semibold tracking-[-0.04em] sm:min-h-[18rem] sm:px-4 sm:py-3">
-            <span className="text-[clamp(3.375rem,13.5vw,5.625rem)] leading-[0.88] text-ink">{headlineLead}</span>
-            <span className="text-[clamp(3.375rem,13.5vw,5.625rem)] leading-[0.88] text-clay">{headlineTail}</span>
+          <h1 className="flex min-h-[10.5rem] min-w-0 flex-1 flex-col justify-center gap-0 font-semibold tracking-[-0.04em] sm:min-h-[18rem]">
+            <span className="hero-headline-line text-[clamp(3.375rem,13.5vw,5.625rem)] leading-[0.88] text-ink">
+              {headlineLead}
+            </span>
+            <span className="hero-headline-line text-[clamp(3.375rem,13.5vw,5.625rem)] leading-[0.88] text-clay">
+              {headlineTail}
+            </span>
           </h1>
         </div>
         <p className="mt-3 max-w-xl text-sm font-medium leading-6 text-[#C8C2B6] sm:mt-3.5 sm:text-[0.9375rem] sm:leading-6">

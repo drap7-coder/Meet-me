@@ -2,18 +2,18 @@ export const BRAND = {
   /** Conversational assistant name in sentences ("Koi finds the plan"). */
   name: "Koi",
   /** Product name — matches askkoibot.com. */
-  displayName: "Ask Koi bot",
+  displayName: "Koi",
   /** Primary CTA — same phrase as the URL. */
-  askLabel: "Ask Koi bot",
+  askLabel: "Ask Koi",
   url: "https://askkoibot.com",
-  tagline: "Places, streaming picks, and local events.",
+  tagline: "Places to meet. Movies to watch. Events nearby.",
   headerEyebrow: "Places · Watch · Events",
-  heroHeadline: "Ask Koi bot.",
-  seoTitle: "Ask Koi bot — Places, streaming picks & local events",
+  heroHeadline: "Ask Koi what to do.",
+  seoTitle: "Koi — Find places to meet, movies to watch & events nearby",
   description:
-    "Ask Koi bot helps you find places to meet, things to watch, and events nearby — one ask, one answer.",
+    "Ask Koi to find places to meet nearby or halfway, movie and TV picks, and local events with one natural-language search.",
   footerDescription:
-    "Ask Koi bot helps you find places to meet, things to watch, and events nearby — one ask, one answer.",
+    "Ask Koi to find places to meet, things to watch, and local events — one ask, one answer.",
   heroSubheadline:
     "Find the right place, movie, or event without sorting through tabs, filters, and maybes."
 };

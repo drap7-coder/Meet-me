@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { BRAND } from "@/src/config/branding";
-import { FAQ_ITEMS } from "@/src/config/seo";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -13,15 +12,30 @@ export const metadata: Metadata = {
     canonical: BRAND.url
   },
   keywords: [
-    "meet me halfway app",
-    "find the best place to meet in the middle",
-    "halfway point app",
+    "places to meet",
+    "find a place to meet",
+    "meet halfway",
+    "halfway between two places",
+    "coffee between two locations",
+    "restaurants halfway between",
     "meeting place finder",
+    "local events near me",
+    "concerts near me",
     "what to watch tonight",
-    "local events finder",
     "movie recommendations",
-    "midpoint restaurant finder"
+    "streaming recommendations"
   ],
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1
+    }
+  },
   icons: {
     icon: [
       { url: "/favicon.ico" },
@@ -56,7 +70,7 @@ const webApplicationJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
   name: BRAND.displayName,
-  alternateName: ["Koi", "Koi bot", "Ask Koi"],
+  alternateName: ["Ask Koi", "Ask Koi bot", "Koi bot", "Meet halfway app"],
   url: BRAND.url,
   applicationCategory: "LifestyleApplication",
   operatingSystem: "Web",
@@ -66,25 +80,23 @@ const webApplicationJsonLd = {
     "@type": "Offer",
     price: "0",
     priceCurrency: "USD"
-  },
-  potentialAction: {
-    "@type": "SearchAction",
-    target: `${BRAND.url}/?a={location_a}&b={location_b}&category=coffee`,
-    "query-input": ["required name=location_a", "required name=location_b"]
   }
 };
 
-const faqJsonLd = {
+const websiteJsonLd = {
   "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: FAQ_ITEMS.map((item) => ({
-    "@type": "Question",
-    name: item.question,
-    acceptedAnswer: {
-      "@type": "Answer",
-      text: item.answer
-    }
-  }))
+  "@type": "WebSite",
+  name: BRAND.displayName,
+  alternateName: ["Ask Koi", "askkoibot.com"],
+  url: BRAND.url,
+  description: BRAND.description,
+  inLanguage: "en-US",
+  publisher: {
+    "@type": "Organization",
+    name: BRAND.displayName,
+    url: BRAND.url,
+    logo: `${BRAND.url}/branding/koi-app-icon-1024.png`
+  }
 };
 
 export default function RootLayout({
@@ -101,7 +113,7 @@ export default function RootLayout({
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
         />
         {children}
         <Analytics />

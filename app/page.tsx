@@ -872,8 +872,11 @@ function MarketingHero() {
 
   return (
       <div className="max-w-4xl">
+        <div className="mb-5 inline-flex rounded-[20px] border border-white/10 bg-paper/95 p-3 shadow-[0_16px_40px_rgba(10,19,35,0.22)] sm:mb-6 sm:p-4">
+          <Logo variant="horizontal" size="lg" />
+        </div>
         <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-clay sm:mb-4 sm:text-sm">
-          Intelligent local discovery assistant
+          {BRAND.tagline}
         </p>
         <h1 className="max-w-4xl text-[2.8rem] font-black leading-[0.96] tracking-[-0.04em] text-[#FFFDF8] sm:text-[clamp(48px,8vw,72px)]">
           {BRAND.heroHeadline}
@@ -1086,17 +1089,9 @@ function SiteHeader() {
     <header className="sticky top-0 z-50 border-b border-line bg-paper/95 pt-[env(safe-area-inset-top)] shadow-[0_10px_28px_rgba(10,19,35,0.08)] backdrop-blur">
       <div className="mx-auto flex h-[64px] w-full max-w-7xl items-center justify-between gap-2 px-3 sm:h-[72px] sm:gap-4 sm:px-6 lg:px-8">
         <a href="/" className="group inline-flex min-w-0 flex-1 items-center gap-2 sm:gap-3" aria-label={`${BRAND.displayName} home`}>
-          <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-2xl border border-line bg-white shadow-[0_10px_24px_rgba(10,19,35,0.08)] ring-1 ring-clay/10 transition group-hover:ring-clay/40 sm:h-11 sm:w-11">
-            <img
-              src="/branding/koi-mark.png"
-              alt=""
-              aria-hidden="true"
-              className="h-full w-full object-contain"
-            />
-          </span>
-          <span className="grid min-w-0 leading-none">
-            <span className="truncate font-serif text-xl font-semibold tracking-wide text-ink sm:text-2xl">{BRAND.displayName}</span>
-            <span className="mt-1 hidden text-[0.62rem] font-black uppercase tracking-[0.26em] text-clay sm:block">
+          <Logo variant="horizontal" size="md" className="transition group-hover:opacity-90" />
+          <span className="hidden min-w-0 leading-none sm:grid">
+            <span className="truncate text-[0.62rem] font-black uppercase tracking-[0.26em] text-clay">
               {BRAND.headerEyebrow}
             </span>
           </span>
@@ -1267,10 +1262,10 @@ function ExamplePromptsSection({ onExample }: { onExample: (prompt: string) => v
         <div className="max-w-2xl">
           <p className="text-sm font-bold uppercase tracking-wide text-clay">Ask once</p>
           <h2 className="mt-3 text-4xl font-black tracking-tight text-ink sm:text-5xl">
-            Koi finds the plan.
+            {BRAND.heroHeadline}
           </h2>
           <p className="mt-4 text-base font-semibold leading-7 text-slate">
-            Places to meet. Movies to watch. Events nearby. Just say what you&apos;re looking for.
+            {BRAND.tagline} Just say what you&apos;re looking for.
           </p>
         </div>
         <div className="mt-8 grid gap-3 sm:grid-cols-2">
@@ -1285,7 +1280,7 @@ function ExamplePromptsSection({ onExample }: { onExample: (prompt: string) => v
               <span className="min-w-0">
                 <span className="block text-lg font-black text-ink">{label}</span>
                 <span className="mt-1 block text-sm font-semibold leading-6 text-slate group-hover:text-clay">
-                  Ask Koi
+                  {BRAND.askLabel}
                 </span>
               </span>
             </button>
@@ -1340,8 +1335,8 @@ function Footer() {
     <footer className="border-t border-line px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 text-sm text-slate sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-base font-black text-ink">{BRAND.displayName}</p>
-          <p className="mt-1 font-semibold">Currently in Beta</p>
+          <Logo variant="horizontal" size="sm" />
+          <p className="mt-3 font-semibold">Currently in Beta</p>
           <p className="mt-3 max-w-sm leading-6">{BRAND.footerDescription}</p>
         </div>
         <div className="sm:text-right">

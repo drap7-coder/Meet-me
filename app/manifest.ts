@@ -4,7 +4,7 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: BRAND.displayName,
-    short_name: BRAND.name,
+    short_name: "Koi bot",
     description: BRAND.description,
     start_url: "/",
     display: "standalone",

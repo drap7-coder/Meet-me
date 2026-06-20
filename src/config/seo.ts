@@ -1,8 +1,8 @@
 export const FAQ_ITEMS = [
   {
-    question: "What is Koi bot?",
+    question: "What is Ask Koi bot?",
     answer:
-      "Koi bot is an intelligent local discovery assistant that helps you find places to meet, things to watch, and events nearby — with balanced travel times and practical recommendations."
+      "Ask Koi bot is an intelligent local discovery assistant that helps you find places to meet, things to watch, and events nearby — with balanced travel times and practical recommendations."
   },
   {
     question: "How do I find a place halfway between two people?",

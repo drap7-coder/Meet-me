@@ -56,7 +56,7 @@ const webApplicationJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebApplication",
   name: BRAND.displayName,
-  alternateName: ["Koi", "Ask Koi"],
+  alternateName: ["Koi", "Koi bot", "Ask Koi"],
   url: BRAND.url,
   applicationCategory: "LifestyleApplication",
   operatingSystem: "Web",

@@ -1,11 +1,17 @@
 "use client";
 
-import { WatchBrowseSelector } from "@/app/components/WatchBrowseSelector";
+import { KoiBrowseSelector } from "@/app/components/KoiBrowseSelector";
 import type { SearchHalfwayRequest, WatchSubcategory } from "@/lib/types";
 import type { CurrentLocationContext } from "@/lib/currentLocation";
-import { DEFAULT_WATCH_SUBCATEGORY, type WatchGenreOption } from "@/lib/watchBrowse";
+import {
+  DEFAULT_BROWSE_LANE_ID,
+  getBrowseLaneForQuery,
+  type KoiBrowseLaneId,
+  type KoiBrowseOption
+} from "@/lib/koiBrowse";
+import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
 import { BRAND } from "@/src/config/branding";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useState } from "react";
 
 type Props = {
   loading: boolean;
@@ -27,14 +33,6 @@ type ParseSearchResult = {
   needsLocation?: boolean;
 };
 
-const EXAMPLE_PROMPTS = [
-  "Coffee between Hoboken and Edison",
-  "Shopping between Hoboken and Edison",
-  "Dinner near me",
-  "Funny movies like Superbad",
-  "Concerts this weekend"
-];
-
 export function AiSearchBox({
   loading,
   locationStatus,
@@ -50,18 +48,10 @@ export function AiSearchBox({
   const [query, setQuery] = useState("");
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState("");
-  const [showWatchGenres, setShowWatchGenres] = useState(false);
-  const [watchActiveSubcategory, setWatchActiveSubcategory] = useState<WatchSubcategory | null>(DEFAULT_WATCH_SUBCATEGORY);
-  const genrePanelRef = useRef<HTMLDivElement | null>(null);
+  const [activeBrowseLane, setActiveBrowseLane] = useState<KoiBrowseLaneId>(DEFAULT_BROWSE_LANE_ID);
+  const [watchActiveSubcategory, setWatchActiveSubcategory] = useState<WatchSubcategory>(DEFAULT_WATCH_SUBCATEGORY);
 
-  useEffect(() => {
-    if (!showWatchGenres) return;
-    requestAnimationFrame(() => {
-      genrePanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    });
-  }, [showWatchGenres]);
-
-  async function runSearch(searchQuery: string) {
+  async function runSearch(searchQuery: string, watchSubcategory = watchActiveSubcategory) {
     const trimmed = searchQuery.trim();
     if (!trimmed) {
       setError("Try a sentence like: Coffee between Hoboken and Edison.");
@@ -71,6 +61,7 @@ export function AiSearchBox({
     if (loading || parsing) return;
 
     setQuery(trimmed);
+    setActiveBrowseLane(getBrowseLaneForQuery(trimmed).id);
     setParsing(true);
     setError("");
 
@@ -91,7 +82,7 @@ export function AiSearchBox({
       }
 
       if (data.botMode === "watch") {
-        onWatchSearch(trimmed, watchActiveSubcategory ?? DEFAULT_WATCH_SUBCATEGORY);
+        onWatchSearch(trimmed, watchSubcategory);
         return;
       }
 
@@ -115,12 +106,14 @@ export function AiSearchBox({
     void runSearch(query);
   }
 
-  function handleWatchGenreSelect(subcategory: WatchSubcategory, option: WatchGenreOption) {
+  function handleBrowseSelect(option: KoiBrowseOption) {
     if (loading || parsing) return;
-    setWatchActiveSubcategory(subcategory);
+    if (option.watchSubcategory) {
+      setWatchActiveSubcategory(option.watchSubcategory);
+    }
     setQuery(option.query);
     setError("");
-    onWatchSearch(option.query, subcategory);
+    void runSearch(option.query, option.watchSubcategory ?? watchActiveSubcategory);
   }
 
   const busy = loading || parsing;
@@ -134,10 +127,10 @@ export function AiSearchBox({
       <div className="mb-5">
         <p className="text-sm font-black uppercase tracking-[0.14em] text-clay">{BRAND.askLabel}</p>
         <h2 id="ai-search-title" className="mt-2 text-2xl font-black tracking-tight text-ink sm:text-3xl">
-          Koi finds the plan.
+          {BRAND.name} finds the plan.
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate">
-          Places to meet. Movies to watch. Events nearby. Just say what you&apos;re looking for.
+          {BRAND.tagline} Just say what you&apos;re looking for.
         </p>
         {locationStatus ? (
           <p className="mt-3 inline-flex rounded-full bg-[#F3FBF6] px-3 py-1.5 text-xs font-black text-[#176644]">
@@ -157,7 +150,7 @@ export function AiSearchBox({
 
       <form onSubmit={handleSubmit} className="grid gap-3">
         <label className="grid gap-2">
-          <span className="sr-only">Ask Koi</span>
+          <span className="sr-only">{BRAND.askLabel}</span>
           <textarea
             value={query}
             onChange={(event) => {
@@ -184,40 +177,14 @@ export function AiSearchBox({
         </p>
       ) : null}
 
-      <div className="mt-5 grid gap-3">
-        <p className="text-xs font-black uppercase tracking-[0.14em] text-slate">Try one</p>
-        <div className="flex flex-wrap gap-2">
-          {EXAMPLE_PROMPTS.map((prompt) => (
-            <button
-              key={prompt}
-              type="button"
-              onClick={() => void runSearch(prompt)}
-              className="rounded-full border border-line bg-white px-3 py-2 text-left text-xs font-semibold text-slate transition hover:border-clay hover:text-clay sm:text-sm"
-            >
-              {prompt}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="mt-5 grid gap-3 border-t border-line/70 pt-5">
-        <button
-          type="button"
-          onClick={() => setShowWatchGenres((current) => !current)}
-          className="justify-self-start rounded-full border border-line bg-white px-4 py-2 text-sm font-black text-ink transition hover:border-clay hover:text-clay"
-        >
-          {showWatchGenres ? "Hide movie genres" : "Browse movie genres"}
-        </button>
-        {showWatchGenres ? (
-          <WatchBrowseSelector
-            genrePanelRef={genrePanelRef}
-            activeSubcategory={watchActiveSubcategory}
-            selectedGenreQuery={query}
-            busy={busy}
-            onSubcategorySelect={setWatchActiveSubcategory}
-            onGenreSelect={handleWatchGenreSelect}
-          />
-        ) : null}
+      <div className="mt-5 border-t border-line/70 pt-5">
+        <KoiBrowseSelector
+          activeLaneId={activeBrowseLane}
+          selectedQuery={query}
+          busy={busy}
+          onLaneChange={setActiveBrowseLane}
+          onSelect={handleBrowseSelect}
+        />
       </div>
     </section>
   );

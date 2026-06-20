@@ -815,16 +815,19 @@ export default function HomePage() {
 }
 
 function MarketingHero() {
+  const [headlineLead, headlineTail] = getHeroHeadlineLines(BRAND.heroHeadline);
+
   return (
       <div className="w-full min-w-0">
-        <div className="inline-flex max-w-full items-center gap-2.5 rounded border border-[#D8DDE6] bg-white px-2.5 py-2 shadow-[0_1px_2px_rgba(10,19,35,0.06)] sm:gap-3 sm:px-3 sm:py-2.5">
+        <div className="flex w-full min-w-0 items-stretch gap-3 rounded-lg border border-line bg-white p-5 shadow-soft sm:gap-5 sm:p-7">
           <Logo
             size="xl"
             bare
             className="shrink-0 [&_img]:h-28 [&_img]:w-28 sm:[&_img]:h-48 sm:[&_img]:w-48"
           />
-          <h1 className="flex h-28 items-center text-[clamp(1.65rem,6vw,2.15rem)] font-semibold leading-none tracking-[-0.04em] text-ink sm:h-48 sm:text-[clamp(2.35rem,4.2vw,3rem)]">
-            {BRAND.heroHeadline}
+          <h1 className="flex min-h-28 min-w-0 flex-1 flex-col justify-center gap-0 font-semibold tracking-[-0.04em] text-ink sm:min-h-48">
+            <span className="text-[clamp(2.25rem,9vw,3.75rem)] leading-[0.88]">{headlineLead}</span>
+            <span className="text-[clamp(2.25rem,9vw,3.75rem)] leading-[0.88]">{headlineTail}</span>
           </h1>
         </div>
         <p className="mt-3 max-w-xl text-sm font-medium leading-6 text-[#C8C2B6] sm:mt-3.5 sm:text-[0.9375rem] sm:leading-6">
@@ -840,6 +843,15 @@ function MarketingHero() {
         </div>
       </div>
   );
+}
+
+function getHeroHeadlineLines(headline: string): [string, string] {
+  const trimmed = headline.trim().replace(/\.$/, "");
+  const words = trimmed.split(/\s+/);
+  if (words.length <= 1) return [headline, ""];
+
+  const lastWord = words.at(-1) ?? "";
+  return [words.slice(0, -1).join(" "), headline.endsWith(".") ? `${lastWord}.` : lastWord];
 }
 
 function CompactResultsHeader({

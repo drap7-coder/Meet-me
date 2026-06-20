@@ -11,6 +11,11 @@ import { copyTextToClipboard } from "@/lib/share";
 import { trackEvent } from "@/lib/analytics";
 import { getCategoryConfig, getCategoryLabel, getPrimaryCategoryId } from "@/lib/categories";
 import { getPreferenceLabel } from "@/lib/preferences";
+import {
+  buildOpenTableSearchUrl,
+  buildResySearchUrl,
+  isRestaurantReservationEligible
+} from "@/lib/reservations";
 import type { MeetupMode, ScoredVenue, SearchMode, VenueCategory } from "@/lib/types";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -47,6 +52,9 @@ export function VenueCard({
   const timeA = formatMinutes(venue.travelFromA.durationMinutes);
   const timeB = formatMinutes(venue.travelFromB.durationMinutes);
   const venueAction = getVenueAction(venue, searchCategory);
+  const showReservationLinks = isRestaurantReservationEligible(searchCategory, venue);
+  const openTableUrl = showReservationLinks ? buildOpenTableSearchUrl(venue.name, venue.address) : null;
+  const resyUrl = showReservationLinks ? buildResySearchUrl(venue.name, venue.address) : null;
   const collegeResearchLinks = getPrimaryCategoryId(searchCategory) === "colleges" ? getCollegeResearchLinks(venue) : null;
   const reviewSnippet = venue.reviewQuote || venue.reviewSummary;
   const match = getMatchExplanation({
@@ -181,6 +189,41 @@ export function VenueCard({
             className="inline-flex h-10 items-center justify-center rounded-full border border-clay/25 bg-clay/10 px-4 text-sm font-black text-ink transition hover:border-clay hover:bg-clay hover:text-white focus:outline-none focus:ring-4 focus:ring-clay/20"
           >
             {venueAction.label}
+          </a>
+        </div>
+      ) : null}
+
+      {openTableUrl && resyUrl ? (
+        <div className="mt-4 flex flex-wrap gap-2">
+          <a
+            href={openTableUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() =>
+              trackEvent("venue_action_clicked", {
+                category: venue.category,
+                action: "Reserve on OpenTable",
+                placeType: venue.types?.[0] ?? venue.category
+              })
+            }
+            className="rounded-full border border-line bg-paper px-3 py-2.5 text-sm font-bold text-ink transition hover:border-clay hover:text-clay focus:outline-none focus:ring-4 focus:ring-ink/10"
+          >
+            Reserve on OpenTable
+          </a>
+          <a
+            href={resyUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() =>
+              trackEvent("venue_action_clicked", {
+                category: venue.category,
+                action: "Check Resy",
+                placeType: venue.types?.[0] ?? venue.category
+              })
+            }
+            className="rounded-full border border-line bg-paper px-3 py-2.5 text-sm font-bold text-ink transition hover:border-clay hover:text-clay focus:outline-none focus:ring-4 focus:ring-ink/10"
+          >
+            Check Resy
           </a>
         </div>
       ) : null}

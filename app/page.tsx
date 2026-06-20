@@ -816,16 +816,18 @@ export default function HomePage() {
 
 function MarketingHero() {
   return (
-      <div className="max-w-4xl">
-        <div className="inline-flex w-full max-w-3xl items-center gap-3 rounded-[24px] border border-white/10 bg-paper/95 p-3 shadow-[0_16px_40px_rgba(10,19,35,0.22)] sm:gap-5 sm:rounded-[28px] sm:p-5">
-          <Logo size="xl" bare className="shrink-0 [&_img]:h-28 [&_img]:w-28 sm:[&_img]:h-48 sm:[&_img]:w-48" />
-          <h1 className="min-w-0 flex-1 text-[2rem] font-black leading-[0.96] tracking-[-0.04em] text-ink sm:text-[clamp(40px,6vw,64px)]">
-            {BRAND.heroHeadline}
-          </h1>
+      <div className="w-full min-w-0">
+        <div className="flex w-full gap-3 rounded-lg border border-line bg-white p-5 shadow-soft sm:gap-5 sm:p-7">
+          <Logo size="xl" bare className="shrink-0 self-start [&_img]:h-28 [&_img]:w-28 sm:[&_img]:h-48 sm:[&_img]:w-48" />
+          <div className="min-w-0 flex-1">
+            <h1 className="text-[2rem] font-black leading-[0.96] tracking-[-0.04em] text-ink sm:text-[clamp(40px,6vw,64px)]">
+              {BRAND.heroHeadline}
+            </h1>
+            <p className="mt-3 text-base font-medium leading-7 text-slate sm:mt-4 sm:text-lg sm:leading-8">
+              {BRAND.heroSubheadline}
+            </p>
+          </div>
         </div>
-        <p className="mt-5 max-w-2xl text-base font-medium leading-7 text-[#D7D0C4] sm:mt-6 sm:text-xl sm:leading-8">
-          {BRAND.heroSubheadline}
-        </p>
         <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:gap-4">
           <a
             href="#ask-koi"

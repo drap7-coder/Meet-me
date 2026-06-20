@@ -1,6 +1,6 @@
 "use client";
 
-import { WatchCategoryCards } from "@/app/components/WatchCategoryCards";
+import { WatchBrowseSelector } from "@/app/components/WatchBrowseSelector";
 import type { KoiBotMode, SearchHalfwayRequest, WatchSubcategory } from "@/lib/types";
 import {
   EVENTS_DESCRIPTION,
@@ -8,11 +8,14 @@ import {
   EVENTS_PLACEHOLDER,
   getWatchSubcategoryDescription,
   getWatchSubcategoryLabel,
+  DEFAULT_WATCH_SUBCATEGORY,
+  watchSubcategoryHasGenres,
   WATCH_PLACEHOLDER,
-  WATCH_PROMPTS_BY_SUBCATEGORY
+  WATCH_PROMPTS_BY_SUBCATEGORY,
+  type WatchGenreOption
 } from "@/lib/watchBrowse";
 import { BRAND } from "@/src/config/branding";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 type Props = {
   loading: boolean;
@@ -149,6 +152,8 @@ export function AiSearchBox({
   const [query, setQuery] = useState("");
   const [watchFlowStep, setWatchFlowStep] = useState<WatchFlowStep>("categories");
   const [watchSubcategory, setWatchSubcategory] = useState<WatchSubcategory | null>(null);
+  const [watchActiveSubcategory, setWatchActiveSubcategory] = useState<WatchSubcategory | null>(DEFAULT_WATCH_SUBCATEGORY);
+  const genrePanelRef = useRef<HTMLDivElement | null>(null);
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState("");
 
@@ -156,8 +161,16 @@ export function AiSearchBox({
     if (botMode !== "watch") {
       setWatchFlowStep("categories");
       setWatchSubcategory(null);
+      setWatchActiveSubcategory(DEFAULT_WATCH_SUBCATEGORY);
     }
   }, [botMode]);
+
+  useEffect(() => {
+    if (botMode !== "watch" || watchFlowStep !== "categories" || !watchActiveSubcategory) return;
+    if (!watchSubcategoryHasGenres(watchActiveSubcategory)) return;
+
+    genrePanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [botMode, watchActiveSubcategory, watchFlowStep]);
 
   function handleModeSelect(mode: KoiBotMode) {
     onBotModeChange(mode);
@@ -166,19 +179,37 @@ export function AiSearchBox({
     if (mode === "watch") {
       setWatchFlowStep("categories");
       setWatchSubcategory(null);
+      setWatchActiveSubcategory(DEFAULT_WATCH_SUBCATEGORY);
     }
   }
 
-  function handleWatchCategorySelect(subcategory: WatchSubcategory) {
+  function handleWatchSubcategorySelect(subcategory: WatchSubcategory) {
+    setWatchActiveSubcategory(subcategory);
+    setError("");
+
+    if (watchSubcategoryHasGenres(subcategory)) {
+      setWatchSubcategory(null);
+      setQuery("");
+      return;
+    }
+
     setWatchSubcategory(subcategory);
     setWatchFlowStep("search");
     setQuery("");
+  }
+
+  function handleWatchGenreSelect(subcategory: WatchSubcategory, option: WatchGenreOption) {
+    setWatchActiveSubcategory(subcategory);
+    setWatchSubcategory(subcategory);
+    setQuery(option.query);
+    setWatchFlowStep("search");
     setError("");
   }
 
   function backToWatchCategories() {
     setWatchFlowStep("categories");
     setWatchSubcategory(null);
+    setWatchActiveSubcategory(watchSubcategory ?? DEFAULT_WATCH_SUBCATEGORY);
     setQuery("");
     setError("");
   }
@@ -269,7 +300,7 @@ export function AiSearchBox({
   };
 
   return (
-    <section id="ask-koi" className="w-full min-w-0 scroll-mt-24 overflow-hidden rounded-lg border border-line bg-paper p-5 shadow-soft sm:p-7" aria-labelledby="ai-search-title">
+    <section id="ask-koi" className="w-full min-w-0 scroll-mt-24 rounded-lg border border-line bg-paper p-5 shadow-soft sm:p-7" aria-labelledby="ai-search-title">
       <div className="mb-5">
         <p className="text-sm font-black uppercase tracking-[0.14em] text-clay">{BRAND.askLabel}</p>
         <h2 id="ai-search-title" className="mt-2 text-2xl font-black tracking-tight text-ink sm:text-3xl">
@@ -325,9 +356,17 @@ export function AiSearchBox({
           <div className="grid gap-4">
             <div>
               <h3 className="text-lg font-black text-ink">What do you want to watch?</h3>
-              <p className="mt-1 text-sm leading-6 text-slate">Pick one lane to start. No location needed.</p>
+              <p className="mt-1 text-sm leading-6 text-slate">
+                Pick a lane, then choose a genre — just like picking a restaurant type under Food.
+              </p>
             </div>
-            <WatchCategoryCards onSelect={handleWatchCategorySelect} />
+            <WatchBrowseSelector
+              genrePanelRef={genrePanelRef}
+              activeSubcategory={watchActiveSubcategory}
+              selectedGenreQuery={query}
+              onSubcategorySelect={handleWatchSubcategorySelect}
+              onGenreSelect={handleWatchGenreSelect}
+            />
           </div>
         ) : null}
 

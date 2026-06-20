@@ -39,6 +39,55 @@ export function getWatchSubcategoryDescription(subcategory: WatchSubcategory) {
   return WATCH_SUBCATEGORIES.find((option) => option.id === subcategory)?.description ?? "";
 }
 
+export type WatchGenreOption = {
+  id: string;
+  label: string;
+  query: string;
+};
+
+export const WATCH_GENRES_BY_SUBCATEGORY: Partial<Record<WatchSubcategory, WatchGenreOption[]>> = {
+  movies: [
+    { id: "action", label: "Action", query: "Best action movies tonight" },
+    { id: "comedy", label: "Comedy", query: "Best comedy movies tonight" },
+    { id: "drama", label: "Drama", query: "Best drama movies tonight" },
+    { id: "horror", label: "Horror", query: "Best horror movies tonight" },
+    { id: "romance", label: "Romance", query: "Best romance movies tonight" },
+    { id: "sci-fi", label: "Sci-Fi", query: "Best sci-fi movies tonight" },
+    { id: "thriller", label: "Thriller", query: "Best thriller movies tonight" },
+    { id: "documentary", label: "Documentary", query: "Best documentary movies tonight" },
+    { id: "family", label: "Family", query: "Best family movies tonight" }
+  ],
+  tv_shows: [
+    { id: "action", label: "Action & Adventure", query: "Best action TV shows tonight" },
+    { id: "comedy", label: "Comedy", query: "Best comedy TV shows tonight" },
+    { id: "drama", label: "Drama", query: "Best drama TV shows tonight" },
+    { id: "horror", label: "Mystery & Thriller", query: "Best mystery TV shows tonight" },
+    { id: "romance", label: "Romance", query: "Best romance TV shows tonight" },
+    { id: "sci-fi", label: "Sci-Fi & Fantasy", query: "Best sci-fi TV shows tonight" },
+    { id: "documentary", label: "Documentary", query: "Best documentary series tonight" },
+    { id: "family", label: "Family", query: "Best family TV shows tonight" }
+  ],
+  genres: [
+    { id: "comedy", label: "Comedy", query: "Best comedy movies and shows tonight" },
+    { id: "sci-fi", label: "Sci-Fi", query: "Best sci-fi movies and shows tonight" },
+    { id: "drama", label: "Drama", query: "Best drama movies and shows tonight" },
+    { id: "horror", label: "Horror", query: "Best horror movies and shows tonight" },
+    { id: "romance", label: "Romance", query: "Best romance movies and shows tonight" },
+    { id: "action", label: "Action", query: "Best action movies and shows tonight" },
+    { id: "thriller", label: "Thriller", query: "Best thriller movies and shows tonight" },
+    { id: "documentary", label: "Documentary", query: "Best documentaries tonight" },
+    { id: "family", label: "Family", query: "Best family-friendly picks tonight" }
+  ]
+};
+
+export function watchSubcategoryHasGenres(subcategory: WatchSubcategory) {
+  return (WATCH_GENRES_BY_SUBCATEGORY[subcategory]?.length ?? 0) > 0;
+}
+
+export function getWatchGenresForSubcategory(subcategory: WatchSubcategory) {
+  return WATCH_GENRES_BY_SUBCATEGORY[subcategory] ?? [];
+}
+
 export const WATCH_PLACEHOLDER = "Ask Koi what you want to watch…";
 
 export const EVENTS_EXAMPLE_PROMPTS = [

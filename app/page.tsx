@@ -819,13 +819,13 @@ function MarketingHero() {
 
   return (
       <div className="w-full min-w-0">
-        <div className="flex w-full min-w-0 items-stretch gap-3 rounded-lg border border-line bg-white p-5 shadow-soft sm:gap-5 sm:p-7">
+        <div className="flex w-full min-w-0 items-stretch gap-3 sm:gap-5">
           <Logo
             size="xl"
             bare
-            className="shrink-0 [&_img]:h-28 [&_img]:w-28 sm:[&_img]:h-48 sm:[&_img]:w-48"
+            className="shrink-0 [&_img]:h-28 [&_img]:w-28 [&_img]:mix-blend-multiply sm:[&_img]:h-48 sm:[&_img]:w-48"
           />
-          <h1 className="flex min-h-28 min-w-0 flex-1 flex-col justify-center gap-0 font-semibold tracking-[-0.04em] text-ink sm:min-h-48">
+          <h1 className="flex min-h-28 min-w-0 flex-1 flex-col justify-center gap-0 font-semibold tracking-[-0.04em] text-[#FFFDF8] sm:min-h-48">
             <span className="text-[clamp(2.25rem,9vw,3.75rem)] leading-[0.88]">{headlineLead}</span>
             <span className="text-[clamp(2.25rem,9vw,3.75rem)] leading-[0.88]">{headlineTail}</span>
           </h1>

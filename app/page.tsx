@@ -8,7 +8,7 @@ import { Logo } from "@/app/components/Logo";
 import { RoadDivider } from "@/app/components/BrandRoad";
 import { ResultsMap } from "@/app/components/ResultsMap";
 import { VenueCard } from "@/app/components/VenueCard";
-import { WatchEventsPlaceholder } from "@/app/components/WatchEventsPlaceholder";
+import { WatchEventsResults } from "@/app/components/WatchEventsResults";
 import { WeatherCard } from "@/app/components/WeatherCard";
 import {
   clearRecentMeetups,
@@ -49,6 +49,7 @@ export default function HomePage() {
   const [form, setForm] = useState<SearchHalfwayRequest>(initialForm);
   const [results, setResults] = useState<SearchHalfwayResponse | null>(null);
   const [watchEventsResult, setWatchEventsResult] = useState<WatchEventsResult | null>(null);
+  const [searchKind, setSearchKind] = useState<"places" | "watch_events" | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [shareMessage, setShareMessage] = useState("");
@@ -96,9 +97,12 @@ export default function HomePage() {
   }, []);
 
   const resultCountLabel = useMemo(() => {
+    if (watchEventsResult) {
+      return `${watchEventsResult.resultCount} preview option${watchEventsResult.resultCount === 1 ? "" : "s"}`;
+    }
     if (!results) return "";
     return `${results.venues.length} place${results.venues.length === 1 ? "" : "s"} that could work`;
-  }, [results]);
+  }, [results, watchEventsResult]);
 
   const resultContext = useMemo(() => {
     if (!results) return null;
@@ -114,10 +118,12 @@ export default function HomePage() {
   async function submitSearch(searchForm: SearchHalfwayRequest = form, existingShareUrl?: string) {
     const startedAt = Date.now();
     const shouldPlayMotion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setSearchKind("places");
     setHasSearched(true);
     setLoading(true);
     setError("");
     setShareMessage("");
+    setWatchEventsResult(null);
     trackEvent("search_started", {
       category: searchForm.category,
       hasPreferences: Boolean(searchForm.preferences?.length)
@@ -153,6 +159,7 @@ export default function HomePage() {
   function startNewSearch() {
     setResults(null);
     setWatchEventsResult(null);
+    setSearchKind(null);
     setError("");
     setShareMessage("");
     setCurrentShareUrl("");
@@ -173,16 +180,46 @@ export default function HomePage() {
     submitSearch(nextForm);
   }
 
-  function runWatchEventsSearch(result: WatchEventsResult) {
+  function runWatchEventsSearch(query: string) {
+    void submitWatchEventsSearch(query);
+  }
+
+  async function submitWatchEventsSearch(query: string) {
+    const startedAt = Date.now();
+    const shouldPlayMotion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setSearchKind("watch_events");
+    setHasSearched(true);
+    setLoading(true);
     setResults(null);
-    setWatchEventsResult(result);
+    setWatchEventsResult(null);
     setError("");
     setShareMessage("");
     setCurrentShareUrl("");
-    setHasSearched(true);
     trackEvent("watch_events_opened", {
-      queryLength: result.query.length
+      queryLength: query.length
     });
+
+    try {
+      const response = await fetch("/api/watch-events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query })
+      });
+      const data = (await response.json()) as WatchEventsResult & { error?: string };
+      if (!response.ok) throw new Error(data.error ?? "Watch & Events search failed.");
+      setWatchEventsResult(data);
+      trackEvent("watch_events_completed", {
+        intent: data.intent,
+        resultCount: data.resultCount
+      });
+    } catch (searchError) {
+      setWatchEventsResult(null);
+      setError(searchError instanceof Error ? searchError.message : "Watch & Events search failed.");
+    } finally {
+      const remainingMotionTime = 650 - (Date.now() - startedAt);
+      if (shouldPlayMotion && remainingMotionTime > 0) await wait(remainingMotionTime);
+      setLoading(false);
+    }
   }
 
   function clearRecent() {
@@ -306,7 +343,7 @@ export default function HomePage() {
               title={watchEventsResult ? watchEventsResult.title : "Recommended places"}
               originSummary={
                 watchEventsResult
-                  ? watchEventsResult.description
+                  ? watchEventsResult.contextSummary
                   : results
                   ? results.searchMode === "single"
                     ? `Near ${results.originA.formattedAddress}`
@@ -340,7 +377,7 @@ export default function HomePage() {
         {loading ? (
           <section className="mt-8 grid gap-4 lg:grid-cols-[1fr_420px]">
             <div className="grid gap-3">
-              <MeetInMiddleLoader />
+              {searchKind === "watch_events" ? <WatchEventsLoader /> : <MeetInMiddleLoader />}
               {[0, 1, 2].map((item) => (
                 <div key={item} className="h-48 animate-pulse rounded-lg bg-sky shadow-soft" />
               ))}
@@ -349,9 +386,7 @@ export default function HomePage() {
           </section>
         ) : null}
 
-        {watchEventsResult && !loading ? (
-          <WatchEventsPlaceholder result={watchEventsResult} onNewSearch={startNewSearch} />
-        ) : null}
+        {watchEventsResult && !loading ? <WatchEventsResults result={watchEventsResult} /> : null}
 
         {results && !loading ? (
           <section className="search-results-enter mt-5 grid gap-5 pb-16 lg:grid-cols-[1fr_420px] lg:items-start">
@@ -618,6 +653,34 @@ function SiteHeader() {
         </a>
       </div>
     </header>
+  );
+}
+
+function WatchEventsLoader() {
+  return (
+    <div
+      className="rounded-[24px] border border-line bg-paper p-5 shadow-[0_14px_38px_rgba(18,50,74,0.08)] sm:p-6"
+      role="status"
+      aria-live="polite"
+      aria-label="Finding watch and event options"
+    >
+      <div className="mx-auto grid max-w-md gap-3">
+        <div className="grid grid-cols-3 gap-2">
+          {["Stream", "Live", "Tickets"].map((label) => (
+            <div key={label} className="rounded-lg bg-sky px-3 py-4 text-center text-xs font-black uppercase tracking-[0.12em] text-slate">
+              {label}
+            </div>
+          ))}
+        </div>
+        <div className="h-2 overflow-hidden rounded-full bg-sky">
+          <div className="h-full w-2/3 animate-pulse rounded-full bg-clay/70" />
+        </div>
+      </div>
+      <div className="mt-4 text-center">
+        <p className="text-sm font-black text-ink">Finding watch & event options</p>
+        <p className="mt-1 text-xs font-semibold text-slate">Matching your ask to streaming, live events, and sports plans.</p>
+      </div>
+    </div>
   );
 }
 

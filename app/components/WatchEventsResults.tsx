@@ -1,0 +1,50 @@
+import type { WatchEventsResult } from "@/lib/types";
+import { WatchEventsCard } from "@/app/components/WatchEventsCard";
+
+type Props = {
+  result: WatchEventsResult;
+};
+
+export function WatchEventsResults({ result }: Props) {
+  return (
+    <section className="search-results-enter mt-5 grid gap-5 pb-16 lg:grid-cols-[1fr_320px] lg:items-start">
+      <div className="results-list-enter order-2 grid gap-4 lg:order-1">
+        {result.recommendations.map((item) => (
+          <WatchEventsCard key={item.id} item={item} />
+        ))}
+      </div>
+
+      <aside className="results-panel-enter order-1 lg:order-2">
+        <div className="rounded-lg border border-line bg-paper p-5 shadow-soft">
+          <p className="text-sm font-black uppercase tracking-[0.14em] text-clay">{result.intentLabel}</p>
+          <h2 className="mt-2 text-2xl font-black tracking-tight text-ink">Your search</h2>
+          <p className="mt-3 text-sm leading-6 text-slate">{result.contextSummary}</p>
+
+          <div className="mt-4 rounded-lg border border-line bg-mint p-4">
+            <p className="text-xs font-black uppercase tracking-[0.14em] text-slate">Ask</p>
+            <p className="mt-2 text-sm font-semibold leading-6 text-ink">“{result.query}”</p>
+          </div>
+
+          <div className="mt-4 rounded-lg border border-clay/25 bg-[#FFF4EC] p-4">
+            <p className="text-sm font-black text-ink">Preview mode</p>
+            <p className="mt-2 text-sm leading-6 text-slate">{result.message}</p>
+          </div>
+
+          <div className="mt-4">
+            <p className="text-xs font-black uppercase tracking-[0.14em] text-slate">Planned integrations</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {result.futureProviders.map((provider) => (
+                <span
+                  key={provider}
+                  className="rounded-full border border-line bg-white px-3 py-1.5 text-xs font-semibold text-slate"
+                >
+                  {provider}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </aside>
+    </section>
+  );
+}

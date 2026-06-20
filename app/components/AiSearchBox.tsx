@@ -1,19 +1,18 @@
 "use client";
 
-import type { KoiBotMode, SearchHalfwayRequest, WatchEventsResult } from "@/lib/types";
+import type { KoiBotMode, SearchHalfwayRequest } from "@/lib/types";
 import { WATCH_EVENTS_DESCRIPTION, WATCH_EVENTS_TITLE } from "@/lib/watchEvents";
 import { FormEvent, useState } from "react";
 
 type Props = {
   loading: boolean;
   onParsed: (form: SearchHalfwayRequest) => void;
-  onWatchEvents: (result: WatchEventsResult) => void;
+  onWatchEvents: (query: string) => void;
 };
 
 type ParseSearchResult = {
   botMode?: KoiBotMode;
   form?: SearchHalfwayRequest;
-  watchEvents?: WatchEventsResult;
   error?: string;
 };
 
@@ -71,8 +70,8 @@ export function AiSearchBox({ loading, onParsed, onWatchEvents }: Props) {
       const data = (await response.json()) as ParseSearchResult;
       if (!response.ok) throw new Error(data.error ?? "I could not understand that search.");
 
-      if (data.botMode === "watch_events" && data.watchEvents) {
-        onWatchEvents(data.watchEvents);
+      if (data.botMode === "watch_events") {
+        onWatchEvents(trimmed);
         return;
       }
 

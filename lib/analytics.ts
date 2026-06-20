@@ -13,7 +13,10 @@ type EventName =
   | "calendar_invite_created"
   | "venue_action_clicked"
   | "weather_viewed"
-  | "watch_events_opened";
+  | "watch_events_opened"
+  | "watch_events_completed"
+  | "watch_events_card_viewed"
+  | "watch_events_action_clicked";
 
 type EventProperties = Record<string, string | number | boolean | null | undefined>;
 

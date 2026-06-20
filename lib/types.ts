@@ -86,13 +86,40 @@ export type SearchMode = "single" | "midpoint";
 
 export type KoiBotMode = "places" | "watch_events";
 
+export type WatchEventsIntent = "stream" | "live_event" | "sports" | "things_to_do" | "general";
+
+export type WatchEventsRecommendation = {
+  id: string;
+  rank: number;
+  title: string;
+  subtitle: string;
+  kind: WatchEventsIntent;
+  badge: string;
+  explanation: string;
+  tags: string[];
+  meta: Array<{ label: string; value: string }>;
+  actionLabel: string;
+  actionUrl: string;
+  provider: string;
+  preview: true;
+};
+
 export type WatchEventsResult = {
   botMode: "watch_events";
   query: string;
   title: string;
   description: string;
   message: string;
+  intent: WatchEventsIntent;
+  intentLabel: string;
+  location: string;
+  timeframe: string;
+  topic: string;
+  contextSummary: string;
+  resultCount: number;
+  recommendations: WatchEventsRecommendation[];
   futureProviders: string[];
+  preview: true;
 };
 
 export type Preference =

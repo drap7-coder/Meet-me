@@ -1,13 +1,18 @@
 "use client";
 
-import { PLACE_UI_GROUPS } from "@/lib/askKoiPlaceGroups";
+import {
+  ASK_KOI_TABS,
+  getAskKoiPlaceOptions,
+  getAskKoiTabConfig,
+  type AskKoiTab
+} from "@/lib/askKoiCategories";
 import type { KoiBotMode, SearchHalfwayRequest } from "@/lib/types";
 import {
   WATCH_EVENTS_EXAMPLE_PROMPTS,
   WATCH_EVENTS_PLACEHOLDER,
   WATCH_UI_GROUPS
 } from "@/lib/watchCategories";
-import { WATCH_EVENTS_DESCRIPTION, WATCH_EVENTS_TITLE } from "@/lib/watchEvents";
+import { WATCH_EVENTS_DESCRIPTION } from "@/lib/watchEvents";
 import { BRAND } from "@/src/config/branding";
 import { FormEvent, useState } from "react";
 
@@ -23,35 +28,28 @@ type ParseSearchResult = {
   error?: string;
 };
 
-const BOT_MODES = [
-  {
-    id: "places" as const,
-    title: "Find places",
-    description: "Food, drinks, coffee, activities, and halfway meetup spots."
-  },
-  {
-    id: "watch_events" as const,
-    title: WATCH_EVENTS_TITLE,
-    description: WATCH_EVENTS_DESCRIPTION
-  }
-];
-
 const PLACE_EXAMPLE_PROMPTS = [
   "Find coffee near Hoboken with easy parking.",
   "Find a coffee shop between Hoboken and Edison with easy parking.",
   "Where should we meet between NYC and Princeton?"
 ];
 
+function tabToBotMode(tab: AskKoiTab): KoiBotMode {
+  return tab === "watch_events" ? "watch_events" : "places";
+}
+
 export function AiSearchBox({ loading, onParsed, onWatchEvents }: Props) {
   const [query, setQuery] = useState("");
-  const [botMode, setBotMode] = useState<KoiBotMode>("places");
+  const [activeTab, setActiveTab] = useState<AskKoiTab>("food");
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState("");
 
-  const isWatchMode = botMode === "watch_events";
-  const activeMode = BOT_MODES.find((mode) => mode.id === botMode) ?? BOT_MODES[0];
-  const examplePrompts = isWatchMode ? WATCH_EVENTS_EXAMPLE_PROMPTS : PLACE_EXAMPLE_PROMPTS;
-  const placeholder = isWatchMode ? WATCH_EVENTS_PLACEHOLDER : `${BRAND.askLabel} what you're looking for…`;
+  const activeConfig = getAskKoiTabConfig(activeTab);
+  const botMode = tabToBotMode(activeTab);
+  const placeOptions = getAskKoiPlaceOptions(activeTab);
+  const isWatchTab = activeTab === "watch_events";
+  const examplePrompts = isWatchTab ? WATCH_EVENTS_EXAMPLE_PROMPTS : PLACE_EXAMPLE_PROMPTS;
+  const placeholder = isWatchTab ? WATCH_EVENTS_PLACEHOLDER : `${BRAND.askLabel} what you're looking for…`;
 
   async function runSearch(searchQuery: string, mode: KoiBotMode = botMode) {
     const trimmed = searchQuery.trim();
@@ -101,7 +99,7 @@ export function AiSearchBox({ loading, onParsed, onWatchEvents }: Props) {
   const submitLabel = parsing
     ? "Understanding..."
     : loading
-      ? isWatchMode
+      ? isWatchTab
         ? "Finding watch & events..."
         : "Finding places..."
       : BRAND.askLabel;
@@ -114,42 +112,41 @@ export function AiSearchBox({ loading, onParsed, onWatchEvents }: Props) {
           Tell {BRAND.name} what you want to find.
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate">
-          {isWatchMode
+          {isWatchTab
             ? `${BRAND.name} helps with ${WATCH_EVENTS_DESCRIPTION} Pick a category, then describe what you want in plain language.`
             : `Tell ${BRAND.name} where you're coming from and what kind of spot you want — nearby or halfway between two people. Pick a category, then describe what you need.`}
         </p>
       </div>
 
-      <div className="mb-4 grid gap-2 sm:grid-cols-2">
-        {BOT_MODES.map((mode) => {
-          const selected = botMode === mode.id;
+      <div className="mb-4 -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+        {ASK_KOI_TABS.map((tab) => {
+          const selected = activeTab === tab.id;
           return (
             <button
-              key={mode.id}
+              key={tab.id}
               type="button"
               onClick={() => {
-                setBotMode(mode.id);
+                setActiveTab(tab.id);
                 if (error) setError("");
               }}
-              className={`rounded-lg border px-4 py-3 text-left transition focus:outline-none focus:ring-4 focus:ring-clay/10 ${
+              className={`shrink-0 rounded-full border px-4 py-2 text-sm font-black transition focus:outline-none focus:ring-4 focus:ring-clay/10 ${
                 selected
-                  ? "border-clay bg-[#FFF4EC] shadow-[inset_0_0_0_1px_rgba(214,90,46,0.12)]"
-                  : "border-line bg-white hover:border-clay/40"
+                  ? "border-clay bg-[#FFF4EC] text-ink shadow-[inset_0_0_0_1px_rgba(214,90,46,0.12)]"
+                  : "border-line bg-white text-slate hover:border-clay/40 hover:text-clay"
               }`}
               aria-pressed={selected}
             >
-              <p className="text-sm font-black text-ink">{mode.title}</p>
-              <p className="mt-1 text-xs leading-5 text-slate">{mode.description}</p>
+              {tab.label}
             </button>
           );
         })}
       </div>
 
       <div className="mb-4 rounded-lg border border-line bg-mint p-4">
-        <p className="text-sm font-black text-ink">{activeMode.title}</p>
-        <p className="mt-1 text-xs leading-5 text-slate">{activeMode.description}</p>
+        <p className="text-sm font-black text-ink">{activeConfig.label}</p>
+        <p className="mt-1 text-xs leading-5 text-slate">{activeConfig.description}</p>
 
-        {isWatchMode ? (
+        {isWatchTab ? (
           <div className="mt-4 grid gap-4">
             {WATCH_UI_GROUPS.map((group) => (
               <div key={group.label}>
@@ -173,28 +170,23 @@ export function AiSearchBox({ loading, onParsed, onWatchEvents }: Props) {
             ))}
           </div>
         ) : (
-          <div className="mt-4 grid gap-4">
-            {PLACE_UI_GROUPS.map((group) => (
-              <div key={group.label}>
-                <p className="text-xs font-black uppercase tracking-[0.14em] text-slate">{group.label}</p>
-                <p className="mt-1 text-xs leading-5 text-slate">{group.description}</p>
-                <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {group.options.map((option) => (
-                    <button
-                      key={option.label}
-                      type="button"
-                      disabled={busy}
-                      onClick={() => {
-                        void runSearch(option.query, "places");
-                      }}
-                      className="rounded-[16px] border border-line bg-white px-3 py-2.5 text-left text-xs font-semibold text-ink transition hover:border-clay hover:bg-[#FFF4EC] disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
+          <div className="mt-4">
+            <p className="text-xs font-black uppercase tracking-[0.14em] text-slate">Popular picks</p>
+            <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {placeOptions.map((option) => (
+                <button
+                  key={option.label}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => {
+                    void runSearch(option.query, "places");
+                  }}
+                  className="rounded-[16px] border border-line bg-white px-3 py-2.5 text-left text-xs font-semibold text-ink transition hover:border-clay hover:bg-[#FFF4EC] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>

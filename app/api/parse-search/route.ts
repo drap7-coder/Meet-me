@@ -1,4 +1,4 @@
-import { mapCategoryIntent } from "@/lib/categories";
+import { resolveSearchCategoryFromQuery } from "@/lib/categories";
 import { detectPreferencesFromQuery } from "@/lib/preferences";
 import type { SearchHalfwayRequest } from "@/lib/types";
 import { NextResponse } from "next/server";
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     const parsed = await parseSearchQuery(query);
     const locationA = parsed.location_a.trim();
     const locationB = parsed.location_b.trim();
-    const categoryIntent = mapCategoryIntent(resolveParsedCategory(query, parsed.category));
+    const categoryIntent = resolveSearchCategoryFromQuery(query, parsed.category);
     const searchMode =
       parsed.search_mode === "single" || (locationA && !locationB && !looksLikeMidpointQuery(query))
         ? "single"
@@ -161,7 +161,7 @@ async function parseWithOllama(query: string): Promise<ParsedSearchIntent> {
     return {
       location_a: stringField(parsed.location_a),
       location_b: stringField(parsed.location_b),
-      category: stringField(parsed.category) || "coffee",
+      category: stringField(parsed.category),
       search_mode: stringField(parsed.search_mode) === "single" ? "single" : "midpoint"
     };
   } catch (error) {
@@ -264,61 +264,7 @@ function cleanupLocation(value: string) {
 }
 
 function guessCategory(query: string) {
-  return detectCategoryFromQuery(query) ?? "coffee";
-}
-
-function detectCategoryFromQuery(query: string) {
-  const normalized = query.toLowerCase();
-  const categoryHints = [
-    "quiet place",
-    "cocktail bar",
-    "wine bar",
-    "restaurant",
-    "bookstore",
-    "steakhouse",
-    "brewery",
-    "brunch",
-    "breakfast",
-    "mexican",
-    "mediterranean",
-    "seafood",
-    "outdoors",
-    "hiking",
-    "trails",
-    "italian",
-    "dinner",
-    "lunch",
-    "coffee",
-    "ramen",
-    "pizza",
-    "sushi",
-    "drinks",
-    "bbq",
-    "bar",
-    "park",
-    "thai"
-  ];
-
-  const sorted = [...new Set(categoryHints)].sort((a, b) => b.length - a.length);
-  const match = sorted.find((hint) => categoryHintMatches(normalized, hint));
-  return match ?? null;
-}
-
-function categoryHintMatches(normalizedQuery: string, hint: string) {
-  const pattern = hint.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+");
-  return new RegExp(`\\b${pattern}\\b`, "i").test(normalizedQuery);
-}
-
-function resolveParsedCategory(query: string, parsedCategory: string) {
-  const detected = detectCategoryFromQuery(query);
-  if (detected) return detected;
-
-  const normalized = parsedCategory.trim().toLowerCase();
-  if (normalized === "park" && /\bparking\b/i.test(query) && !categoryHintMatches(query.toLowerCase(), "park")) {
-    return "restaurant";
-  }
-
-  return parsedCategory.trim() || "coffee";
+  return resolveSearchCategoryFromQuery(query).category;
 }
 
 function looksLikeMidpointQuery(query: string) {

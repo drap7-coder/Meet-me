@@ -449,6 +449,8 @@ export function mapCategoryIntent(input: string | null | undefined): { category:
     food: "restaurant",
     cuisine: "restaurant",
     dining: "restaurant",
+    restaurants: "restaurant",
+    eat: "restaurant",
     italian_food: "italian",
     barbecue: "bbq",
     barbeque: "bbq",
@@ -482,6 +484,9 @@ export function mapCategoryIntent(input: string | null | undefined): { category:
     tavern: "pubs",
     beer: "breweries",
     brewery: "breweries",
+    breweries: "breweries",
+    brewpub: "breweries",
+    brewpubs: "breweries",
     wine: "wine_bars",
     wine_bar: "wine_bars",
     lounge: "lounges",
@@ -538,6 +543,83 @@ export function mapCategoryIntent(input: string | null | undefined): { category:
   if (alias) return { category: normalizeCategory(alias) };
 
   return { category: "custom", customQuery: raw };
+}
+
+export function resolveSearchCategoryFromQuery(
+  query: string,
+  parsedCategory?: string
+): { category: VenueCategory; customQuery?: string } {
+  const matched = matchCategoryInQuery(query);
+  if (matched) return { category: matched };
+
+  const parsed = parsedCategory?.trim();
+  if (parsed) {
+    const fromParsed = mapCategoryIntent(parsed);
+    if (fromParsed.category !== "custom") return fromParsed;
+
+    const rematched = matchCategoryInQuery(fromParsed.customQuery ?? parsed);
+    if (rematched) return { category: rematched };
+  }
+
+  if (/\b(?:meet|meeting|halfway|between|spot|place)\b/i.test(query)) {
+    return { category: "restaurant" };
+  }
+
+  return { category: "restaurant" };
+}
+
+function matchCategoryInQuery(query: string): VenueCategory | null {
+  const normalized = query.toLowerCase().replace(/&/g, "and");
+
+  const phraseMatches: Array<{ pattern: RegExp; category: VenueCategory }> = [
+    { pattern: /\bcoffee shops?\b|\bcafes?\b|\bespresso bars?\b/, category: "coffee" },
+    { pattern: /\bbreweries\b|\bbrewpubs?\b|\bcraft beer\b/, category: "breweries" },
+    { pattern: /\bcocktail bars?\b|\bspeakeas(?:y|ies)\b/, category: "cocktail_bars" },
+    { pattern: /\bwine bars?\b|\bwine tasting\b/, category: "wine_bars" },
+    { pattern: /\bsports bars?\b|\bgame day bars?\b/, category: "sports_bars" },
+    { pattern: /\brooftop bars?\b/, category: "rooftop_bars" },
+    { pattern: /\bcigar lounges?\b/, category: "cigar_lounges" },
+    { pattern: /\bsteakhouses?\b|\bchophouses?\b/, category: "steakhouse" },
+    { pattern: /\bsushi bars?\b|\bomakase\b/, category: "sushi" },
+    { pattern: /\bpizza places?\b|\bpizzerias?\b|\bpizza\b/, category: "pizza" },
+    { pattern: /\bitalian restaurants?\b|\btrattorias?\b|\bitalian food\b|\bitalian\b/, category: "italian" },
+    { pattern: /\bmexican restaurants?\b|\btaquerias?\b|\btacos?\b|\bmexican\b/, category: "mexican" },
+    { pattern: /\bindian restaurants?\b|\bcurry\b|\bindian\b/, category: "indian" },
+    { pattern: /\bthai restaurants?\b|\bpad thai\b|\bthai\b/, category: "thai" },
+    { pattern: /\bseafood restaurants?\b|\boyster bars?\b|\bseafood\b/, category: "seafood" },
+    { pattern: /\bbbq\b|\bbarbecue\b|\bsmokehouses?\b/, category: "bbq" },
+    { pattern: /\bbookstores?\b|\bbook shops?\b/, category: "bookstore" },
+    { pattern: /\bgolf courses?\b|\bgolf\b/, category: "golf" },
+    { pattern: /\bdog parks?\b/, category: "dog_parks" },
+    { pattern: /\bhiking trails?\b|\bhiking\b|\btrails?\b/, category: "hiking" },
+    { pattern: /\bnational parks?\b|\bpicnic areas?\b|\bparks?\b/, category: "park" },
+    { pattern: /\bmuseums?\b/, category: "museums" },
+    { pattern: /\bhotels?\b/, category: "hotels" },
+    { pattern: /\bbrunch spots?\b|\bbrunch\b/, category: "brunch" },
+    { pattern: /\bbreakfast spots?\b|\bbreakfast\b/, category: "breakfast" },
+    { pattern: /\brestaurants?\b|\bdinner\b|\blunch\b|\bfood\b|\bdining\b/, category: "restaurant" },
+    { pattern: /\bdrinks?\b|\bcocktails?\b|\bbars?\b|\bpubs?\b|\btaverns?\b/, category: "cocktail_bars" }
+  ];
+
+  for (const { pattern, category } of phraseMatches) {
+    if (category === "park" && /\bparking\b/i.test(normalized) && !/\b(?:dog park|national park|theme park|state park)\b/i.test(normalized)) {
+      continue;
+    }
+    if (pattern.test(normalized)) return category;
+  }
+
+  for (const config of [...CATEGORIES].sort((a, b) => b.id.length - a.id.length)) {
+    const idPattern = config.id.replace(/_/g, "[\\s_-]+");
+    if (new RegExp(`\\b${idPattern}s?\\b`, "i").test(normalized)) {
+      return config.id;
+    }
+    const labelPattern = config.label.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    if (new RegExp(`\\b${labelPattern}s?\\b`, "i").test(normalized)) {
+      return config.id;
+    }
+  }
+
+  return null;
 }
 
 export function parseSearchMode(value: string | null | undefined): SearchMode {

@@ -6,7 +6,8 @@ import { NextResponse } from "next/server";
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || (process.env.VERCEL ? "" : "http://localhost:11434");
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "qwen3:8b";
 const OLLAMA_TIMEOUT_MS = Number(process.env.OLLAMA_TIMEOUT_MS || 30000);
-const GEMINI_API_KEY = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || "";
+const GEMINI_API_KEY =
+  process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_MAPS_API_KEY || "";
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 const NLP_PROVIDER = process.env.NLP_PROVIDER || "";
 
@@ -86,7 +87,14 @@ export async function POST(request: Request) {
 
 async function parseSearchQuery(query: string): Promise<ParsedSearchIntent> {
   if (NLP_PROVIDER === "gemini" || (!NLP_PROVIDER && GEMINI_API_KEY)) {
-    return parseWithGemini(query);
+    try {
+      return await parseWithGemini(query);
+    } catch (error) {
+      if (NLP_PROVIDER === "gemini" || process.env.VERCEL) {
+        return parseWithFallback(query);
+      }
+      throw error;
+    }
   }
 
   if (NLP_PROVIDER === "ollama" || OLLAMA_BASE_URL) {

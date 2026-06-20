@@ -817,21 +817,23 @@ export default function HomePage() {
 function MarketingHero() {
   return (
       <div className="w-full min-w-0">
-        <div className="flex w-full gap-3 rounded-lg border border-line bg-white p-5 shadow-soft sm:gap-5 sm:p-7">
-          <Logo size="xl" bare className="shrink-0 self-start [&_img]:h-28 [&_img]:w-28 sm:[&_img]:h-48 sm:[&_img]:w-48" />
-          <div className="min-w-0 flex-1">
-            <h1 className="text-[2rem] font-black leading-[0.96] tracking-[-0.04em] text-ink sm:text-[clamp(40px,6vw,64px)]">
-              {BRAND.heroHeadline}
-            </h1>
-            <p className="mt-3 text-base font-medium leading-7 text-slate sm:mt-4 sm:text-lg sm:leading-8">
-              {BRAND.heroSubheadline}
-            </p>
-          </div>
+        <div className="inline-flex max-w-full items-center gap-2.5 rounded border border-[#D8DDE6] bg-white px-2.5 py-2 shadow-[0_1px_2px_rgba(10,19,35,0.06)] sm:gap-3 sm:px-3 sm:py-2.5">
+          <Logo
+            size="xl"
+            bare
+            className="shrink-0 [&_img]:h-28 [&_img]:w-28 sm:[&_img]:h-48 sm:[&_img]:w-48"
+          />
+          <h1 className="flex h-28 items-center text-[clamp(1.65rem,6vw,2.15rem)] font-semibold leading-none tracking-[-0.04em] text-ink sm:h-48 sm:text-[clamp(2.35rem,4.2vw,3rem)]">
+            {BRAND.heroHeadline}
+          </h1>
         </div>
-        <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:gap-4">
+        <p className="mt-3 max-w-xl text-sm font-medium leading-6 text-[#C8C2B6] sm:mt-3.5 sm:text-[0.9375rem] sm:leading-6">
+          {BRAND.heroSubheadline}
+        </p>
+        <div className="mt-4 sm:mt-5">
           <a
             href="#ask-koi"
-            className="inline-flex h-12 items-center justify-center rounded-full bg-clay px-7 text-base font-bold text-white shadow-glow transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25"
+            className="inline-flex h-10 items-center justify-center rounded-full bg-clay px-5 text-sm font-semibold text-white transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25"
           >
             {BRAND.askLabel}
           </a>

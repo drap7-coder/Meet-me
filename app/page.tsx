@@ -524,6 +524,13 @@ export default function HomePage() {
           {hasSearched || results || watchEventsResult || loading ? (
             <CompactResultsHeader
               loading={loading}
+              loadingLabel={
+                searchKind === "watch"
+                  ? "Finding watch picks"
+                  : searchKind === "events"
+                    ? "Finding local events"
+                    : "Finding places"
+              }
               resultCountLabel={resultCountLabel}
               title={watchEventsResult ? watchEventsResult.title : "Recommended places"}
               originSummary={
@@ -704,6 +711,7 @@ function MarketingHero() {
 
 function CompactResultsHeader({
   loading,
+  loadingLabel = "Finding places",
   resultCountLabel,
   title,
   originSummary,
@@ -712,6 +720,7 @@ function CompactResultsHeader({
   onNewSearch
 }: {
   loading: boolean;
+  loadingLabel?: string;
   resultCountLabel: string;
   title: string;
   originSummary: string;
@@ -726,7 +735,7 @@ function CompactResultsHeader({
           <div>
             <p className="text-sm font-bold uppercase tracking-wide text-clay">{BRAND.name}</p>
             <p className="mt-2 text-sm font-bold uppercase tracking-wide text-clay">
-              {loading ? "Finding places" : resultCountLabel || "Recommended places"}
+              {loading ? loadingLabel : resultCountLabel || "Results"}
             </p>
             <h1 className="mt-1 text-3xl font-black tracking-tight text-ink sm:text-4xl">{title}</h1>
             {originSummary ? <p className="mt-2 text-sm leading-6 text-slate">{originSummary}</p> : null}
@@ -858,7 +867,7 @@ function SiteHeader() {
           <span className="grid min-w-0 leading-none">
             <span className="truncate font-serif text-xl font-semibold tracking-wide text-ink sm:text-2xl">{BRAND.displayName}</span>
             <span className="mt-1 hidden text-[0.62rem] font-black uppercase tracking-[0.26em] text-clay sm:block">
-              Meet smarter
+              {BRAND.headerEyebrow}
             </span>
           </span>
         </a>
@@ -927,9 +936,18 @@ function MeetInMiddleLoader() {
 
 function HowItWorks() {
   const steps = [
-    ["Tell Koi where to look", "Use one location for nearby options, or two when you want a balanced meeting point."],
-    ["Choose the vibe", "Coffee, dinner, drinks, parks, or something different."],
-    ["Pick somewhere good", "Koi compares local options so the plan feels easy to act on."]
+    [
+      "Ask Koi in plain English",
+      "Describe a meet-up spot, a watch mood, or local events near you — nearby or halfway."
+    ],
+    [
+      "Pick your lane",
+      "Choose Find Places, Watch, or Events, then narrow with categories like cuisine or genre."
+    ],
+    [
+      "Get picks you can act on",
+      "Koi surfaces real recommendations with context, not just a list of links."
+    ]
   ];
 
   return (
@@ -937,7 +955,9 @@ function HowItWorks() {
       <div className="mx-auto max-w-7xl">
         <div className="max-w-2xl">
           <p className="text-sm font-bold uppercase tracking-wide text-clay">How it works</p>
-          <h2 className="mt-3 text-4xl font-black tracking-tight text-ink sm:text-5xl">Tell Koi the plan. Pick somewhere good.</h2>
+          <h2 className="mt-3 text-4xl font-black tracking-tight text-ink sm:text-5xl">
+            Tell Koi the plan. Get something worth doing.
+          </h2>
         </div>
         <div className="mt-10 grid gap-4 md:grid-cols-3">
           {steps.map(([title, copy], index) => (
@@ -957,9 +977,12 @@ function HowItWorks() {
 
 function UseCases() {
   const cards = [
-    ["Smart Nearby Search", "One location plus preferences is enough to find strong nearby options."],
-    ["Fair for Two People", "Add a second location when you want balanced travel times."],
-    ["Best Local Places", "Restaurants, coffee shops, bars, bookstores, golf courses, and more."]
+    [
+      "Find Places",
+      "Restaurants, coffee, activities, and meet-up spots — nearby or balanced between two people."
+    ],
+    ["Watch Picks", "Movies, TV, genres, and streaming ideas powered by TMDB. No location needed."],
+    ["Local Events", "Sports, concerts, comedy, festivals, and happenings near you."]
   ];
 
   return (
@@ -968,7 +991,7 @@ function UseCases() {
         <div className="max-w-2xl">
           <p className="text-sm font-bold uppercase tracking-wide text-clay">Why it works</p>
           <h2 className="mt-3 text-4xl font-black tracking-tight text-ink sm:text-5xl">
-            Equal effort, better plans.
+            One assistant, three ways to plan.
           </h2>
         </div>
         <div className="mt-8 grid gap-2.5 sm:grid-cols-3 sm:gap-3">
@@ -988,9 +1011,11 @@ function BrandSection() {
   return (
     <section className="px-4 py-16 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl rounded-lg bg-ink px-6 py-14 text-white shadow-soft ring-1 ring-clay/20 sm:px-10 lg:px-14">
-        <h2 className="max-w-3xl text-4xl font-black tracking-tight sm:text-6xl">Meeting in the middle should feel intentional.</h2>
+        <h2 className="max-w-3xl text-4xl font-black tracking-tight sm:text-6xl">
+          Good plans should feel easy to start.
+        </h2>
         <p className="mt-5 max-w-2xl text-xl leading-8 text-white/70">
-          Koi helps turn fuzzy plans into a place that feels easy, fair, and worth the trip.
+          Koi turns fuzzy ideas into places to meet, things to watch, and events worth checking out.
         </p>
       </div>
     </section>
@@ -1007,7 +1032,7 @@ function FaqSection() {
             {BRAND.askLabel}, without losing the classic controls.
           </h2>
           <p className="mt-4 text-base font-semibold leading-7 text-slate">
-            Answers for people searching for a meet me halfway app or trying to find the best place to meet in the middle.
+            Answers about finding places, watch picks, local events, and meet-in-the-middle search.
           </p>
         </div>
         <div className="mt-8 grid gap-3">

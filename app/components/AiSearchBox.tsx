@@ -58,7 +58,7 @@ const PLACE_EXAMPLE_PROMPTS = [
   "Where should we meet between NYC and Princeton?"
 ];
 
-const NEUTRAL_SUBHEADLINE = "Find places, watch picks, and local events — nearby or halfway.";
+const NEUTRAL_SUBHEADLINE = BRAND.heroSubheadline;
 
 function FlowBackButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (

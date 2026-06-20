@@ -17,8 +17,10 @@ export const metadata: Metadata = {
     "find the best place to meet in the middle",
     "halfway point app",
     "meeting place finder",
-    "midpoint restaurant finder",
-    "fair meeting place"
+    "what to watch tonight",
+    "local events finder",
+    "movie recommendations",
+    "midpoint restaurant finder"
   ],
   icons: {
     icon: [

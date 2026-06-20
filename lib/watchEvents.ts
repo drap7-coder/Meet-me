@@ -122,20 +122,31 @@ export function buildWatchEventsResult(query: string): WatchEventsResult {
 function classifyWatchEventsIntent(query: string): WatchEventsIntent {
   const value = query.toLowerCase();
 
-  if (/\b(?:stream|streaming|movie|movies|film|films|tv show|where can i stream)\b/i.test(value)) {
-    if (!/\bgame\b/i.test(value)) return "stream";
-  }
-
-  if (/\b(?:game tonight|watch the .* game|sports on tv|phillies|yankees|eagles|nba|nfl|mlb|nhl)\b/i.test(value)) {
+  if (/\b(?:game tonight|watch the .* game|sports on tv|phillies|yankees|eagles|nba|nfl|mlb|nhl|football|baseball|soccer)\b/i.test(value)) {
     return "sports";
   }
 
-  if (/\b(?:comedy|concert|concerts|stand[- ]?up|festival|festivals|tickets?|box office)\b/i.test(value)) {
+  if (/\b(?:movie theater|movie theatre|cinema|cinemas)\b/i.test(value)) {
+    return "general";
+  }
+
+  if (
+    /\b(?:drama|sci-fi|science fiction|comedy|action|horror|romance|thriller|documentary|family)\b/i.test(value) &&
+    /\b(?:movie|movies|film|films|tonight)\b/i.test(value)
+  ) {
+    return "general";
+  }
+
+  if (/\b(?:comedy show|stand[- ]?up|concert|concerts|festival|festivals|tickets?|box office)\b/i.test(value)) {
     return "live_event";
   }
 
   if (/\b(?:family[- ]friendly events|things to do|local events|events near)\b/i.test(value)) {
     return "things_to_do";
+  }
+
+  if (/\b(?:stream|streaming|where can i stream)\b/i.test(value)) {
+    return "stream";
   }
 
   if (/\bwhat (?:should|can|do) (?:i|we) watch\b/i.test(value) || /\bwhat(?:'s| is) on (?:tv|television)\b/i.test(value)) {
@@ -144,6 +155,10 @@ function classifyWatchEventsIntent(query: string): WatchEventsIntent {
 
   if (/\bnear\b/i.test(value) && /\b(?:show|shows|event|events|game)\b/i.test(value)) {
     return "live_event";
+  }
+
+  if (/\b(?:movie|movies|film|films|tv show)\b/i.test(value) && !/\bgame\b/i.test(value)) {
+    return "general";
   }
 
   return "general";
@@ -193,12 +208,23 @@ function extractWatchEventsTopic(query: string, intent: WatchEventsIntent) {
   const watchMatch = query.match(/\bwatch(?:ing)?\s+(?:the\s+)?(.+?)(?:\s+game\b|\?|$)/i);
   if (watchMatch?.[1] && intent === "sports") return cleanupWatchEventsFragment(watchMatch[1]);
 
-  if (/\bcomedy\b/i.test(query)) return "comedy";
+  if (/\bcomedy\b/i.test(query) && !/\b(?:movie|movies|film)\b/i.test(query)) return "comedy";
   if (/\bconcert/i.test(query)) return "concerts";
   if (/\bfamily[- ]friendly events\b/i.test(query)) return "family-friendly events";
   if (/\bthings to do\b/i.test(query)) return "things to do";
 
+  const genre = extractMovieGenre(query);
+  if (genre) return genre;
+
   return "";
+}
+
+function extractMovieGenre(query: string) {
+  const match = query.match(
+    /\b(drama|sci-fi|science fiction|comedy|action|horror|romance|thriller|documentary|family)\b/i
+  );
+  if (!match?.[1]) return "";
+  return match[1].toLowerCase() === "science fiction" ? "sci-fi" : match[1].toLowerCase();
 }
 
 function buildContextSummary({
@@ -242,6 +268,12 @@ function buildWatchEventsRecommendations({
     case "things_to_do":
       return buildThingsToDoRecommendations(location || "your area", topic || "events", timeframe);
     default:
+      if (/\b(?:movie theater|movie theatre|cinema|cinemas)\b/i.test(query)) {
+        return buildMovieTheaterRecommendations(location || "near you", timeframe);
+      }
+      if (extractMovieGenre(query)) {
+        return buildMovieGenreRecommendations(extractMovieGenre(query), timeframe);
+      }
       return buildGeneralRecommendations(query, timeframe);
   }
 }
@@ -465,6 +497,118 @@ function buildThingsToDoRecommendations(location: string, topic: string, timefra
       ],
       actionLabel: "See local listings",
       actionUrl: buildGoogleSearchUrl(`local festivals ${location} ${timeframe}`),
+      provider: "Koi preview"
+    })
+  ];
+}
+
+function buildMovieGenreRecommendations(genre: string, timeframe: string) {
+  const label = genre === "sci-fi" ? "Sci-Fi" : capitalizeWords(genre);
+
+  return [
+    recommendation({
+      rank: 1,
+      title: `Top ${label.toLowerCase()} pick tonight`,
+      subtitle: `${timeframe} · Movie night`,
+      kind: "general",
+      badge: "Best genre match",
+      explanation: `Koi matched this to a ${label.toLowerCase()} movie search and surfaced strong tonight picks in that genre first.`,
+      tags: [label, timeframe, "Movie night"],
+      meta: [
+        { label: "Genre", value: label },
+        { label: "Timing", value: timeframe },
+        { label: "Next data", value: "TMDB" }
+      ],
+      actionLabel: `Browse ${label.toLowerCase()} picks`,
+      actionUrl: buildGoogleSearchUrl(`best ${label.toLowerCase()} movies tonight`),
+      provider: "TMDB preview"
+    }),
+    recommendation({
+      rank: 2,
+      title: `Critically acclaimed ${label.toLowerCase()}`,
+      subtitle: "When you want something with strong reviews",
+      kind: "general",
+      badge: "Highly rated",
+      explanation: `A good second lane when the group wants a ${label.toLowerCase()} film that feels worth the runtime.`,
+      tags: [label, "Highly rated", "Tonight"],
+      meta: [
+        { label: "Genre", value: label },
+        { label: "Timing", value: timeframe }
+      ],
+      actionLabel: "See top-rated options",
+      actionUrl: buildGoogleSearchUrl(`highly rated ${label.toLowerCase()} movies`),
+      provider: "Koi preview"
+    }),
+    recommendation({
+      rank: 3,
+      title: `Shorter ${label.toLowerCase()} option`,
+      subtitle: "Easier pick if nobody wants a long film",
+      kind: "general",
+      badge: "Quick option",
+      explanation: "Useful when the group wants the right genre mood without committing to a three-hour movie.",
+      tags: [label, "Shorter runtime", "Easy start"],
+      meta: [
+        { label: "Genre", value: label },
+        { label: "Timing", value: timeframe }
+      ],
+      actionLabel: "Find a shorter pick",
+      actionUrl: buildGoogleSearchUrl(`short ${label.toLowerCase()} movies under 2 hours`),
+      provider: "Koi preview"
+    })
+  ];
+}
+
+function buildMovieTheaterRecommendations(location: string, timeframe: string) {
+  const area = location === "near you" ? "near you" : `near ${location}`;
+
+  return [
+    recommendation({
+      rank: 1,
+      title: "Movie theater nearby",
+      subtitle: `${timeframe} · Out to watch`,
+      kind: "general",
+      badge: "Best theater match",
+      explanation: `Koi read this as a movie theater search ${area} and prioritized easy out-of-home options first.`,
+      tags: ["Movie theater", timeframe, "Out tonight"],
+      meta: [
+        { label: "Area", value: location },
+        { label: "Timing", value: timeframe },
+        { label: "Plan type", value: "Out to watch" }
+      ],
+      actionLabel: "Find movie theaters",
+      actionUrl: buildGoogleSearchUrl(`movie theaters ${location} showtimes ${timeframe.toLowerCase()}`),
+      provider: "Koi preview"
+    }),
+    recommendation({
+      rank: 2,
+      title: "New releases in theaters",
+      subtitle: "If the group wants something current",
+      kind: "general",
+      badge: "Now playing",
+      explanation: "A strong backup when you want a definite plan with showtimes instead of picking a title at home.",
+      tags: ["Now playing", "New releases", timeframe],
+      meta: [
+        { label: "Area", value: location },
+        { label: "Timing", value: timeframe }
+      ],
+      actionLabel: "See new releases",
+      actionUrl: buildGoogleSearchUrl(`new movies in theaters ${location}`),
+      provider: "Koi preview"
+    }),
+    recommendation({
+      rank: 3,
+      title: "Dinner and a movie",
+      subtitle: "Easy meetup plan nearby",
+      kind: "general",
+      badge: "Meetup-friendly",
+      explanation: "Helpful when the group wants a full night out with food and a film in the same area.",
+      tags: ["Dinner + movie", "Group-friendly", "Night out"],
+      meta: [
+        { label: "Area", value: location },
+        { label: "Timing", value: timeframe }
+      ],
+      actionLabel: "Plan dinner and a movie",
+      actionUrl: buildGoogleSearchUrl(`restaurants near movie theater ${location}`),
       provider: "Koi preview"
     })
   ];

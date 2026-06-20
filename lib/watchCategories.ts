@@ -32,10 +32,13 @@ export const WATCH_CATEGORY_GROUPS: WatchCategoryGroup[] = [
     description: "Theaters, date nights, and movie picks for tonight.",
     iconCategory: "events",
     options: [
-      { id: "movies-tonight", label: "Movies Tonight", query: "What should we watch tonight?", iconCategory: "events" },
-      { id: "movie-theaters", label: "Movie Theaters", query: "Movie theater near me", iconCategory: "events" },
-      { id: "date-night-movies", label: "Date Night Movies", query: "Best date night movies tonight", iconCategory: "events" },
-      { id: "family-movies", label: "Family Movies", query: "Best family movies tonight", iconCategory: "events" }
+      { id: "drama", label: "Drama", query: "Best drama movies tonight", iconCategory: "events" },
+      { id: "sci-fi", label: "Sci-Fi", query: "Best sci-fi movies tonight", iconCategory: "events" },
+      { id: "comedy", label: "Comedy", query: "Best comedy movies tonight", iconCategory: "events" },
+      { id: "action", label: "Action", query: "Best action movies tonight", iconCategory: "events" },
+      { id: "horror", label: "Horror", query: "Best horror movies tonight", iconCategory: "events" },
+      { id: "romance", label: "Romance", query: "Best romance movies tonight", iconCategory: "events" },
+      { id: "movie-theaters", label: "Movie Theaters", query: "Movie theater near me", iconCategory: "events" }
     ]
   },
   {
@@ -94,11 +97,22 @@ export function getWatchCategoryGroupForQuery(query: string) {
     }
   }
 
+  if (/\b(?:movie theater|movie theatre|cinema|cinemas)\b/i.test(normalized)) {
+    return WATCH_CATEGORY_GROUPS.find((group) => group.id === "movies") ?? DEFAULT_WATCH_CATEGORY_GROUP;
+  }
+
+  if (
+    /\b(?:drama|sci-fi|science fiction|comedy|action|horror|romance|thriller|documentary)\b/i.test(normalized) &&
+    /\b(?:movie|movies|film|films|tonight)\b/i.test(normalized)
+  ) {
+    return WATCH_CATEGORY_GROUPS.find((group) => group.id === "movies") ?? DEFAULT_WATCH_CATEGORY_GROUP;
+  }
+
   return DEFAULT_WATCH_CATEGORY_GROUP;
 }
 
 export const WATCH_EVENTS_EXAMPLE_PROMPTS = [
-  "What should we watch tonight?",
+  "Best sci-fi movies tonight",
   "Find a sports bar between Princeton and Philly",
   "Movie theater between Hoboken and Edison",
   "Any comedy shows near Philly this weekend?",

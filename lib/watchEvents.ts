@@ -5,16 +5,10 @@ import type {
   WatchEventsResult
 } from "@/lib/types";
 
-export const WATCH_TITLE = "Watch";
-export const WATCH_DESCRIPTION = "TV, streaming, movies, and sports.";
-/** @deprecated Use WATCH_TITLE */
-export const WATCH_EVENTS_TITLE = WATCH_TITLE;
-/** @deprecated Use WATCH_DESCRIPTION */
-export const WATCH_EVENTS_DESCRIPTION = WATCH_DESCRIPTION;
-export const WATCH_PREVIEW_MESSAGE =
-  "Preview results below are curated by Koi from your ask. Live streaming and sports data is coming soon.";
-/** @deprecated Use WATCH_PREVIEW_MESSAGE */
-export const WATCH_EVENTS_PREVIEW_MESSAGE = WATCH_PREVIEW_MESSAGE;
+export const WATCH_EVENTS_TITLE = "Watch & Events";
+export const WATCH_EVENTS_DESCRIPTION = "Find shows, movies, sports, concerts, comedy, and things to do.";
+export const WATCH_EVENTS_PREVIEW_MESSAGE =
+  "Preview results below are curated by Koi from your ask. Live streaming, ticket, and broadcast data is coming soon.";
 
 export const WATCH_EVENTS_FUTURE_PROVIDERS = [
   "TMDB",
@@ -109,9 +103,9 @@ export function buildWatchEventsResult(query: string): WatchEventsResult {
   return {
     botMode: "watch_events",
     query: trimmed,
-    title: WATCH_TITLE,
-    description: WATCH_DESCRIPTION,
-    message: WATCH_PREVIEW_MESSAGE,
+    title: WATCH_EVENTS_TITLE,
+    description: WATCH_EVENTS_DESCRIPTION,
+    message: WATCH_EVENTS_PREVIEW_MESSAGE,
     intent,
     intentLabel: INTENT_LABELS[intent],
     location,

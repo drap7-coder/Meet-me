@@ -28,7 +28,8 @@ import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
 import {
   looksLikeCurrentLocationQuery,
   needsCurrentLocationResolution,
-  resolveCurrentLocationInForm
+  resolveCurrentLocationInForm,
+  type CurrentLocationContext
 } from "@/lib/currentLocation";
 import { getCurrentPosition, geocodeManualLocation, reverseGeocodeCoordinates } from "@/lib/geolocation";
 import {
@@ -74,6 +75,7 @@ export default function HomePage() {
   const [fallbackKind, setFallbackKind] = useState<FallbackKind>("none");
   const [pendingRetry, setPendingRetry] = useState<PendingRetry | null>(null);
   const [locationStatus, setLocationStatus] = useState("");
+  const [savedLocation, setSavedLocation] = useState<CurrentLocationContext>({ locationA: "" });
   const [locationUiState, setLocationUiState] = useState<LocationUiState>("idle");
   const [showManualFallback, setShowManualFallback] = useState(false);
   const [showLocationActions, setShowLocationActions] = useState(false);
@@ -90,6 +92,34 @@ export default function HomePage() {
   const [recentMeetups, setRecentMeetups] = useState<RecentMeetup[]>([]);
   const [showRoadDividerPreview, setShowRoadDividerPreview] = useState(false);
   const searchBoxRef = useRef<AiSearchBoxHandle>(null);
+
+  function persistSavedLocation(location: CurrentLocationContext) {
+    if (!location.locationACoordinates || !location.locationA?.trim()) return;
+    setSavedLocation({
+      locationA: location.locationA,
+      locationAPlaceId: location.locationAPlaceId,
+      locationACoordinates: location.locationACoordinates
+    });
+    setLocationStatus(formatLocationStatusLabel(shortLocationLabel(location.locationA)));
+  }
+
+  function getActiveLocationContext(): CurrentLocationContext {
+    if (savedLocation.locationACoordinates && savedLocation.locationA?.trim()) {
+      return savedLocation;
+    }
+    return {
+      locationA: form.locationA,
+      locationAPlaceId: form.locationAPlaceId,
+      locationACoordinates: form.locationACoordinates
+    };
+  }
+
+  const locationContext = useMemo(() => getActiveLocationContext(), [
+    savedLocation,
+    form.locationA,
+    form.locationAPlaceId,
+    form.locationACoordinates
+  ]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -110,6 +140,9 @@ export default function HomePage() {
     if (locationA || locationB || customQuery) {
       const nextForm = { locationA, locationAPlaceId, locationACoordinates, locationB, locationBPlaceId, locationBCoordinates, category, searchMode, meetupMode, customQuery, preferences };
       setForm(nextForm);
+      if (locationACoordinates && locationA.trim()) {
+        persistSavedLocation({ locationA, locationAPlaceId, locationACoordinates });
+      }
       if (shareId) {
         const shareUrl = `${window.location.origin}/s/${shareId}`;
         setCurrentShareUrl(shareUrl);
@@ -157,7 +190,7 @@ export default function HomePage() {
     retry?: PendingRetry | null
   ) {
     setForm(nextForm);
-    setLocationStatus(formatLocationStatusLabel(shortLocationLabel(nextForm.locationA)));
+    persistSavedLocation(nextForm);
     setLocationUiState(uiState);
     setShowManualFallback(false);
     setShowLocationActions(false);
@@ -352,7 +385,7 @@ export default function HomePage() {
 
   function runParsedSearch(nextForm: SearchHalfwayRequest) {
     setWatchEventsResult(null);
-    const resolvedForm = resolveCurrentLocationInForm(nextForm, form);
+    const resolvedForm = resolveCurrentLocationInForm(nextForm, getActiveLocationContext());
     if (needsCurrentLocationResolution(resolvedForm)) {
       setPendingRetry({ kind: "places", form: resolvedForm });
       setShowLocationActions(true);
@@ -363,6 +396,7 @@ export default function HomePage() {
     setShowClassicFallback(false);
     setFallbackKind("none");
     setPendingRetry(null);
+    setShowLocationActions(false);
     setForm(resolvedForm);
     submitSearch(resolvedForm);
   }
@@ -417,7 +451,7 @@ export default function HomePage() {
     const startedAt = Date.now();
     const shouldPlayMotion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let redirectedToPlaces = false;
-    let eventLocationContext = resolveCurrentLocationInForm(locationContext ?? form, form);
+    let eventLocationContext = resolveCurrentLocationInForm(locationContext ?? form, getActiveLocationContext());
     if (looksLikeCurrentLocationQuery(query) && needsCurrentLocationResolution({ ...eventLocationContext, locationA: "me", searchMode: "single" })) {
       setPendingRetry({ kind: "events", query });
       setShowLocationActions(true);
@@ -524,6 +558,7 @@ export default function HomePage() {
     const retry = pendingRetry;
     setPendingRetry(null);
     setError("");
+    persistSavedLocation(form);
 
     if (retry.kind === "events") {
       void submitEventsSearch(retry.query, form);
@@ -698,11 +733,7 @@ export default function HomePage() {
                 showManualFallback={showManualFallback}
                 showLocationActions={showLocationActions}
                 manualLocationError={manualLocationError}
-                locationContext={{
-                  locationA: form.locationA,
-                  locationAPlaceId: form.locationAPlaceId,
-                  locationACoordinates: form.locationACoordinates
-                }}
+                locationContext={locationContext}
                 locating={locating}
                 resolvingManual={resolvingManual}
                 onParsed={runParsedSearch}
@@ -789,11 +820,7 @@ export default function HomePage() {
                 showManualFallback={showManualFallback}
                 showLocationActions={showLocationActions}
                 manualLocationError={manualLocationError}
-                locationContext={{
-                  locationA: form.locationA,
-                  locationAPlaceId: form.locationAPlaceId,
-                  locationACoordinates: form.locationACoordinates
-                }}
+                locationContext={locationContext}
                 locating={locating}
                 resolvingManual={resolvingManual}
                 onParsed={runParsedSearch}

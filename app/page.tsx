@@ -1297,7 +1297,7 @@ function RecentSearchesSection({
         <button
           type="button"
           onClick={onClear}
-          className="shrink-0 rounded-lg border border-white/20 bg-[#111c30] px-3 py-2 text-sm font-bold text-white/75 transition hover:border-white/35 hover:text-white"
+          className="shrink-0 rounded-lg border border-white/15 bg-white/[0.03] px-3 py-2 text-sm font-bold text-white/75 transition hover:border-white/22 hover:bg-white/[0.05] hover:text-white"
         >
           Clear
         </button>

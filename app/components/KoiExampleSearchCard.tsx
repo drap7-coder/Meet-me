@@ -12,6 +12,9 @@ type Props = {
 };
 
 export function KoiExampleSearchCard({ icon, title, subtitle, accent, disabled = false, onClick }: Props) {
+  const browseCardClassName =
+    "group border border-white/15 bg-white/[0.03] shadow-none transition hover:border-white/22 hover:bg-white/[0.05] focus:outline-none focus:ring-4 focus:ring-white/10 disabled:cursor-not-allowed disabled:opacity-60";
+
   const iconShellClass =
     accent === "watch"
       ? "bg-ink shadow-[0_8px_20px_rgba(10,19,35,0.22)] group-hover:bg-[#152238] group-hover:shadow-[0_10px_24px_rgba(10,19,35,0.28)]"
@@ -22,7 +25,7 @@ export function KoiExampleSearchCard({ icon, title, subtitle, accent, disabled =
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="group flex w-full min-w-0 items-start gap-3 rounded-[18px] border border-white/20 bg-[#111c30] p-3.5 text-left font-sans shadow-[0_8px_22px_rgba(0,0,0,0.18)] transition hover:border-white/30 hover:bg-[#162238] hover:shadow-[0_12px_28px_rgba(0,0,0,0.24)] focus:outline-none focus:ring-4 focus:ring-white/10 disabled:cursor-not-allowed disabled:opacity-60 sm:gap-4 sm:p-4"
+      className={`${browseCardClassName} flex w-full min-w-0 items-start gap-3 rounded-[18px] p-3.5 text-left font-sans sm:gap-4 sm:p-4`}
     >
       <span
         className={`grid h-12 w-12 shrink-0 place-items-center rounded-full text-[1.35rem] leading-none transition duration-200 group-hover:scale-[1.04] sm:h-14 sm:w-14 sm:text-[1.5rem] ${iconShellClass}`}

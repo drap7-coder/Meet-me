@@ -92,8 +92,10 @@ function WatchSomethingIcon({ className = "h-[3.4rem] w-[3.4rem] sm:h-[4.35rem] 
   );
 }
 
-const cardClassName =
-  "group flex min-w-0 items-center gap-4 rounded-[20px] border border-white/20 bg-[#111c30] px-4 py-5 text-left font-sans shadow-[0_10px_26px_rgba(0,0,0,0.18)] transition hover:border-white/30 hover:bg-[#162238] hover:shadow-[0_14px_34px_rgba(0,0,0,0.24)] focus:outline-none focus:ring-4 focus:ring-white/10 disabled:cursor-not-allowed disabled:opacity-60 sm:gap-5 sm:px-5 sm:py-6";
+const browseCardClassName =
+  "group border border-white/15 bg-white/[0.03] shadow-none transition hover:border-white/22 hover:bg-white/[0.05] focus:outline-none focus:ring-4 focus:ring-white/10 disabled:cursor-not-allowed disabled:opacity-60";
+
+const cardClassName = `${browseCardClassName} flex min-w-0 items-center gap-4 rounded-[20px] px-4 py-5 text-left font-sans sm:gap-5 sm:px-5 sm:py-6`;
 
 export function KoiPathCards({ busy = false, onGoSomewhere, onWatchSomething }: Props) {
   return (

@@ -1,4 +1,5 @@
 import { buildWatchSearchMore, buildWatchSearchResult } from "@/lib/watchSearch";
+import { logApiError } from "@/lib/serverLog";
 import type { WatchSubcategory } from "@/lib/types";
 import { NextResponse } from "next/server";
 
@@ -17,7 +18,8 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(await buildWatchSearchResult(query, subcategory));
-  } catch {
+  } catch (error) {
+    logApiError("/api/watch-search", error);
     return NextResponse.json({ error: "Watch search failed." }, { status: 400 });
   }
 }

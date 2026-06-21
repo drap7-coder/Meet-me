@@ -7,9 +7,10 @@ import { KoiThinkingLoader } from "@/app/components/KoiThinkingLoader";
 import { AiSearchBox, type AiSearchBoxHandle } from "@/app/components/AiSearchBox";
 import { CompactResultsHeader } from "@/app/components/home/CompactResultsHeader";
 import { MarketingHero } from "@/app/components/home/MarketingHero";
+import { ShareDialog, type ShareDialogState } from "@/app/components/home/ShareDialog";
+import { Footer, SiteHeader } from "@/app/components/home/SiteChrome";
 import { KoiExampleSearchCard } from "@/app/components/KoiExampleSearchCard";
 import { LocationForm } from "@/app/components/LocationForm";
-import { Logo } from "@/app/components/Logo";
 import { RoadDivider } from "@/app/components/BrandRoad";
 import { ResultsMap } from "@/app/components/ResultsMap";
 import { VenueCard } from "@/app/components/VenueCard";
@@ -26,7 +27,7 @@ import {
 } from "@/lib/recentMeetups";
 import { normalizeCategory, parseMeetupMode, parseSearchMode } from "@/lib/categories";
 import { parsePreferences } from "@/lib/preferences";
-import { copyTextToClipboard, shareWithFallback, shouldUseNativeShare } from "@/lib/share";
+import { shareWithFallback, shouldUseNativeShare } from "@/lib/share";
 import { trackEvent } from "@/lib/analytics";
 import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
 import {
@@ -55,13 +56,6 @@ const initialForm: SearchHalfwayRequest = {
   searchMode: "midpoint",
   meetupMode: "single",
   customQuery: ""
-};
-
-type ShareDialogState = {
-  title: string;
-  url: string;
-  subject: string;
-  body: string;
 };
 
 type FallbackKind = "none" | "location" | "full";
@@ -1012,62 +1006,6 @@ export default function HomePage() {
   );
 }
 
-function ShareDialog({
-  dialog,
-  onCopied,
-  onClose
-}: {
-  dialog: ShareDialogState;
-  onCopied: () => void;
-  onClose: () => void;
-}) {
-  const [status, setStatus] = useState("");
-  const mailto = `mailto:?subject=${encodeURIComponent(dialog.subject)}&body=${encodeURIComponent(dialog.body)}`;
-
-  async function copyLink() {
-    const copied = await copyTextToClipboard(dialog.url);
-    setStatus(copied ? "Link copied" : "Copy failed. Try Email Results instead.");
-    if (copied) onCopied();
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-end bg-black/30 p-3 sm:place-items-center" role="dialog" aria-modal="true">
-      <div className="w-full max-w-sm rounded-[24px] border border-line bg-white p-5 shadow-[0_24px_80px_rgba(17,24,39,0.24)]">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm font-bold uppercase tracking-wide text-koi">Share</p>
-            <h2 className="mt-1 text-2xl font-black tracking-tight text-ink">{dialog.title}</h2>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg border border-line px-3 py-1.5 text-sm font-bold text-slate transition hover:border-koi hover:text-koi"
-          >
-            Close
-          </button>
-        </div>
-        <div className="mt-5 grid gap-2">
-          <button
-            type="button"
-            onClick={copyLink}
-            className="inline-flex h-11 items-center justify-center rounded-full bg-koi px-4 text-sm font-bold text-white transition hover:bg-koi-hover focus:outline-none focus:ring-4 focus:ring-koi/25"
-          >
-            Copy Link
-          </button>
-          <a
-            href={mailto}
-            onClick={() => setStatus("Email draft opened.")}
-            className="inline-flex h-11 items-center justify-center rounded-full border border-line bg-paper px-4 text-sm font-bold text-ink transition hover:border-koi hover:text-koi focus:outline-none focus:ring-4 focus:ring-ink/10"
-          >
-            Email Results
-          </a>
-        </div>
-        {status ? <p className="mt-3 text-center text-xs font-semibold text-slate">{status}</p> : null}
-      </div>
-    </div>
-  );
-}
-
 function LocationFallbackPanel({
   form,
   loading,
@@ -1134,49 +1072,6 @@ function ClassicSearchPanel({
         onSubmit={onSubmit}
       />
     </section>
-  );
-}
-
-function SiteHeader() {
-  return (
-    <header className="sticky top-0 z-50 border-b border-line/80 bg-paper/90 pt-[env(safe-area-inset-top)] shadow-[0_1px_0_rgba(10,19,35,0.06)] backdrop-blur-sm">
-      <div className="mx-auto flex h-[56px] w-full max-w-7xl items-center justify-between gap-2 px-3 sm:h-[60px] sm:gap-3 sm:px-6 lg:px-8">
-        <a href="/" className="group inline-flex min-w-0 flex-1 items-center gap-2 sm:gap-3" aria-label={`${BRAND.displayName} home`}>
-          <Logo variant="mark" size="sm" className="transition group-hover:opacity-90" />
-        </a>
-        <a
-          href="#ask-koi"
-          className="inline-flex h-9 shrink-0 items-center justify-center rounded-full bg-koi px-3 text-xs font-black text-white transition hover:bg-koi-hover focus:outline-none focus:ring-4 focus:ring-koi/25 sm:h-10 sm:px-5 sm:text-sm"
-        >
-          {BRAND.askLabel}
-        </a>
-      </div>
-    </header>
-  );
-}
-
-function Footer() {
-  const feedbackHref = `mailto:nathandrapkin@gmail.com?subject=${encodeURIComponent(
-    `${BRAND.name} feedback`
-  )}&body=${encodeURIComponent("Questions, ideas, or feedback:\n")}`;
-
-  return (
-    <footer className="bg-ink px-4 py-10 text-[#B8B0A3] sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-7xl flex-col gap-6 text-sm sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <Logo variant="lockup" size="sm" className="[&_.font-serif]:text-white" />
-          <p className="mt-3 font-semibold text-white/90">Currently in Beta</p>
-          <p className="mt-3 max-w-sm leading-6">{BRAND.footerDescription}</p>
-        </div>
-        <div className="sm:text-right">
-          <p className="leading-6">Questions, ideas, or feedback?</p>
-          <p className="leading-6">We&apos;d love to hear from you.</p>
-          <a href={feedbackHref} className="mt-3 inline-flex font-bold text-koi hover:text-koi/80">
-            Send Feedback -&gt;
-          </a>
-        </div>
-      </div>
-    </footer>
   );
 }
 

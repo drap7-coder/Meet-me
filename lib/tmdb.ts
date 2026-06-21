@@ -2,7 +2,7 @@ import { withTmdbCache } from "@/lib/tmdbCache";
 
 const TMDB_API_BASE = "https://api.themoviedb.org/3";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w342";
-const TMDB_MAX_DISCOVER_PAGE = 5;
+const TMDB_MAX_DISCOVER_PAGE = 2;
 
 export type TmdbMediaKind = "movie" | "tv";
 
@@ -299,6 +299,10 @@ async function discoverTv(params: Record<string, string>, page = 1) {
 }
 
 async function enrichPick(pick: TmdbPick): Promise<TmdbPick> {
+  if (pick.overview && pick.posterUrl) {
+    return pick;
+  }
+
   if (pick.kind === "movie") {
     if (pick.runtimeMinutes !== null) return pick;
     try {

@@ -1,4 +1,6 @@
+import { readRequestSearchForm } from "@/lib/apiLocationContext";
 import { buildEventsResult } from "@/lib/eventsSearch";
+import { logApiError } from "@/lib/serverLog";
 import { isMovieTheaterEventsQuery } from "@/lib/watchEvents";
 import { resolveWatchPlaceSearchForm } from "@/lib/watchPlaceSearch";
 import type { SearchHalfwayRequest, WatchEventsPlacesRedirect } from "@/lib/types";
@@ -12,7 +14,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Tell Koi what events you want to find." }, { status: 400 });
     }
 
-    const locationContext = readLocationContext(body);
+    const locationContext = readRequestSearchForm(body);
     const placeForm = resolveWatchPlaceSearchForm(query, locationContext);
     if (placeForm && !isMovieTheaterEventsQuery(query)) {
       const locationA = placeForm.locationA.trim();
@@ -35,26 +37,8 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(await buildEventsResult(query, locationContext));
-  } catch {
+  } catch (error) {
+    logApiError("/api/watch-events", error);
     return NextResponse.json({ error: "Events search failed." }, { status: 400 });
   }
-}
-
-function readLocationContext(body: Record<string, unknown>): SearchHalfwayRequest | undefined {
-  const form = body.form;
-  if (!form || typeof form !== "object" || Array.isArray(form)) return undefined;
-  const value = form as Partial<SearchHalfwayRequest>;
-  if (!value.locationA && !value.locationB) return undefined;
-  return {
-    locationA: typeof value.locationA === "string" ? value.locationA : "",
-    locationB: typeof value.locationB === "string" ? value.locationB : "",
-    locationAPlaceId: typeof value.locationAPlaceId === "string" ? value.locationAPlaceId : undefined,
-    locationBPlaceId: typeof value.locationBPlaceId === "string" ? value.locationBPlaceId : undefined,
-    locationACoordinates: value.locationACoordinates,
-    locationBCoordinates: value.locationBCoordinates,
-    category: value.category ?? "coffee",
-    searchMode: value.searchMode ?? "midpoint",
-    meetupMode: value.meetupMode ?? "single",
-    customQuery: typeof value.customQuery === "string" ? value.customQuery : ""
-  };
 }

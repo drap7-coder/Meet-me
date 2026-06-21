@@ -1,12 +1,13 @@
+import { readRequestLocationContext } from "@/lib/apiLocationContext";
 import { resolveSearchCategoryFromQuery } from "@/lib/categories";
 import {
   isCurrentLocationReference,
   looksLikeCurrentLocationQuery,
   needsCurrentLocationResolution,
-  resolveCurrentLocationInForm,
-  type CurrentLocationContext
+  resolveCurrentLocationInForm
 } from "@/lib/currentLocation";
 import { detectPreferencesFromQuery } from "@/lib/preferences";
+import { logApiError } from "@/lib/serverLog";
 import type { KoiBotMode, SearchHalfwayRequest } from "@/lib/types";
 import { resolveKoiBotMode } from "@/lib/watchEvents";
 import { resolveWatchPlaceSearchForm } from "@/lib/watchPlaceSearch";
@@ -71,7 +72,7 @@ export async function POST(request: Request) {
     }
 
     const parsed = await parseSearchQuery(query);
-    const locationContext = readLocationContext(body);
+    const locationContext = readRequestLocationContext(body);
     let locationA = parsed.location_a.trim();
     const locationB = parsed.location_b.trim();
     if ((!locationA && looksLikeCurrentLocationQuery(query)) || isCurrentLocationReference(locationA)) {
@@ -127,6 +128,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(placeResponse);
   } catch (error) {
+    logApiError("/api/parse-search", error);
     const message = error instanceof Error ? error.message : "Natural language search failed.";
     const status = message.includes("Ollama") ? 500 : 400;
     return NextResponse.json({ error: message }, { status });
@@ -323,18 +325,6 @@ function guessCategory(query: string) {
 
 function looksLikeMidpointQuery(query: string) {
   return /\b(?:between|halfway|midway|middle)\b/i.test(query);
-}
-
-function readLocationContext(body: Record<string, unknown>): CurrentLocationContext | undefined {
-  const context = body.context;
-  if (!context || typeof context !== "object" || Array.isArray(context)) return undefined;
-  const value = context as Partial<CurrentLocationContext>;
-  if (!value.locationA && !value.locationACoordinates) return undefined;
-  return {
-    locationA: typeof value.locationA === "string" ? value.locationA : "",
-    locationAPlaceId: typeof value.locationAPlaceId === "string" ? value.locationAPlaceId : undefined,
-    locationACoordinates: value.locationACoordinates
-  };
 }
 
 function parseJsonObject(value: unknown): Record<string, unknown> {

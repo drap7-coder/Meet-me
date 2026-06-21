@@ -1,4 +1,5 @@
 import { searchHalfway } from "@/lib/google";
+import { shortLocationLabel } from "@/lib/geolocation";
 import {
   buildLocalHappeningsLiveMeta,
   detectLocalHappeningsSubcategory,
@@ -233,13 +234,6 @@ function formatMinutes(value: number | null) {
   const hours = Math.floor(value / 60);
   const minutes = Math.round(value % 60);
   return minutes ? `${hours}h ${minutes}m` : `${hours}h`;
-}
-
-function shortLocationLabel(value: string) {
-  const trimmed = value.trim();
-  if (!trimmed) return "you";
-  const first = trimmed.split(",")[0]?.trim();
-  return first || trimmed;
 }
 
 function capitalizeWords(value: string) {

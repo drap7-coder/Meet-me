@@ -1,5 +1,6 @@
 import { searchHalfway } from "@/lib/google";
 import { normalizeCategory } from "@/lib/categories";
+import { logApiError } from "@/lib/serverLog";
 import type { SearchHalfwayRequest } from "@/lib/types";
 import { NextResponse } from "next/server";
 
@@ -20,6 +21,7 @@ export async function POST(request: Request) {
     const result = await searchHalfway({ ...body, category: normalizeCategory(body.category) });
     return NextResponse.json(result);
   } catch (error) {
+    logApiError("/api/search-halfway", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Koi search failed." },
       { status: 500 }

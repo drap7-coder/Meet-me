@@ -10,7 +10,6 @@ Koi is a mobile-first Next.js MVP for an intelligent local meeting assistant. As
 - TypeScript
 - Tailwind CSS
 - Google Maps Platform
-- Optional Supabase environment variables for future saved searches
 - Vercel KV or Upstash Redis for share links and API rate limiting (required in production)
 
 ## Google APIs To Enable
@@ -161,7 +160,6 @@ The MVP formula:
 ## Notes
 
 - No paid auth is required for the MVP.
-- Supabase is not wired yet; environment variables are included for future saved searches.
 - The map panel uses returned coordinates and local rendering so the browser does not need a public Google Maps key.
 - Shareable URL parameters are supported for locations, category, and custom query.
 - Optional preferences can be shared with `preferences=downtown,walkable,easy_parking`; existing links without preferences still work.

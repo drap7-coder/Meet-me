@@ -459,7 +459,7 @@ function LocationInput({
           setStatus(error instanceof Error ? error.message : "Location search failed.");
         }
       }
-    }, 220);
+    }, 300);
 
     return () => window.clearTimeout(timeout);
   }, [placeId, value]);

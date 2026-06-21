@@ -41,7 +41,7 @@ import {
   parseLocationStatusLabel,
   type LocationUiState
 } from "@/lib/locationInput";
-import { getSavedUserLocation, mergeSavedUserLocation, saveUserLocation } from "@/lib/savedUserLocation";
+import { getSavedUserLocation, mergeSavedUserLocation } from "@/lib/savedUserLocation";
 import { getSearchAccent } from "@/lib/searchAccent";
 import { KOI_PICK_DISPLAY_LIMIT, THINKING_PROGRESS_LABELS } from "@/lib/koiCapabilityExamples";
 import type { KoiBotMode, LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory, WatchEventsApiResponse, WatchEventsMoreResult, WatchEventsResult, WatchSubcategory } from "@/lib/types";
@@ -94,9 +94,12 @@ function readStoredLocationSnapshot() {
   }
 
   return {
-    savedLocation: { locationA: "" } as CurrentLocationContext,
+    savedLocation: {
+      locationA: address,
+      locationAPlaceId: stored.locationAPlaceId
+    },
     savedUserAddress: address,
-    locationStatus: ""
+    locationStatus: formatLocationStatusLabel(shortLocationLabel(address))
   };
 }
 
@@ -146,40 +149,46 @@ export default function HomePage() {
     THINKING_PROGRESS_LABELS.places[loadingPhase] ??
     THINKING_PROGRESS_LABELS.places[0];
 
+  function syncUserLocationFromStorage() {
+    restoreStoredLocation({ setSavedLocation, setSavedUserAddress, setLocationStatus });
+  }
+
   function persistSavedLocation(location: CurrentLocationContext) {
     if (!location.locationA?.trim()) return;
 
-    setSavedUserAddress(location.locationA.trim());
-
-    if (!location.locationACoordinates) {
-      mergeSavedUserLocation({
-        locationA: location.locationA,
-        locationAPlaceId: location.locationAPlaceId
-      });
-      return;
-    }
-
-    const nextLocation: CurrentLocationContext = {
-      locationA: location.locationA,
+    mergeSavedUserLocation({
+      locationA: location.locationA.trim(),
       locationAPlaceId: location.locationAPlaceId,
       locationACoordinates: location.locationACoordinates
-    };
-    setSavedLocation(nextLocation);
-    setLocationStatus(formatLocationStatusLabel(shortLocationLabel(location.locationA)));
-    saveUserLocation(nextLocation);
+    });
+    syncUserLocationFromStorage();
   }
 
   function persistUserAddress(address: string) {
     const trimmed = address.trim();
     if (!trimmed) return;
-    setSavedUserAddress(trimmed);
     mergeSavedUserLocation({ locationA: trimmed });
+    syncUserLocationFromStorage();
   }
 
   function getActiveLocationContext(): CurrentLocationContext {
     if (savedLocation.locationACoordinates && savedLocation.locationA?.trim()) {
       return savedLocation;
     }
+
+    const stored = getSavedUserLocation();
+    if (stored?.locationACoordinates && stored.locationA.trim()) {
+      return stored;
+    }
+
+    if (savedUserAddress.trim()) {
+      return {
+        locationA: savedUserAddress,
+        locationAPlaceId: stored?.locationAPlaceId,
+        locationACoordinates: stored?.locationACoordinates
+      };
+    }
+
     return {
       locationA: form.locationA,
       locationAPlaceId: form.locationAPlaceId,
@@ -195,7 +204,7 @@ export default function HomePage() {
   ]);
 
   const activeLocationLabel = useMemo(() => {
-    if (savedLocation.locationACoordinates && savedLocation.locationA?.trim()) {
+    if (savedLocation.locationA?.trim()) {
       return shortLocationLabel(savedLocation.locationA);
     }
     if (savedUserAddress.trim()) return shortLocationLabel(savedUserAddress);
@@ -224,7 +233,7 @@ export default function HomePage() {
     if (locationA || locationB || customQuery) {
       const nextForm = { locationA, locationAPlaceId, locationACoordinates, locationB, locationBPlaceId, locationBCoordinates, category, searchMode, meetupMode, customQuery, preferences };
       setForm(nextForm);
-      if (locationACoordinates && locationA.trim()) {
+      if (shareId && locationACoordinates && locationA.trim()) {
         persistSavedLocation({ locationA, locationAPlaceId, locationACoordinates });
       }
       if (shareId) {
@@ -250,7 +259,7 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    restoreStoredLocation({ setSavedLocation, setSavedUserAddress, setLocationStatus });
+    syncUserLocationFromStorage();
   }, []);
 
   useEffect(() => {
@@ -380,7 +389,7 @@ export default function HomePage() {
     setShowManualFallback(false);
     setShowLocationActions(false);
     setManualLocationError("");
-    if (!savedLocation.locationACoordinates) {
+    if (!savedLocation.locationACoordinates && !savedUserAddress.trim()) {
       setLocationStatus("");
     }
     try {
@@ -395,7 +404,7 @@ export default function HomePage() {
       };
       await applyResolvedLocation(nextForm, "browser_success", retry ?? pendingRetry);
     } catch {
-      restoreStoredLocation({ setSavedLocation, setSavedUserAddress, setLocationStatus });
+      syncUserLocationFromStorage();
       setLocationUiState("browser_failed");
       setShowManualFallback(true);
       setShowLocationActions(false);
@@ -449,6 +458,7 @@ export default function HomePage() {
       const shareUrl = updateShareUrl(searchForm);
       setCurrentShareUrl(existingShareUrl ?? shareUrl);
       setRecentMeetups(saveRecentMeetup(createRecentMeetup(searchForm, data, shareUrl)));
+      syncUserLocationFromStorage();
       trackEvent("search_completed", {
         category: data.category,
         resultCount: data.venues.length,
@@ -480,6 +490,9 @@ export default function HomePage() {
     setShowClassicFallback(false);
     setFallbackKind("none");
     setPendingRetry(null);
+    setShowLocationActions(false);
+    setShowManualFallback(false);
+    syncUserLocationFromStorage();
     window.history.replaceState(null, "", "/");
     window.requestAnimationFrame(() => document.getElementById("search")?.scrollIntoView({ behavior: "smooth" }));
   }
@@ -540,6 +553,7 @@ export default function HomePage() {
       if (!response.ok) throw new Error(data.error ?? "Watch search failed.");
 
       setWatchEventsResult(data);
+      syncUserLocationFromStorage();
       trackEvent("watch_events_completed", {
         intent: data.intent,
         resultCount: data.resultCount
@@ -616,6 +630,7 @@ export default function HomePage() {
       setFallbackKind("none");
       setPendingRetry(null);
       setWatchEventsResult(result);
+      syncUserLocationFromStorage();
       trackEvent("watch_events_completed", {
         intent: result.intent,
         resultCount: result.resultCount

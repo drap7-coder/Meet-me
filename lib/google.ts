@@ -1,4 +1,9 @@
 import { DEFAULT_MEETUP_MODE, DEFAULT_SEARCH_MODE, getCategorySearchTerm, getCategorySearchTerms } from "@/lib/categories";
+import {
+  geocodeCacheKeyForAddress,
+  geocodeCacheKeyForLatLng,
+  withGeocodeCache
+} from "@/lib/geocodeCache";
 import { calculateMidpoint, estimateSearchRadiusMeters } from "@/lib/geo";
 import { scoreVenue } from "@/lib/scoring";
 import type {
@@ -27,58 +32,64 @@ function getGoogleMapsKey() {
 
 export async function geocodeAddress(input: string, placeId?: string): Promise<GeocodedLocation> {
   const trimmed = input.trim();
-  if (!trimmed) throw new Error("Location is required.");
+  if (!trimmed && !placeId?.trim()) throw new Error("Location is required.");
 
-  const url = new URL(GEOCODING_URL);
-  if (placeId) {
-    url.searchParams.set("place_id", placeId);
-  } else {
-    url.searchParams.set("address", trimmed);
-  }
-  url.searchParams.set("key", getGoogleMapsKey());
+  const cacheKey = geocodeCacheKeyForAddress(trimmed || placeId || "", placeId);
+  return withGeocodeCache(cacheKey, async () => {
+    const url = new URL(GEOCODING_URL);
+    if (placeId) {
+      url.searchParams.set("place_id", placeId);
+    } else {
+      url.searchParams.set("address", trimmed);
+    }
+    url.searchParams.set("key", getGoogleMapsKey());
 
-  const response = await fetch(url, { cache: "no-store" });
-  if (!response.ok) throw new Error(`Geocoding failed with ${response.status}.`);
+    const response = await fetch(url, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Geocoding failed with ${response.status}.`);
 
-  const data = await response.json();
-  if (data.status !== "OK" || !data.results?.[0]) {
-    const detail = typeof data.error_message === "string" ? ` ${data.error_message}` : "";
-    throw new Error(`Could not geocode "${trimmed}".${detail}`);
-  }
+    const data = await response.json();
+    if (data.status !== "OK" || !data.results?.[0]) {
+      const detail = typeof data.error_message === "string" ? ` ${data.error_message}` : "";
+      throw new Error(`Could not geocode "${trimmed || placeId}".${detail}`);
+    }
 
-  const result = data.results[0];
-  return {
-    input: trimmed,
-    formattedAddress: result.formatted_address,
-    location: {
-      lat: result.geometry.location.lat,
-      lng: result.geometry.location.lng
-    },
-    placeId: result.place_id
-  };
+    const result = data.results[0];
+    return {
+      input: trimmed || result.formatted_address,
+      formattedAddress: result.formatted_address,
+      location: {
+        lat: result.geometry.location.lat,
+        lng: result.geometry.location.lng
+      },
+      placeId: result.place_id
+    };
+  });
 }
 
 export async function reverseGeocodeLocation(location: LatLng, input = "Current location"): Promise<GeocodedLocation> {
-  const url = new URL(GEOCODING_URL);
-  url.searchParams.set("latlng", `${location.lat},${location.lng}`);
-  url.searchParams.set("key", getGoogleMapsKey());
+  const cacheKey = geocodeCacheKeyForLatLng(location);
+  return withGeocodeCache(cacheKey, async () => {
+    const url = new URL(GEOCODING_URL);
+    url.searchParams.set("latlng", `${location.lat},${location.lng}`);
+    url.searchParams.set("key", getGoogleMapsKey());
 
-  const response = await fetch(url, { cache: "no-store" });
-  if (!response.ok) throw new Error(`Reverse geocoding failed with ${response.status}.`);
+    const response = await fetch(url, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Reverse geocoding failed with ${response.status}.`);
 
-  const data = await response.json();
-  if (data.status !== "OK" || !data.results?.[0]) {
-    const detail = typeof data.error_message === "string" ? ` ${data.error_message}` : "";
-    throw new Error(`Could not reverse geocode current location.${detail}`);
-  }
+    const data = await response.json();
+    if (data.status !== "OK" || !data.results?.[0]) {
+      const detail = typeof data.error_message === "string" ? ` ${data.error_message}` : "";
+      throw new Error(`Could not reverse geocode current location.${detail}`);
+    }
 
-  const result = data.results[0];
-  return {
-    input,
-    formattedAddress: result.formatted_address,
-    location,
-    placeId: result.place_id
-  };
+    const result = data.results[0];
+    return {
+      input,
+      formattedAddress: result.formatted_address,
+      location,
+      placeId: result.place_id
+    };
+  });
 }
 
 function resolveRequestLocation(input: string, placeId: string | undefined, coordinates: LatLng | undefined) {

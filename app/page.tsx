@@ -203,14 +203,12 @@ export default function HomePage() {
     form.locationACoordinates
   ]);
 
-  const activeLocationLabel = useMemo(() => {
-    if (savedLocation.locationA?.trim()) {
-      return shortLocationLabel(savedLocation.locationA);
-    }
-    if (savedUserAddress.trim()) return shortLocationLabel(savedUserAddress);
-    if (locationStatus) return parseLocationStatusLabel(locationStatus);
-    return "";
-  }, [savedLocation, savedUserAddress, locationStatus]);
+  const activeLocationLabel = useMemo(() => resolveLocationChipLabel(savedLocation, savedUserAddress, locationStatus, locationUiState), [
+    savedLocation,
+    savedUserAddress,
+    locationStatus,
+    locationUiState
+  ]);
 
   const activeAccent = useMemo(() => getSearchAccent(searchKind), [searchKind]);
 
@@ -1556,6 +1554,33 @@ function buildMeetupEmailBody(results: SearchHalfwayResponse, currentUrl: string
 
 function formatDriveComparison(venue: ScoredVenue) {
   return `${formatMinutes(venue.travelFromA.durationMinutes)} / ${formatMinutes(venue.travelFromB.durationMinutes)}`;
+}
+
+function resolveLocationChipLabel(
+  savedLocation: CurrentLocationContext,
+  savedUserAddress: string,
+  locationStatus: string,
+  locationUiState: LocationUiState
+) {
+  const raw = savedLocation.locationA?.trim() || savedUserAddress.trim();
+  if (raw) {
+    const label = shortLocationLabel(raw);
+    if (label && label !== "you") return label;
+    if (locationUiState === "browser_success" || savedLocation.locationACoordinates) {
+      return "Current location";
+    }
+  }
+
+  if (locationStatus) {
+    const parsed = parseLocationStatusLabel(locationStatus);
+    if (parsed && parsed !== "you") return parsed;
+  }
+
+  if (locationUiState === "browser_success" || savedLocation.locationACoordinates) {
+    return "Current location";
+  }
+
+  return "";
 }
 
 function wait(ms: number) {

@@ -41,6 +41,7 @@ import {
   isValidManualLocationInput,
   type LocationUiState
 } from "@/lib/locationInput";
+import { getSavedUserLocation, mergeSavedUserLocation, saveUserLocation } from "@/lib/savedUserLocation";
 import { type KoiBrowseOption } from "@/lib/koiBrowse";
 import { getTrendingCardDisplay, getTrendingSearches, subscribeTrendingSearches } from "@/lib/trendingSearches";
 import type { KoiBotMode, LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory, WatchEventsApiResponse, WatchEventsMoreResult, WatchEventsResult, WatchSubcategory } from "@/lib/types";
@@ -87,6 +88,7 @@ export default function HomePage() {
   const [pendingRetry, setPendingRetry] = useState<PendingRetry | null>(null);
   const [locationStatus, setLocationStatus] = useState("");
   const [savedLocation, setSavedLocation] = useState<CurrentLocationContext>({ locationA: "" });
+  const [savedUserAddress, setSavedUserAddress] = useState("");
   const [locationUiState, setLocationUiState] = useState<LocationUiState>("idle");
   const [showManualFallback, setShowManualFallback] = useState(false);
   const [showLocationActions, setShowLocationActions] = useState(false);
@@ -108,13 +110,33 @@ export default function HomePage() {
   const loadingPhaseLabel = PLACE_LOADING_LABELS[loadingPhase] ?? PLACE_LOADING_LABELS[0];
 
   function persistSavedLocation(location: CurrentLocationContext) {
-    if (!location.locationACoordinates || !location.locationA?.trim()) return;
-    setSavedLocation({
+    if (!location.locationA?.trim()) return;
+
+    setSavedUserAddress(location.locationA.trim());
+
+    if (!location.locationACoordinates) {
+      mergeSavedUserLocation({
+        locationA: location.locationA,
+        locationAPlaceId: location.locationAPlaceId
+      });
+      return;
+    }
+
+    const nextLocation: CurrentLocationContext = {
       locationA: location.locationA,
       locationAPlaceId: location.locationAPlaceId,
       locationACoordinates: location.locationACoordinates
-    });
+    };
+    setSavedLocation(nextLocation);
     setLocationStatus(formatLocationStatusLabel(shortLocationLabel(location.locationA)));
+    saveUserLocation(nextLocation);
+  }
+
+  function persistUserAddress(address: string) {
+    const trimmed = address.trim();
+    if (!trimmed) return;
+    setSavedUserAddress(trimmed);
+    mergeSavedUserLocation({ locationA: trimmed });
   }
 
   function getActiveLocationContext(): CurrentLocationContext {
@@ -177,6 +199,20 @@ export default function HomePage() {
 
   useEffect(() => {
     setRecentMeetups(getRecentMeetups());
+  }, []);
+
+  useEffect(() => {
+    const stored = getSavedUserLocation();
+    if (!stored?.locationA?.trim()) return;
+    setSavedUserAddress(stored.locationA.trim());
+    if (stored.locationACoordinates) {
+      setSavedLocation({
+        locationA: stored.locationA,
+        locationAPlaceId: stored.locationAPlaceId,
+        locationACoordinates: stored.locationACoordinates
+      });
+      setLocationStatus(formatLocationStatusLabel(shortLocationLabel(stored.locationA)));
+    }
   }, []);
 
   useEffect(() => {
@@ -305,7 +341,9 @@ export default function HomePage() {
     setShowManualFallback(false);
     setShowLocationActions(false);
     setManualLocationError("");
-    setLocationStatus("");
+    if (!savedLocation.locationACoordinates) {
+      setLocationStatus("");
+    }
     try {
       const coordinates = await getCurrentPosition();
       const resolved = await reverseGeocodeCoordinates(coordinates);
@@ -776,6 +814,7 @@ export default function HomePage() {
                 showLocationActions={showLocationActions}
                 manualLocationError={manualLocationError}
                 locationContext={locationContext}
+                defaultUserAddress={savedUserAddress}
                 locating={locating}
                 resolvingManual={resolvingManual}
                 onParsed={runParsedSearch}
@@ -783,6 +822,7 @@ export default function HomePage() {
                 onEventsSearch={runEventsSearch}
                 onNeedsFullFallback={() => openFullFallback()}
                 onNeedsLocation={handleNeedsLocation}
+                onPersistUserAddress={persistUserAddress}
                 onUseLocation={() => void requestUserLocation()}
                 onShowZipFallback={showZipFallback}
                 onSubmitManualLocation={(input) => void resolveManualLocation(input)}
@@ -892,6 +932,7 @@ export default function HomePage() {
                 showLocationActions={showLocationActions}
                 manualLocationError={manualLocationError}
                 locationContext={locationContext}
+                defaultUserAddress={savedUserAddress}
                 locating={locating}
                 resolvingManual={resolvingManual}
                 onParsed={runParsedSearch}
@@ -899,6 +940,7 @@ export default function HomePage() {
                 onEventsSearch={runEventsSearch}
                 onNeedsFullFallback={() => openFullFallback()}
                 onNeedsLocation={handleNeedsLocation}
+                onPersistUserAddress={persistUserAddress}
                 onUseLocation={() => void requestUserLocation()}
                 onShowZipFallback={showZipFallback}
                 onSubmitManualLocation={(input) => void resolveManualLocation(input)}

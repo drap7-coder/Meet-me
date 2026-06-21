@@ -9,7 +9,7 @@ import { KOI_EXAMPLE } from "@/lib/koiExamples";
 import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
 import { recordTrendingSearch } from "@/lib/trendingSearches";
 import { BRAND } from "@/src/config/branding";
-import { FormEvent, forwardRef, useCallback, useImperativeHandle, useRef, useState } from "react";
+import { FormEvent, forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 
 type Props = {
   loading: boolean;
@@ -18,11 +18,13 @@ type Props = {
   showManualFallback?: boolean;
   manualLocationError?: string;
   locationContext?: CurrentLocationContext;
+  defaultUserAddress?: string;
   onParsed: (form: SearchHalfwayRequest) => void;
   onWatchSearch: (query: string, subcategory: WatchSubcategory) => void;
   onEventsSearch: (query: string) => void;
   onNeedsFullFallback: () => void;
   onNeedsLocation: (form: SearchHalfwayRequest) => void;
+  onPersistUserAddress?: (address: string) => void;
   onUseLocation: () => void;
   onShowZipFallback: () => void;
   onSubmitManualLocation: (input: string) => void;
@@ -91,11 +93,13 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     showManualFallback = false,
     manualLocationError,
     locationContext,
+    defaultUserAddress = "",
     onParsed,
     onWatchSearch,
     onEventsSearch,
     onNeedsFullFallback,
     onNeedsLocation,
+    onPersistUserAddress,
     onUseLocation,
     onShowZipFallback,
     onSubmitManualLocation,
@@ -117,6 +121,12 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   const [halfwayLookingFor, setHalfwayLookingFor] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const address = defaultUserAddress.trim() || locationContext?.locationA?.trim() || "";
+    if (!address) return;
+    setLocationA((current) => (current.trim() ? current : address));
+  }, [defaultUserAddress, locationContext?.locationA, locationContext?.locationAPlaceId, locationContext?.locationACoordinates]);
 
   const scrollToSearch = useCallback(() => {
     window.requestAnimationFrame(() => {
@@ -255,6 +265,8 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     }
 
     trackEvent("halfway_search_submitted", { source: "guided" });
+
+    onPersistUserAddress?.(a);
 
     const form: SearchHalfwayRequest = {
       locationA: a,

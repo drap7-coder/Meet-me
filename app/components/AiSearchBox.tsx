@@ -26,6 +26,7 @@ type Props = {
   showLocationActions?: boolean;
   locating?: boolean;
   resolvingManual?: boolean;
+  surface?: "hero" | "page";
 };
 
 type ParseSearchResult = {
@@ -93,7 +94,8 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     onSubmitManualLocation,
     showLocationActions = false,
     locating = false,
-    resolvingManual = false
+    resolvingManual = false,
+    surface = "hero"
   },
   ref
 ) {
@@ -103,6 +105,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   const [manualLocationInput, setManualLocationInput] = useState("");
   const [watchActiveSubcategory, setWatchActiveSubcategory] = useState<WatchSubcategory>(DEFAULT_WATCH_SUBCATEGORY);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const fillQuery = useCallback((searchQuery: string, watchSubcategory?: WatchSubcategory) => {
     const trimmed = searchQuery.trim();
@@ -111,7 +114,8 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     setQuery(trimmed);
     setError("");
     window.requestAnimationFrame(() => {
-      inputRef.current?.focus();
+      containerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      inputRef.current?.focus({ preventScroll: true });
       const length = trimmed.length;
       inputRef.current?.setSelectionRange(length, length);
     });
@@ -208,72 +212,79 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   const locationBusy = locating || resolvingManual;
   const hasLocation = Boolean(locationStatus);
   const submitLabel = parsing ? "Understanding" : loading ? "Finding picks" : BRAND.askLabel;
+  const onHero = surface === "hero";
+  const locationButtonClass = onHero
+    ? "inline-flex items-center gap-1.5 text-left text-base font-bold text-white transition hover:text-white/85 focus:outline-none focus:ring-4 focus:ring-white/15 disabled:cursor-not-allowed disabled:opacity-60 sm:text-lg"
+    : "inline-flex items-center gap-1.5 text-left text-base font-bold text-ink transition hover:text-clay focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60 sm:text-lg";
+  const locationHintClass = onHero ? "mt-1 max-w-md text-xs leading-5 text-white/55" : "mt-1 max-w-md text-xs leading-5 text-slate/80";
+  const locationStatusClass = onHero ? "mt-3 text-xs leading-5 text-white/70" : "mt-3 text-xs leading-5 text-slate/90";
 
   return (
-    <section
-      id="ask-koi"
-      className="w-full min-w-0 max-w-full scroll-mt-20 rounded-[24px] border border-white/20 bg-paper/98 p-5 shadow-[0_24px_60px_rgba(10,19,35,0.22),0_0_0_1px_rgba(255,255,255,0.14)_inset] sm:p-6 supports-[backdrop-filter]:backdrop-blur-sm"
-      aria-labelledby="ai-search-title"
-    >
-      <h2 id="ai-search-title" className="sr-only">
-        {BRAND.askLabel}
-      </h2>
+    <div ref={containerRef} id="ask-koi" className="w-full min-w-0 max-w-full scroll-mt-24">
+      <section
+        className="w-full min-w-0"
+        aria-labelledby="ai-search-title"
+      >
+        <h2 id="ai-search-title" className="sr-only">
+          {BRAND.askLabel}
+        </h2>
 
-      <form onSubmit={handleSubmit} className="w-full min-w-0">
-        <label className="block w-full min-w-0">
-          <span className="sr-only">{BRAND.askLabel}</span>
-          <div className="group/search w-full min-w-0 overflow-hidden rounded-[18px] border border-line/70 bg-white shadow-[0_2px_16px_rgba(10,19,35,0.05),inset_0_1px_0_rgba(255,255,255,0.9)] ring-1 ring-black/[0.03] transition focus-within:border-clay/35 focus-within:shadow-[0_4px_28px_rgba(214,90,46,0.12),0_0_0_3px_rgba(214,90,46,0.07)]">
-            <div className="flex w-full min-w-0 items-center gap-2 px-2.5 py-2.5 sm:px-3 sm:py-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center sm:h-10 sm:w-10">
-                <AiSparkleIcon />
+        <form onSubmit={handleSubmit} className="w-full min-w-0">
+          <label className="block w-full min-w-0">
+            <span className="sr-only">{BRAND.askLabel}</span>
+            <div className="group/search w-full min-w-0 overflow-hidden rounded-[18px] bg-white shadow-[0_2px_16px_rgba(10,19,35,0.05)] transition focus-within:shadow-[0_4px_28px_rgba(10,19,35,0.08)]">
+              <div className="flex w-full min-w-0 items-center gap-2 px-2.5 py-2.5 sm:px-3 sm:py-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center sm:h-10 sm:w-10">
+                  <AiSparkleIcon />
+                </div>
+                <textarea
+                  ref={inputRef}
+                  value={query}
+                  onChange={(event) => {
+                    setQuery(event.target.value);
+                    if (error) setError("");
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && !event.shiftKey) {
+                      event.preventDefault();
+                      void runSearch(query);
+                    }
+                  }}
+                  placeholder={BRAND.searchPlaceholder}
+                  rows={2}
+                  className="m-0 min-h-[2.75rem] w-0 min-w-0 flex-1 resize-none appearance-none border-0 bg-transparent py-1.5 text-base leading-6 text-ink outline-none placeholder:text-slate/55 [field-sizing:content] sm:min-h-[3rem] sm:py-2 sm:text-[1.0625rem]"
+                />
+                <button
+                  type="submit"
+                  disabled={busy}
+                  aria-label={submitLabel}
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-white transition hover:bg-ink/88 focus:outline-none focus:ring-4 focus:ring-ink/15 disabled:cursor-not-allowed disabled:bg-ink/30 sm:h-10 sm:w-10"
+                >
+                  {busy ? (
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  ) : (
+                    <SendIcon />
+                  )}
+                </button>
               </div>
-              <textarea
-                ref={inputRef}
-                value={query}
-                onChange={(event) => {
-                  setQuery(event.target.value);
-                  if (error) setError("");
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
-                    void runSearch(query);
-                  }
-                }}
-                placeholder={BRAND.searchPlaceholder}
-                rows={2}
-                className="m-0 min-h-[2.75rem] w-0 min-w-0 flex-1 resize-none appearance-none border-0 bg-transparent py-1.5 text-base leading-6 text-ink outline-none placeholder:text-slate/55 [field-sizing:content] sm:min-h-[3rem] sm:py-2 sm:text-[1.0625rem]"
-              />
-              <button
-                type="submit"
-                disabled={busy}
-                aria-label={submitLabel}
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-white transition hover:bg-ink/88 focus:outline-none focus:ring-4 focus:ring-ink/15 disabled:cursor-not-allowed disabled:bg-ink/30 sm:h-10 sm:w-10"
-              >
-                {busy ? (
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                ) : (
-                  <SendIcon />
-                )}
-              </button>
             </div>
-          </div>
-        </label>
-      </form>
+          </label>
+        </form>
+      </section>
 
       {hasLocation && locationStatus && !showLocationActions && !showManualFallback ? (
-        <p className="mt-3 text-xs leading-5 text-slate/90">{locationStatus}</p>
+        <p className={locationStatusClass}>{locationStatus}</p>
       ) : !showLocationActions && !showManualFallback ? (
         <div className="mt-3">
           <button
             type="button"
             onClick={onUseLocation}
             disabled={locationBusy || busy}
-            className="inline-flex items-center gap-1 text-left text-sm font-semibold text-slate transition hover:text-clay focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60"
+            className={locationButtonClass}
           >
             {locating || locationUiState === "requesting" ? "Checking location..." : "📍 Use my location"}
           </button>
-          <p className="mt-1 max-w-md text-xs leading-5 text-slate/80">
+          <p className={locationHintClass}>
             Optional — helps with nearby place searches.
           </p>
         </div>
@@ -285,15 +296,23 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
             type="button"
             onClick={onUseLocation}
             disabled={locationBusy || busy}
-            className="inline-flex h-10 items-center rounded-full border border-line/80 bg-white px-4 text-sm font-semibold text-ink shadow-sm transition hover:border-clay/50 hover:bg-[#FFF4EC] focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60"
+            className={
+              onHero
+                ? "inline-flex h-11 items-center rounded-full border border-white/25 bg-white/10 px-5 text-base font-bold text-white transition hover:border-white/40 hover:bg-white/15 focus:outline-none focus:ring-4 focus:ring-white/15 disabled:cursor-not-allowed disabled:opacity-60"
+                : "inline-flex h-11 items-center rounded-full border border-line/80 bg-white px-5 text-base font-bold text-ink shadow-sm transition hover:border-clay/50 hover:bg-[#FFF4EC] focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60"
+            }
           >
-            {locating ? "Checking location..." : "Use Current Location"}
+            {locating ? "Checking location..." : "Use my location"}
           </button>
           <button
             type="button"
             onClick={onShowZipFallback}
             disabled={locationBusy || busy}
-            className="inline-flex h-10 items-center rounded-full border border-line/80 bg-white px-4 text-sm font-semibold text-ink shadow-sm transition hover:border-clay/50 hover:bg-[#FFF4EC] focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60"
+            className={
+              onHero
+                ? "inline-flex h-10 items-center rounded-full border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white/90 transition hover:border-white/35 hover:bg-white/15 focus:outline-none focus:ring-4 focus:ring-white/15 disabled:cursor-not-allowed disabled:opacity-60"
+                : "inline-flex h-10 items-center rounded-full border border-line/80 bg-white px-4 text-sm font-semibold text-ink shadow-sm transition hover:border-clay/50 hover:bg-[#FFF4EC] focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60"
+            }
           >
             Enter ZIP Code
           </button>
@@ -303,10 +322,16 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
       {showManualFallback ? (
         <form
           onSubmit={handleManualLocationSubmit}
-          className="mt-3 rounded-xl border border-line/80 bg-mint/80 p-3"
+          className={
+            onHero
+              ? "mt-3 rounded-xl border border-white/15 bg-white/10 p-3 backdrop-blur-sm"
+              : "mt-3 rounded-xl border border-line/80 bg-mint/80 p-3"
+          }
           aria-live="polite"
         >
-          <p className="text-sm font-semibold text-ink">Location blocked? Enter a ZIP code instead.</p>
+          <p className={`text-sm font-semibold ${onHero ? "text-white" : "text-ink"}`}>
+            Location blocked? Enter a ZIP code instead.
+          </p>
           <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
             <input
               type="text"
@@ -320,7 +345,11 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
             <button
               type="submit"
               disabled={locationBusy || busy}
-              className="inline-flex h-11 shrink-0 items-center justify-center rounded-full border-2 border-line bg-white px-4 text-sm font-bold text-ink transition hover:border-clay hover:bg-[#FFF4EC] focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60"
+              className={
+                onHero
+                  ? "inline-flex h-11 shrink-0 items-center justify-center rounded-full border-2 border-white/25 bg-white/10 px-4 text-sm font-bold text-white transition hover:border-white/40 hover:bg-white/15 focus:outline-none focus:ring-4 focus:ring-white/15 disabled:cursor-not-allowed disabled:opacity-60"
+                  : "inline-flex h-11 shrink-0 items-center justify-center rounded-full border-2 border-line bg-white px-4 text-sm font-bold text-ink transition hover:border-clay hover:bg-[#FFF4EC] focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60"
+              }
             >
               {resolvingManual ? "Finding..." : "Use this location"}
             </button>
@@ -328,7 +357,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
           {manualLocationError ? (
             <p className="mt-2 text-xs font-semibold text-clay">{manualLocationError}</p>
           ) : null}
-          <p className="mt-2 text-xs leading-5 text-slate">
+          <p className={`mt-2 text-xs leading-5 ${onHero ? "text-white/55" : "text-slate"}`}>
             You can still search by typing a place, like &apos;pizza near 19038&apos; or &apos;coffee near Hoboken&apos;.
           </p>
         </form>
@@ -339,6 +368,6 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
           {error}
         </p>
       ) : null}
-    </section>
+    </div>
   );
 });

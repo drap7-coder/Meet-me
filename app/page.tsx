@@ -820,6 +820,7 @@ export default function HomePage() {
           <section id="search" className="mt-5 grid w-full max-w-5xl gap-5">
               <AiSearchBox
                 ref={searchBoxRef}
+                surface="page"
                 loading={loading}
                 locationStatus={locationStatus}
                 locationUiState={locationUiState}
@@ -923,9 +924,8 @@ export default function HomePage() {
           </section>
         ) : null}
         </div>
+        <Footer />
       </div>
-
-      <Footer />
       {shareDialog ? (
         <ShareDialog
           dialog={shareDialog}
@@ -957,7 +957,8 @@ function MarketingHero() {
             </span>
           </h1>
           <p className="mt-4 max-w-xl text-[0.9375rem] font-normal leading-6 tracking-[-0.01em] text-[#B8B0A3] sm:text-base sm:leading-7">
-            {BRAND.heroSubheadline}
+            <span className="block">{BRAND.heroSubheadline}</span>
+            <span className="mt-1 block">{BRAND.heroSubheadlineTagline}</span>
           </p>
         </div>
       </div>
@@ -1221,11 +1222,11 @@ function Footer() {
   )}&body=${encodeURIComponent("Questions, ideas, or feedback:\n")}`;
 
   return (
-    <footer className="border-t border-line px-4 py-10 sm:px-6 lg:px-8">
+    <footer className="bg-mint px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 text-sm text-slate sm:flex-row sm:items-end sm:justify-between">
         <div>
           <Logo variant="lockup" size="sm" />
-          <p className="mt-3 font-semibold">Currently in Beta</p>
+          <p className="mt-3 font-semibold text-ink">Currently in Beta</p>
           <p className="mt-3 max-w-sm leading-6">{BRAND.footerDescription}</p>
         </div>
         <div className="sm:text-right">

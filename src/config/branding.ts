@@ -13,7 +13,7 @@ export const BRAND = {
     "Ask Koi to find places to meet nearby or halfway, streaming picks, and nearby movie theaters with one natural-language search.",
   footerDescription:
     "Ask Koi to find places to meet and things to watch — one ask, one answer.",
-  heroSubheadline:
-    "Find a place to go or something to watch — one ask, one answer.",
+  heroSubheadline: "Places. Movies. Events. Streaming.",
+  heroSubheadlineTagline: "One ask. One answer.",
   searchPlaceholder: "Ask Koi anything..."
 };

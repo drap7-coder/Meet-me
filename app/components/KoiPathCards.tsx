@@ -14,11 +14,11 @@ function GoSomewhereIcon({ className = "h-10 w-10" }: { className?: string }) {
       className={className}
       fill="none"
       stroke="currentColor"
-      strokeWidth="2.25"
+      strokeWidth="2.5"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M12 21s7-4.6 7-11a7 7 0 1 0-14 0c0 6.4 7 11 7 11z" fill="currentColor" stroke="none" opacity="0.22" />
+      <path d="M12 21s7-4.6 7-11a7 7 0 1 0-14 0c0 6.4 7 11 7 11z" fill="currentColor" stroke="none" opacity="0.3" />
       <path d="M12 21s7-4.6 7-11a7 7 0 1 0-14 0c0 6.4 7 11 7 11z" />
       <circle cx="12" cy="10" r="2.75" fill="currentColor" stroke="none" />
     </svg>
@@ -33,11 +33,11 @@ function WatchSomethingIcon({ className = "h-10 w-10" }: { className?: string })
       className={className}
       fill="none"
       stroke="currentColor"
-      strokeWidth="2.25"
+      strokeWidth="2.5"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <rect x="3" y="5" width="18" height="13" rx="2.5" fill="currentColor" stroke="none" opacity="0.22" />
+      <rect x="3" y="5" width="18" height="13" rx="2.5" fill="currentColor" stroke="none" opacity="0.3" />
       <rect x="3" y="5" width="18" height="13" rx="2.5" />
       <path d="M8 21h8" />
       <path d="M12 18v3" />
@@ -47,7 +47,15 @@ function WatchSomethingIcon({ className = "h-10 w-10" }: { className?: string })
 }
 
 const iconShellClass =
-  "grid h-[4.75rem] w-[4.75rem] shrink-0 place-items-center rounded-full transition duration-200 group-hover:scale-[1.03] sm:h-20 sm:w-20";
+  "grid h-[5.5rem] w-[5.5rem] shrink-0 place-items-center rounded-full transition duration-200 group-hover:scale-[1.05] sm:h-24 sm:w-24";
+
+const iconClassName = "h-12 w-12 sm:h-14 sm:w-14";
+
+const goIconShellClass =
+  "bg-clay text-white shadow-[0_14px_32px_rgba(214,90,46,0.42)] group-hover:bg-[#C44E28] group-hover:shadow-[0_18px_40px_rgba(214,90,46,0.48)]";
+
+const watchIconShellClass =
+  "bg-ink text-white shadow-[0_14px_32px_rgba(10,19,35,0.36)] ring-2 ring-white/20 group-hover:bg-[#152238] group-hover:shadow-[0_18px_40px_rgba(10,19,35,0.42)]";
 
 const cardClassName =
   "group flex min-w-0 items-center gap-4 rounded-[20px] border border-white/20 bg-[#111c30] px-4 py-5 text-left font-sans shadow-[0_10px_26px_rgba(0,0,0,0.18)] transition hover:border-white/30 hover:bg-[#162238] hover:shadow-[0_14px_34px_rgba(0,0,0,0.24)] focus:outline-none focus:ring-4 focus:ring-white/10 disabled:cursor-not-allowed disabled:opacity-60 sm:gap-5 sm:px-5 sm:py-6";
@@ -62,10 +70,8 @@ export function KoiPathCards({ busy = false, onGoSomewhere, onWatchSomething }: 
           onClick={onGoSomewhere}
           className={cardClassName}
         >
-          <span
-            className={`${iconShellClass} bg-clay text-white shadow-[0_12px_28px_rgba(214,90,46,0.32)] group-hover:bg-[#C44E28] group-hover:shadow-[0_14px_32px_rgba(214,90,46,0.38)]`}
-          >
-            <GoSomewhereIcon className="h-10 w-10 sm:h-11 sm:w-11" />
+          <span className={`${iconShellClass} ${goIconShellClass}`}>
+            <GoSomewhereIcon className={iconClassName} />
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-lg font-bold leading-tight tracking-[-0.025em] text-white sm:text-xl">Go Somewhere</span>
@@ -81,10 +87,8 @@ export function KoiPathCards({ busy = false, onGoSomewhere, onWatchSomething }: 
           onClick={onWatchSomething}
           className={cardClassName}
         >
-          <span
-            className={`${iconShellClass} bg-ink text-white shadow-[0_12px_28px_rgba(10,19,35,0.28)] ring-2 ring-white/15 group-hover:bg-[#152238] group-hover:shadow-[0_14px_32px_rgba(10,19,35,0.34)]`}
-          >
-            <WatchSomethingIcon className="h-10 w-10 sm:h-11 sm:w-11" />
+          <span className={`${iconShellClass} ${watchIconShellClass}`}>
+            <WatchSomethingIcon className={iconClassName} />
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-lg font-bold leading-tight tracking-[-0.025em] text-white sm:text-xl">Watch Something</span>

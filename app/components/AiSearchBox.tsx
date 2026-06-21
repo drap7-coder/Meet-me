@@ -8,6 +8,7 @@ import { buildHalfwaySearchQuery } from "@/lib/halfwayBrowse";
 import { KOI_EXAMPLE } from "@/lib/koiExamples";
 import { DEFAULT_WATCH_SUBCATEGORY, EVENTS_PLACEHOLDER } from "@/lib/watchBrowse";
 import { LOCAL_HAPPENINGS_OPTIONS } from "@/lib/localHappenings";
+import { SPOT_OPTIONS, type SpotOptionAccent } from "@/lib/spotBrowse";
 import { recordTrendingSearch } from "@/lib/trendingSearches";
 import { BRAND } from "@/src/config/branding";
 import { SavedLocationBadge } from "@/app/components/SavedLocationBadge";
@@ -49,6 +50,7 @@ export type AiSearchBoxHandle = {
   fillQuery: (query: string, watchSubcategory?: WatchSubcategory) => void;
   fillHalfwayIntent: (lookingFor: string, exampleQuery?: string) => void;
   fillEventsQuery: (query: string) => void;
+  fillSpotQuery: (query?: string) => void;
   setGuidedMode: (mode: GuidedSearchMode) => void;
 };
 
@@ -176,6 +178,18 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     });
   }, [scrollToSearch]);
 
+  const fillSpotQuery = useCallback((searchQuery?: string) => {
+    setGuidedMode("spot");
+    if (searchQuery?.trim()) {
+      setQuery(searchQuery.trim());
+    }
+    setError("");
+    scrollToSearch();
+    window.requestAnimationFrame(() => {
+      inputRef.current?.focus({ preventScroll: true });
+    });
+  }, [scrollToSearch]);
+
   const runSearch = useCallback(
     async (searchQuery: string, watchSubcategory = watchActiveSubcategory) => {
       const trimmed = searchQuery.trim();
@@ -254,17 +268,21 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
       fillQuery,
       fillHalfwayIntent,
       fillEventsQuery,
+      fillSpotQuery,
       setGuidedMode: (mode) => {
         setGuidedMode(mode);
         scrollToSearch();
       }
     }),
-    [fillEventsQuery, fillHalfwayIntent, fillQuery, runSearch, scrollToSearch]
+    [fillEventsQuery, fillHalfwayIntent, fillQuery, fillSpotQuery, runSearch, scrollToSearch]
   );
 
   function handleGuidedModeChange(mode: Exclude<GuidedSearchMode, null>) {
     const next = guidedMode === mode ? null : mode;
     setGuidedMode(next);
+    if (next === "spot") {
+      trackEvent("spot_mode_selected", { mode: "spot" });
+    }
     if (next === "halfway") {
       trackEvent("halfway_mode_selected", { mode: "halfway" });
     }
@@ -272,6 +290,14 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
       trackEvent("events_mode_selected", { mode: "events" });
     }
     setError("");
+  }
+
+  function submitSpotGuided(queryValue: string) {
+    const trimmed = queryValue.trim();
+    if (!trimmed || loading || parsing) return;
+    setQuery(trimmed);
+    setError("");
+    void runSearch(trimmed);
   }
 
   function submitEventsGuided(queryValue: string) {
@@ -397,6 +423,28 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
             Find Events
           </button>
         </div>
+
+        {guidedMode === "spot" ? (
+          <div className="mb-3 rounded-[18px] border border-koi/20 bg-koi/5 p-3 sm:p-4">
+            <p className={`text-sm font-black ${onHero ? "text-white" : "text-koi"}`}>Nearby Spots</p>
+            <p className={`mt-1 text-xs font-semibold leading-5 ${onHero ? "text-white/65" : "text-slate"}`}>
+              Restaurants, coffee, drinks, shopping, and activities near you.
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {SPOT_OPTIONS.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => submitSpotGuided(option.query)}
+                  className={`rounded-[14px] border px-3 py-2.5 text-left text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${spotOptionClass(option.accent, onHero)}`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         {guidedMode === "events" ? (
           <div className="mb-3 rounded-[18px] border border-events/20 bg-events/5 p-3 sm:p-4">
@@ -620,3 +668,24 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     </div>
   );
 });
+
+function spotOptionClass(accent: SpotOptionAccent, onHero: boolean) {
+  if (accent === "food") {
+    return onHero
+      ? "border-food/40 bg-food/10 text-white hover:border-food/60"
+      : "border-food/35 bg-food/10 text-ink hover:border-food/60";
+  }
+  if (accent === "drinks") {
+    return onHero
+      ? "border-drinks/40 bg-drinks/10 text-white hover:border-drinks/60"
+      : "border-drinks/35 bg-drinks/10 text-ink hover:border-drinks/60";
+  }
+  if (accent === "outdoor") {
+    return onHero
+      ? "border-outdoor/40 bg-outdoor/10 text-white hover:border-outdoor/60"
+      : "border-outdoor/35 bg-outdoor/10 text-ink hover:border-outdoor/60";
+  }
+  return onHero
+    ? "border-koi/35 bg-koi/10 text-white hover:border-koi/55"
+    : "border-koi/30 bg-koi/5 text-ink hover:border-koi/50";
+}

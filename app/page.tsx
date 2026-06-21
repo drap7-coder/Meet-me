@@ -881,7 +881,7 @@ export default function HomePage() {
                 <div className="mt-3">
                   <KoiPathCards
                     busy={loading || locating || resolvingManual}
-                    onGoSomewhere={() => searchBoxRef.current?.fillQuery(KOI_GO_SOMEWHERE_QUERY)}
+                    onGoSomewhere={() => searchBoxRef.current?.fillSpotQuery(KOI_GO_SOMEWHERE_QUERY)}
                     onFindEvents={() => searchBoxRef.current?.fillEventsQuery(KOI_FIND_EVENTS_QUERY)}
                     onWatchSomething={() => searchBoxRef.current?.fillQuery(KOI_WATCH_SOMETHING_QUERY, "tv_shows")}
                   />

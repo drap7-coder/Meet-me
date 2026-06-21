@@ -196,19 +196,19 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   return (
     <section
       id="ask-koi"
-      className="w-full min-w-0 scroll-mt-20 rounded-[24px] border border-white/20 bg-paper/98 p-5 shadow-[0_24px_60px_rgba(10,19,35,0.22),0_0_0_1px_rgba(255,255,255,0.14)_inset] backdrop-blur-sm sm:p-6"
+      className="w-full min-w-0 max-w-full scroll-mt-20 rounded-[24px] border border-white/20 bg-paper/98 p-5 shadow-[0_24px_60px_rgba(10,19,35,0.22),0_0_0_1px_rgba(255,255,255,0.14)_inset] sm:p-6 supports-[backdrop-filter]:backdrop-blur-sm"
       aria-labelledby="ai-search-title"
     >
       <h2 id="ai-search-title" className="sr-only">
         {BRAND.askLabel}
       </h2>
 
-      <form onSubmit={handleSubmit} className="grid gap-3">
-        <label className="grid gap-2">
+      <form onSubmit={handleSubmit} className="w-full min-w-0">
+        <label className="block w-full min-w-0">
           <span className="sr-only">{BRAND.askLabel}</span>
-          <div className="group/search rounded-[18px] border border-line/70 bg-white shadow-[0_2px_16px_rgba(10,19,35,0.05),inset_0_1px_0_rgba(255,255,255,0.9)] ring-1 ring-black/[0.03] transition focus-within:border-clay/35 focus-within:shadow-[0_4px_28px_rgba(214,90,46,0.12),0_0_0_3px_rgba(214,90,46,0.07)]">
-            <div className="flex items-end gap-1 px-2.5 py-2 sm:gap-2 sm:px-3 sm:py-2.5">
-              <div className="mb-2.5 flex h-9 w-9 shrink-0 items-center justify-center sm:mb-3">
+          <div className="group/search w-full min-w-0 overflow-hidden rounded-[18px] border border-line/70 bg-white shadow-[0_2px_16px_rgba(10,19,35,0.05),inset_0_1px_0_rgba(255,255,255,0.9)] ring-1 ring-black/[0.03] transition focus-within:border-clay/35 focus-within:shadow-[0_4px_28px_rgba(214,90,46,0.12),0_0_0_3px_rgba(214,90,46,0.07)]">
+            <div className="flex w-full min-w-0 items-center gap-2 px-2.5 py-2.5 sm:px-3 sm:py-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center sm:h-10 sm:w-10">
                 <AiSparkleIcon />
               </div>
               <textarea
@@ -225,13 +225,13 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
                 }}
                 placeholder={BRAND.searchPlaceholder}
                 rows={2}
-                className="min-h-[2.75rem] flex-1 resize-none border-0 bg-transparent py-2 text-base leading-6 text-ink outline-none placeholder:text-slate/55 sm:min-h-[3rem] sm:text-[1.0625rem]"
+                className="m-0 min-h-[2.75rem] w-0 min-w-0 flex-1 resize-none appearance-none border-0 bg-transparent py-1.5 text-base leading-6 text-ink outline-none placeholder:text-slate/55 [field-sizing:content] sm:min-h-[3rem] sm:py-2 sm:text-[1.0625rem]"
               />
               <button
                 type="submit"
                 disabled={busy}
                 aria-label={submitLabel}
-                className="mb-1.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-white transition hover:bg-ink/88 focus:outline-none focus:ring-4 focus:ring-ink/15 disabled:cursor-not-allowed disabled:bg-ink/30 sm:mb-2 sm:h-10 sm:w-10"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-white transition hover:bg-ink/88 focus:outline-none focus:ring-4 focus:ring-ink/15 disabled:cursor-not-allowed disabled:bg-ink/30 sm:h-10 sm:w-10"
               >
                 {busy ? (
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />

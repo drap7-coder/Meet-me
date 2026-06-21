@@ -1308,7 +1308,7 @@ function RecentSearchesSection({
         </button>
       </div>
       <div className="mt-5 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
-        {meetups.slice(0, 5).map((meetup) => (
+        {meetups.slice(0, 3).map((meetup) => (
           <button
             key={meetup.id}
             type="button"

@@ -371,14 +371,23 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
               {resolvingManual ? "Finding..." : "Continue"}
             </button>
           </div>
-          {manualLocationError ? (
-            <p className="mt-2 text-xs font-semibold text-events">{manualLocationError}</p>
+      {manualLocationError ? (
+            <p className={`mt-2 text-xs font-semibold leading-5 ${onHero ? "text-[#FFD4C8]" : "text-events"}`}>
+              {manualLocationError}
+            </p>
           ) : null}
         </form>
       ) : null}
 
       {error ? (
-        <p className="mt-3 rounded-xl border border-events/20 bg-events/10 px-3 py-2.5 text-sm font-semibold text-ink">
+        <p
+          className={
+            onHero
+              ? "mt-3 rounded-xl border border-white/25 bg-white/10 px-3 py-2.5 text-sm font-semibold leading-6 text-white/90"
+              : "mt-3 rounded-xl border border-events/25 bg-events/10 px-3 py-2.5 text-sm font-semibold leading-6 text-ink"
+          }
+          role="status"
+        >
           {error}
         </p>
       ) : null}

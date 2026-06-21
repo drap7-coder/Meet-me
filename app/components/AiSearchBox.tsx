@@ -7,7 +7,6 @@ import { trackEvent } from "@/lib/analytics";
 import { KOI_EXAMPLE } from "@/lib/koiExamples";
 import { KOI_ROTATING_PLACEHOLDERS } from "@/lib/koiCapabilityExamples";
 import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
-import { recordTrendingSearch } from "@/lib/trendingSearches";
 import { BRAND } from "@/src/config/branding";
 import { LocationPinIcon, SavedLocationBadge } from "@/app/components/SavedLocationBadge";
 import { FormEvent, forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
@@ -184,19 +183,16 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
         }
 
         if (data.botMode === "watch") {
-          recordTrendingSearch(trimmed, watchSubcategory);
           onWatchSearch(trimmed, watchSubcategory);
           return;
         }
 
         if (data.botMode === "events") {
-          recordTrendingSearch(trimmed);
           onEventsSearch(trimmed);
           return;
         }
 
         if (!data.form) throw new Error(data.error ?? "I could not understand that search.");
-        recordTrendingSearch(trimmed);
         if (data.form.searchMode === "midpoint") {
           trackEvent("halfway_search_submitted", { source: "freeform" });
         }

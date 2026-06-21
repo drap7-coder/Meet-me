@@ -44,7 +44,7 @@ import {
 import { getSavedUserLocation, mergeSavedUserLocation } from "@/lib/savedUserLocation";
 import { getSearchAccent } from "@/lib/searchAccent";
 import { KOI_PICK_DISPLAY_LIMIT, THINKING_PROGRESS_LABELS } from "@/lib/koiCapabilityExamples";
-import type { KoiBotMode, LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory, WatchEventsApiResponse, WatchEventsMoreResult, WatchEventsResult, WatchSubcategory } from "@/lib/types";
+import type { KoiBotMode, LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory, WatchEventsApiResponse, WatchEventsResult, WatchSubcategory } from "@/lib/types";
 import { BRAND } from "@/src/config/branding";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -133,7 +133,6 @@ export default function HomePage() {
   const [locating, setLocating] = useState(false);
   const [resolvingManual, setResolvingManual] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [loadingMoreWatchEvents, setLoadingMoreWatchEvents] = useState(false);
   const [error, setError] = useState("");
   const [shareMessage, setShareMessage] = useState("");
   const [currentShareUrl, setCurrentShareUrl] = useState("");
@@ -695,49 +694,6 @@ export default function HomePage() {
       locationBCoordinates: form.locationBCoordinates,
       searchMode: form.searchMode ?? retry.form.searchMode
     });
-  }
-
-  async function loadMoreWatchEvents() {
-    if (!watchEventsResult?.hasMore || loadingMoreWatchEvents) return;
-
-    const excludeKeys = watchEventsResult.recommendations
-      .filter((item) => typeof item.tmdbId === "number")
-      .map((item) => `${item.mediaType ?? "movie"}:${item.tmdbId}`);
-
-    setLoadingMoreWatchEvents(true);
-    setError("");
-    try {
-      const endpoint = searchKind === "watch" ? "/api/watch-search" : "/api/watch-events";
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query: watchEventsResult.query,
-          excludeKeys,
-          ...(searchKind === "watch" ? { subcategory: activeWatchSubcategory } : {})
-        })
-      });
-      const data = (await response.json()) as WatchEventsMoreResult & { error?: string };
-      if (!response.ok) throw new Error(data.error ?? "Could not load more picks.");
-
-      setWatchEventsResult((current) => {
-        if (!current || data.append !== true) return current;
-        const recommendations = [...current.recommendations, ...data.recommendations].map((item, index) => ({
-          ...item,
-          rank: index + 1
-        }));
-        return {
-          ...current,
-          recommendations,
-          hasMore: data.hasMore,
-          resultCount: recommendations.length
-        };
-      });
-    } catch (loadMoreError) {
-      setError(loadMoreError instanceof Error ? loadMoreError.message : "Could not load more picks.");
-    } finally {
-      setLoadingMoreWatchEvents(false);
-    }
   }
 
   function submitClassicSearch() {

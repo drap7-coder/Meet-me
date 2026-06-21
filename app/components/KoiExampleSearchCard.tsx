@@ -1,12 +1,12 @@
 "use client";
 
-import type { TrendingCardDisplay } from "@/lib/trendingSearches";
+type CardAccent = "places" | "watch";
 
 type Props = {
   icon: string;
   title: string;
   subtitle: string;
-  accent: TrendingCardDisplay["accent"];
+  accent: CardAccent;
   featured?: boolean;
   disabled?: boolean;
   onClick: () => void;

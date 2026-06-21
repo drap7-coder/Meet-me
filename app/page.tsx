@@ -1,14 +1,12 @@
 "use client";
 
 import { EmptyState } from "@/app/components/EmptyState";
+import { FairMeetupPreview } from "@/app/components/FairMeetupPreview";
+import { KoiCapabilityExamples } from "@/app/components/KoiCapabilityExamples";
+import { KoiThinkingLoader } from "@/app/components/KoiThinkingLoader";
 import { AiSearchBox, type AiSearchBoxHandle } from "@/app/components/AiSearchBox";
 import { SavedLocationBadge } from "@/app/components/SavedLocationBadge";
-import { KoiPathCards } from "@/app/components/KoiPathCards";
-import { KoiSpecialtyModule } from "@/app/components/KoiSpecialtyModule";
-import { KoiContextBar } from "@/app/components/KoiContextBar";
-import { KOI_GO_SOMEWHERE_QUERY, KOI_WATCH_SOMETHING_QUERY, KOI_FIND_EVENTS_QUERY } from "@/lib/koiBrowse";
 import { KoiExampleSearchCard } from "@/app/components/KoiExampleSearchCard";
-import { isHalfwayQuery, extractLookingForFromHalfwayQuery } from "@/lib/halfwayBrowse";
 import { LocationForm } from "@/app/components/LocationForm";
 import { Logo } from "@/app/components/Logo";
 import { RoadDivider } from "@/app/components/BrandRoad";
@@ -45,8 +43,7 @@ import {
 } from "@/lib/locationInput";
 import { getSavedUserLocation, mergeSavedUserLocation, saveUserLocation } from "@/lib/savedUserLocation";
 import { getSearchAccent } from "@/lib/searchAccent";
-import { type KoiBrowseOption } from "@/lib/koiBrowse";
-import { getTrendingCardDisplay, getTrendingSearches, subscribeTrendingSearches } from "@/lib/trendingSearches";
+import { KOI_PICK_DISPLAY_LIMIT, THINKING_PROGRESS_LABELS } from "@/lib/koiCapabilityExamples";
 import type { KoiBotMode, LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory, WatchEventsApiResponse, WatchEventsMoreResult, WatchEventsResult, WatchSubcategory } from "@/lib/types";
 import { BRAND } from "@/src/config/branding";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -72,13 +69,6 @@ type FallbackKind = "none" | "location" | "full";
 type PendingRetry =
   | { kind: "events"; query: string }
   | { kind: "places"; form: SearchHalfwayRequest };
-
-const PLACE_LOADING_LABELS = [
-  "Finding midpoint...",
-  "Calculating drive times...",
-  "Ranking locations...",
-  "Finding best options..."
-];
 
 function readStoredLocationSnapshot() {
   const stored = getSavedUserLocation();
@@ -151,7 +141,10 @@ export default function HomePage() {
   const [showRoadDividerPreview, setShowRoadDividerPreview] = useState(false);
   const [loadingPhase, setLoadingPhase] = useState(0);
   const searchBoxRef = useRef<AiSearchBoxHandle>(null);
-  const loadingPhaseLabel = PLACE_LOADING_LABELS[loadingPhase] ?? PLACE_LOADING_LABELS[0];
+  const loadingPhaseLabel =
+    THINKING_PROGRESS_LABELS[searchKind ?? "places"][loadingPhase] ??
+    THINKING_PROGRESS_LABELS.places[loadingPhase] ??
+    THINKING_PROGRESS_LABELS.places[0];
 
   function persistSavedLocation(location: CurrentLocationContext) {
     if (!location.locationA?.trim()) return;
@@ -261,12 +254,13 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    if (!loading || searchKind !== "places") {
+    if (!loading) {
       setLoadingPhase(0);
       return;
     }
+    const labels = THINKING_PROGRESS_LABELS[searchKind ?? "places"];
     const timer = window.setInterval(() => {
-      setLoadingPhase((phase) => (phase + 1) % PLACE_LOADING_LABELS.length);
+      setLoadingPhase((phase) => (phase + 1) % labels.length);
     }, 1800);
     return () => window.clearInterval(timer);
   }, [loading, searchKind]);
@@ -414,12 +408,9 @@ export default function HomePage() {
   }
 
   const resultCountLabel = useMemo(() => {
-    if (watchEventsResult) {
-      const label = watchEventsResult.preview ? "preview option" : "streaming pick";
-      return `${watchEventsResult.resultCount} ${label}${watchEventsResult.resultCount === 1 ? "" : "s"}`;
-    }
-    if (!results) return "";
-    return `${results.venues.length} place${results.venues.length === 1 ? "" : "s"} that could work`;
+    if (watchEventsResult?.recommendations.length) return "Koi Pick ready";
+    if (results?.venues.length) return "Koi Pick ready";
+    return "";
   }, [results, watchEventsResult]);
 
   const resultContext = useMemo(() => {
@@ -850,6 +841,7 @@ export default function HomePage() {
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0A1323] via-[#0A1323]/70 to-transparent sm:h-28" />
             <div className="relative z-10 mx-auto grid w-full max-w-5xl gap-5 py-5 sm:gap-6 sm:py-7 lg:gap-7 lg:py-8">
               <MarketingHero />
+              <FairMeetupPreview />
               <AiSearchBox
                 ref={searchBoxRef}
                 loading={loading}
@@ -873,40 +865,11 @@ export default function HomePage() {
                 onShowZipFallback={showZipFallback}
                 onSubmitManualLocation={(input) => void resolveManualLocation(input)}
               />
-              <KoiContextBar coordinates={locationContext.locationACoordinates} />
-              <section className="w-full min-w-0" aria-labelledby="more-ways-title">
-                <h2 id="more-ways-title" className="text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-white/45">
-                  More ways to ask Koi
-                </h2>
-                <div className="mt-3">
-                  <KoiPathCards
-                    busy={loading || locating || resolvingManual}
-                    onGoSomewhere={() => searchBoxRef.current?.fillSpotQuery(KOI_GO_SOMEWHERE_QUERY)}
-                    onFindEvents={() => searchBoxRef.current?.fillEventsQuery(KOI_FIND_EVENTS_QUERY)}
-                    onWatchSomething={() =>
-                      searchBoxRef.current?.fillStreamingQuery(KOI_WATCH_SOMETHING_QUERY, "tv_shows")
-                    }
-                  />
-                </div>
-              </section>
-              <KoiSpecialtyModule
+              <KoiCapabilityExamples
                 busy={loading || locating || resolvingManual}
-                onSelect={(lookingFor, exampleQuery) =>
-                  searchBoxRef.current?.fillHalfwayIntent(lookingFor, exampleQuery)
+                onSelect={(example) =>
+                  searchBoxRef.current?.runQuery(example.query, example.watchSubcategory)
                 }
-              />
-              <TrendingSearchesSection
-                busy={loading || locating || resolvingManual}
-                onSelect={(option) => {
-                  if (isHalfwayQuery(option.query)) {
-                    searchBoxRef.current?.fillHalfwayIntent(
-                      extractLookingForFromHalfwayQuery(option.query),
-                      option.query
-                    );
-                    return;
-                  }
-                  searchBoxRef.current?.fillQuery(option.query, option.watchSubcategory);
-                }}
               />
               <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
               <LocationFallbackPanel
@@ -945,7 +908,7 @@ export default function HomePage() {
                     : loadingPhaseLabel
               }
               resultCountLabel={resultCountLabel}
-              title={watchEventsResult ? watchEventsResult.title : "Recommended places"}
+              title={watchEventsResult ? watchEventsResult.title : "Koi's pick"}
               originSummary={
                 watchEventsResult
                   ? watchEventsResult.contextSummary
@@ -1020,27 +983,13 @@ export default function HomePage() {
           ) : null}
 
         {loading ? (
-          <section className="mt-8 grid gap-4 lg:grid-cols-[1fr_420px]">
-            <div className="grid gap-3">
-              {searchKind === "watch" || searchKind === "events" ? (
-                <WatchEventsLoader searchKind={searchKind} />
-              ) : (
-                <MeetInMiddleLoader />
-              )}
-              {[0, 1, 2].map((item) => (
-                <div key={item} className="h-48 animate-pulse rounded-lg bg-sky shadow-soft" />
-              ))}
-            </div>
-            <div className="h-[420px] animate-pulse rounded-lg bg-sky shadow-soft" />
+          <section className="mt-8">
+            <KoiThinkingLoader searchKind={searchKind} phase={loadingPhase} />
           </section>
         ) : null}
 
         {watchEventsResult && !loading ? (
-          <WatchEventsResults
-            result={watchEventsResult}
-            loadingMore={loadingMoreWatchEvents}
-            onLoadMore={watchEventsResult.hasMore ? loadMoreWatchEvents : undefined}
-          />
+          <WatchEventsResults result={watchEventsResult} />
         ) : null}
 
         {results && !loading ? (
@@ -1070,22 +1019,52 @@ export default function HomePage() {
 
               {results.venues.length ? (
                 <div className="results-list-enter grid gap-4">
-                  {results.venues.map((venue, index) => (
-                    <VenueCard
-                      key={venue.id}
-                      venue={venue}
-                      rank={index + 1}
-                      originALabel={resultContext?.originALabel ?? "Person A"}
-                      originBLabel={resultContext?.originBLabel ?? "Person B"}
-                      isClosestToHalfway={venue.id === resultContext?.closestVenueId}
-                      isShortestCombined={venue.id === resultContext?.shortestCombinedVenueId}
-                      searchCategory={results.category}
-                      searchMode={results.searchMode}
-                      meetupMode={results.meetupMode}
-                      onShare={shareVenue}
-                      shareUrl={currentShareUrl}
-                    />
-                  ))}
+                  {(() => {
+                    const curated = results.venues.slice(0, KOI_PICK_DISPLAY_LIMIT);
+                    const [koiPick, ...otherOptions] = curated;
+                    return (
+                      <>
+                        {koiPick ? (
+                          <VenueCard
+                            key={koiPick.id}
+                            venue={koiPick}
+                            rank={1}
+                            isKoiPick
+                            originALabel={resultContext?.originALabel ?? "Person A"}
+                            originBLabel={resultContext?.originBLabel ?? "Person B"}
+                            isClosestToHalfway={koiPick.id === resultContext?.closestVenueId}
+                            isShortestCombined={koiPick.id === resultContext?.shortestCombinedVenueId}
+                            searchCategory={results.category}
+                            searchMode={results.searchMode}
+                            meetupMode={results.meetupMode}
+                            onShare={shareVenue}
+                            shareUrl={currentShareUrl}
+                          />
+                        ) : null}
+                        {otherOptions.length ? (
+                          <div className="grid gap-4">
+                            <h2 className="text-sm font-black uppercase tracking-[0.14em] text-slate">Other Good Options</h2>
+                            {otherOptions.map((venue, index) => (
+                              <VenueCard
+                                key={venue.id}
+                                venue={venue}
+                                rank={index + 2}
+                                originALabel={resultContext?.originALabel ?? "Person A"}
+                                originBLabel={resultContext?.originBLabel ?? "Person B"}
+                                isClosestToHalfway={venue.id === resultContext?.closestVenueId}
+                                isShortestCombined={venue.id === resultContext?.shortestCombinedVenueId}
+                                searchCategory={results.category}
+                                searchMode={results.searchMode}
+                                meetupMode={results.meetupMode}
+                                onShare={shareVenue}
+                                shareUrl={currentShareUrl}
+                              />
+                            ))}
+                          </div>
+                        ) : null}
+                      </>
+                    );
+                  })()}
                 </div>
               ) : (
                 <EmptyState />
@@ -1125,7 +1104,7 @@ function MarketingHero() {
           </h1>
           <p className="mt-4 max-w-xl text-[0.9375rem] font-normal leading-6 tracking-[-0.01em] text-[#B8B0A3] sm:text-base sm:leading-7">
             <span className="block">{BRAND.heroSubheadline}</span>
-            <span className="mt-1 block">{BRAND.heroSubheadlineTagline}</span>
+            <span className="mt-1 block text-white/55">{BRAND.heroSubheadlineTagline}</span>
           </p>
         </div>
       </div>
@@ -1345,68 +1324,6 @@ function SiteHeader() {
   );
 }
 
-function WatchEventsLoader({ searchKind }: { searchKind: "watch" | "events" }) {
-  const accent = getSearchAccent(searchKind);
-  const labels =
-    searchKind === "events" ? ["Comedy", "Live music", "Sports"] : ["Movies", "TV", "Theaters"];
-
-  return (
-    <div
-      className="rounded-[24px] border border-line bg-paper p-5 shadow-[0_14px_38px_rgba(18,50,74,0.08)] sm:p-6"
-      role="status"
-      aria-live="polite"
-      aria-label={searchKind === "events" ? "Finding local events" : "Finding watch options"}
-    >
-      <div className="mx-auto grid max-w-md gap-3">
-        <div className="grid grid-cols-3 gap-2">
-          {labels.map((label) => (
-            <div key={label} className="rounded-lg bg-sky px-3 py-4 text-center text-xs font-black uppercase tracking-[0.12em] text-slate">
-              {label}
-            </div>
-          ))}
-        </div>
-        <div className="h-2 overflow-hidden rounded-full bg-sky">
-          <div className={`h-full w-2/3 animate-pulse rounded-full ${accent.progress}`} />
-        </div>
-      </div>
-      <div className="mt-4 text-center">
-        <p className="text-sm font-black text-ink">
-          {searchKind === "events" ? "Finding local events" : "Finding watch picks"}
-        </p>
-        <p className="mt-1 text-xs font-semibold text-slate">
-          {searchKind === "events"
-            ? "Matching your ask to comedy, music, sports, and more nearby."
-            : "Matching your ask to streaming picks and nearby theaters."}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function MeetInMiddleLoader() {
-  return (
-    <div
-      className="meet-middle-motion rounded-[24px] border border-line bg-paper p-5 shadow-[0_14px_38px_rgba(18,50,74,0.08)] sm:p-6"
-      role="status"
-      aria-live="polite"
-      aria-label="Finding a fair midpoint"
-    >
-      <div className="relative mx-auto h-20 max-w-md overflow-hidden rounded-full bg-sky/80 px-8">
-        <div className="absolute left-8 right-8 top-1/2 h-px -translate-y-1/2 bg-line" />
-        <div className="meet-middle-dot meet-middle-dot-left absolute left-8 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-[#2D3E57] shadow-[0_0_0_8px_rgba(45,62,87,0.12)]" />
-        <div className="meet-middle-dot meet-middle-dot-right absolute right-8 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-ink shadow-[0_0_0_8px_rgba(18,50,74,0.10)]" />
-        <div className="meet-middle-pin absolute left-1/2 top-1/2 grid h-10 w-10 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-koi text-white shadow-glow ring-8 ring-koi/10">
-          <span className="h-3 w-3 rounded-full bg-white" />
-        </div>
-      </div>
-      <div className="mt-4 text-center">
-        <p className="text-sm font-black text-ink">Finding the midpoint</p>
-        <p className="mt-1 text-xs font-semibold text-slate">Calculating drive times and ranking locations.</p>
-      </div>
-    </div>
-  );
-}
-
 function Footer() {
   const feedbackHref = `mailto:nathandrapkin@gmail.com?subject=${encodeURIComponent(
     `${BRAND.name} feedback`
@@ -1447,69 +1364,6 @@ function SharedHalfwayReferralBanner({ onStartSearch }: { onStartSearch: () => v
         Ask Koi your own question
       </button>
     </div>
-  );
-}
-
-function TrendingSearchesSection({
-  busy,
-  onSelect
-}: {
-  busy: boolean;
-  onSelect: (option: KoiBrowseOption) => void;
-}) {
-  const [searches, setSearches] = useState<KoiBrowseOption[]>([]);
-
-  useEffect(() => {
-    setSearches(getTrendingSearches());
-    return subscribeTrendingSearches(() => setSearches(getTrendingSearches()));
-  }, []);
-
-  const halfwaySearches = searches.filter((option) => isHalfwayQuery(option.query));
-  const standardSearches = searches.filter((option) => !isHalfwayQuery(option.query));
-
-  return (
-    <section className="w-full min-w-0" aria-labelledby="trending-searches-title">
-      <h2 id="trending-searches-title" className="text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-white/45">
-        Trending Searches
-      </h2>
-      {halfwaySearches.length ? (
-        <div className="mt-4 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
-          {halfwaySearches.map((option) => {
-            const card = getTrendingCardDisplay(option);
-            return (
-              <KoiExampleSearchCard
-                key={option.id}
-                icon={card.icon}
-                title={card.title}
-                subtitle={card.subtitle}
-                accent={card.accent}
-                featured
-                disabled={busy}
-                onClick={() => onSelect(option)}
-              />
-            );
-          })}
-        </div>
-      ) : null}
-      {standardSearches.length ? (
-        <div className={`grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 ${halfwaySearches.length ? "mt-3" : "mt-4"}`}>
-          {standardSearches.map((option) => {
-            const card = getTrendingCardDisplay(option);
-            return (
-              <KoiExampleSearchCard
-                key={option.id}
-                icon={card.icon}
-                title={card.title}
-                subtitle={card.subtitle}
-                accent={card.accent}
-                disabled={busy}
-                onClick={() => onSelect(option)}
-              />
-            );
-          })}
-        </div>
-      ) : null}
-    </section>
   );
 }
 

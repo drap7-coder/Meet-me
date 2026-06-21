@@ -8,6 +8,7 @@ import {
 } from "@/lib/calendar";
 import { CategoryIcon } from "@/app/components/CategoryIcon";
 import { FairMeetupBadge } from "@/app/components/KoiMatchBadge";
+import { KoiPickBadge } from "@/app/components/KoiPickBadge";
 import { copyTextToClipboard } from "@/lib/share";
 import { trackEvent } from "@/lib/analytics";
 import { getCategoryConfig, getCategoryLabel, getPrimaryCategoryId } from "@/lib/categories";
@@ -25,6 +26,7 @@ type Props = {
   searchCategory: VenueCategory;
   searchMode: SearchMode;
   meetupMode: MeetupMode;
+  isKoiPick?: boolean;
   onShare: (venue: ScoredVenue) => void;
   shareUrl?: string;
 };
@@ -39,6 +41,7 @@ export function VenueCard({
   searchCategory,
   searchMode,
   meetupMode,
+  isKoiPick = false,
   onShare,
   shareUrl
 }: Props) {
@@ -117,11 +120,18 @@ export function VenueCard({
   }
 
   return (
-    <article ref={cardRef} className="rounded-lg border border-line bg-paper p-5 shadow-soft sm:p-6">
+    <article
+      ref={cardRef}
+      className={`rounded-lg border bg-paper p-5 shadow-soft sm:p-6 ${
+        isKoiPick ? "border-koi/30 ring-2 ring-koi/15" : "border-line"
+      }`}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            {searchMode === "midpoint" ? (
+            {isKoiPick ? (
+              <KoiPickBadge />
+            ) : searchMode === "midpoint" ? (
               <FairMeetupBadge
                 minutesA={hasTravelTimes ? venue.travelFromA.durationMinutes : null}
                 minutesB={hasTravelTimes ? venue.travelFromB.durationMinutes : null}
@@ -131,8 +141,17 @@ export function VenueCard({
                 {match.badge}
               </span>
             )}
+            {isKoiPick && searchMode === "midpoint" && hasTravelTimes ? (
+              <FairMeetupBadge
+                minutesA={venue.travelFromA.durationMinutes}
+                minutesB={venue.travelFromB.durationMinutes}
+                compact
+              />
+            ) : null}
           </div>
-          <h3 className="text-xl font-black leading-tight text-ink">{venue.name}</h3>
+          <h3 className={`font-black leading-tight text-ink ${isKoiPick ? "text-2xl sm:text-3xl" : "text-xl"}`}>
+            {venue.name}
+          </h3>
           <p className="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold text-slate">
             <CategoryIcon category={searchCategory} className="h-4 w-4" />
             {venue.category}

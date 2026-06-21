@@ -1,6 +1,7 @@
 "use client";
 
 import { trackEvent } from "@/lib/analytics";
+import { KoiPickBadge } from "@/app/components/KoiPickBadge";
 import { botModeToSearchKind, getSearchAccent } from "@/lib/searchAccent";
 import type { WatchEventsRecommendation } from "@/lib/types";
 import { useEffect, useRef, useState } from "react";
@@ -8,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 type Props = {
   item: WatchEventsRecommendation;
   botMode?: "watch" | "events";
+  isKoiPick?: boolean;
 };
 
 function isSearchSuggestion(item: WatchEventsRecommendation) {
@@ -26,7 +28,7 @@ function previewBadge(item: WatchEventsRecommendation) {
   return "Preview";
 }
 
-export function WatchEventsCard({ item, botMode = "watch" }: Props) {
+export function WatchEventsCard({ item, botMode = "watch", isKoiPick = false }: Props) {
   const accent = getSearchAccent(botModeToSearchKind(botMode));
   const [expanded, setExpanded] = useState(false);
   const cardRef = useRef<HTMLElement | null>(null);
@@ -69,7 +71,11 @@ export function WatchEventsCard({ item, botMode = "watch" }: Props) {
     <article
       ref={cardRef}
       className={`rounded-lg border bg-paper p-5 shadow-soft sm:p-6 ${
-        searchSuggestion ? "border-events/25" : accent.panelBorder
+        isKoiPick
+          ? "border-koi/30 ring-2 ring-koi/15"
+          : searchSuggestion
+            ? "border-events/25"
+            : accent.panelBorder
       }`}
     >
       <div className="flex items-start gap-4">
@@ -83,6 +89,7 @@ export function WatchEventsCard({ item, botMode = "watch" }: Props) {
         ) : null}
         <div className="min-w-0 flex-1">
           <div className="mb-3 flex flex-wrap items-center gap-2">
+            {isKoiPick ? <KoiPickBadge /> : null}
             <span className={`inline-flex rounded-lg px-3 py-1 text-xs font-bold ${badgeClass(item, botMode)}`}>
               {item.badge}
             </span>
@@ -100,7 +107,9 @@ export function WatchEventsCard({ item, botMode = "watch" }: Props) {
               </span>
             )}
           </div>
-          <h3 className="text-xl font-black leading-tight text-ink">{item.title}</h3>
+          <h3 className={`font-black leading-tight text-ink ${isKoiPick ? "text-2xl sm:text-3xl" : "text-xl"}`}>
+            {item.title}
+          </h3>
           <p className="mt-1 text-sm font-semibold text-slate">{item.subtitle}</p>
           {item.rating || item.year || item.runtime || item.genre ? (
             <p className="mt-2 text-xs font-bold uppercase tracking-[0.12em] text-slate">

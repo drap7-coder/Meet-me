@@ -4,12 +4,9 @@ import type { SearchHalfwayRequest, WatchSubcategory } from "@/lib/types";
 import type { CurrentLocationContext } from "@/lib/currentLocation";
 import type { LocationUiState } from "@/lib/locationInput";
 import { trackEvent } from "@/lib/analytics";
-import { buildHalfwaySearchQuery } from "@/lib/halfwayBrowse";
 import { KOI_EXAMPLE } from "@/lib/koiExamples";
-import { DEFAULT_WATCH_SUBCATEGORY, EVENTS_PLACEHOLDER, WATCH_PLACEHOLDER } from "@/lib/watchBrowse";
-import { LOCAL_HAPPENINGS_OPTIONS } from "@/lib/localHappenings";
-import { SPOT_OPTIONS, type SpotOptionAccent } from "@/lib/spotBrowse";
-import { STREAMING_OPTIONS, type StreamingOptionAccent } from "@/lib/streamBrowse";
+import { KOI_ROTATING_PLACEHOLDERS } from "@/lib/koiCapabilityExamples";
+import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
 import { recordTrendingSearch } from "@/lib/trendingSearches";
 import { BRAND } from "@/src/config/branding";
 import { SavedLocationBadge } from "@/app/components/SavedLocationBadge";
@@ -50,13 +47,7 @@ export type AiSearchBoxHandle = {
   runQuery: (query: string, watchSubcategory?: WatchSubcategory) => void;
   fillQuery: (query: string, watchSubcategory?: WatchSubcategory) => void;
   fillHalfwayIntent: (lookingFor: string, exampleQuery?: string) => void;
-  fillEventsQuery: (query: string) => void;
-  fillSpotQuery: (query?: string) => void;
-  fillStreamingQuery: (query?: string, watchSubcategory?: WatchSubcategory) => void;
-  setGuidedMode: (mode: GuidedSearchMode) => void;
 };
-
-type GuidedSearchMode = null | "spot" | "halfway" | "events" | "streaming";
 
 function AiSparkleIcon() {
   return (
@@ -96,19 +87,15 @@ function SendIcon() {
 export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearchBox(
   {
     loading,
-    locationStatus,
     locationLabel = "",
-    locationUiState = "idle",
     showManualFallback = false,
     manualLocationError,
     locationContext,
-    defaultUserAddress = "",
     onParsed,
     onWatchSearch,
     onEventsSearch,
     onNeedsFullFallback,
     onNeedsLocation,
-    onPersistUserAddress,
     onUseLocation,
     onShowZipFallback,
     onSubmitManualLocation,
@@ -124,18 +111,16 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   const [error, setError] = useState("");
   const [manualLocationInput, setManualLocationInput] = useState("");
   const [watchActiveSubcategory, setWatchActiveSubcategory] = useState<WatchSubcategory>(DEFAULT_WATCH_SUBCATEGORY);
-  const [guidedMode, setGuidedMode] = useState<GuidedSearchMode>(null);
-  const [locationA, setLocationA] = useState("");
-  const [locationB, setLocationB] = useState("");
-  const [halfwayLookingFor, setHalfwayLookingFor] = useState("");
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const address = defaultUserAddress.trim() || locationContext?.locationA?.trim() || "";
-    if (!address) return;
-    setLocationA((current) => (current.trim() ? current : address));
-  }, [defaultUserAddress, locationContext?.locationA, locationContext?.locationAPlaceId, locationContext?.locationACoordinates]);
+    const timer = window.setInterval(() => {
+      setPlaceholderIndex((current) => (current + 1) % KOI_ROTATING_PLACEHOLDERS.length);
+    }, 4200);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const scrollToSearch = useCallback(() => {
     window.requestAnimationFrame(() => {
@@ -143,67 +128,30 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     });
   }, []);
 
-  const fillQuery = useCallback((searchQuery: string, watchSubcategory?: WatchSubcategory) => {
-    const trimmed = searchQuery.trim();
-    if (!trimmed) return;
-    if (watchSubcategory) setWatchActiveSubcategory(watchSubcategory);
-    setGuidedMode(null);
-    setQuery(trimmed);
-    setError("");
-    scrollToSearch();
-    window.requestAnimationFrame(() => {
-      inputRef.current?.focus({ preventScroll: true });
-      const length = trimmed.length;
-      inputRef.current?.setSelectionRange(length, length);
-    });
-  }, [scrollToSearch]);
+  const fillQuery = useCallback(
+    (searchQuery: string, watchSubcategory?: WatchSubcategory) => {
+      const trimmed = searchQuery.trim();
+      if (!trimmed) return;
+      if (watchSubcategory) setWatchActiveSubcategory(watchSubcategory);
+      setQuery(trimmed);
+      setError("");
+      scrollToSearch();
+      window.requestAnimationFrame(() => {
+        inputRef.current?.focus({ preventScroll: true });
+        const length = trimmed.length;
+        inputRef.current?.setSelectionRange(length, length);
+      });
+    },
+    [scrollToSearch]
+  );
 
-  const fillHalfwayIntent = useCallback((lookingFor: string, exampleQuery?: string) => {
-    setGuidedMode("halfway");
-    setHalfwayLookingFor(lookingFor);
-    if (exampleQuery) setQuery(exampleQuery);
-    setError("");
-    scrollToSearch();
-  }, [scrollToSearch]);
-
-  const fillEventsQuery = useCallback((searchQuery: string) => {
-    const trimmed = searchQuery.trim();
-    if (!trimmed) return;
-    setGuidedMode("events");
-    setQuery(trimmed);
-    setError("");
-    scrollToSearch();
-    window.requestAnimationFrame(() => {
-      inputRef.current?.focus({ preventScroll: true });
-      const length = trimmed.length;
-      inputRef.current?.setSelectionRange(length, length);
-    });
-  }, [scrollToSearch]);
-
-  const fillSpotQuery = useCallback((searchQuery?: string) => {
-    setGuidedMode("spot");
-    if (searchQuery?.trim()) {
-      setQuery(searchQuery.trim());
-    }
-    setError("");
-    scrollToSearch();
-    window.requestAnimationFrame(() => {
-      inputRef.current?.focus({ preventScroll: true });
-    });
-  }, [scrollToSearch]);
-
-  const fillStreamingQuery = useCallback((searchQuery?: string, watchSubcategory?: WatchSubcategory) => {
-    setGuidedMode("streaming");
-    if (watchSubcategory) setWatchActiveSubcategory(watchSubcategory);
-    if (searchQuery?.trim()) {
-      setQuery(searchQuery.trim());
-    }
-    setError("");
-    scrollToSearch();
-    window.requestAnimationFrame(() => {
-      inputRef.current?.focus({ preventScroll: true });
-    });
-  }, [scrollToSearch]);
+  const fillHalfwayIntent = useCallback(
+    (_lookingFor: string, exampleQuery?: string) => {
+      if (exampleQuery?.trim()) fillQuery(exampleQuery);
+      else scrollToSearch();
+    },
+    [fillQuery, scrollToSearch]
+  );
 
   const runSearch = useCallback(
     async (searchQuery: string, watchSubcategory = watchActiveSubcategory) => {
@@ -229,7 +177,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
         if (!response.ok) {
           if (response.status === 422 && data.needsLocation && data.form) {
             onNeedsLocation(data.form);
-            setError(data.error ?? "Add your location to search nearby.");
+            setError(data.error ?? "Add your city, ZIP code, or address to search nearby.");
             return;
           }
           throw new Error(data.error ?? "I could not understand that search.");
@@ -281,91 +229,10 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
         void runSearch(searchQuery, watchSubcategory);
       },
       fillQuery,
-      fillHalfwayIntent,
-      fillEventsQuery,
-      fillSpotQuery,
-      fillStreamingQuery,
-      setGuidedMode: (mode) => {
-        setGuidedMode(mode);
-        scrollToSearch();
-      }
+      fillHalfwayIntent
     }),
-    [fillEventsQuery, fillHalfwayIntent, fillQuery, fillSpotQuery, fillStreamingQuery, runSearch, scrollToSearch]
+    [fillHalfwayIntent, fillQuery, runSearch]
   );
-
-  function handleGuidedModeChange(mode: Exclude<GuidedSearchMode, null>) {
-    const next = guidedMode === mode ? null : mode;
-    setGuidedMode(next);
-    if (next === "spot") {
-      trackEvent("spot_mode_selected", { mode: "spot" });
-    }
-    if (next === "streaming") {
-      trackEvent("streaming_mode_selected", { mode: "streaming" });
-    }
-    if (next === "halfway") {
-      trackEvent("halfway_mode_selected", { mode: "halfway" });
-    }
-    if (next === "events") {
-      trackEvent("events_mode_selected", { mode: "events" });
-    }
-    setError("");
-  }
-
-  function submitSpotGuided(queryValue: string) {
-    const trimmed = queryValue.trim();
-    if (!trimmed || loading || parsing) return;
-    setQuery(trimmed);
-    setError("");
-    void runSearch(trimmed);
-  }
-
-  function submitStreamingGuided(queryValue: string, subcategory: WatchSubcategory) {
-    const trimmed = queryValue.trim();
-    if (!trimmed || loading || parsing) return;
-    setWatchActiveSubcategory(subcategory);
-    setQuery(trimmed);
-    setError("");
-    recordTrendingSearch(trimmed, subcategory);
-    onWatchSearch(trimmed, subcategory);
-  }
-
-  function submitEventsGuided(queryValue: string) {
-    const trimmed = queryValue.trim();
-    if (!trimmed || loading || parsing) return;
-    setQuery(trimmed);
-    setError("");
-    onEventsSearch(trimmed);
-  }
-
-  function submitHalfwayGuided(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (loading || parsing) return;
-
-    const a = locationA.trim();
-    const b = locationB.trim();
-    const lookingFor = halfwayLookingFor.trim();
-
-    if (!a || !b || !lookingFor) {
-      setError("Add both locations and what you are looking for.");
-      return;
-    }
-
-    trackEvent("halfway_search_submitted", { source: "guided" });
-
-    onPersistUserAddress?.(a);
-
-    const form: SearchHalfwayRequest = {
-      locationA: a,
-      locationB: b,
-      category: "custom",
-      searchMode: "midpoint",
-      meetupMode: "single",
-      customQuery: lookingFor
-    };
-
-    setError("");
-    onParsed(form);
-  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -380,215 +247,19 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   const busy = loading || parsing;
   const locationBusy = locating || resolvingManual;
   const activeLocationLabel = locationLabel.trim();
-  const hasLocation = Boolean(activeLocationLabel || locationStatus);
+  const hasLocation = Boolean(activeLocationLabel);
   const submitLabel = parsing ? "Understanding" : loading ? "Finding options" : BRAND.askLabel;
   const onHero = surface === "hero";
-  const locationButtonClass = onHero
-    ? "inline-flex items-center gap-1.5 text-left text-base font-semibold text-white/80 transition hover:text-koi focus:outline-none focus:ring-4 focus:ring-koi/20 disabled:cursor-not-allowed disabled:opacity-60 sm:text-lg"
-    : "inline-flex items-center gap-1.5 text-left text-base font-semibold text-ink transition hover:text-koi focus:outline-none focus:ring-4 focus:ring-koi/15 disabled:cursor-not-allowed disabled:opacity-60 sm:text-lg";
-  const locationHintClass = onHero ? "mt-1 max-w-md text-xs leading-5 text-white/50" : "mt-1 max-w-md text-xs leading-5 text-slate/80";
   const heroFieldClass = "koi-hero-field h-11 w-full px-4 text-base outline-none transition disabled:cursor-not-allowed disabled:opacity-60";
   const fieldClass = "koi-field h-11 w-full px-4 text-base outline-none transition placeholder:text-slate/60 disabled:cursor-not-allowed disabled:opacity-60";
-  const addressInputClass = onHero ? heroFieldClass : fieldClass;
-  const guidedInputClass = onHero ? heroFieldClass : fieldClass;
-  const pillClass = (active: boolean, accent: "default" | "events" | "watch" = "default") =>
-    onHero
-      ? `inline-flex h-9 items-center rounded-full px-4 text-sm font-bold transition focus:outline-none focus:ring-4 focus:ring-white/15 disabled:cursor-not-allowed disabled:opacity-60 ${
-          active
-            ? accent === "events"
-              ? "border border-events bg-events text-white"
-              : accent === "watch"
-                ? "border border-watch bg-watch text-white"
-                : "border border-koi bg-koi text-white"
-            : "border border-white/15 bg-white/5 text-white/85 hover:border-white/25 hover:bg-white/8"
-        }`
-      : `inline-flex h-9 items-center rounded-full px-4 text-sm font-semibold transition focus:outline-none focus:ring-4 focus:ring-koi/15 disabled:cursor-not-allowed disabled:opacity-60 ${
-          active
-            ? accent === "events"
-              ? "border border-events bg-events text-white"
-              : accent === "watch"
-                ? "border border-watch bg-watch text-white"
-                : "border border-koi bg-koi text-white"
-            : "border border-line bg-white text-ink hover:border-koi/40 hover:bg-[#EDFFED]"
-        }`;
-  const searchPlaceholder =
-    guidedMode === "spot"
-      ? BRAND.searchPlaceholderSpot
-      : guidedMode === "halfway"
-        ? buildHalfwaySearchQuery(locationA, locationB, halfwayLookingFor) || "Add locations above, or ask in plain language below"
-        : guidedMode === "events"
-          ? EVENTS_PLACEHOLDER
-          : guidedMode === "streaming"
-            ? WATCH_PLACEHOLDER
-            : BRAND.searchPlaceholderFreeform;
+  const rotatingPlaceholder = KOI_ROTATING_PLACEHOLDERS[placeholderIndex] ?? BRAND.searchPlaceholder;
 
   return (
     <div ref={containerRef} id="ask-koi" className="w-full min-w-0 max-w-full scroll-mt-24">
-      <section
-        className="w-full min-w-0"
-        aria-labelledby="ai-search-title"
-      >
+      <section className="w-full min-w-0" aria-labelledby="ai-search-title">
         <h2 id="ai-search-title" className="sr-only">
           {BRAND.askLabel}
         </h2>
-
-        <div className="mb-3 flex flex-wrap gap-2">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => handleGuidedModeChange("spot")}
-            className={pillClass(guidedMode === "spot")}
-          >
-            Find a Spot
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => handleGuidedModeChange("halfway")}
-            className={pillClass(guidedMode === "halfway")}
-          >
-            Meet Halfway
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => handleGuidedModeChange("events")}
-            className={pillClass(guidedMode === "events", "events")}
-          >
-            Find Events
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => handleGuidedModeChange("streaming")}
-            className={pillClass(guidedMode === "streaming", "watch")}
-          >
-            Streaming
-          </button>
-        </div>
-
-        {guidedMode === "spot" ? (
-          <div className="mb-3 rounded-[18px] border border-koi/20 bg-koi/5 p-3 sm:p-4">
-            <p className={`text-sm font-black ${onHero ? "text-white" : "text-koi"}`}>Nearby Spots</p>
-            <p className={`mt-1 text-xs font-semibold leading-5 ${onHero ? "text-white/65" : "text-slate"}`}>
-              Restaurants, coffee, drinks, shopping, and activities near you.
-            </p>
-            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {SPOT_OPTIONS.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  disabled={busy}
-                  onClick={() => submitSpotGuided(option.query)}
-                  className={`rounded-[14px] border px-3 py-2.5 text-left text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${spotOptionClass(option.accent, onHero)}`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {guidedMode === "streaming" ? (
-          <div className="mb-3 rounded-[18px] border border-watch/20 bg-watch/5 p-3 sm:p-4">
-            <p className={`text-sm font-black ${onHero ? "text-white" : "text-watch"}`}>Streaming Picks</p>
-            <p className={`mt-1 text-xs font-semibold leading-5 ${onHero ? "text-white/65" : "text-slate"}`}>
-              Movies, TV series, and trending titles from TMDB.
-            </p>
-            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {STREAMING_OPTIONS.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  disabled={busy}
-                  onClick={() => submitStreamingGuided(option.query, option.watchSubcategory)}
-                  className={`rounded-[14px] border px-3 py-2.5 text-left text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${streamOptionClass(option.accent, onHero)}`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {guidedMode === "events" ? (
-          <div className="mb-3 rounded-[18px] border border-events/20 bg-events/5 p-3 sm:p-4">
-            <p className={`text-sm font-black ${onHero ? "text-white" : "text-events"}`}>Local Happenings</p>
-            <p className={`mt-1 text-xs font-semibold leading-5 ${onHero ? "text-white/65" : "text-slate"}`}>
-              Street fairs, farmers markets, festivals, and seasonal events near you.
-            </p>
-            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {LOCAL_HAPPENINGS_OPTIONS.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  disabled={busy}
-                  onClick={() => submitEventsGuided(option.query)}
-                  className={`rounded-[14px] border px-3 py-2.5 text-left text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                    option.accent === "market"
-                      ? onHero
-                        ? "border-[#14B8A6]/40 bg-[#14B8A6]/10 text-white hover:border-[#14B8A6]/60"
-                        : "border-[#14B8A6]/35 bg-[#E6FFFA] text-ink hover:border-[#14B8A6]/60"
-                      : onHero
-                        ? "border-events/35 bg-events/10 text-white hover:border-events/55"
-                        : "border-events/30 bg-events/5 text-ink hover:border-events/50"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {guidedMode === "halfway" ? (
-          <form onSubmit={submitHalfwayGuided} className="mb-3 grid gap-2 sm:grid-cols-2">
-            <label className="block min-w-0 sm:col-span-1">
-              <span className={`mb-1 block text-xs font-semibold ${onHero ? "text-white/70" : "text-slate"}`}>Your address</span>
-              <input
-                type="text"
-                value={locationA}
-                onChange={(event) => setLocationA(event.target.value)}
-                placeholder={KOI_EXAMPLE.locationA}
-                disabled={busy}
-                className={addressInputClass}
-              />
-            </label>
-            <label className="block min-w-0 sm:col-span-1">
-              <span className={`mb-1 block text-xs font-bold ${onHero ? "text-white/75" : "text-slate"}`}>Location B</span>
-              <input
-                type="text"
-                value={locationB}
-                onChange={(event) => setLocationB(event.target.value)}
-                placeholder={KOI_EXAMPLE.locationB}
-                disabled={busy}
-                className={addressInputClass}
-              />
-            </label>
-            <label className="block min-w-0 sm:col-span-2">
-              <span className={`mb-1 block text-xs font-bold ${onHero ? "text-white/75" : "text-slate"}`}>
-                What are you looking for?
-              </span>
-              <input
-                type="text"
-                value={halfwayLookingFor}
-                onChange={(event) => setHalfwayLookingFor(event.target.value)}
-                placeholder="Dinner, brewery, lunch, happy hour, date night"
-                disabled={busy}
-                className={guidedInputClass}
-              />
-            </label>
-            <div className="sm:col-span-2">
-              <button
-                type="submit"
-                disabled={busy}
-                className="inline-flex h-11 w-full items-center justify-center rounded-full bg-koi px-5 text-sm font-bold text-white transition hover:bg-koi-hover focus:outline-none focus:ring-4 focus:ring-koi/25 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-              >
-                Find halfway spot
-              </button>
-            </div>
-          </form>
-        ) : null}
 
         <form onSubmit={handleSubmit} className="w-full min-w-0">
           <label className="block w-full min-w-0">
@@ -611,7 +282,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
                       void runSearch(query);
                     }
                   }}
-                  placeholder={searchPlaceholder}
+                  placeholder={rotatingPlaceholder}
                   rows={2}
                   className="m-0 min-h-[2.75rem] w-0 min-w-0 flex-1 resize-none appearance-none border-0 bg-transparent py-1.5 text-base leading-6 text-ink outline-none placeholder:text-slate/55 [field-sizing:content] sm:min-h-[3rem] sm:py-2 sm:text-[1.0625rem]"
                 />
@@ -628,29 +299,13 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
                   )}
                 </button>
               </div>
-              {hasLocation && activeLocationLabel && !showLocationActions && !showManualFallback ? (
+              {hasLocation && !showLocationActions && !showManualFallback ? (
                 <SavedLocationBadge label={activeLocationLabel} />
               ) : null}
             </div>
           </label>
         </form>
       </section>
-
-      {hasLocation && activeLocationLabel && !showLocationActions && !showManualFallback ? null : !showLocationActions && !showManualFallback ? (
-        <div className="mt-3">
-          <button
-            type="button"
-            onClick={onUseLocation}
-            disabled={locationBusy || busy}
-            className={locationButtonClass}
-          >
-            {locating || locationUiState === "requesting" ? "Checking location..." : "Use my location"}
-          </button>
-          <p className={locationHintClass}>
-            Optional — helps with nearby place searches.
-          </p>
-        </div>
-      ) : null}
 
       {showLocationActions ? (
         <div className="mt-3 flex flex-wrap gap-2" aria-live="polite">
@@ -661,7 +316,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
             className={
               onHero
                 ? "inline-flex h-11 items-center rounded-full border border-white/25 bg-white/10 px-5 text-base font-bold text-white transition hover:border-white/40 hover:bg-white/15 focus:outline-none focus:ring-4 focus:ring-white/15 disabled:cursor-not-allowed disabled:opacity-60"
-                : "inline-flex h-11 items-center rounded-full border border-line/80 bg-white px-5 text-base font-bold text-ink shadow-sm transition hover:border-clay/50 hover:bg-[#EDFFED] focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60"
+                : "inline-flex h-11 items-center rounded-full border border-line/80 bg-white px-5 text-base font-bold text-ink shadow-sm transition hover:border-koi/50 hover:bg-koi/10 focus:outline-none focus:ring-4 focus:ring-koi/10 disabled:cursor-not-allowed disabled:opacity-60"
             }
           >
             {locating ? "Checking location..." : "Use my location"}
@@ -673,10 +328,10 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
             className={
               onHero
                 ? "inline-flex h-10 items-center rounded-full border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white/90 transition hover:border-white/35 hover:bg-white/15 focus:outline-none focus:ring-4 focus:ring-white/15 disabled:cursor-not-allowed disabled:opacity-60"
-                : "inline-flex h-10 items-center rounded-full border border-line/80 bg-white px-4 text-sm font-semibold text-ink shadow-sm transition hover:border-clay/50 hover:bg-[#EDFFED] focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60"
+                : "inline-flex h-10 items-center rounded-full border border-line/80 bg-white px-4 text-sm font-semibold text-ink shadow-sm transition hover:border-koi/50 hover:bg-koi/10 focus:outline-none focus:ring-4 focus:ring-koi/10 disabled:cursor-not-allowed disabled:opacity-60"
             }
           >
-            Enter ZIP Code
+            Enter city or ZIP
           </button>
         </div>
       ) : null}
@@ -692,14 +347,14 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
           aria-live="polite"
         >
           <p className={`text-sm font-semibold ${onHero ? "text-white" : "text-ink"}`}>
-            Location blocked? Enter a ZIP code instead.
+            Enter a city, ZIP code, or address to search nearby.
           </p>
           <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
             <input
               type="text"
               value={manualLocationInput}
               onChange={(event) => setManualLocationInput(event.target.value)}
-              placeholder="ZIP code or city"
+              placeholder="City, ZIP code, or address"
               autoComplete="postal-code"
               disabled={locationBusy || busy}
               className={`h-11 min-w-0 flex-1 px-4 text-base outline-none transition disabled:cursor-not-allowed disabled:opacity-60 ${onHero ? heroFieldClass : fieldClass}`}
@@ -710,18 +365,15 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
               className={
                 onHero
                   ? "inline-flex h-11 shrink-0 items-center justify-center rounded-full border-2 border-white/25 bg-white/10 px-4 text-sm font-bold text-white transition hover:border-white/40 hover:bg-white/15 focus:outline-none focus:ring-4 focus:ring-white/15 disabled:cursor-not-allowed disabled:opacity-60"
-                  : "inline-flex h-11 shrink-0 items-center justify-center rounded-full border-2 border-line bg-white px-4 text-sm font-bold text-ink transition hover:border-clay hover:bg-[#EDFFED] focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60"
+                  : "inline-flex h-11 shrink-0 items-center justify-center rounded-full border-2 border-line bg-white px-4 text-sm font-bold text-ink transition hover:border-koi hover:bg-koi/10 focus:outline-none focus:ring-4 focus:ring-koi/10 disabled:cursor-not-allowed disabled:opacity-60"
               }
             >
-              {resolvingManual ? "Finding..." : "Use this location"}
+              {resolvingManual ? "Finding..." : "Continue"}
             </button>
           </div>
           {manualLocationError ? (
             <p className="mt-2 text-xs font-semibold text-events">{manualLocationError}</p>
           ) : null}
-          <p className={`mt-2 text-xs leading-5 ${onHero ? "text-white/55" : "text-slate"}`}>
-            You can still search by typing a place, like &apos;{KOI_EXAMPLE.spotQuery}&apos; or &apos;{KOI_EXAMPLE.italianQuery}&apos;.
-          </p>
         </form>
       ) : null}
 
@@ -733,45 +385,3 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     </div>
   );
 });
-
-function streamOptionClass(accent: StreamingOptionAccent, onHero: boolean) {
-  if (accent === "trending") {
-    return onHero
-      ? "border-indigo/40 bg-indigo/10 text-white hover:border-indigo/60"
-      : "border-indigo/35 bg-indigo/10 text-ink hover:border-indigo/60";
-  }
-  if (accent === "series") {
-    return onHero
-      ? "border-watch/45 bg-watch/15 text-white hover:border-watch/65"
-      : "border-watch/40 bg-watch/10 text-ink hover:border-watch/60";
-  }
-  if (accent === "movies") {
-    return onHero
-      ? "border-watch/35 bg-watch/10 text-white hover:border-watch/55"
-      : "border-watch/30 bg-watch/5 text-ink hover:border-watch/50";
-  }
-  return onHero
-    ? "border-watch/35 bg-watch/10 text-white hover:border-watch/55"
-    : "border-watch/30 bg-watch/5 text-ink hover:border-watch/50";
-}
-
-function spotOptionClass(accent: SpotOptionAccent, onHero: boolean) {
-  if (accent === "food") {
-    return onHero
-      ? "border-food/40 bg-food/10 text-white hover:border-food/60"
-      : "border-food/35 bg-food/10 text-ink hover:border-food/60";
-  }
-  if (accent === "drinks") {
-    return onHero
-      ? "border-drinks/40 bg-drinks/10 text-white hover:border-drinks/60"
-      : "border-drinks/35 bg-drinks/10 text-ink hover:border-drinks/60";
-  }
-  if (accent === "outdoor") {
-    return onHero
-      ? "border-outdoor/40 bg-outdoor/10 text-white hover:border-outdoor/60"
-      : "border-outdoor/35 bg-outdoor/10 text-ink hover:border-outdoor/60";
-  }
-  return onHero
-    ? "border-koi/35 bg-koi/10 text-white hover:border-koi/55"
-    : "border-koi/30 bg-koi/5 text-ink hover:border-koi/50";
-}

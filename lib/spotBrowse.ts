@@ -11,9 +11,9 @@ export type SpotOption = {
 
 export const SPOT_OPTIONS: SpotOption[] = [
   {
-    id: "dinner",
-    label: "Dinner",
-    query: "Dinner near me",
+    id: "bbq",
+    label: "BBQ",
+    query: "BBQ near me",
     accent: "food"
   },
   {
@@ -53,10 +53,10 @@ export const SPOT_OPTIONS: SpotOption[] = [
     accent: "food"
   },
   {
-    id: "activities",
-    label: "Something Fun",
-    query: "Fun activities near me",
-    accent: "outdoor"
+    id: "mexican",
+    label: "Mexican",
+    query: "Mexican restaurant near me",
+    accent: "food"
   }
 ];
 

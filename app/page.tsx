@@ -502,7 +502,7 @@ export default function HomePage() {
 
   function submitLocationFallback() {
     if (!form.locationA.trim()) {
-      setError("Add where you are, or use the location pin in the search box.");
+      setError("Add where you are, or tap Use my location below the search box.");
       scrollToFallback();
       return;
     }
@@ -685,9 +685,10 @@ export default function HomePage() {
 
       {!hasSearched && !results && !watchEventsResult && !loading ? (
         <>
-          <section id="search" className="relative isolate overflow-hidden bg-ink px-4 pb-6 pt-2 sm:px-6 sm:pt-3 lg:px-8">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_28%_18%,rgba(214,90,46,0.24),transparent_28%),radial-gradient(circle_at_72%_8%,rgba(242,239,231,0.10),transparent_24%)]" />
-            <div className="relative z-10 mx-auto grid w-full max-w-5xl gap-4 py-4 sm:gap-5 sm:py-5 lg:py-6">
+          <section id="search" className="relative isolate overflow-hidden bg-ink px-4 pb-10 pt-4 sm:px-6 sm:pb-12 sm:pt-5 lg:px-8 lg:pb-14">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_50%_-15%,rgba(214,90,46,0.38),transparent_58%),radial-gradient(circle_at_12%_28%,rgba(214,90,46,0.16),transparent_34%),radial-gradient(circle_at_88%_10%,rgba(242,239,231,0.14),transparent_30%),linear-gradient(180deg,#0A1323_0%,#0c1729_50%,#0A1323_100%)]" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-mint via-mint/80 to-transparent sm:h-28" />
+            <div className="relative z-10 mx-auto grid w-full max-w-5xl gap-5 py-5 sm:gap-6 sm:py-7 lg:gap-7 lg:py-8">
               <MarketingHero />
               <AiSearchBox
                 ref={searchBoxRef}
@@ -909,29 +910,29 @@ export default function HomePage() {
 
 function MarketingHero() {
   return (
-      <div className="w-full min-w-0">
-        <div className="flex w-full min-w-0 items-center gap-3 sm:gap-4">
-          <Logo
-            size="lg"
-            bare
-            className="shrink-0 [&_img]:h-24 [&_img]:w-24 sm:[&_img]:h-40 sm:[&_img]:w-40"
-          />
-          <div className="min-w-0 flex-1">
-            <h1 className="font-semibold tracking-[-0.04em]">
-              <span className="block text-[clamp(2rem,8vw,3.25rem)] leading-[0.92] text-white">
-                {BRAND.heroHeadlineLead}
-              </span>
-              <span className="mt-1 block text-[clamp(2rem,8vw,3.25rem)] leading-[0.92]">
-                <span className="text-white">what to </span>
-                <span className="text-clay">do.</span>
-              </span>
-            </h1>
-            <p className="mt-3 max-w-xl text-sm font-medium leading-6 text-[#C8C2B6] sm:text-[0.9375rem] sm:leading-6">
-              {BRAND.heroSubheadline}
-            </p>
-          </div>
+    <div className="w-full min-w-0">
+      <div className="flex w-full min-w-0 items-center gap-4 sm:gap-5">
+        <Logo
+          size="lg"
+          bare
+          className="shrink-0 drop-shadow-[0_8px_24px_rgba(0,0,0,0.35)] [&_img]:h-24 [&_img]:w-24 sm:[&_img]:h-40 sm:[&_img]:w-40"
+        />
+        <div className="min-w-0 flex-1">
+          <h1 className="font-semibold tracking-[-0.045em]">
+            <span className="block text-[clamp(2.125rem,8vw,3.5rem)] leading-[0.9] text-white">
+              {BRAND.heroHeadlineLead}
+            </span>
+            <span className="mt-1.5 block text-[clamp(2.125rem,8vw,3.5rem)] leading-[0.9]">
+              <span className="text-white/95">what to </span>
+              <span className="text-clay">do.</span>
+            </span>
+          </h1>
+          <p className="mt-4 max-w-xl text-[0.9375rem] font-normal leading-6 tracking-[-0.01em] text-[#B8B0A3] sm:text-base sm:leading-7">
+            {BRAND.heroSubheadline}
+          </p>
         </div>
       </div>
+    </div>
   );
 }
 
@@ -1120,7 +1121,7 @@ function SiteHeader() {
     <header className="sticky top-0 z-50 border-b border-line/80 bg-paper/90 pt-[env(safe-area-inset-top)] shadow-[0_1px_0_rgba(10,19,35,0.06)] backdrop-blur-sm">
       <div className="mx-auto flex h-[56px] w-full max-w-7xl items-center justify-between gap-2 px-3 sm:h-[60px] sm:gap-3 sm:px-6 lg:px-8">
         <a href="/" className="group inline-flex min-w-0 flex-1 items-center gap-2 sm:gap-3" aria-label={`${BRAND.displayName} home`}>
-          <Logo variant="lockup" size="md" showEyebrow className="transition group-hover:opacity-90" />
+          <Logo variant="mark" size="sm" className="transition group-hover:opacity-90" />
         </a>
         <a
           href="#ask-koi"
@@ -1226,13 +1227,13 @@ function TrendingSearchesSection({
 
   return (
     <section
-      className="w-full min-w-0 overflow-hidden rounded-[20px] border border-white/10 bg-paper/95 p-4 shadow-[0_12px_32px_rgba(10,19,35,0.14)] sm:p-5"
+      className="w-full min-w-0 overflow-hidden rounded-[22px] border border-white/15 bg-paper/96 p-5 shadow-[0_16px_40px_rgba(10,19,35,0.16),0_0_0_1px_rgba(255,255,255,0.1)_inset] sm:p-6"
       aria-labelledby="trending-searches-title"
     >
-      <h2 id="trending-searches-title" className="text-sm font-bold uppercase tracking-wide text-clay">
+      <h2 id="trending-searches-title" className="text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-clay">
         Trending Searches
       </h2>
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-4 flex flex-wrap gap-2">
         {searches.map((option) => (
           <button
             key={option.id}
@@ -1258,13 +1259,13 @@ function PopularSearchesSection({
 }) {
   return (
     <section
-      className="w-full min-w-0 overflow-hidden rounded-[20px] border border-white/10 bg-paper/95 p-4 shadow-[0_12px_32px_rgba(10,19,35,0.14)] sm:p-5"
+      className="w-full min-w-0 overflow-hidden rounded-[22px] border border-white/15 bg-paper/96 p-5 shadow-[0_16px_40px_rgba(10,19,35,0.16),0_0_0_1px_rgba(255,255,255,0.1)_inset] sm:p-6"
       aria-labelledby="popular-searches-title"
     >
-      <h2 id="popular-searches-title" className="text-sm font-bold uppercase tracking-wide text-clay">
+      <h2 id="popular-searches-title" className="text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-clay">
         Popular Searches
       </h2>
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-4 flex flex-wrap gap-2">
         {KOI_POPULAR_SEARCHES.map((option) => (
           <button
             key={option.id}
@@ -1293,10 +1294,10 @@ function RecentSearchesSection({
   if (!meetups.length) return null;
 
   return (
-    <section className="w-full min-w-0 overflow-hidden rounded-[20px] border border-white/10 bg-paper/95 p-4 shadow-[0_12px_32px_rgba(10,19,35,0.14)] sm:p-5">
+    <section className="w-full min-w-0 overflow-hidden rounded-[22px] border border-white/15 bg-paper/96 p-5 shadow-[0_16px_40px_rgba(10,19,35,0.16),0_0_0_1px_rgba(255,255,255,0.1)_inset] sm:p-6">
       <div className="flex min-w-0 items-start justify-between gap-3 sm:items-center sm:gap-4">
         <div className="min-w-0 flex-1">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-clay">Recent Searches</h2>
+          <h2 className="text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-clay">Recent Searches</h2>
         </div>
         <button
           type="button"

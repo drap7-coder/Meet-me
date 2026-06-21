@@ -11,6 +11,7 @@ Koi is a mobile-first Next.js MVP for an intelligent local meeting assistant. As
 - Tailwind CSS
 - Google Maps Platform
 - Optional Supabase environment variables for future saved searches
+- Vercel KV or Upstash Redis for share links and API rate limiting (required in production)
 
 ## Google APIs To Enable
 
@@ -39,9 +40,13 @@ OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=qwen3:8b
 OLLAMA_TIMEOUT_MS=30000
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+KV_REST_API_URL=
+KV_REST_API_TOKEN=
 ```
 
 `GOOGLE_MAPS_API_KEY` is used only by the server-side Google Maps, Places, Geocoding, and Routes calls. `TMDB_API_KEY` powers live watch picks. `NLP_PROVIDER`, `OLLAMA_BASE_URL`, and `OLLAMA_MODEL` are used only by the server-side natural-language parser. The browser never receives the model endpoint.
+
+In production, set `KV_REST_API_URL` and `KV_REST_API_TOKEN` (Vercel KV or Upstash Redis REST) for durable share links and per-IP API rate limiting.
 
 For production hosting, `OLLAMA_BASE_URL` must point to an Ollama endpoint reachable from the server. `http://localhost:11434` works for local development only.
 
@@ -58,10 +63,13 @@ Open `http://localhost:3000`.
 ## API Routes
 
 - `POST /api/geocode`
-- `POST /api/places`
 - `POST /api/parse-search`
-- `POST /api/route-matrix`
 - `POST /api/search-halfway`
+- `POST /api/watch-search`
+- `POST /api/watch-events`
+- `POST /api/share`
+
+All `/api/*` routes are rate-limited per IP (Redis-backed in production).
 
 The browser calls `/api/search-halfway`; the server handles Google API calls so the Google Maps API key is not exposed to client code.
 

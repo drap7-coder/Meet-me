@@ -7,8 +7,7 @@ import {
   type CurrentLocationContext
 } from "@/lib/currentLocation";
 import { detectPreferencesFromQuery } from "@/lib/preferences";
-import type { KoiBotMode, SearchHalfwayRequest, WatchEventsResult } from "@/lib/types";
-import { buildEventsResult } from "@/lib/eventsSearch";
+import type { KoiBotMode, SearchHalfwayRequest } from "@/lib/types";
 import { resolveKoiBotMode } from "@/lib/watchEvents";
 import { resolveWatchPlaceSearchForm } from "@/lib/watchPlaceSearch";
 import { NextResponse } from "next/server";
@@ -29,11 +28,6 @@ type ParseSearchResponse = {
     search_mode: "single" | "midpoint";
   };
   form: SearchHalfwayRequest;
-};
-
-type ParseEventsResponse = {
-  botMode: "events";
-  watchEvents: WatchEventsResult;
 };
 
 type ParsedSearchIntent = {
@@ -72,10 +66,7 @@ export async function POST(request: Request) {
         );
       }
 
-      const response: ParseEventsResponse = {
-        botMode: "events",
-        watchEvents: await buildEventsResult(query)
-      };
+      const response = { botMode: "events" as const };
       return NextResponse.json(response);
     }
 

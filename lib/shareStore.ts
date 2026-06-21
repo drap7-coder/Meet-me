@@ -1,4 +1,5 @@
 import { normalizeCategory } from "@/lib/categories";
+import { getRedisConfig, redisCommand } from "@/lib/redisRest";
 import type { LatLng, MeetupMode, Preference, ScoredVenue, SearchHalfwayRequest, SearchMode, VenueCategory } from "@/lib/types";
 
 const SHARE_PREFIX = "halfway:share:";
@@ -24,11 +25,6 @@ export type SharePayload = {
   createdAt: string;
 };
 
-type RedisConfig = {
-  url: string;
-  token: string;
-};
-
 const memoryStore = getMemoryStore();
 
 export async function createShare(payload: SharePayload) {
@@ -37,13 +33,14 @@ export async function createShare(payload: SharePayload) {
   const redis = getRedisConfig();
 
   if (redis) {
-    await redisCommand(redis, ["SET", key, JSON.stringify(payload), "EX", String(SHARE_TTL_SECONDS)]);
+    await redisCommand(["SET", key, JSON.stringify(payload), "EX", String(SHARE_TTL_SECONDS)]);
     return shortId;
   }
 
   if (process.env.NODE_ENV === "production") {
-    warnNoDurableStorage();
-    return encodePortablePayload(payload);
+    throw new Error(
+      "Share storage is not configured. Set KV_REST_API_URL/KV_REST_API_TOKEN or UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN."
+    );
   }
 
   warnNoDurableStorage();
@@ -62,9 +59,13 @@ export async function getShare(id: string) {
   const redis = getRedisConfig();
 
   if (redis) {
-    const value = await redisCommand(redis, ["GET", `${SHARE_PREFIX}${safeId}`]);
+    const value = await redisCommand(["GET", `${SHARE_PREFIX}${safeId}`]);
     if (typeof value !== "string") return null;
     return JSON.parse(value) as SharePayload;
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    return null;
   }
 
   warnNoDurableStorage();
@@ -83,32 +84,6 @@ export function sharePayloadToSearchRequest(payload: SharePayload): SearchHalfwa
     customQuery: payload.customQuery,
     preferences: payload.preferences
   };
-}
-
-function getRedisConfig(): RedisConfig | null {
-  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-  return url && token ? { url, token } : null;
-}
-
-async function redisCommand(config: RedisConfig, command: string[]) {
-  const response = await fetch(config.url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${config.token}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(command),
-    cache: "no-store"
-  });
-
-  if (!response.ok) {
-    throw new Error(`Share storage failed with ${response.status}.`);
-  }
-
-  const data = await response.json();
-  if (data.error) throw new Error(data.error);
-  return data.result;
 }
 
 function createShortId() {
@@ -132,22 +107,6 @@ function getMemoryStore() {
   };
   globalStore.__halfwayShareStore ??= new Map<string, SharePayload>();
   return globalStore.__halfwayShareStore;
-}
-
-function encodePortablePayload(payload: SharePayload) {
-  const compact = {
-    a: payload.locationA,
-    b: payload.locationB,
-    c: payload.category,
-    sm: payload.searchMode,
-    mode: payload.meetupMode,
-    q: payload.customQuery,
-    p: payload.preferences,
-    m: payload.midpoint,
-    r: payload.selectedResultIds,
-    t: payload.createdAt
-  };
-  return `p_${Buffer.from(JSON.stringify(compact), "utf8").toString("base64url")}`;
 }
 
 function decodePortablePayload(id: string): SharePayload | null {

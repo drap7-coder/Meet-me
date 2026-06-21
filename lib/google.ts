@@ -194,9 +194,6 @@ async function searchPlacesForQuery(params: {
         "places.rating",
         "places.userRatingCount",
         "places.priceLevel",
-        "places.reviews",
-        "places.editorialSummary",
-        "places.generativeSummary",
         "places.currentOpeningHours.openNow",
         "places.googleMapsUri",
         "places.websiteUri",
@@ -233,38 +230,11 @@ async function searchPlacesForQuery(params: {
       rating: typeof place.rating === "number" ? place.rating : null,
       reviewCount: typeof place.userRatingCount === "number" ? place.userRatingCount : 0,
       priceLevel: typeof place.priceLevel === "string" ? place.priceLevel : undefined,
-      reviewQuote: getReviewQuote(place),
-      reviewSummary: getReviewSummary(place),
-      reviewSummaryDisclosure: stringText(place.generativeSummary?.disclaimerText) || undefined,
       openNow: typeof place.currentOpeningHours?.openNow === "boolean" ? place.currentOpeningHours.openNow : null,
       googleMapsUri: place.googleMapsUri ?? buildGoogleMapsSearchLink(place.displayName?.text, place.formattedAddress),
       websiteUri: place.websiteUri,
       types: Array.isArray(place.types) ? place.types : []
     }));
-}
-
-function getReviewQuote(place: any) {
-  const reviews = Array.isArray(place.reviews) ? place.reviews : [];
-  for (const review of reviews) {
-    const text = stringText(review?.text) || stringText(review?.originalText);
-    if (text && text.length >= 24) return truncateText(text, 150);
-  }
-  return undefined;
-}
-
-function getReviewSummary(place: any) {
-  const summary = stringText(place.generativeSummary?.overview) || stringText(place.editorialSummary);
-  return summary ? truncateText(summary, 170) : undefined;
-}
-
-function stringText(value: unknown) {
-  if (typeof value === "string") return value.trim();
-  if (value && typeof value === "object" && "text" in value && typeof value.text === "string") return value.text.trim();
-  return "";
-}
-
-function truncateText(value: string, maxLength: number) {
-  return value.length > maxLength ? `${value.slice(0, maxLength - 1).trim()}…` : value;
 }
 
 function getIncludedPlaceTypes(category: SearchHalfwayRequest["category"]) {

@@ -3,7 +3,7 @@ import Image from "next/image";
 
 const MARK_SRC = "/branding/koi-mark-transparent.png";
 
-type LogoSize = "sm" | "md" | "lg" | "xl";
+type LogoSize = "sm" | "md" | "lg" | "xl" | "hero";
 type LogoVariant = "mark" | "lockup";
 
 type LogoProps = {
@@ -12,6 +12,7 @@ type LogoProps = {
   showEyebrow?: boolean;
   bare?: boolean;
   size?: LogoSize;
+  onDark?: boolean;
   className?: string;
 };
 
@@ -31,6 +32,10 @@ const MARK_SIZE: Record<LogoSize, { image: string; tagline: string }> = {
   xl: {
     image: "h-60 w-60 sm:h-72 sm:w-72",
     tagline: "text-lg sm:text-xl"
+  },
+  hero: {
+    image: "h-24 w-24 sm:h-40 sm:w-40",
+    tagline: "text-base sm:text-lg"
   }
 };
 
@@ -38,15 +43,24 @@ const LOCKUP_MARK_SIZE: Record<LogoSize, string> = {
   sm: "h-10 w-10 sm:h-11 sm:w-11",
   md: "h-10 w-10 sm:h-11 sm:w-11",
   lg: "h-14 w-14 sm:h-16 sm:w-16",
-  xl: "h-14 w-14 sm:h-16 sm:w-16"
+  xl: "h-14 w-14 sm:h-16 sm:w-16",
+  hero: "h-14 w-14 sm:h-16 sm:w-16"
 };
 
 const LOCKUP_TITLE: Record<LogoSize, string> = {
   sm: "text-lg sm:text-xl",
   md: "text-xl sm:text-2xl",
   lg: "text-2xl sm:text-3xl",
-  xl: "text-2xl sm:text-3xl"
+  xl: "text-2xl sm:text-3xl",
+  hero: "text-2xl sm:text-3xl"
 };
+
+function getMarkImageSizes(size: LogoSize) {
+  if (size === "hero") return "(min-width: 640px) 320px, 192px";
+  if (size === "xl") return "(min-width: 640px) 288px, 240px";
+  if (size === "lg") return "(min-width: 640px) 192px, 160px";
+  return "96px";
+}
 
 export function Logo({
   variant = "mark",
@@ -54,6 +68,7 @@ export function Logo({
   showEyebrow = false,
   bare = true,
   size = "md",
+  onDark = false,
   className = ""
 }: LogoProps) {
   if (variant === "lockup") {
@@ -88,9 +103,15 @@ export function Logo({
   }
 
   const styles = MARK_SIZE[size];
-  const imageClassName = bare
-    ? `${styles.image} object-contain`
-    : `${styles.image} object-contain drop-shadow-[0_10px_24px_rgba(10,19,35,0.12)]`;
+  const imageClassName = [
+    styles.image,
+    "object-contain",
+    !bare && "drop-shadow-[0_10px_24px_rgba(10,19,35,0.12)]",
+    onDark &&
+      "drop-shadow-[0_0_28px_rgba(214,90,46,0.42)] drop-shadow-[0_10px_28px_rgba(0,0,0,0.38)]"
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div className={`inline-grid min-w-0 gap-2 ${className}`}>
@@ -99,8 +120,9 @@ export function Logo({
         alt={`${BRAND.displayName} mark`}
         width={1024}
         height={1024}
-        sizes={size === "xl" ? "(min-width: 640px) 192px, 112px" : "96px"}
-        priority={size === "xl"}
+        sizes={getMarkImageSizes(size)}
+        priority={size === "hero" || size === "xl"}
+        quality={size === "hero" ? 100 : 90}
         className={imageClassName}
       />
       {showTagline ? (

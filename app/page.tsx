@@ -723,7 +723,7 @@ export default function HomePage() {
         <>
           <section id="search" className="relative isolate overflow-hidden bg-ink px-4 pb-10 pt-4 sm:px-6 sm:pb-12 sm:pt-5 lg:px-8 lg:pb-14">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_50%_-15%,rgba(214,90,46,0.38),transparent_58%),radial-gradient(circle_at_12%_28%,rgba(214,90,46,0.16),transparent_34%),radial-gradient(circle_at_88%_10%,rgba(242,239,231,0.14),transparent_30%),linear-gradient(180deg,#0A1323_0%,#0c1729_50%,#0A1323_100%)]" />
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-mint via-mint/80 to-transparent sm:h-28" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0A1323] via-[#0A1323]/70 to-transparent sm:h-28" />
             <div className="relative z-10 mx-auto grid w-full max-w-5xl gap-5 py-5 sm:gap-6 sm:py-7 lg:gap-7 lg:py-8">
               <MarketingHero />
               <AiSearchBox
@@ -924,8 +924,9 @@ export default function HomePage() {
           </section>
         ) : null}
         </div>
-        <Footer />
       </div>
+
+      <Footer />
       {shareDialog ? (
         <ShareDialog
           dialog={shareDialog}
@@ -941,11 +942,7 @@ function MarketingHero() {
   return (
     <div className="w-full min-w-0">
       <div className="flex w-full min-w-0 items-center gap-4 sm:gap-5">
-        <Logo
-          size="lg"
-          bare
-          className="shrink-0 drop-shadow-[0_8px_24px_rgba(0,0,0,0.35)] [&_img]:h-24 [&_img]:w-24 sm:[&_img]:h-40 sm:[&_img]:w-40"
-        />
+        <Logo size="hero" onDark className="shrink-0" />
         <div className="min-w-0 flex-1">
           <h1 className="font-semibold tracking-[-0.045em]">
             <span className="block text-[clamp(2.125rem,8vw,3.5rem)] leading-[0.9] text-white">
@@ -1222,17 +1219,17 @@ function Footer() {
   )}&body=${encodeURIComponent("Questions, ideas, or feedback:\n")}`;
 
   return (
-    <footer className="bg-mint px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-7xl flex-col gap-6 text-sm text-slate sm:flex-row sm:items-end sm:justify-between">
+    <footer className="bg-ink px-4 py-10 text-[#B8B0A3] sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-7xl flex-col gap-6 text-sm sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <Logo variant="lockup" size="sm" />
-          <p className="mt-3 font-semibold text-ink">Currently in Beta</p>
+          <Logo variant="lockup" size="sm" className="[&_.font-serif]:text-white" />
+          <p className="mt-3 font-semibold text-white/90">Currently in Beta</p>
           <p className="mt-3 max-w-sm leading-6">{BRAND.footerDescription}</p>
         </div>
         <div className="sm:text-right">
           <p className="leading-6">Questions, ideas, or feedback?</p>
-          <p className="leading-6">We'd love to hear from you.</p>
-          <a href={feedbackHref} className="mt-3 inline-flex font-bold text-clay hover:text-[#B94A22]">
+          <p className="leading-6">We&apos;d love to hear from you.</p>
+          <a href={feedbackHref} className="mt-3 inline-flex font-bold text-clay hover:text-[#E07A5F]">
             Send Feedback -&gt;
           </a>
         </div>

@@ -107,38 +107,38 @@ export const KOI_FEATURED_EXAMPLES: KoiFeaturedExample[] = [
   }
 ];
 
-/** Homepage popular searches — longer prompts shown after Recent Searches. */
+/** Homepage popular searches — short labels, full queries. */
 export const KOI_POPULAR_SEARCHES: KoiBrowseOption[] = [
   {
     id: "halfway-friend",
-    label: "Meet a friend halfway between Hoboken and Princeton",
+    label: "Halfway meetup",
     query: "Meet a friend halfway between Hoboken and Princeton"
   },
   {
     id: "pizza-nearby",
-    label: "Find a great pizza place nearby",
+    label: "Pizza nearby",
     query: "Find a great pizza place nearby"
   },
   {
     id: "funny-movie",
-    label: "Find a funny movie like Superbad",
+    label: "Like Superbad",
     query: "Find a funny movie like Superbad",
     watchSubcategory: "movies"
   },
   {
     id: "stream-tonight",
-    label: "Find something worth streaming tonight",
+    label: "Stream tonight",
     query: "Find something worth streaming tonight",
     watchSubcategory: "tv_shows"
   },
   {
     id: "breweries-doylestown",
-    label: "Breweries near Doylestown",
+    label: "Doylestown breweries",
     query: "Breweries near Doylestown"
   },
   {
     id: "movies-nearby-tonight",
-    label: "Movies playing nearby tonight",
+    label: "Movies tonight",
     query: "Movies playing nearby tonight",
     watchSubcategory: "movies"
   }

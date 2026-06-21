@@ -11,6 +11,7 @@ import {
   type KoiBrowseOption
 } from "@/lib/koiBrowse";
 import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
+import { recordTrendingSearch } from "@/lib/trendingSearches";
 import { BRAND } from "@/src/config/branding";
 import { FormEvent, forwardRef, useCallback, useImperativeHandle, useState } from "react";
 
@@ -92,16 +93,19 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
         }
 
         if (data.botMode === "watch") {
+          recordTrendingSearch(trimmed, watchSubcategory);
           onWatchSearch(trimmed, watchSubcategory);
           return;
         }
 
         if (data.botMode === "events") {
+          recordTrendingSearch(trimmed);
           onEventsSearch(trimmed);
           return;
         }
 
         if (!data.form) throw new Error(data.error ?? "I could not understand that search.");
+        recordTrendingSearch(trimmed);
         onParsed(data.form);
       } catch (parseError) {
         setError(parseError instanceof Error ? parseError.message : "I could not understand that search.");
@@ -182,21 +186,24 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
         >
           {parsing ? "Understanding..." : loading ? "Finding picks..." : BRAND.askLabel}
         </button>
+      </form>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         {locationStatus ? (
-          <p className="rounded-full border border-[#B7E4C7] bg-[#F3FBF6] px-4 py-2.5 text-center text-sm font-semibold text-[#176644]">
+          <span className="inline-flex max-w-full items-center rounded-full border border-[#B7E4C7] bg-[#F3FBF6] px-3 py-2 text-xs font-semibold text-[#176644] sm:text-sm">
             {locationStatus}
-          </p>
+          </span>
         ) : (
           <button
             type="button"
             onClick={onUseLocation}
             disabled={locating || busy}
-            className="h-11 rounded-full border-2 border-line bg-white px-5 text-sm font-bold text-ink transition hover:border-clay hover:bg-[#FFF4EC] focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60 sm:h-12 sm:text-base"
+            className="inline-flex shrink-0 items-center rounded-full border border-line bg-white px-3 py-2 text-xs font-semibold text-ink transition hover:border-clay hover:bg-[#FFF4EC] focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm"
           >
             {locating ? "Checking location..." : "📍 Use my location"}
           </button>
         )}
-      </form>
+      </div>
 
       {error ? (
         <p className="mt-3 rounded-lg border border-clay/30 bg-[#FFF4EC] px-3 py-2 text-sm font-semibold text-ink">

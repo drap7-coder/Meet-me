@@ -32,6 +32,7 @@ import {
 } from "@/lib/currentLocation";
 import { getCurrentPosition, reverseGeocodeCoordinates } from "@/lib/geolocation";
 import { KOI_POPULAR_SEARCHES, type KoiBrowseOption } from "@/lib/koiBrowse";
+import { getTrendingSearches, subscribeTrendingSearches } from "@/lib/trendingSearches";
 import type { KoiBotMode, LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory, WatchEventsApiResponse, WatchEventsMoreResult, WatchEventsResult, WatchSubcategory } from "@/lib/types";
 import { BRAND } from "@/src/config/branding";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -634,6 +635,10 @@ export default function HomePage() {
                 onNeedsLocation={handleNeedsLocation}
                 onUseLocation={() => void requestUserLocation()}
               />
+              <TrendingSearchesSection
+                busy={loading || locating}
+                onSelect={(option) => searchBoxRef.current?.runQuery(option.query, option.watchSubcategory)}
+              />
               <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
               <PopularSearchesSection
                 busy={loading || locating}
@@ -1120,6 +1125,45 @@ function Footer() {
   );
 }
 
+function TrendingSearchesSection({
+  busy,
+  onSelect
+}: {
+  busy: boolean;
+  onSelect: (option: KoiBrowseOption) => void;
+}) {
+  const [searches, setSearches] = useState<KoiBrowseOption[]>([]);
+
+  useEffect(() => {
+    setSearches(getTrendingSearches());
+    return subscribeTrendingSearches(() => setSearches(getTrendingSearches()));
+  }, []);
+
+  return (
+    <section
+      className="w-full min-w-0 overflow-hidden rounded-[20px] border border-white/10 bg-paper/95 p-4 shadow-[0_12px_32px_rgba(10,19,35,0.14)] sm:p-5"
+      aria-labelledby="trending-searches-title"
+    >
+      <h2 id="trending-searches-title" className="text-sm font-bold uppercase tracking-wide text-clay">
+        Trending Searches
+      </h2>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {searches.map((option) => (
+          <button
+            key={option.id}
+            type="button"
+            disabled={busy}
+            onClick={() => onSelect(option)}
+            className="rounded-full border border-line bg-white px-3 py-2 text-xs font-semibold text-slate transition hover:border-clay hover:bg-[#FFF4EC] hover:text-ink focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm"
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function PopularSearchesSection({
   busy,
   onSelect
@@ -1132,18 +1176,17 @@ function PopularSearchesSection({
       className="w-full min-w-0 overflow-hidden rounded-[20px] border border-white/10 bg-paper/95 p-4 shadow-[0_12px_32px_rgba(10,19,35,0.14)] sm:p-5"
       aria-labelledby="popular-searches-title"
     >
-      <p className="text-sm font-bold uppercase tracking-wide text-clay">Popular Searches</p>
-      <h2 id="popular-searches-title" className="mt-1 text-lg font-black tracking-tight text-ink sm:text-xl">
-        Try one of these to see how Koi thinks.
+      <h2 id="popular-searches-title" className="text-sm font-bold uppercase tracking-wide text-clay">
+        Popular Searches
       </h2>
-      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+      <div className="mt-3 flex flex-wrap gap-2">
         {KOI_POPULAR_SEARCHES.map((option) => (
           <button
             key={option.id}
             type="button"
             disabled={busy}
             onClick={() => onSelect(option)}
-            className="rounded-xl border border-line bg-white px-3 py-3 text-left text-sm font-semibold leading-snug text-slate transition hover:border-clay hover:bg-[#FFF4EC] hover:text-ink focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-full border border-line bg-white px-3 py-2 text-xs font-semibold text-slate transition hover:border-clay hover:bg-[#FFF4EC] hover:text-ink focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm"
           >
             {option.label}
           </button>
@@ -1168,8 +1211,7 @@ function RecentSearchesSection({
     <section className="w-full min-w-0 overflow-hidden rounded-[20px] border border-white/10 bg-paper/95 p-4 shadow-[0_12px_32px_rgba(10,19,35,0.14)] sm:p-5">
       <div className="flex min-w-0 items-start justify-between gap-3 sm:items-center sm:gap-4">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold uppercase tracking-wide text-clay">Recent Searches</p>
-          <h2 className="mt-1 truncate text-lg font-black tracking-tight text-ink sm:text-xl">Pick up where you left off.</h2>
+          <h2 className="text-sm font-bold uppercase tracking-wide text-clay">Recent Searches</h2>
         </div>
         <button
           type="button"

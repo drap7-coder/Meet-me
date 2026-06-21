@@ -15,6 +15,7 @@ import { FormEvent, forwardRef, useCallback, useEffect, useImperativeHandle, use
 type Props = {
   loading: boolean;
   locationStatus?: string;
+  locationLabel?: string;
   locationUiState?: LocationUiState;
   showManualFallback?: boolean;
   manualLocationError?: string;
@@ -70,6 +71,19 @@ function AiSparkleIcon() {
   );
 }
 
+function LocationPinIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-3.5 w-3.5 shrink-0 text-watch"
+      fill="currentColor"
+    >
+      <path d="M12 2a6 6 0 0 0-6 6c0 4.5 6 12 6 12s6-7.5 6-12a6 6 0 0 0-6-6Zm0 8.25A2.25 2.25 0 1 1 12 6a2.25 2.25 0 0 1 0 4.5Z" />
+    </svg>
+  );
+}
+
 function SendIcon() {
   return (
     <svg
@@ -91,6 +105,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   {
     loading,
     locationStatus,
+    locationLabel = "",
     locationUiState = "idle",
     showManualFallback = false,
     manualLocationError,
@@ -321,14 +336,14 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
 
   const busy = loading || parsing;
   const locationBusy = locating || resolvingManual;
-  const hasLocation = Boolean(locationStatus);
+  const activeLocationLabel = locationLabel.trim();
+  const hasLocation = Boolean(activeLocationLabel || locationStatus);
   const submitLabel = parsing ? "Understanding" : loading ? "Finding options" : BRAND.askLabel;
   const onHero = surface === "hero";
   const locationButtonClass = onHero
     ? "inline-flex items-center gap-1.5 text-left text-base font-semibold text-white/80 transition hover:text-koi focus:outline-none focus:ring-4 focus:ring-koi/20 disabled:cursor-not-allowed disabled:opacity-60 sm:text-lg"
     : "inline-flex items-center gap-1.5 text-left text-base font-semibold text-ink transition hover:text-koi focus:outline-none focus:ring-4 focus:ring-koi/15 disabled:cursor-not-allowed disabled:opacity-60 sm:text-lg";
   const locationHintClass = onHero ? "mt-1 max-w-md text-xs leading-5 text-white/50" : "mt-1 max-w-md text-xs leading-5 text-slate/80";
-  const locationStatusClass = onHero ? "mt-3 text-xs leading-5 text-white/65" : "mt-3 text-xs leading-5 text-slate/90";
   const heroFieldClass = "koi-hero-field h-11 w-full px-4 text-base outline-none transition disabled:cursor-not-allowed disabled:opacity-60";
   const fieldClass = "koi-field h-11 w-full px-4 text-base outline-none transition placeholder:text-slate/60 disabled:cursor-not-allowed disabled:opacity-60";
   const addressInputClass = onHero ? heroFieldClass : fieldClass;
@@ -512,14 +527,26 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
                   )}
                 </button>
               </div>
+              {hasLocation && activeLocationLabel && !showLocationActions && !showManualFallback ? (
+                <div
+                  className="flex items-center gap-2 border-t border-watch/15 bg-[#F0F7FF] px-3 py-2 sm:px-4"
+                  aria-live="polite"
+                >
+                  <span className="inline-flex items-center gap-1 rounded-full bg-watch/10 px-2 py-0.5 text-[0.6875rem] font-bold uppercase tracking-[0.08em] text-slate">
+                    <LocationPinIcon />
+                    Location
+                  </span>
+                  <span className="min-w-0 truncate text-sm font-bold text-watch drop-shadow-[0_0_10px_rgba(10,132,255,0.35)]">
+                    {activeLocationLabel}
+                  </span>
+                </div>
+              ) : null}
             </div>
           </label>
         </form>
       </section>
 
-      {hasLocation && locationStatus && !showLocationActions && !showManualFallback ? (
-        <p className={locationStatusClass}>{locationStatus}</p>
-      ) : !showLocationActions && !showManualFallback ? (
+      {hasLocation && activeLocationLabel && !showLocationActions && !showManualFallback ? null : !showLocationActions && !showManualFallback ? (
         <div className="mt-3">
           <button
             type="button"

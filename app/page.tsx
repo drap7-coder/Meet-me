@@ -39,6 +39,7 @@ import { getCurrentPosition, geocodeManualLocation, reverseGeocodeCoordinates } 
 import {
   formatLocationStatusLabel,
   isValidManualLocationInput,
+  parseLocationStatusLabel,
   type LocationUiState
 } from "@/lib/locationInput";
 import { getSavedUserLocation, mergeSavedUserLocation, saveUserLocation } from "@/lib/savedUserLocation";
@@ -156,6 +157,14 @@ export default function HomePage() {
     form.locationAPlaceId,
     form.locationACoordinates
   ]);
+
+  const activeLocationLabel = useMemo(() => {
+    if (savedLocation.locationACoordinates && savedLocation.locationA?.trim()) {
+      return shortLocationLabel(savedLocation.locationA);
+    }
+    if (locationStatus) return parseLocationStatusLabel(locationStatus);
+    return "";
+  }, [savedLocation, locationStatus]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -809,6 +818,7 @@ export default function HomePage() {
                 ref={searchBoxRef}
                 loading={loading}
                 locationStatus={locationStatus}
+                locationLabel={activeLocationLabel}
                 locationUiState={locationUiState}
                 showManualFallback={showManualFallback}
                 showLocationActions={showLocationActions}
@@ -928,6 +938,7 @@ export default function HomePage() {
                 surface="page"
                 loading={loading}
                 locationStatus={locationStatus}
+                locationLabel={activeLocationLabel}
                 locationUiState={locationUiState}
                 showManualFallback={showManualFallback}
                 showLocationActions={showLocationActions}

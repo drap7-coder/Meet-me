@@ -20,3 +20,7 @@ export function isValidManualLocationInput(input: string) {
 export function formatLocationStatusLabel(resolvedLabel: string) {
   return `Using location: ${resolvedLabel.trim()}`;
 }
+
+export function parseLocationStatusLabel(status: string) {
+  return status.replace(/^Using location:\s*/i, "").trim();
+}

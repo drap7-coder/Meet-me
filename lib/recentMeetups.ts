@@ -1,4 +1,5 @@
 import { getCategoryLabel } from "@/lib/categories";
+import { shortLocationLabel } from "@/lib/geolocation";
 import type { MeetupMode, Preference, SearchHalfwayRequest, SearchHalfwayResponse, SearchMode, VenueCategory } from "@/lib/types";
 
 export const RECENT_MEETUPS_KEY = "meetMeHalfway.recentMeetups.v1";
@@ -111,6 +112,133 @@ export function recentMeetupToForm(meetup: RecentMeetup): SearchHalfwayRequest {
 export function getRecentMeetupCategoryLabel(meetup: RecentMeetup) {
   if (meetup.category === "custom") return meetup.customQuery?.trim() || "Something else";
   return getCategoryLabel(meetup.category);
+}
+
+export type RecentMeetupCardDisplay = {
+  icon: string;
+  title: string;
+  subtitle: string;
+};
+
+const RECENT_MEETUP_ICONS: Partial<Record<VenueCategory, string>> = {
+  american: "🍔",
+  antiques: "🏺",
+  arcades: "🕹️",
+  activities: "🎯",
+  aquariums: "🐠",
+  asian: "🥡",
+  bar: "🍺",
+  bbq: "🍖",
+  bookstore: "📚",
+  bowling: "🎳",
+  breakfast: "🥞",
+  breweries: "🍺",
+  brunch: "🥞",
+  business_finance: "💼",
+  childrens_museums: "🧒",
+  cigar_lounges: "🚬",
+  cocktail_bars: "🍸",
+  coffee: "☕",
+  college_towns: "🏘️",
+  colleges: "🎓",
+  custom: "✨",
+  dessert: "🍰",
+  distilleries: "🥃",
+  dog_parks: "🐕",
+  downtowns: "🏙️",
+  driving_range: "⛳",
+  engineering_stem: "🔬",
+  escape_rooms: "🔐",
+  events: "🎟️",
+  family: "👨‍👩‍👧",
+  farmers_markets: "🧺",
+  gardens: "🌸",
+  golf: "⛳",
+  health_pre_med: "🩺",
+  hiking: "🥾",
+  home_design: "🛋️",
+  hotels: "🏨",
+  indian: "🍛",
+  italian: "🍝",
+  liberal_arts: "📖",
+  lounges: "🛋️",
+  malls: "🛍️",
+  mediterranean: "🥙",
+  mexican: "🌮",
+  museums: "🏛️",
+  nature_preserves: "🌲",
+  outlets: "🛍️",
+  park: "🌳",
+  pickleball: "🏓",
+  picnic_areas: "🧺",
+  pizza: "🍕",
+  playgrounds: "🛝",
+  pubs: "🍺",
+  restaurant: "🍽️",
+  rooftop_bars: "🌆",
+  scenic_spots: "📸",
+  scenic_walks: "🚶",
+  seafood: "🦞",
+  shopping: "🛍️",
+  small_towns: "🏡",
+  sports: "🏀",
+  sports_bars: "📺",
+  steakhouse: "🥩",
+  sushi: "🍣",
+  thai: "🍜",
+  thrifting: "👕",
+  trails: "🥾",
+  universities: "🎓",
+  urban_campuses: "🏫",
+  vegan: "🥗",
+  vintage: "👗",
+  walkable_main_streets: "🚶",
+  waterfronts: "🌊",
+  wine_bars: "🍷",
+  zoos: "🦁"
+};
+
+function inferRecentMeetupIconFromQuery(query: string) {
+  const value = query.toLowerCase();
+  if (/\b(coffee|espresso|latte|cafe)\b/.test(value)) return "☕";
+  if (/\b(pizza|pizzeria)\b/.test(value)) return "🍕";
+  if (/\b(brewer|beer|bar|pub|drink)\b/.test(value)) return "🍺";
+  if (/\b(wine|cocktail|distiller)\b/.test(value)) return "🍷";
+  if (/\b(restaurant|food|dinner|lunch|brunch|eat)\b/.test(value)) return "🍽️";
+  if (/\b(shop|mall|store)\b/.test(value)) return "🛍️";
+  if (/\b(park|hike|trail|outdoor|garden)\b/.test(value)) return "🌳";
+  if (/\b(movie|stream|watch|tv|show)\b/.test(value)) return "📺";
+  if (/\b(sport|game)\b/.test(value)) return "🏈";
+  if (/\b(hotel|stay)\b/.test(value)) return "🏨";
+  if (/\b(halfway|between|meetup|midpoint)\b/.test(value)) return "🤝";
+  return undefined;
+}
+
+function getRecentMeetupIcon(meetup: RecentMeetup) {
+  const categoryIcon = RECENT_MEETUP_ICONS[meetup.category];
+  if (categoryIcon) return categoryIcon;
+
+  const queryIcon = inferRecentMeetupIconFromQuery(meetup.customQuery ?? "");
+  if (queryIcon) return queryIcon;
+
+  if (meetup.searchMode !== "single") return "🤝";
+  return "📍";
+}
+
+export function getRecentMeetupCardDisplay(meetup: RecentMeetup): RecentMeetupCardDisplay {
+  const title =
+    meetup.searchMode === "single"
+      ? `Near ${shortLocationLabel(meetup.originA)}`
+      : `${shortLocationLabel(meetup.originA)} ↔ ${shortLocationLabel(meetup.originB)}`;
+
+  const modeLabel = (meetup.meetupMode ?? "single") === "district" ? "District" : "Single place";
+  const subtitle = `${getRecentMeetupCategoryLabel(meetup)} · ${modeLabel} · ${formatRecentMeetupDate(meetup.timestamp)}`;
+
+  return {
+    icon: getRecentMeetupIcon(meetup),
+    title,
+    subtitle
+  };
 }
 
 function isRecentMeetup(value: unknown): value is RecentMeetup {

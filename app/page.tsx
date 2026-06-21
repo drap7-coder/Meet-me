@@ -4,7 +4,7 @@ import { EmptyState } from "@/app/components/EmptyState";
 import { AiSearchBox, type AiSearchBoxHandle } from "@/app/components/AiSearchBox";
 import { KoiPathCards } from "@/app/components/KoiPathCards";
 import { KOI_GO_SOMEWHERE_QUERY, KOI_WATCH_SOMETHING_QUERY } from "@/lib/koiBrowse";
-import { CategoryIcon } from "@/app/components/CategoryIcon";
+import { KoiExampleSearchCard } from "@/app/components/KoiExampleSearchCard";
 import { LocationForm } from "@/app/components/LocationForm";
 import { Logo } from "@/app/components/Logo";
 import { RoadDivider } from "@/app/components/BrandRoad";
@@ -15,15 +15,14 @@ import { WeatherCard } from "@/app/components/WeatherCard";
 import {
   clearRecentMeetups,
   createRecentMeetup,
-  formatRecentMeetupDate,
-  getRecentMeetupCategoryLabel,
+  getRecentMeetupCardDisplay,
   getRecentMeetups,
   recentMeetupToForm,
   saveRecentMeetup,
   type RecentMeetup
 } from "@/lib/recentMeetups";
 import { normalizeCategory, parseMeetupMode, parseSearchMode } from "@/lib/categories";
-import { getPreferenceLabel, parsePreferences } from "@/lib/preferences";
+import { parsePreferences } from "@/lib/preferences";
 import { copyTextToClipboard, shareWithFallback, shouldUseNativeShare } from "@/lib/share";
 import { trackEvent } from "@/lib/analytics";
 import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
@@ -40,7 +39,7 @@ import {
   type LocationUiState
 } from "@/lib/locationInput";
 import { type KoiBrowseOption } from "@/lib/koiBrowse";
-import { getTrendingSearches, subscribeTrendingSearches } from "@/lib/trendingSearches";
+import { getTrendingCardDisplay, getTrendingSearches, subscribeTrendingSearches } from "@/lib/trendingSearches";
 import type { KoiBotMode, LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory, WatchEventsApiResponse, WatchEventsMoreResult, WatchEventsResult, WatchSubcategory } from "@/lib/types";
 import { BRAND } from "@/src/config/branding";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -754,7 +753,7 @@ export default function HomePage() {
               />
               <TrendingSearchesSection
                 busy={loading || locating || resolvingManual}
-                onSelect={(option) => searchBoxRef.current?.runQuery(option.query, option.watchSubcategory)}
+                onSelect={(option) => searchBoxRef.current?.fillQuery(option.query, option.watchSubcategory)}
               />
               <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
               <LocationFallbackPanel
@@ -1263,18 +1262,21 @@ function TrendingSearchesSection({
       <h2 id="trending-searches-title" className="text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-clay">
         Trending Searches
       </h2>
-      <div className="mt-4 flex flex-wrap gap-2">
-        {searches.map((option) => (
-          <button
-            key={option.id}
-            type="button"
-            disabled={busy}
-            onClick={() => onSelect(option)}
-            className="rounded-full border border-line bg-white px-3 py-2 text-xs font-semibold text-slate transition hover:border-clay hover:bg-[#FFF4EC] hover:text-ink focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm"
-          >
-            {option.label}
-          </button>
-        ))}
+      <div className="mt-4 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+        {searches.map((option) => {
+          const card = getTrendingCardDisplay(option);
+          return (
+            <KoiExampleSearchCard
+              key={option.id}
+              icon={card.icon}
+              title={card.title}
+              subtitle={card.subtitle}
+              accent={card.accent}
+              disabled={busy}
+              onClick={() => onSelect(option)}
+            />
+          );
+        })}
       </div>
     </section>
   );
@@ -1305,37 +1307,20 @@ function RecentSearchesSection({
           Clear
         </button>
       </div>
-      <div className="mt-5 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
-        {meetups.slice(0, 2).map((meetup) => (
-          <button
-            key={meetup.id}
-            type="button"
-            onClick={() => onSelect(meetup)}
-            className="w-full min-w-0 overflow-hidden rounded-lg border border-line bg-mint p-4 text-left shadow-[0_8px_22px_rgba(17,24,39,0.04)] transition hover:border-clay hover:bg-white hover:shadow-soft"
-          >
-            <div className="flex min-w-0 items-start gap-3">
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-sky" aria-hidden="true">
-                <CategoryIcon category={meetup.category} className="h-5 w-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-base font-black text-ink">
-                  {meetup.searchMode === "single"
-                    ? `Near ${shortLocationLabel(meetup.originA)}`
-                    : `${shortLocationLabel(meetup.originA)} ↔ ${shortLocationLabel(meetup.originB)}`}
-                </p>
-                <p className="mt-1 truncate text-sm font-semibold text-slate">
-                  {getRecentMeetupCategoryLabel(meetup)} · {(meetup.meetupMode ?? "single") === "district" ? "District" : "Single place"} · {formatRecentMeetupDate(meetup.timestamp)}
-                </p>
-                {meetup.preferences?.length ? (
-                  <p className="mt-1 truncate text-xs font-semibold text-clay">
-                    {meetup.preferences.map(getPreferenceLabel).join(" + ")}
-                  </p>
-                ) : null}
-                <p className="mt-2 text-xs font-semibold text-slate">Tap to search again</p>
-              </div>
-            </div>
-          </button>
-        ))}
+      <div className="mt-4 grid min-w-0 grid-cols-1 gap-3">
+        {meetups.slice(0, 2).map((meetup) => {
+          const card = getRecentMeetupCardDisplay(meetup);
+          return (
+            <KoiExampleSearchCard
+              key={meetup.id}
+              icon={card.icon}
+              title={card.title}
+              subtitle={card.subtitle}
+              accent="places"
+              onClick={() => onSelect(meetup)}
+            />
+          );
+        })}
       </div>
     </section>
   );

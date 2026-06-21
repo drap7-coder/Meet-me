@@ -19,26 +19,50 @@ const FALLBACK_TRENDING: KoiBrowseOption[] = [
   {
     id: "trend-coffee-halfway",
     label: "Coffee halfway between Hoboken and Princeton",
-    query: "Coffee halfway between Hoboken and Princeton"
+    query: "Coffee halfway between Hoboken and Princeton",
+    cardIcon: "☕",
+    cardTitle: "Halfway coffee",
+    cardSubtitle: "Fair meetup between two places",
+    cardAccent: "places"
   },
-  { id: "trend-pizza", label: "Pizza near me", query: "Pizza near me" },
+  {
+    id: "trend-pizza",
+    label: "Pizza near me",
+    query: "Pizza near me",
+    cardIcon: "🍕",
+    cardTitle: "Pizza near me",
+    cardSubtitle: "Find spots close to you",
+    cardAccent: "places"
+  },
   {
     id: "trend-stream",
     label: "What should I stream tonight?",
     query: "What should I stream tonight?",
-    watchSubcategory: "tv_shows"
+    watchSubcategory: "tv_shows",
+    cardIcon: "📺",
+    cardTitle: "Stream tonight",
+    cardSubtitle: "TV and streaming picks",
+    cardAccent: "watch"
   },
   {
     id: "trend-movies-near",
     label: "Movies playing near me",
     query: "Movies playing near me",
-    watchSubcategory: "movies"
+    watchSubcategory: "movies",
+    cardIcon: "🎬",
+    cardTitle: "Movies near me",
+    cardSubtitle: "Theaters playing tonight",
+    cardAccent: "watch"
   },
   {
     id: "trend-sports",
     label: "Sports on TV tonight",
     query: "Sports on TV tonight",
-    watchSubcategory: "tv_shows"
+    watchSubcategory: "tv_shows",
+    cardIcon: "🏈",
+    cardTitle: "Sports on TV",
+    cardSubtitle: "Games and matches tonight",
+    cardAccent: "watch"
   }
 ];
 
@@ -63,6 +87,77 @@ export function getSearchDisplayLabel(query: string) {
   const match = LABEL_CATALOG.find((option) => normalizeQuery(option.query) === normalized);
   const source = match?.label ?? query.trim();
   return shortenToWordLimit(source, 5);
+}
+
+export type TrendingCardDisplay = {
+  icon: string;
+  title: string;
+  subtitle: string;
+  accent: "places" | "watch";
+};
+
+function inferTrendingCard(option: KoiBrowseOption): TrendingCardDisplay {
+  const query = option.query.toLowerCase();
+  const title = option.cardTitle ?? getSearchDisplayLabel(option.query);
+
+  if (option.watchSubcategory || /\b(stream|watch|movie|show|tv|sport)\b/.test(query)) {
+    if (query.includes("sport")) {
+      return { icon: "🏈", title, subtitle: "Sports and games tonight", accent: "watch" };
+    }
+    if (query.includes("movie") || query.includes("theater")) {
+      return { icon: "🎬", title, subtitle: "Movies playing nearby", accent: "watch" };
+    }
+    return { icon: "📺", title, subtitle: "Streaming and TV picks", accent: "watch" };
+  }
+
+  if (query.includes("halfway") || query.includes("between")) {
+    return { icon: "☕", title, subtitle: "Halfway meetup search", accent: "places" };
+  }
+  if (query.includes("pizza")) {
+    return { icon: "🍕", title, subtitle: "Food nearby", accent: "places" };
+  }
+  if (query.includes("brewer") || query.includes("bar") || query.includes("drink")) {
+    return { icon: "🍺", title, subtitle: "Drinks and breweries", accent: "places" };
+  }
+  if (query.includes("near me") || query.includes("nearby")) {
+    return { icon: "📍", title, subtitle: "Places near you", accent: "places" };
+  }
+
+  return { icon: "✨", title, subtitle: "Popular on Koi", accent: "places" };
+}
+
+export function getTrendingCardDisplay(option: KoiBrowseOption): TrendingCardDisplay {
+  if (option.cardIcon && option.cardTitle && option.cardSubtitle && option.cardAccent) {
+    return {
+      icon: option.cardIcon,
+      title: option.cardTitle,
+      subtitle: option.cardSubtitle,
+      accent: option.cardAccent
+    };
+  }
+
+  const catalogMatch = LABEL_CATALOG.find((item) => normalizeQuery(item.query) === normalizeQuery(option.query));
+  if (
+    catalogMatch?.cardIcon &&
+    catalogMatch.cardTitle &&
+    catalogMatch.cardSubtitle &&
+    catalogMatch.cardAccent
+  ) {
+    return {
+      icon: catalogMatch.cardIcon,
+      title: catalogMatch.cardTitle,
+      subtitle: catalogMatch.cardSubtitle,
+      accent: catalogMatch.cardAccent
+    };
+  }
+
+  return inferTrendingCard(option);
+}
+
+function mergeTrendingMetadata(option: KoiBrowseOption): KoiBrowseOption {
+  const catalogMatch = FALLBACK_TRENDING.find((item) => normalizeQuery(item.query) === normalizeQuery(option.query));
+  if (!catalogMatch) return option;
+  return { ...catalogMatch, ...option, id: option.id, label: option.label || catalogMatch.label };
 }
 
 function readStats(): TrendingStat[] {
@@ -144,7 +239,7 @@ export function getTrendingSearches(limit = 5): KoiBrowseOption[] {
     seen.add(normalizeQuery(fallback.query));
   }
 
-  return filled.slice(0, limit);
+  return filled.slice(0, limit).map(mergeTrendingMetadata);
 }
 
 export function subscribeTrendingSearches(onChange: () => void) {

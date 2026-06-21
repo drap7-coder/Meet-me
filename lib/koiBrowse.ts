@@ -8,6 +8,10 @@ export type KoiBrowseOption = {
   label: string;
   query: string;
   watchSubcategory?: WatchSubcategory;
+  cardIcon?: string;
+  cardTitle?: string;
+  cardSubtitle?: string;
+  cardAccent?: "places" | "watch";
 };
 
 export type KoiBrowseLane = {

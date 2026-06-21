@@ -2,6 +2,7 @@
 
 import { EmptyState } from "@/app/components/EmptyState";
 import { AiSearchBox, type AiSearchBoxHandle } from "@/app/components/AiSearchBox";
+import { KoiCapabilityExamples } from "@/app/components/KoiCapabilityExamples";
 import { CategoryIcon } from "@/app/components/CategoryIcon";
 import { LocationForm } from "@/app/components/LocationForm";
 import { Logo } from "@/app/components/Logo";
@@ -744,6 +745,10 @@ export default function HomePage() {
                 onUseLocation={() => void requestUserLocation()}
                 onShowZipFallback={showZipFallback}
                 onSubmitManualLocation={(input) => void resolveManualLocation(input)}
+              />
+              <KoiCapabilityExamples
+                busy={loading || locating || resolvingManual}
+                onSelect={(option) => searchBoxRef.current?.runQuery(option.query, option.watchSubcategory)}
               />
               <TrendingSearchesSection
                 busy={loading || locating || resolvingManual}

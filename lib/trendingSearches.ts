@@ -1,4 +1,5 @@
 import {
+  KOI_CAPABILITY_EXAMPLES,
   KOI_FEATURED_EXAMPLES,
   KOI_BROWSE_LANES,
   type KoiBrowseOption
@@ -48,6 +49,7 @@ const FALLBACK_TRENDING: KoiBrowseOption[] = [
 ];
 
 const LABEL_CATALOG: KoiBrowseOption[] = [
+  ...KOI_CAPABILITY_EXAMPLES,
   ...KOI_FEATURED_EXAMPLES,
   ...FALLBACK_TRENDING,
   ...KOI_BROWSE_LANES.flatMap((lane) => lane.options)

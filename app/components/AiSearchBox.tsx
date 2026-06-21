@@ -6,7 +6,7 @@ import type { LocationUiState } from "@/lib/locationInput";
 import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
 import { recordTrendingSearch } from "@/lib/trendingSearches";
 import { BRAND } from "@/src/config/branding";
-import { FormEvent, forwardRef, useCallback, useImperativeHandle, useState } from "react";
+import { FormEvent, forwardRef, useCallback, useImperativeHandle, useRef, useState } from "react";
 
 type Props = {
   loading: boolean;
@@ -37,6 +37,7 @@ type ParseSearchResult = {
 
 export type AiSearchBoxHandle = {
   runQuery: (query: string, watchSubcategory?: WatchSubcategory) => void;
+  fillQuery: (query: string, watchSubcategory?: WatchSubcategory) => void;
 };
 
 function AiSparkleIcon() {
@@ -101,6 +102,20 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   const [error, setError] = useState("");
   const [manualLocationInput, setManualLocationInput] = useState("");
   const [watchActiveSubcategory, setWatchActiveSubcategory] = useState<WatchSubcategory>(DEFAULT_WATCH_SUBCATEGORY);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const fillQuery = useCallback((searchQuery: string, watchSubcategory?: WatchSubcategory) => {
+    const trimmed = searchQuery.trim();
+    if (!trimmed) return;
+    if (watchSubcategory) setWatchActiveSubcategory(watchSubcategory);
+    setQuery(trimmed);
+    setError("");
+    window.requestAnimationFrame(() => {
+      inputRef.current?.focus();
+      const length = trimmed.length;
+      inputRef.current?.setSelectionRange(length, length);
+    });
+  }, []);
 
   const runSearch = useCallback(
     async (searchQuery: string, watchSubcategory = watchActiveSubcategory) => {
@@ -173,9 +188,10 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
       runQuery: (searchQuery, watchSubcategory) => {
         if (watchSubcategory) setWatchActiveSubcategory(watchSubcategory);
         void runSearch(searchQuery, watchSubcategory);
-      }
+      },
+      fillQuery
     }),
-    [runSearch]
+    [fillQuery, runSearch]
   );
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -212,6 +228,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
                 <AiSparkleIcon />
               </div>
               <textarea
+                ref={inputRef}
                 value={query}
                 onChange={(event) => {
                   setQuery(event.target.value);

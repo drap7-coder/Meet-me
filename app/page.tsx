@@ -748,7 +748,7 @@ export default function HomePage() {
               />
               <KoiCapabilityExamples
                 busy={loading || locating || resolvingManual}
-                onSelect={(option) => searchBoxRef.current?.runQuery(option.query, option.watchSubcategory)}
+                onSelect={(option) => searchBoxRef.current?.fillQuery(option.query, option.watchSubcategory)}
               />
               <TrendingSearchesSection
                 busy={loading || locating || resolvingManual}

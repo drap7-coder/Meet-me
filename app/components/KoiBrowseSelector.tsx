@@ -36,7 +36,7 @@ export function KoiBrowseSelector({
 
   return (
     <div className="grid gap-4">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {KOI_BROWSE_LANES.map((lane) => {
           const selected = lane.id === activeLaneId;
           return (

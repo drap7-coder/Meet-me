@@ -1,28 +1,23 @@
 export const FAQ_ITEMS = [
   {
-    question: "What is Ask Koi bot?",
+    question: "What is Koi?",
     answer:
-      "Ask Koi bot is an intelligent local discovery assistant that helps you find places to meet, things to watch, and events nearby — with balanced travel times and practical recommendations."
+      "Koi is a natural-language assistant that helps you find places to meet and things to watch — with balanced travel times for meetup searches and practical recommendations."
   },
   {
     question: "How do I find a place halfway between two people?",
     answer:
-      "Choose Find Places, tell Koi where each person is coming from, pick the kind of meet-up you want, and Koi recommends spots near the midpoint that work for both people."
+      "Tell Koi where each person is coming from and what kind of spot you want. Koi recommends places near the midpoint that work for both people."
   },
   {
     question: "Can Koi help me decide what to watch?",
     answer:
-      "Yes. Choose Streaming, pick movies or TV, browse by genre, or describe the mood you want. Koi pulls real picks from TMDB — no location needed."
-  },
-  {
-    question: "Can Koi find local events near me?",
-    answer:
-      "Yes. Choose Events and include a location in your ask — sports, concerts, comedy, festivals, and other happenings nearby."
+      "Yes. Describe the mood, genre, or title you want — or ask for movies playing nearby. Koi pulls streaming picks from TMDB and can help with nearby theaters when location is set."
   },
   {
     question: "Can Koi find restaurants and coffee shops between two locations?",
     answer:
-      "Yes. Koi can search for restaurants, coffee shops, brunch spots, breweries, wine bars, shopping, activities, family spots, colleges, and places to explore."
+      "Yes. Koi can search for restaurants, coffee shops, brunch spots, breweries, wine bars, shopping, activities, and other places to meet."
   },
   {
     question: "Does Koi compare drive times?",
@@ -32,6 +27,6 @@ export const FAQ_ITEMS = [
   {
     question: "Can I search near one location instead of two?",
     answer:
-      "Yes. Use One Location mode to search near a city, town, address, ZIP code, or your current location."
+      "Yes. Search near a city, town, address, ZIP code, or your current location."
   }
 ];

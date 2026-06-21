@@ -56,7 +56,7 @@ export function AiSearchBox({
   async function runSearch(searchQuery: string, watchSubcategory = watchActiveSubcategory) {
     const trimmed = searchQuery.trim();
     if (!trimmed) {
-      setError("Try something like: Coffee between us.");
+      setError("Try something like: Coffee halfway between Hoboken and Princeton.");
       return;
     }
 
@@ -124,27 +124,12 @@ export function AiSearchBox({
   return (
     <section
       id="ask-koi"
-      className="w-full min-w-0 scroll-mt-24 rounded-lg border border-line bg-paper p-5 shadow-soft sm:p-7"
+      className="w-full min-w-0 scroll-mt-20 rounded-[20px] border border-white/10 bg-paper p-4 shadow-[0_16px_40px_rgba(10,19,35,0.18)] sm:p-5"
       aria-labelledby="ai-search-title"
     >
       <h2 id="ai-search-title" className="sr-only">
         {BRAND.askLabel}
       </h2>
-
-      {locationStatus ? (
-        <p className="mb-4 inline-flex rounded-full bg-[#F3FBF6] px-3 py-1.5 text-xs font-black text-[#176644]">
-          {locationStatus}
-        </p>
-      ) : (
-        <button
-          type="button"
-          onClick={onUseLocation}
-          disabled={locating || busy}
-          className="mb-4 inline-flex rounded-full border border-line bg-white px-3 py-1.5 text-xs font-black text-ink transition hover:border-clay hover:text-clay disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {locating ? "Checking location..." : "Use my location"}
-        </button>
-      )}
 
       <form onSubmit={handleSubmit} className="grid gap-3">
         <label className="grid gap-2">
@@ -155,15 +140,15 @@ export function AiSearchBox({
               setQuery(event.target.value);
               if (error) setError("");
             }}
-            placeholder={`${BRAND.askLabel}...`}
-            rows={3}
-            className="min-h-24 resize-none rounded-lg border border-line bg-mint px-4 py-3 text-base text-ink outline-none transition placeholder:text-slate/70 focus:border-clay focus:ring-4 focus:ring-clay/10"
+            placeholder={BRAND.searchPlaceholder}
+            rows={2}
+            className="min-h-[3.25rem] resize-none rounded-2xl border border-line bg-white px-4 py-3.5 text-base text-ink outline-none transition placeholder:text-slate/60 focus:border-clay focus:ring-4 focus:ring-clay/10 sm:min-h-14 sm:text-lg"
           />
         </label>
         <button
           type="submit"
           disabled={busy}
-          className="h-11 rounded-full bg-ink px-5 font-bold text-white shadow-[0_10px_24px_rgba(17,24,39,0.14)] transition hover:bg-ink/85 focus:outline-none focus:ring-4 focus:ring-ink/15 disabled:cursor-not-allowed disabled:bg-ink/30 sm:h-12"
+          className="h-11 rounded-full bg-ink px-5 text-sm font-bold text-white transition hover:bg-ink/85 focus:outline-none focus:ring-4 focus:ring-ink/15 disabled:cursor-not-allowed disabled:bg-ink/30 sm:h-12 sm:text-base"
         >
           {parsing ? "Understanding..." : loading ? "Finding picks..." : BRAND.askLabel}
         </button>
@@ -175,42 +160,52 @@ export function AiSearchBox({
         </p>
       ) : null}
 
-      <div className="mt-5 grid gap-3">
-        <p className="text-xs font-black uppercase tracking-[0.14em] text-slate">Try an example</p>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {KOI_FEATURED_EXAMPLES.map((example) => {
-            const selected = example.query.trim().toLowerCase() === normalizedSelection;
-            return (
-              <button
-                key={example.id}
-                type="button"
-                disabled={busy}
-                onClick={() => handleBrowseSelect(example)}
-                className={`group flex items-center gap-3 rounded-[18px] border-2 px-3 py-3 text-left transition focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60 sm:px-4 ${
-                  selected
-                    ? "border-[var(--mmh-coral)] bg-[#FFF4EC] shadow-[0_0_0_4px_rgba(214,90,46,0.10)]"
-                    : "border-[#D8DDE6] bg-white hover:border-ink/25 hover:bg-sky"
-                }`}
-              >
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#FFF4EC] text-lg">
-                  {example.emoji}
-                </span>
-                <span className="min-w-0 text-sm font-black leading-snug text-ink group-hover:text-clay">
-                  {example.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {KOI_FEATURED_EXAMPLES.map((example) => {
+          const selected = example.query.trim().toLowerCase() === normalizedSelection;
+          return (
+            <button
+              key={example.id}
+              type="button"
+              disabled={busy}
+              onClick={() => handleBrowseSelect(example)}
+              className={`rounded-full border px-3 py-2 text-left text-xs font-semibold leading-snug transition focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm ${
+                selected
+                  ? "border-clay bg-[#FFF4EC] text-ink"
+                  : "border-line bg-white text-slate hover:border-clay/40 hover:text-ink"
+              }`}
+            >
+              {example.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+        {locationStatus ? (
+          <p className="text-xs font-semibold text-[#176644]">{locationStatus}</p>
+        ) : (
+          <button
+            type="button"
+            onClick={onUseLocation}
+            disabled={locating || busy}
+            className="text-xs font-semibold text-slate underline decoration-line underline-offset-4 transition hover:text-clay disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {locating ? "Checking location..." : "Use my location"}
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setShowMoreIdeas((current) => !current)}
-          className="justify-self-start text-sm font-black text-clay transition hover:text-[#B94A22]"
+          className="text-xs font-semibold text-slate transition hover:text-clay"
           aria-expanded={showMoreIdeas}
         >
           {showMoreIdeas ? "Hide more ideas" : "More ideas"}
         </button>
-        {showMoreIdeas ? (
+      </div>
+
+      {showMoreIdeas ? (
+        <div className="mt-4 border-t border-line/80 pt-4">
           <KoiBrowseSelector
             activeLaneId={activeBrowseLane}
             selectedQuery={query}
@@ -218,8 +213,8 @@ export function AiSearchBox({
             onLaneChange={setActiveBrowseLane}
             onSelect={handleBrowseSelect}
           />
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </section>
   );
 }

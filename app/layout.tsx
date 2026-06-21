@@ -19,8 +19,8 @@ export const metadata: Metadata = {
     "coffee between two locations",
     "restaurants halfway between",
     "meeting place finder",
-    "local events near me",
-    "concerts near me",
+    "movies playing nearby",
+    "movie theaters near me",
     "what to watch tonight",
     "movie recommendations",
     "streaming recommendations"

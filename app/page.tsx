@@ -356,7 +356,7 @@ export default function HomePage() {
       setHasSearched(true);
       setResults(null);
       setWatchEventsResult(null);
-      openLocationFallback({ kind: "events", query }, "Add your location to discover nearby events.");
+      openLocationFallback({ kind: "events", query }, "Add your location to search nearby.");
       return;
     }
 
@@ -379,7 +379,7 @@ export default function HomePage() {
         body: JSON.stringify({ query, form: eventLocationContext })
       });
       const data = (await response.json()) as WatchEventsApiResponse & { error?: string };
-      if (!response.ok) throw new Error(data.error ?? "Events search failed.");
+      if (!response.ok) throw new Error(data.error ?? "Search failed.");
 
       if (data.botMode === "places") {
         setForm(data.form);
@@ -394,8 +394,8 @@ export default function HomePage() {
 
       const result = data as WatchEventsResult;
       if (result.preview) {
-        openLocationFallback({ kind: "events", query }, "Add your location to discover nearby events.");
-        throw new Error("Add your location to discover nearby events.");
+        openLocationFallback({ kind: "events", query }, "Add your location to search nearby.");
+        throw new Error("Add your location to search nearby.");
       }
       setShowClassicFallback(false);
       setFallbackKind("none");
@@ -407,7 +407,7 @@ export default function HomePage() {
       });
     } catch (searchError) {
       setWatchEventsResult(null);
-      setError(searchError instanceof Error ? searchError.message : "Events search failed.");
+      setError(searchError instanceof Error ? searchError.message : "Search failed.");
       scrollToFallback();
     } finally {
       if (!redirectedToPlaces) {
@@ -611,9 +611,9 @@ export default function HomePage() {
 
       {!hasSearched && !results && !watchEventsResult && !loading ? (
         <>
-          <section id="search" className="relative isolate overflow-hidden bg-ink px-4 pb-8 pt-4 sm:px-6 sm:pt-6 lg:px-8">
+          <section id="search" className="relative isolate overflow-hidden bg-ink px-4 pb-6 pt-2 sm:px-6 sm:pt-3 lg:px-8">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_28%_18%,rgba(214,90,46,0.24),transparent_28%),radial-gradient(circle_at_72%_8%,rgba(242,239,231,0.10),transparent_24%)]" />
-            <div className="relative z-10 mx-auto grid w-full max-w-5xl gap-6 py-8 lg:py-12">
+            <div className="relative z-10 mx-auto grid w-full max-w-5xl gap-4 py-4 sm:gap-5 sm:py-5 lg:py-6">
               <MarketingHero />
               <AiSearchBox
                 loading={loading}
@@ -631,6 +631,7 @@ export default function HomePage() {
                 onNeedsLocation={handleNeedsLocation}
                 onUseLocation={() => void requestUserLocation()}
               />
+              <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
               <LocationFallbackPanel
                 form={form}
                 loading={loading}
@@ -649,11 +650,6 @@ export default function HomePage() {
               />
             </div>
           </section>
-          <section className="bg-mint px-4 pb-10 pt-5 sm:px-6 lg:px-8">
-            <div className="mx-auto grid w-full max-w-5xl gap-5">
-              <RecentMeetupsSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
-            </div>
-          </section>
         </>
       ) : null}
 
@@ -666,7 +662,7 @@ export default function HomePage() {
                 searchKind === "watch"
                   ? "Finding streaming picks"
                   : searchKind === "events"
-                    ? "Finding local events"
+                    ? "Finding watch picks"
                     : "Finding places"
               }
               resultCountLabel={resultCountLabel}
@@ -730,7 +726,7 @@ export default function HomePage() {
                 onSubmit={submitClassicSearch}
                 hidden={!showClassicFallback || fallbackKind !== "full"}
               />
-              <RecentMeetupsSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
+              <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
             </section>
           ) : null}
 
@@ -818,19 +814,14 @@ export default function HomePage() {
 function SeoContentSection() {
   const items = [
     {
-      title: "Places to meet",
+      title: "Places",
       text:
-        "Find coffee, dinner, drinks, parks, and activities near one location or balanced between two starting points."
+        "Find restaurants, coffee, drinks, shopping, activities, and halfway spots near one location or balanced between two starting points."
     },
     {
-      title: "Movies and TV",
+      title: "Watch",
       text:
-        "Describe the mood, genre, or title you like and Koi turns it into a short list of things worth watching."
-    },
-    {
-      title: "Events nearby",
-      text:
-        "Use your location to discover concerts, comedy, sports, festivals, and other local plans without digging through tabs."
+        "Find movies, TV shows, streaming picks, and nearby theaters based on your mood, genre, title, or location."
     }
   ];
 
@@ -843,9 +834,9 @@ function SeoContentSection() {
             One ask. One useful answer.
           </h2>
           <p className="mt-3 max-w-2xl text-base leading-7 text-slate">
-            Koi understands natural-language requests for local meetups, nearby plans, and watch picks, then keeps the search simple.
+            Koi understands natural-language requests for places to meet and things to watch, then keeps the search simple.
           </p>
-          <div className="mt-6 grid gap-3 md:grid-cols-3">
+          <div className="mt-6 grid gap-3 md:grid-cols-2">
             {items.map((item) => (
               <article key={item.title} className="rounded-lg border border-line bg-paper p-5 shadow-[0_10px_28px_rgba(10,19,35,0.05)]">
                 <h3 className="text-lg font-black text-ink">{item.title}</h3>
@@ -860,47 +851,31 @@ function SeoContentSection() {
 }
 
 function MarketingHero() {
-  const [headlineLead, headlineTail] = getHeroHeadlineLines(BRAND.heroHeadline);
-
   return (
       <div className="w-full min-w-0">
-        <div className="flex w-full min-w-0 items-stretch gap-3 sm:gap-5">
+        <div className="flex w-full min-w-0 items-center gap-3 sm:gap-4">
           <Logo
-            size="xl"
+            size="lg"
             bare
-            className="shrink-0 [&_img]:h-[10.5rem] [&_img]:w-[10.5rem] sm:[&_img]:h-72 sm:[&_img]:w-72"
+            className="shrink-0 [&_img]:h-24 [&_img]:w-24 sm:[&_img]:h-40 sm:[&_img]:w-40"
           />
-          <h1 className="flex min-h-[15.75rem] min-w-0 flex-1 flex-col justify-center gap-0 font-semibold tracking-[-0.04em] sm:min-h-[27rem]">
-            <span className="text-[clamp(2.35rem,9.5vw,3.95rem)] leading-[0.88] text-white">
-              {headlineLead}
-            </span>
-            <span className="text-[clamp(2.35rem,9.5vw,3.95rem)] leading-[0.88] text-clay">
-              {headlineTail}
-            </span>
-          </h1>
-        </div>
-        <p className="mt-3 max-w-xl text-sm font-medium leading-6 text-[#C8C2B6] sm:mt-3.5 sm:text-[0.9375rem] sm:leading-6">
-          {BRAND.heroSubheadline}
-        </p>
-        <div className="mt-4 sm:mt-5">
-          <a
-            href="#ask-koi"
-            className="inline-flex h-10 items-center justify-center rounded-full bg-clay px-5 text-sm font-semibold text-white transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25"
-          >
-            {BRAND.askLabel}
-          </a>
+          <div className="min-w-0 flex-1">
+            <h1 className="font-semibold tracking-[-0.04em]">
+              <span className="block text-[clamp(2rem,8vw,3.25rem)] leading-[0.92] text-white">
+                {BRAND.heroHeadlineLead}
+              </span>
+              <span className="mt-1 block text-[clamp(2rem,8vw,3.25rem)] leading-[0.92]">
+                <span className="text-white">what to </span>
+                <span className="text-clay">do.</span>
+              </span>
+            </h1>
+            <p className="mt-3 max-w-xl text-sm font-medium leading-6 text-[#C8C2B6] sm:text-[0.9375rem] sm:leading-6">
+              {BRAND.heroSubheadline}
+            </p>
+          </div>
         </div>
       </div>
   );
-}
-
-function getHeroHeadlineLines(headline: string): [string, string] {
-  const trimmed = headline.trim().replace(/\.$/, "");
-  const words = trimmed.split(/\s+/);
-  if (words.length <= 1) return [headline, ""];
-
-  const lastWord = words.at(-1) ?? "";
-  return [words.slice(0, -1).join(" "), headline.endsWith(".") ? `${lastWord}.` : lastWord];
 }
 
 function CompactResultsHeader({
@@ -1042,9 +1017,9 @@ function LocationFallbackPanel({
       <LocationForm
         form={form}
         loading={loading}
-        discoveryMode="events"
+        discoveryMode="watch"
         variant="location-only"
-        submitLabel={pendingQuery ? "Find events" : "Search nearby"}
+        submitLabel={pendingQuery ? "Search" : "Search nearby"}
         onChange={onChange}
         onSubmit={onSubmit}
       />
@@ -1085,14 +1060,14 @@ function ClassicSearchPanel({
 
 function SiteHeader() {
   return (
-    <header className="sticky top-0 z-50 border-b border-line bg-paper/95 pt-[env(safe-area-inset-top)] shadow-[0_10px_28px_rgba(10,19,35,0.08)] backdrop-blur">
-      <div className="mx-auto flex h-[64px] w-full max-w-7xl items-center justify-between gap-2 px-3 sm:h-[72px] sm:gap-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 border-b border-line/80 bg-paper/90 pt-[env(safe-area-inset-top)] shadow-[0_1px_0_rgba(10,19,35,0.06)] backdrop-blur-sm">
+      <div className="mx-auto flex h-[56px] w-full max-w-7xl items-center justify-between gap-2 px-3 sm:h-[60px] sm:gap-3 sm:px-6 lg:px-8">
         <a href="/" className="group inline-flex min-w-0 flex-1 items-center gap-2 sm:gap-3" aria-label={`${BRAND.displayName} home`}>
           <Logo variant="lockup" size="md" showEyebrow className="transition group-hover:opacity-90" />
         </a>
         <a
           href="#ask-koi"
-          className="inline-flex h-10 shrink-0 items-center justify-center rounded-full bg-clay px-3 text-xs font-black text-white shadow-[0_10px_24px_rgba(214,90,46,0.28)] transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25 sm:h-11 sm:px-6 sm:text-sm"
+          className="inline-flex h-9 shrink-0 items-center justify-center rounded-full bg-clay px-3 text-xs font-black text-white transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25 sm:h-10 sm:px-5 sm:text-sm"
         >
           {BRAND.askLabel}
         </a>
@@ -1107,11 +1082,11 @@ function WatchEventsLoader() {
       className="rounded-[24px] border border-line bg-paper p-5 shadow-[0_14px_38px_rgba(18,50,74,0.08)] sm:p-6"
       role="status"
       aria-live="polite"
-      aria-label="Finding watch and event options"
+      aria-label="Finding watch options"
     >
       <div className="mx-auto grid max-w-md gap-3">
         <div className="grid grid-cols-3 gap-2">
-          {["Movies", "Sports", "Live"].map((label) => (
+          {["Movies", "TV", "Theaters"].map((label) => (
             <div key={label} className="rounded-lg bg-sky px-3 py-4 text-center text-xs font-black uppercase tracking-[0.12em] text-slate">
               {label}
             </div>
@@ -1122,8 +1097,8 @@ function WatchEventsLoader() {
         </div>
       </div>
       <div className="mt-4 text-center">
-        <p className="text-sm font-black text-ink">Finding watch & event options</p>
-        <p className="mt-1 text-xs font-semibold text-slate">Matching your ask to movies, sports, and live plans.</p>
+        <p className="text-sm font-black text-ink">Finding watch picks</p>
+        <p className="mt-1 text-xs font-semibold text-slate">Matching your ask to streaming picks and nearby theaters.</p>
       </div>
     </div>
   );
@@ -1213,7 +1188,7 @@ function Footer() {
   );
 }
 
-function RecentMeetupsSection({
+function RecentSearchesSection({
   meetups,
   onSelect,
   onClear
@@ -1225,11 +1200,11 @@ function RecentMeetupsSection({
   if (!meetups.length) return null;
 
   return (
-    <section className="w-full min-w-0 overflow-hidden rounded-lg border border-line bg-paper p-4 shadow-soft sm:p-6">
+    <section className="w-full min-w-0 overflow-hidden rounded-[20px] border border-white/10 bg-paper/95 p-4 shadow-[0_12px_32px_rgba(10,19,35,0.14)] sm:p-5">
       <div className="flex min-w-0 items-start justify-between gap-3 sm:items-center sm:gap-4">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold uppercase tracking-wide text-clay">Recent Meetups</p>
-          <h2 className="mt-1 truncate text-xl font-black tracking-tight text-ink sm:text-2xl">Pick up where you left off.</h2>
+          <p className="text-sm font-bold uppercase tracking-wide text-clay">Recent Searches</p>
+          <h2 className="mt-1 truncate text-lg font-black tracking-tight text-ink sm:text-xl">Pick up where you left off.</h2>
         </div>
         <button
           type="button"
@@ -1265,7 +1240,7 @@ function RecentMeetupsSection({
                     {meetup.preferences.map(getPreferenceLabel).join(" + ")}
                   </p>
                 ) : null}
-                <p className="mt-2 text-xs font-semibold text-slate">Tap to meet here again</p>
+                <p className="mt-2 text-xs font-semibold text-slate">Tap to search again</p>
               </div>
             </div>
           </button>

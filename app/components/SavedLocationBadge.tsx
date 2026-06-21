@@ -12,6 +12,8 @@ function LocationPinIcon({ className = "text-watch" }: { className?: string }) {
   );
 }
 
+export { LocationPinIcon };
+
 export function SavedLocationBadge({ label, compact = false, className = "" }: Props) {
   const trimmed = label.trim();
   if (!trimmed) return null;

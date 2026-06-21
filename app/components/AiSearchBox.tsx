@@ -9,7 +9,7 @@ import { KOI_ROTATING_PLACEHOLDERS } from "@/lib/koiCapabilityExamples";
 import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
 import { recordTrendingSearch } from "@/lib/trendingSearches";
 import { BRAND } from "@/src/config/branding";
-import { SavedLocationBadge } from "@/app/components/SavedLocationBadge";
+import { LocationPinIcon, SavedLocationBadge } from "@/app/components/SavedLocationBadge";
 import { FormEvent, forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 
 type Props = {
@@ -309,6 +309,18 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
 
       {showLocationActions ? (
         <div className="mt-3 flex flex-wrap gap-2" aria-live="polite">
+          <div
+            className={
+              onHero
+                ? "mb-1 flex w-full min-w-0 items-start gap-2 rounded-[14px] border border-koi/30 bg-koi/15 px-3 py-2.5"
+                : "mb-1 flex w-full min-w-0 items-start gap-2 rounded-[14px] border border-koi/25 bg-koi/10 px-3 py-2.5"
+            }
+          >
+            <LocationPinIcon className="mt-0.5 h-4 w-4 shrink-0 text-koi" />
+            <p className={`min-w-0 flex-1 text-sm font-semibold leading-6 ${onHero ? "text-white" : "text-ink"}`}>
+              Add your location so Koi can search nearby.
+            </p>
+          </div>
           <button
             type="button"
             onClick={onUseLocation}
@@ -341,24 +353,32 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
           onSubmit={handleManualLocationSubmit}
           className={
             onHero
-              ? "mt-3 koi-premium-card p-3 backdrop-blur-sm"
-              : "mt-3 rounded-card border border-line bg-paper p-3 shadow-soft"
+              ? "mt-3 rounded-[14px] border border-koi/30 bg-koi/15 p-3 backdrop-blur-sm"
+              : "mt-3 rounded-card border border-koi/25 bg-koi/10 p-3 shadow-soft"
           }
           aria-live="polite"
         >
-          <p className={`text-sm font-semibold ${onHero ? "text-white" : "text-ink"}`}>
-            Enter a city, ZIP code, or address to search nearby.
-          </p>
+          <div className="flex items-start gap-2">
+            <LocationPinIcon className="mt-0.5 h-4 w-4 shrink-0 text-koi" />
+            <p className={`min-w-0 flex-1 text-sm font-semibold leading-6 ${onHero ? "text-white" : "text-ink"}`}>
+              Enter a city, ZIP code, or address to search nearby.
+            </p>
+          </div>
           <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
-            <input
-              type="text"
-              value={manualLocationInput}
-              onChange={(event) => setManualLocationInput(event.target.value)}
-              placeholder="City, ZIP code, or address"
-              autoComplete="postal-code"
-              disabled={locationBusy || busy}
-              className={`h-11 min-w-0 flex-1 px-4 text-base outline-none transition disabled:cursor-not-allowed disabled:opacity-60 ${onHero ? heroFieldClass : fieldClass}`}
-            />
+            <div className="relative min-w-0 flex-1">
+              <LocationPinIcon
+                className={`pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${onHero ? "text-koi" : "text-watch"}`}
+              />
+              <input
+                type="text"
+                value={manualLocationInput}
+                onChange={(event) => setManualLocationInput(event.target.value)}
+                placeholder="City, ZIP code, or address"
+                autoComplete="postal-code"
+                disabled={locationBusy || busy}
+                className={`h-11 w-full min-w-0 pl-10 pr-4 text-base outline-none transition disabled:cursor-not-allowed disabled:opacity-60 ${onHero ? heroFieldClass : fieldClass}`}
+              />
+            </div>
             <button
               type="submit"
               disabled={locationBusy || busy}
@@ -380,16 +400,17 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
       ) : null}
 
       {error ? (
-        <p
+        <div
           className={
             onHero
-              ? "mt-3 rounded-xl border border-white/25 bg-white/10 px-3 py-2.5 text-sm font-semibold leading-6 text-white/90"
-              : "mt-3 rounded-xl border border-events/25 bg-events/10 px-3 py-2.5 text-sm font-semibold leading-6 text-ink"
+              ? "mt-3 flex items-start gap-2 rounded-[14px] border border-koi/35 bg-koi/20 px-3 py-2.5 shadow-[0_8px_24px_rgba(52,199,89,0.12)]"
+              : "mt-3 flex items-start gap-2 rounded-[14px] border border-koi/30 bg-koi/10 px-3 py-2.5"
           }
           role="status"
         >
-          {error}
-        </p>
+          <LocationPinIcon className="mt-0.5 h-4 w-4 shrink-0 text-koi" />
+          <p className={`min-w-0 flex-1 text-sm font-semibold leading-6 ${onHero ? "text-white" : "text-ink"}`}>{error}</p>
+        </div>
       ) : null}
     </div>
   );

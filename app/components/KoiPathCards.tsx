@@ -4,6 +4,7 @@ type Props = {
   busy?: boolean;
   onGoSomewhere: () => void;
   onWatchSomething: () => void;
+  onFindEvents: () => void;
 };
 
 const cardClassName =
@@ -14,11 +15,12 @@ const iconShellBase =
 
 const placesIconShellClass = `${iconShellBase} bg-koi/15 text-koi`;
 const watchIconShellClass = `${iconShellBase} bg-watch/15 text-watch`;
+const eventsIconShellClass = `${iconShellBase} bg-events/15 text-events`;
 
-export function KoiPathCards({ busy = false, onGoSomewhere, onWatchSomething }: Props) {
+export function KoiPathCards({ busy = false, onGoSomewhere, onWatchSomething, onFindEvents }: Props) {
   return (
-    <section className="w-full min-w-0" aria-label="Choose places or watch">
-      <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+    <section className="w-full min-w-0" aria-label="Choose places, events, or watch">
+      <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-3">
         <button type="button" disabled={busy} onClick={onGoSomewhere} className={cardClassName}>
           <span className={placesIconShellClass} aria-hidden="true">
             🗺️
@@ -31,6 +33,18 @@ export function KoiPathCards({ busy = false, onGoSomewhere, onWatchSomething }: 
           </span>
         </button>
 
+        <button type="button" disabled={busy} onClick={onFindEvents} className={cardClassName}>
+          <span className={eventsIconShellClass} aria-hidden="true">
+            🎪
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-lg font-bold leading-tight tracking-[-0.025em] text-white sm:text-xl">Find Events</span>
+            <span className="mt-1 block text-sm font-medium leading-6 tracking-[-0.01em] text-white/60">
+              Street fairs, farmers markets, festivals, and local happenings.
+            </span>
+          </span>
+        </button>
+
         <button type="button" disabled={busy} onClick={onWatchSomething} className={cardClassName}>
           <span className={watchIconShellClass} aria-hidden="true">
             📺
@@ -38,7 +52,7 @@ export function KoiPathCards({ busy = false, onGoSomewhere, onWatchSomething }: 
           <span className="min-w-0 flex-1">
             <span className="block text-lg font-bold leading-tight tracking-[-0.025em] text-white sm:text-xl">Watch Something</span>
             <span className="mt-1 block text-sm font-medium leading-6 tracking-[-0.01em] text-white/60">
-              Movies, TV shows, sports, and streaming picks.
+              Movies, TV shows, and streaming picks from TMDB.
             </span>
           </span>
         </button>

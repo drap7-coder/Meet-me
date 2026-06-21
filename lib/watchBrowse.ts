@@ -1,4 +1,5 @@
 import type { WatchSubcategory } from "@/lib/types";
+import { LOCAL_HAPPENINGS_OPTIONS } from "@/lib/localHappenings";
 
 export type WatchSubcategoryOption = {
   id: WatchSubcategory;
@@ -76,35 +77,53 @@ export function getWatchGenresForSubcategory(subcategory: WatchSubcategory) {
 export const WATCH_PLACEHOLDER = "Ask Koi what you want to watch…";
 
 export const EVENTS_EXAMPLE_PROMPTS = [
-  "Movie theaters near me tonight",
-  "Any comedy shows near Philly this weekend?",
-  "Concerts near Hoboken this month",
-  "Sports games near me tonight"
+  "Street fairs near me this weekend",
+  "Farmers markets in Philadelphia today",
+  "Festivals near Collingswood this weekend",
+  "Art walks in New Hope",
+  "Food festivals near Philadelphia",
+  "Flea markets open this Saturday"
 ];
 
-export const EVENTS_PLACEHOLDER = "Ask Koi about movie theaters, sports, concerts, festivals, or local happenings…";
+export const EVENTS_PLACEHOLDER =
+  "Street fairs this weekend, farmers markets today, festivals near me…";
 
 export const EVENTS_DESCRIPTION =
-  "Movie theaters, sports, concerts, festivals, and local happenings.";
+  "Local happenings, sports, concerts, movie theaters, and live events.";
 
 export type EventsCategoryOption = {
   id: string;
   label: string;
   query: string;
+  accent?: "events" | "market";
 };
 
 export type EventsCategoryGroup = {
   id: string;
   label: string;
   description: string;
+  accent: "events" | "neutral";
   options: EventsCategoryOption[];
 };
 
 export const EVENTS_CATEGORY_GROUPS: EventsCategoryGroup[] = [
   {
+    id: "local_happenings",
+    label: "Local Happenings",
+    description: "Street fairs, markets, art walks, and seasonal events worth leaving the house for.",
+    accent: "events",
+    options: LOCAL_HAPPENINGS_OPTIONS.map((option) => ({
+      id: option.id,
+      label: option.label,
+      query: option.query,
+      accent: option.accent
+    }))
+  },
+  {
     id: "sports",
     label: "Sports",
     description: "Games, matches, and live sports nearby.",
+    accent: "neutral",
     options: [
       { id: "live-sports", label: "Live Sports", query: "What live sports are on near me tonight?" },
       { id: "football", label: "Football", query: "Football games near me this weekend" },
@@ -116,6 +135,7 @@ export const EVENTS_CATEGORY_GROUPS: EventsCategoryGroup[] = [
     id: "concerts",
     label: "Concerts",
     description: "Live music and touring acts.",
+    accent: "neutral",
     options: [
       { id: "concerts", label: "Concerts", query: "Any concerts near me this weekend?" },
       { id: "live-music", label: "Live Music", query: "Live music near me tonight" },
@@ -123,19 +143,10 @@ export const EVENTS_CATEGORY_GROUPS: EventsCategoryGroup[] = [
     ]
   },
   {
-    id: "festivals",
-    label: "Festivals",
-    description: "Festivals, fairs, and outdoor events.",
-    options: [
-      { id: "festivals", label: "Festivals", query: "Festivals near me this weekend" },
-      { id: "food-festivals", label: "Food Festivals", query: "Food festivals near me this month" },
-      { id: "outdoor-events", label: "Outdoor Events", query: "Outdoor festivals near me this weekend" }
-    ]
-  },
-  {
     id: "local",
     label: "Live Events",
-    description: "Movie theaters, comedy, things to do, and nearby plans.",
+    description: "Movie theaters, comedy, and nearby plans.",
+    accent: "neutral",
     options: [
       { id: "movie-theaters", label: "Movie Theaters", query: "Movie theaters near me tonight" },
       { id: "comedy", label: "Comedy", query: "Any comedy shows near me this weekend?" },
@@ -157,6 +168,14 @@ export function getEventsCategoryGroupForQuery(query: string) {
     }
   }
 
+  if (
+    /\b(?:street fair|farmers? market|flea market|art walk|pop[- ]?up|holiday market|seasonal market|food festival)\b/i.test(
+      normalized
+    )
+  ) {
+    return EVENTS_CATEGORY_GROUPS.find((group) => group.id === "local_happenings") ?? EVENTS_CATEGORY_GROUPS[0];
+  }
+
   if (/\b(?:movie theater|movie theatre|cinema|cinemas|movies in theaters?)\b/i.test(normalized)) {
     return EVENTS_CATEGORY_GROUPS.find((group) => group.id === "local") ?? EVENTS_CATEGORY_GROUPS[0];
   }
@@ -165,12 +184,12 @@ export function getEventsCategoryGroupForQuery(query: string) {
     return EVENTS_CATEGORY_GROUPS.find((group) => group.id === "concerts") ?? EVENTS_CATEGORY_GROUPS[0];
   }
 
-  if (/\b(?:festival|festivals|fair|fairs)\b/i.test(normalized)) {
-    return EVENTS_CATEGORY_GROUPS.find((group) => group.id === "festivals") ?? EVENTS_CATEGORY_GROUPS[0];
-  }
-
   if (/\b(?:game|games|sports|match|matches)\b/i.test(normalized)) {
     return EVENTS_CATEGORY_GROUPS.find((group) => group.id === "sports") ?? EVENTS_CATEGORY_GROUPS[0];
+  }
+
+  if (/\b(?:festival|festivals|fair|fairs|market|markets)\b/i.test(normalized)) {
+    return EVENTS_CATEGORY_GROUPS.find((group) => group.id === "local_happenings") ?? EVENTS_CATEGORY_GROUPS[0];
   }
 
   return EVENTS_CATEGORY_GROUPS.find((group) => group.id === "local") ?? EVENTS_CATEGORY_GROUPS[0];

@@ -6,7 +6,8 @@ import type { LocationUiState } from "@/lib/locationInput";
 import { trackEvent } from "@/lib/analytics";
 import { buildHalfwaySearchQuery } from "@/lib/halfwayBrowse";
 import { KOI_EXAMPLE } from "@/lib/koiExamples";
-import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
+import { DEFAULT_WATCH_SUBCATEGORY, EVENTS_PLACEHOLDER } from "@/lib/watchBrowse";
+import { LOCAL_HAPPENINGS_OPTIONS } from "@/lib/localHappenings";
 import { recordTrendingSearch } from "@/lib/trendingSearches";
 import { BRAND } from "@/src/config/branding";
 import { FormEvent, forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
@@ -45,10 +46,11 @@ export type AiSearchBoxHandle = {
   runQuery: (query: string, watchSubcategory?: WatchSubcategory) => void;
   fillQuery: (query: string, watchSubcategory?: WatchSubcategory) => void;
   fillHalfwayIntent: (lookingFor: string, exampleQuery?: string) => void;
+  fillEventsQuery: (query: string) => void;
   setGuidedMode: (mode: GuidedSearchMode) => void;
 };
 
-type GuidedSearchMode = null | "spot" | "halfway";
+type GuidedSearchMode = null | "spot" | "halfway" | "events";
 
 function AiSparkleIcon() {
   return (
@@ -157,6 +159,20 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     scrollToSearch();
   }, [scrollToSearch]);
 
+  const fillEventsQuery = useCallback((searchQuery: string) => {
+    const trimmed = searchQuery.trim();
+    if (!trimmed) return;
+    setGuidedMode("events");
+    setQuery(trimmed);
+    setError("");
+    scrollToSearch();
+    window.requestAnimationFrame(() => {
+      inputRef.current?.focus({ preventScroll: true });
+      const length = trimmed.length;
+      inputRef.current?.setSelectionRange(length, length);
+    });
+  }, [scrollToSearch]);
+
   const runSearch = useCallback(
     async (searchQuery: string, watchSubcategory = watchActiveSubcategory) => {
       const trimmed = searchQuery.trim();
@@ -234,12 +250,13 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
       },
       fillQuery,
       fillHalfwayIntent,
+      fillEventsQuery,
       setGuidedMode: (mode) => {
         setGuidedMode(mode);
         scrollToSearch();
       }
     }),
-    [fillHalfwayIntent, fillQuery, runSearch, scrollToSearch]
+    [fillEventsQuery, fillHalfwayIntent, fillQuery, runSearch, scrollToSearch]
   );
 
   function handleGuidedModeChange(mode: Exclude<GuidedSearchMode, null>) {
@@ -248,7 +265,18 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     if (next === "halfway") {
       trackEvent("halfway_mode_selected", { mode: "halfway" });
     }
+    if (next === "events") {
+      trackEvent("events_mode_selected", { mode: "events" });
+    }
     setError("");
+  }
+
+  function submitEventsGuided(queryValue: string) {
+    const trimmed = queryValue.trim();
+    if (!trimmed || loading || parsing) return;
+    setQuery(trimmed);
+    setError("");
+    onEventsSearch(trimmed);
   }
 
   function submitHalfwayGuided(event: FormEvent<HTMLFormElement>) {
@@ -305,16 +333,20 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   const fieldClass = "koi-field h-11 w-full px-4 text-base outline-none transition placeholder:text-slate/60 disabled:cursor-not-allowed disabled:opacity-60";
   const addressInputClass = onHero ? heroFieldClass : fieldClass;
   const guidedInputClass = onHero ? heroFieldClass : fieldClass;
-  const pillClass = (active: boolean) =>
+  const pillClass = (active: boolean, accent: "default" | "events" = "default") =>
     onHero
       ? `inline-flex h-9 items-center rounded-full px-4 text-sm font-bold transition focus:outline-none focus:ring-4 focus:ring-white/15 disabled:cursor-not-allowed disabled:opacity-60 ${
           active
-            ? "border border-koi bg-koi text-white"
+            ? accent === "events"
+              ? "border border-events bg-events text-white"
+              : "border border-koi bg-koi text-white"
             : "border border-white/15 bg-white/5 text-white/85 hover:border-white/25 hover:bg-white/8"
         }`
       : `inline-flex h-9 items-center rounded-full px-4 text-sm font-semibold transition focus:outline-none focus:ring-4 focus:ring-koi/15 disabled:cursor-not-allowed disabled:opacity-60 ${
           active
-            ? "border border-koi bg-koi text-white"
+            ? accent === "events"
+              ? "border border-events bg-events text-white"
+              : "border border-koi bg-koi text-white"
             : "border border-line bg-white text-ink hover:border-koi/40 hover:bg-[#EDFFED]"
         }`;
   const searchPlaceholder =
@@ -322,7 +354,9 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
       ? BRAND.searchPlaceholderSpot
       : guidedMode === "halfway"
         ? buildHalfwaySearchQuery(locationA, locationB, halfwayLookingFor) || "Add locations above, or ask in plain language below"
-        : BRAND.searchPlaceholderFreeform;
+        : guidedMode === "events"
+          ? EVENTS_PLACEHOLDER
+          : BRAND.searchPlaceholderFreeform;
 
   return (
     <div ref={containerRef} id="ask-koi" className="w-full min-w-0 max-w-full scroll-mt-24">
@@ -351,7 +385,45 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
           >
             Meet Halfway
           </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => handleGuidedModeChange("events")}
+            className={pillClass(guidedMode === "events", "events")}
+          >
+            Find Events
+          </button>
         </div>
+
+        {guidedMode === "events" ? (
+          <div className="mb-3 rounded-[18px] border border-events/20 bg-events/5 p-3 sm:p-4">
+            <p className={`text-sm font-black ${onHero ? "text-white" : "text-events"}`}>Local Happenings</p>
+            <p className={`mt-1 text-xs font-semibold leading-5 ${onHero ? "text-white/65" : "text-slate"}`}>
+              Street fairs, farmers markets, festivals, and seasonal events near you.
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {LOCAL_HAPPENINGS_OPTIONS.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => submitEventsGuided(option.query)}
+                  className={`rounded-[14px] border px-3 py-2.5 text-left text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                    option.accent === "market"
+                      ? onHero
+                        ? "border-[#14B8A6]/40 bg-[#14B8A6]/10 text-white hover:border-[#14B8A6]/60"
+                        : "border-[#14B8A6]/35 bg-[#E6FFFA] text-ink hover:border-[#14B8A6]/60"
+                      : onHero
+                        ? "border-events/35 bg-events/10 text-white hover:border-events/55"
+                        : "border-events/30 bg-events/5 text-ink hover:border-events/50"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         {guidedMode === "halfway" ? (
           <form onSubmit={submitHalfwayGuided} className="mb-3 grid gap-2 sm:grid-cols-2">

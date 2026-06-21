@@ -20,7 +20,7 @@ export function WatchEventsResults({ result, loadingMore = false, onLoadMore }: 
     <section className="search-results-enter mt-5 grid gap-5 pb-16 lg:grid-cols-[1fr_320px] lg:items-start">
       <div className="results-list-enter order-2 grid gap-4 lg:order-1">
         {result.recommendations.map((item) => (
-          <WatchEventsCard key={item.id} item={item} />
+          <WatchEventsCard key={item.id} item={item} botMode={result.botMode} />
         ))}
 
         {result.hasMore && onLoadMore ? (
@@ -39,8 +39,18 @@ export function WatchEventsResults({ result, loadingMore = false, onLoadMore }: 
       </div>
 
       <aside className="results-panel-enter order-1 lg:order-2">
-        <div className="rounded-lg border border-line bg-paper p-5 shadow-soft">
-          <p className="text-sm font-black uppercase tracking-[0.14em] text-clay">{result.intentLabel}</p>
+        <div
+          className={`rounded-lg border bg-paper p-5 shadow-soft ${
+            result.botMode === "events" ? "border-events/15" : "border-line"
+          }`}
+        >
+          <p
+            className={`text-sm font-black uppercase tracking-[0.14em] ${
+              result.botMode === "events" ? "text-events" : "text-clay"
+            }`}
+          >
+            {result.intentLabel}
+          </p>
           <h2 className="mt-2 text-2xl font-black tracking-tight text-ink">Your search</h2>
           <p className="mt-3 text-sm leading-6 text-slate">{result.contextSummary}</p>
 
@@ -51,7 +61,11 @@ export function WatchEventsResults({ result, loadingMore = false, onLoadMore }: 
 
           <div
             className={`mt-4 rounded-lg border p-4 ${
-              result.preview ? "border-clay/25 bg-[#EDFFED]" : "border-[#B7E4C7] bg-[#F3FBF6]"
+              result.preview
+                ? result.botMode === "events"
+                  ? "border-events/20 bg-events/5"
+                  : "border-clay/25 bg-[#EDFFED]"
+                : "border-[#B7E4C7] bg-[#F3FBF6]"
             }`}
           >
             <p className="text-sm font-black text-ink">{sidebarTitle}</p>

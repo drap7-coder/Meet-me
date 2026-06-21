@@ -4,6 +4,13 @@ import type {
   WatchEventsRecommendation,
   WatchEventsResult
 } from "@/lib/types";
+import {
+  buildLocalHappeningsPreviewRecommendations,
+  detectLocalHappeningsSubcategory,
+  extractLocalHappeningsTimeframe,
+  isLocalHappeningsQuery,
+  localHappeningsTopic
+} from "@/lib/localHappenings";
 
 export const WATCH_TITLE = "Streaming";
 export const WATCH_DESCRIPTION = "Movies, TV shows, and trending picks.";
@@ -14,7 +21,7 @@ export const WATCH_LIVE_MESSAGE =
 
 export const EVENTS_TITLE = "Events";
 export const EVENTS_PREVIEW_MESSAGE =
-  "Preview results below are location-based and curated by Koi. Add locations in classic search below for real venues ranked by drive time.";
+  "Preview cards below are search suggestions curated by Koi. Add your location for live venue picks ranked by drive time.";
 export const EVENTS_LIVE_MESSAGE =
   "Venues below are real places from Google Maps, ranked by drive time from your location(s). Event schedules and tickets from Ticketmaster and SeatGeek are coming soon.";
 
@@ -127,6 +134,7 @@ export function detectEventsIntent(query: string) {
   const eventPatterns = [
     /\b(?:movie theaters?|movie theatres?|cinema|cinemas)\b/i,
     /\b(?:movies playing|now playing|playing nearby|showtimes?)\b/i,
+    /\b(?:street fairs?|farmers? markets?|flea markets?|art walks?|pop[- ]?ups?|holiday markets?|seasonal markets?|food festivals?)\b/i,
     /\b(?:comedy clubs?|comedy shows?|stand[- ]?up|concert|concerts|festival|festivals)\b/i,
     /\b(?:live sports|game tonight|watch the .* game|watch .* game tonight)\b/i,
     /\b(?:tickets?|box office)\b/i,
@@ -168,6 +176,7 @@ export function resolveKoiBotMode(query: string, requestedMode?: KoiBotMode): Ko
   if (requestedMode === "places") return "places";
   if (requestedMode === "watch") return "watch";
   if (requestedMode === "events") return "events";
+  if (isLocalHappeningsQuery(query)) return "events";
   if (hasStreamingWatchContext(query)) return "watch";
   if (detectEventsIntent(query)) return "events";
   if (detectWatchIntent(query)) return "watch";
@@ -194,6 +203,10 @@ export function isMovieTheaterEventsQuery(query: string) {
 
 export function classifyEventsIntent(query: string): WatchEventsIntent {
   const value = query.toLowerCase();
+
+  if (isLocalHappeningsQuery(value)) {
+    return "things_to_do";
+  }
 
   if (/\b(?:game tonight|watch the .* game|phillies|yankees|eagles|nba|nfl|mlb|nhl|football|baseball|soccer)\b/i.test(value)) {
     return "sports";
@@ -253,6 +266,16 @@ export function buildEventsPreviewRecommendations({
   timeframe: string;
   topic: string;
 }) {
+  const localSubcategory = detectLocalHappeningsSubcategory(query);
+  if (localSubcategory) {
+    return buildLocalHappeningsPreviewRecommendations({
+      query,
+      subcategory: localSubcategory,
+      location,
+      timeframe: extractLocalHappeningsTimeframe(query, localSubcategory)
+    });
+  }
+
   switch (intent) {
     case "sports":
       return buildSportsRecommendations(topic || "local team", location, timeframe);
@@ -331,14 +354,27 @@ export function extractWatchEventsLocation(query: string) {
 }
 
 export function extractWatchEventsTimeframe(query: string) {
+  const localSubcategory = detectLocalHappeningsSubcategory(query);
+  if (localSubcategory || isLocalHappeningsQuery(query)) {
+    return extractLocalHappeningsTimeframe(query, localSubcategory);
+  }
+
   const patterns: Array<[RegExp, string]> = [
     [/\bthis weekend\b/i, "This weekend"],
+    [/\bnext weekend\b/i, "Next weekend"],
     [/\btonight\b/i, "Tonight"],
     [/\btoday\b/i, "Today"],
     [/\btomorrow\b/i, "Tomorrow"],
+    [/\bevery saturday\b/i, "Every Saturday"],
+    [/\bevery sunday\b/i, "Every Sunday"],
+    [/\bthis saturday\b/i, "This Saturday"],
+    [/\bthis sunday\b/i, "This Sunday"],
+    [/\bopen this saturday\b/i, "This Saturday"],
     [/\bsaturday\b/i, "Saturday"],
     [/\bsunday\b/i, "Sunday"],
-    [/\bthis month\b/i, "This month"]
+    [/\bthis month\b/i, "This month"],
+    [/\bupcoming\b/i, "Upcoming"],
+    [/\bseasonal\b/i, "Seasonal"]
   ];
 
   for (const [pattern, label] of patterns) {
@@ -349,6 +385,11 @@ export function extractWatchEventsTimeframe(query: string) {
 }
 
 export function extractWatchEventsTopic(query: string, intent: WatchEventsIntent) {
+  const localSubcategory = detectLocalHappeningsSubcategory(query);
+  if (localSubcategory) {
+    return localHappeningsTopic(localSubcategory);
+  }
+
   const streamMatch = query.match(/\bstream(?:ing)?\s+(.+?)(?:\?|$)/i);
   if (streamMatch?.[1]) return cleanupWatchEventsFragment(streamMatch[1]);
 

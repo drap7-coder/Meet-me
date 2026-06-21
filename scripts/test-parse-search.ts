@@ -17,7 +17,10 @@ const WATCH_EXAMPLES = [
 
 const EVENTS_EXAMPLES = [
   { query: "Any comedy shows near Philly this weekend?", expectedBotMode: "events", expectedIntent: "live_event" },
-  { query: "Where can I watch the Phillies game tonight?", expectedBotMode: "events", expectedIntent: "sports" }
+  { query: "Where can I watch the Phillies game tonight?", expectedBotMode: "events", expectedIntent: "sports" },
+  { query: "Street fairs near me this weekend", expectedBotMode: "events", expectedIntent: "things_to_do" },
+  { query: "Farmers markets in Philadelphia today", expectedBotMode: "events", expectedIntent: "things_to_do" },
+  { query: "Flea markets open this Saturday", expectedBotMode: "events", expectedIntent: "things_to_do" }
 ];
 
 async function runParseExample(example: {

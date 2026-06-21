@@ -1,4 +1,5 @@
 import { buildLiveEventsFromPlaces, canUseLiveEventsSearch } from "@/lib/eventsPlaces";
+import { detectLocalHappeningsSubcategory, getLocalHappeningsOption } from "@/lib/localHappenings";
 import type { SearchHalfwayRequest, WatchEventsResult } from "@/lib/types";
 import { EVENTS_DESCRIPTION } from "@/lib/watchBrowse";
 import {
@@ -23,6 +24,7 @@ export async function buildEventsResult(
   const location = extractedLocation || formLocation;
   const timeframe = extractWatchEventsTimeframe(trimmed);
   const topic = extractWatchEventsTopic(trimmed, intent);
+  const localSubcategory = detectLocalHappeningsSubcategory(trimmed);
   const liveRecommendations =
     locationContext && canUseLiveEventsSearch(locationContext)
       ? await buildLiveEventsFromPlaces({
@@ -51,7 +53,7 @@ export async function buildEventsResult(
     description: EVENTS_DESCRIPTION,
     message: isLive ? EVENTS_LIVE_MESSAGE : EVENTS_PREVIEW_MESSAGE,
     intent,
-    intentLabel: intentLabel(intent),
+    intentLabel: intentLabel(intent, localSubcategory),
     location,
     timeframe,
     topic,
@@ -75,7 +77,14 @@ function readFormLocation(form?: SearchHalfwayRequest) {
   return locationA;
 }
 
-function intentLabel(intent: WatchEventsResult["intent"]) {
+function intentLabel(
+  intent: WatchEventsResult["intent"],
+  localSubcategory: ReturnType<typeof detectLocalHappeningsSubcategory> = null
+) {
+  if (localSubcategory) {
+    return getLocalHappeningsOption(localSubcategory).label;
+  }
+
   switch (intent) {
     case "sports":
       return "Sports";

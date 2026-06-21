@@ -5,7 +5,7 @@ import { AiSearchBox, type AiSearchBoxHandle } from "@/app/components/AiSearchBo
 import { KoiPathCards } from "@/app/components/KoiPathCards";
 import { KoiSpecialtyModule } from "@/app/components/KoiSpecialtyModule";
 import { KoiContextBar } from "@/app/components/KoiContextBar";
-import { KOI_GO_SOMEWHERE_QUERY, KOI_WATCH_SOMETHING_QUERY } from "@/lib/koiBrowse";
+import { KOI_GO_SOMEWHERE_QUERY, KOI_WATCH_SOMETHING_QUERY, KOI_FIND_EVENTS_QUERY } from "@/lib/koiBrowse";
 import { KoiExampleSearchCard } from "@/app/components/KoiExampleSearchCard";
 import { isHalfwayQuery, extractLookingForFromHalfwayQuery } from "@/lib/halfwayBrowse";
 import { LocationForm } from "@/app/components/LocationForm";
@@ -836,6 +836,7 @@ export default function HomePage() {
                   <KoiPathCards
                     busy={loading || locating || resolvingManual}
                     onGoSomewhere={() => searchBoxRef.current?.fillQuery(KOI_GO_SOMEWHERE_QUERY)}
+                    onFindEvents={() => searchBoxRef.current?.fillEventsQuery(KOI_FIND_EVENTS_QUERY)}
                     onWatchSomething={() => searchBoxRef.current?.fillQuery(KOI_WATCH_SOMETHING_QUERY, "tv_shows")}
                   />
                 </div>

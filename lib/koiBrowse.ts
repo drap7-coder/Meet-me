@@ -84,6 +84,7 @@ export type KoiFeaturedExample = KoiBrowseOption;
 
 export const KOI_GO_SOMEWHERE_QUERY = KOI_EXAMPLE.spotQuery;
 export const KOI_WATCH_SOMETHING_QUERY = KOI_EXAMPLE.streamQuery;
+export const KOI_FIND_EVENTS_QUERY = "Farmers markets near me today";
 
 /** Compact prompt chips under the ask box. */
 export const KOI_FEATURED_EXAMPLES: KoiFeaturedExample[] = [

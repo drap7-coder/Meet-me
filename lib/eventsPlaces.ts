@@ -1,4 +1,11 @@
 import { searchHalfway } from "@/lib/google";
+import {
+  buildLocalHappeningsLiveMeta,
+  detectLocalHappeningsSubcategory,
+  extractLocalHappeningsTimeframe,
+  getLocalHappeningsOption,
+  resolveLocalHappeningsPlacesSearch
+} from "@/lib/localHappenings";
 import { isMovieTheaterEventsQuery } from "@/lib/watchEvents";
 import type {
   ScoredVenue,
@@ -26,6 +33,11 @@ export function resolveEventsPlacesSearch(
 ): { category: VenueCategory; customQuery?: string } {
   const normalized = query.toLowerCase();
   const topicValue = topic.toLowerCase();
+  const localSubcategory = detectLocalHappeningsSubcategory(query);
+
+  if (localSubcategory) {
+    return resolveLocalHappeningsPlacesSearch(localSubcategory);
+  }
 
   if (isMovieTheaterEventsQuery(normalized) || topicValue.includes("movie theater")) {
     return { category: "custom", customQuery: "movie theater" };
@@ -105,7 +117,9 @@ export async function buildLiveEventsFromPlaces({
         venue,
         rank: index + 1,
         intent,
-        timeframe,
+        timeframe: detectLocalHappeningsSubcategory(query)
+          ? extractLocalHappeningsTimeframe(query, detectLocalHappeningsSubcategory(query))
+          : timeframe,
         searchMode,
         locationA: locationContext.locationA,
         locationB: locationContext.locationB ?? "",
@@ -136,6 +150,7 @@ function venueToEventRecommendation({
   locationB: string;
   query: string;
 }): WatchEventsRecommendation {
+  const localSubcategory = detectLocalHappeningsSubcategory(query);
   const isMovieTheater = isMovieTheaterEventsQuery(query);
   const timeA = formatMinutes(venue.travelFromA.durationMinutes);
   const timeB = formatMinutes(venue.travelFromB.durationMinutes);
@@ -144,37 +159,63 @@ function venueToEventRecommendation({
     ? `about ${timeA} from ${shortLocationLabel(locationA)} and ${timeB} from ${shortLocationLabel(locationB)}`
     : `about ${timeA} from your search area`;
 
-  const meta: WatchEventsRecommendation["meta"] = [];
-  if (isMidpoint) {
-    meta.push({ label: "Drive A", value: timeA });
-    meta.push({ label: "Drive B", value: timeB });
-  } else {
-    meta.push({ label: "Drive time", value: timeA });
-  }
-  if (typeof venue.rating === "number") {
-    meta.push({
-      label: "Rating",
-      value: venue.reviewCount ? `${venue.rating.toFixed(1)}★ (${venue.reviewCount})` : `${venue.rating.toFixed(1)}★`
-    });
-  }
-  if (venue.openNow === true) meta.push({ label: "Hours", value: "Open now" });
-  if (venue.openNow === false) meta.push({ label: "Hours", value: "Closed now" });
-  meta.push({ label: "Timing", value: timeframe });
+  const meta: WatchEventsRecommendation["meta"] = localSubcategory
+    ? buildLocalHappeningsLiveMeta({
+        subcategory: localSubcategory,
+        timeframe,
+        address: venue.address || capitalizeWords(venue.category),
+        driveTime: isMidpoint ? `${timeA} / ${timeB}` : timeA,
+        openNow: venue.openNow
+      })
+    : [];
 
-  const tags = [capitalizeWords(venue.category), timeframe];
+  if (!localSubcategory) {
+    if (isMidpoint) {
+      meta.push({ label: "Drive A", value: timeA });
+      meta.push({ label: "Drive B", value: timeB });
+    } else {
+      meta.push({ label: "Drive time", value: timeA });
+    }
+    if (typeof venue.rating === "number") {
+      meta.push({
+        label: "Rating",
+        value: venue.reviewCount ? `${venue.rating.toFixed(1)}★ (${venue.reviewCount})` : `${venue.rating.toFixed(1)}★`
+      });
+    }
+    if (venue.openNow === true) meta.push({ label: "Hours", value: "Open now" });
+    if (venue.openNow === false) meta.push({ label: "Hours", value: "Closed now" });
+    meta.push({ label: "Timing", value: timeframe });
+  }
+
+  const localOption = localSubcategory ? getLocalHappeningsOption(localSubcategory) : null;
+  const tags = localOption
+    ? [localOption.label, timeframe, localOption.schedule === "recurring" ? "Recurring" : "One-off"]
+    : [capitalizeWords(venue.category), timeframe];
   if (venue.openNow === true) tags.push("Open now");
   if (isMidpoint && venue.timeDifferenceMinutes !== null && venue.timeDifferenceMinutes <= 8) {
     tags.push("Fair drive times");
   }
 
+  const explanation = localOption
+    ? localOption.schedule === "recurring"
+      ? `Koi found ${venue.name} for ${localOption.label.toLowerCase()} with ${travelExplanation}. Confirm the next market date and seasonal hours before you go.`
+      : `Koi found ${venue.name} for ${localOption.label.toLowerCase()} with ${travelExplanation}. Check local listings for the exact date and start time.`
+    : `Koi found ${venue.name} near your ${isMidpoint ? "midpoint" : "area"} with ${travelExplanation}. Check Maps or the venue site for ${isMovieTheater ? "showtimes and what's playing" : intent === "sports" ? "upcoming games and events" : "upcoming shows and tickets"}.`;
+
   return {
     id: `events-place-${venue.id}-${rank}`,
     rank,
     title: venue.name,
-    subtitle: venue.address || capitalizeWords(venue.category),
+    subtitle: localOption
+      ? `${timeframe} · ${venue.address || localOption.label}`
+      : venue.address || capitalizeWords(venue.category),
     kind: intent,
-    badge: EVENT_BADGES[Math.min(rank - 1, EVENT_BADGES.length - 1)] ?? "Match",
-    explanation: `Koi found ${venue.name} near your ${isMidpoint ? "midpoint" : "area"} with ${travelExplanation}. Check Maps or the venue site for ${isMovieTheater ? "showtimes and what's playing" : intent === "sports" ? "upcoming games and events" : "upcoming shows and tickets"}.`,
+    badge: localOption
+      ? localOption.schedule === "recurring"
+        ? "Next occurrence"
+        : "Upcoming event"
+      : EVENT_BADGES[Math.min(rank - 1, EVENT_BADGES.length - 1)] ?? "Match",
+    explanation,
     tags,
     meta,
     actionLabel: venue.websiteUri ? "Visit website" : "Open in Maps",

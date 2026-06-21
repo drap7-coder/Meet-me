@@ -6,13 +6,30 @@ import { useEffect, useRef, useState } from "react";
 
 type Props = {
   item: WatchEventsRecommendation;
+  botMode?: "watch" | "events";
 };
 
-export function WatchEventsCard({ item }: Props) {
+function isSearchSuggestion(item: WatchEventsRecommendation) {
+  return item.preview && /search suggestion/i.test(item.provider);
+}
+
+function badgeClass(item: WatchEventsRecommendation, botMode: "watch" | "events") {
+  if (isSearchSuggestion(item)) return "bg-events text-white";
+  if (botMode === "events" && item.kind === "things_to_do") return "bg-events text-white";
+  return "bg-clay text-white";
+}
+
+function previewBadge(item: WatchEventsRecommendation) {
+  if (isSearchSuggestion(item)) return "Search suggestion";
+  return "Preview";
+}
+
+export function WatchEventsCard({ item, botMode = "watch" }: Props) {
   const [expanded, setExpanded] = useState(false);
   const cardRef = useRef<HTMLElement | null>(null);
   const viewed = useRef(false);
   const isLivePick = !item.preview;
+  const searchSuggestion = isSearchSuggestion(item);
 
   useEffect(() => {
     if (!cardRef.current || viewed.current) return;
@@ -46,7 +63,12 @@ export function WatchEventsCard({ item }: Props) {
   }
 
   return (
-    <article ref={cardRef} className="rounded-lg border border-line bg-paper p-5 shadow-soft sm:p-6">
+    <article
+      ref={cardRef}
+      className={`rounded-lg border bg-paper p-5 shadow-soft sm:p-6 ${
+        searchSuggestion ? "border-events/25" : botMode === "events" ? "border-events/15" : "border-line"
+      }`}
+    >
       <div className="flex items-start gap-4">
         {item.posterUrl ? (
           <img
@@ -58,12 +80,20 @@ export function WatchEventsCard({ item }: Props) {
         ) : null}
         <div className="min-w-0 flex-1">
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <span className="inline-flex rounded-lg bg-clay px-3 py-1 text-xs font-bold text-white">{item.badge}</span>
+            <span className={`inline-flex rounded-lg px-3 py-1 text-xs font-bold ${badgeClass(item, botMode)}`}>
+              {item.badge}
+            </span>
             {item.preview ? (
-              <span className="inline-flex rounded-full bg-sky px-2.5 py-1 text-xs font-bold text-slate">Preview</span>
+              <span
+                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${
+                  searchSuggestion ? "bg-events/10 text-events" : "bg-sky text-slate"
+                }`}
+              >
+                {previewBadge(item)}
+              </span>
             ) : (
               <span className="inline-flex rounded-full bg-[#E8F5EE] px-2.5 py-1 text-xs font-bold text-[#176644]">
-                {item.mediaType === "tv" ? "Live TV pick" : "Live pick"}
+                {botMode === "events" ? "Live venue" : item.mediaType === "tv" ? "Live TV pick" : "Live pick"}
               </span>
             )}
           </div>
@@ -88,7 +118,11 @@ export function WatchEventsCard({ item }: Props) {
           <button
             type="button"
             onClick={toggleExpanded}
-            className="rounded-full border border-clay bg-white px-4 py-2 text-sm font-black text-clay transition hover:bg-[#EDFFED] focus:outline-none focus:ring-4 focus:ring-clay/15"
+            className={`rounded-full border bg-white px-4 py-2 text-sm font-black transition focus:outline-none focus:ring-4 ${
+              botMode === "events"
+                ? "border-events text-events hover:bg-events/10 focus:ring-events/15"
+                : "border-clay text-clay hover:bg-[#EDFFED] focus:ring-clay/15"
+            }`}
           >
             {expanded ? "Hide details" : "Show details"}
           </button>
@@ -97,7 +131,7 @@ export function WatchEventsCard({ item }: Props) {
 
       {(!isLivePick || expanded) && (
         <>
-          <div className="mt-4 rounded-lg border border-line bg-mint p-4">
+          <div className={`mt-4 rounded-lg border p-4 ${searchSuggestion ? "border-events/15 bg-events/5" : "border-line bg-mint"}`}>
             <p className="text-sm font-black text-ink">Why Koi picked it</p>
             <p className="mt-2 text-sm leading-6 text-slate">{item.explanation}</p>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -114,7 +148,10 @@ export function WatchEventsCard({ item }: Props) {
 
           <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
             {item.meta.map((entry) => (
-              <div key={entry.label} className="rounded-lg bg-sky px-3 py-2.5">
+              <div
+                key={entry.label}
+                className={`rounded-lg px-3 py-2.5 ${searchSuggestion ? "bg-events/5 ring-1 ring-events/10" : "bg-sky"}`}
+              >
                 <div className="text-xs font-bold uppercase text-slate">{entry.label}</div>
                 <div className="mt-1 font-bold text-ink">{entry.value}</div>
               </div>
@@ -127,7 +164,7 @@ export function WatchEventsCard({ item }: Props) {
         <span className="rounded-lg bg-line px-2.5 py-1 font-semibold text-slate">Source: {item.provider}</span>
       </div>
 
-      {isLivePick && expanded && item.actionUrl ? (
+      {isLivePick && expanded && item.actionUrl && botMode === "watch" ? (
         <p className="mt-4 text-sm leading-6 text-slate">
           Need cast, trailers, or photos?{" "}
           <a
@@ -161,7 +198,11 @@ export function WatchEventsCard({ item }: Props) {
                 provider: item.provider
               })
             }
-            className="rounded-full bg-clay px-3 py-2.5 text-center text-sm font-bold text-white transition hover:bg-[#24A832] focus:outline-none focus:ring-4 focus:ring-clay/25"
+            className={`rounded-full px-3 py-2.5 text-center text-sm font-bold text-white transition focus:outline-none focus:ring-4 ${
+              searchSuggestion || botMode === "events"
+                ? "bg-events hover:bg-[#CF6A52] focus:ring-events/25"
+                : "bg-clay hover:bg-[#24A832] focus:ring-clay/25"
+            }`}
           >
             {item.actionLabel}
           </a>

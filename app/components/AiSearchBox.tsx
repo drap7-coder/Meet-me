@@ -53,7 +53,7 @@ function AiSparkleIcon() {
     <svg
       aria-hidden="true"
       viewBox="0 0 24 24"
-      className="h-5 w-5 shrink-0 text-clay"
+      className="h-5 w-5 shrink-0 text-koi"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.75"
@@ -282,29 +282,28 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   const busy = loading || parsing;
   const locationBusy = locating || resolvingManual;
   const hasLocation = Boolean(locationStatus);
-  const submitLabel = parsing ? "Understanding" : loading ? "Finding picks" : BRAND.askLabel;
+  const submitLabel = parsing ? "Understanding" : loading ? "Finding options" : BRAND.askLabel;
   const onHero = surface === "hero";
   const locationButtonClass = onHero
-    ? "inline-flex items-center gap-1.5 text-left text-base font-bold text-fluoro-bright transition hover:text-fluoro focus:outline-none focus:ring-4 focus:ring-fluoro/25 disabled:cursor-not-allowed disabled:opacity-60 sm:text-lg [text-shadow:0_0_12px_rgba(85,255,85,0.35)]"
-    : "inline-flex items-center gap-1.5 text-left text-base font-bold text-ink transition hover:text-[#1B7A1B] focus:outline-none focus:ring-4 focus:ring-fluoro/20 disabled:cursor-not-allowed disabled:opacity-60 sm:text-lg";
-  const locationHintClass = onHero ? "mt-1 max-w-md text-xs leading-5 text-white/55" : "mt-1 max-w-md text-xs leading-5 text-slate/80";
-  const locationStatusClass = onHero ? "mt-3 text-xs leading-5 text-fluoro-bright/90" : "mt-3 text-xs leading-5 text-slate/90";
-  const addressInputClass = onHero
-    ? "koi-address-input koi-address-input-on-dark h-11 w-full px-4 text-base outline-none transition disabled:cursor-not-allowed disabled:opacity-60"
-    : "koi-address-input h-11 w-full px-4 text-base outline-none transition disabled:cursor-not-allowed disabled:opacity-60";
-  const guidedInputClass =
-    "h-11 w-full rounded-md border border-line bg-white px-4 text-base text-ink outline-none transition placeholder:text-slate/60 focus:border-clay focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60";
+    ? "inline-flex items-center gap-1.5 text-left text-base font-semibold text-white/80 transition hover:text-koi focus:outline-none focus:ring-4 focus:ring-koi/20 disabled:cursor-not-allowed disabled:opacity-60 sm:text-lg"
+    : "inline-flex items-center gap-1.5 text-left text-base font-semibold text-ink transition hover:text-koi focus:outline-none focus:ring-4 focus:ring-koi/15 disabled:cursor-not-allowed disabled:opacity-60 sm:text-lg";
+  const locationHintClass = onHero ? "mt-1 max-w-md text-xs leading-5 text-white/50" : "mt-1 max-w-md text-xs leading-5 text-slate/80";
+  const locationStatusClass = onHero ? "mt-3 text-xs leading-5 text-white/65" : "mt-3 text-xs leading-5 text-slate/90";
+  const heroFieldClass = "koi-hero-field h-11 w-full px-4 text-base outline-none transition disabled:cursor-not-allowed disabled:opacity-60";
+  const fieldClass = "koi-field h-11 w-full px-4 text-base outline-none transition placeholder:text-slate/60 disabled:cursor-not-allowed disabled:opacity-60";
+  const addressInputClass = onHero ? heroFieldClass : fieldClass;
+  const guidedInputClass = onHero ? heroFieldClass : fieldClass;
   const pillClass = (active: boolean) =>
     onHero
       ? `inline-flex h-9 items-center rounded-full px-4 text-sm font-bold transition focus:outline-none focus:ring-4 focus:ring-white/15 disabled:cursor-not-allowed disabled:opacity-60 ${
           active
-            ? "border border-clay bg-clay text-white"
-            : "border border-white/20 bg-white/10 text-white/90 hover:border-white/35 hover:bg-white/15"
+            ? "border border-koi bg-koi text-white"
+            : "border border-white/15 bg-white/5 text-white/85 hover:border-white/25 hover:bg-white/8"
         }`
-      : `inline-flex h-9 items-center rounded-full px-4 text-sm font-bold transition focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60 ${
+      : `inline-flex h-9 items-center rounded-full px-4 text-sm font-semibold transition focus:outline-none focus:ring-4 focus:ring-koi/15 disabled:cursor-not-allowed disabled:opacity-60 ${
           active
-            ? "border border-clay bg-clay text-white"
-            : "border border-line bg-white text-ink hover:border-clay/50 hover:bg-[#FFF4EC]"
+            ? "border border-koi bg-koi text-white"
+            : "border border-line bg-white text-ink hover:border-koi/40 hover:bg-[#EDFFED]"
         }`;
   const searchPlaceholder =
     guidedMode === "spot"
@@ -345,7 +344,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
         {guidedMode === "halfway" ? (
           <form onSubmit={submitHalfwayGuided} className="mb-3 grid gap-2 sm:grid-cols-2">
             <label className="block min-w-0 sm:col-span-1">
-              <span className={`mb-1 block text-xs font-bold ${onHero ? "text-fluoro-bright" : "text-[#1B7A1B]"}`}>Your address</span>
+              <span className={`mb-1 block text-xs font-semibold ${onHero ? "text-white/70" : "text-slate"}`}>Your address</span>
               <input
                 type="text"
                 value={locationA}
@@ -383,7 +382,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
               <button
                 type="submit"
                 disabled={busy}
-                className="inline-flex h-11 w-full items-center justify-center rounded-full bg-clay px-5 text-sm font-bold text-white transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                className="inline-flex h-11 w-full items-center justify-center rounded-full bg-koi px-5 text-sm font-bold text-white transition hover:bg-koi-hover focus:outline-none focus:ring-4 focus:ring-koi/25 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
               >
                 Find halfway spot
               </button>
@@ -461,7 +460,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
             className={
               onHero
                 ? "inline-flex h-11 items-center rounded-full border border-white/25 bg-white/10 px-5 text-base font-bold text-white transition hover:border-white/40 hover:bg-white/15 focus:outline-none focus:ring-4 focus:ring-white/15 disabled:cursor-not-allowed disabled:opacity-60"
-                : "inline-flex h-11 items-center rounded-full border border-line/80 bg-white px-5 text-base font-bold text-ink shadow-sm transition hover:border-clay/50 hover:bg-[#FFF4EC] focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60"
+                : "inline-flex h-11 items-center rounded-full border border-line/80 bg-white px-5 text-base font-bold text-ink shadow-sm transition hover:border-clay/50 hover:bg-[#EDFFED] focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60"
             }
           >
             {locating ? "Checking location..." : "Use my location"}
@@ -473,7 +472,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
             className={
               onHero
                 ? "inline-flex h-10 items-center rounded-full border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white/90 transition hover:border-white/35 hover:bg-white/15 focus:outline-none focus:ring-4 focus:ring-white/15 disabled:cursor-not-allowed disabled:opacity-60"
-                : "inline-flex h-10 items-center rounded-full border border-line/80 bg-white px-4 text-sm font-semibold text-ink shadow-sm transition hover:border-clay/50 hover:bg-[#FFF4EC] focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60"
+                : "inline-flex h-10 items-center rounded-full border border-line/80 bg-white px-4 text-sm font-semibold text-ink shadow-sm transition hover:border-clay/50 hover:bg-[#EDFFED] focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60"
             }
           >
             Enter ZIP Code
@@ -486,8 +485,8 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
           onSubmit={handleManualLocationSubmit}
           className={
             onHero
-              ? "mt-3 koi-block-panel p-3 backdrop-blur-sm"
-              : "mt-3 rounded-md border-2 border-fluoro/30 bg-mint/80 p-3 shadow-[3px_3px_0_rgba(8,42,14,0.2)]"
+              ? "mt-3 koi-premium-card p-3 backdrop-blur-sm"
+              : "mt-3 rounded-card border border-line bg-paper p-3 shadow-soft"
           }
           aria-live="polite"
         >
@@ -502,7 +501,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
               placeholder="ZIP code or city"
               autoComplete="postal-code"
               disabled={locationBusy || busy}
-              className={`h-11 min-w-0 flex-1 px-4 text-base outline-none transition disabled:cursor-not-allowed disabled:opacity-60 ${onHero ? "koi-address-input koi-address-input-on-dark" : "koi-address-input"}`}
+              className={`h-11 min-w-0 flex-1 px-4 text-base outline-none transition disabled:cursor-not-allowed disabled:opacity-60 ${onHero ? heroFieldClass : fieldClass}`}
             />
             <button
               type="submit"
@@ -510,14 +509,14 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
               className={
                 onHero
                   ? "inline-flex h-11 shrink-0 items-center justify-center rounded-full border-2 border-white/25 bg-white/10 px-4 text-sm font-bold text-white transition hover:border-white/40 hover:bg-white/15 focus:outline-none focus:ring-4 focus:ring-white/15 disabled:cursor-not-allowed disabled:opacity-60"
-                  : "inline-flex h-11 shrink-0 items-center justify-center rounded-full border-2 border-line bg-white px-4 text-sm font-bold text-ink transition hover:border-clay hover:bg-[#FFF4EC] focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60"
+                  : "inline-flex h-11 shrink-0 items-center justify-center rounded-full border-2 border-line bg-white px-4 text-sm font-bold text-ink transition hover:border-clay hover:bg-[#EDFFED] focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60"
               }
             >
               {resolvingManual ? "Finding..." : "Use this location"}
             </button>
           </div>
           {manualLocationError ? (
-            <p className="mt-2 text-xs font-semibold text-clay">{manualLocationError}</p>
+            <p className="mt-2 text-xs font-semibold text-events">{manualLocationError}</p>
           ) : null}
           <p className={`mt-2 text-xs leading-5 ${onHero ? "text-white/55" : "text-slate"}`}>
             You can still search by typing a place, like &apos;{KOI_EXAMPLE.spotQuery}&apos; or &apos;{KOI_EXAMPLE.italianQuery}&apos;.
@@ -526,7 +525,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
       ) : null}
 
       {error ? (
-        <p className="mt-3 rounded-xl border border-clay/25 bg-[#FFF4EC] px-3 py-2.5 text-sm font-semibold text-ink">
+        <p className="mt-3 rounded-xl border border-events/20 bg-events/10 px-3 py-2.5 text-sm font-semibold text-ink">
           {error}
         </p>
       ) : null}

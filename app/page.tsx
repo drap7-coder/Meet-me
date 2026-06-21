@@ -4,6 +4,7 @@ import { EmptyState } from "@/app/components/EmptyState";
 import { AiSearchBox, type AiSearchBoxHandle } from "@/app/components/AiSearchBox";
 import { KoiPathCards } from "@/app/components/KoiPathCards";
 import { KoiSpecialtyModule } from "@/app/components/KoiSpecialtyModule";
+import { KoiContextBar } from "@/app/components/KoiContextBar";
 import { KOI_GO_SOMEWHERE_QUERY, KOI_WATCH_SOMETHING_QUERY } from "@/lib/koiBrowse";
 import { KoiExampleSearchCard } from "@/app/components/KoiExampleSearchCard";
 import { isHalfwayQuery, extractLookingForFromHalfwayQuery } from "@/lib/halfwayBrowse";
@@ -68,6 +69,13 @@ type PendingRetry =
   | { kind: "events"; query: string }
   | { kind: "places"; form: SearchHalfwayRequest };
 
+const PLACE_LOADING_LABELS = [
+  "Finding midpoint...",
+  "Calculating drive times...",
+  "Ranking locations...",
+  "Finding best options..."
+];
+
 export default function HomePage() {
   const [form, setForm] = useState<SearchHalfwayRequest>(initialForm);
   const [results, setResults] = useState<SearchHalfwayResponse | null>(null);
@@ -95,7 +103,9 @@ export default function HomePage() {
   const [hasSearched, setHasSearched] = useState(false);
   const [recentMeetups, setRecentMeetups] = useState<RecentMeetup[]>([]);
   const [showRoadDividerPreview, setShowRoadDividerPreview] = useState(false);
+  const [loadingPhase, setLoadingPhase] = useState(0);
   const searchBoxRef = useRef<AiSearchBoxHandle>(null);
+  const loadingPhaseLabel = PLACE_LOADING_LABELS[loadingPhase] ?? PLACE_LOADING_LABELS[0];
 
   function persistSavedLocation(location: CurrentLocationContext) {
     if (!location.locationACoordinates || !location.locationA?.trim()) return;
@@ -168,6 +178,17 @@ export default function HomePage() {
   useEffect(() => {
     setRecentMeetups(getRecentMeetups());
   }, []);
+
+  useEffect(() => {
+    if (!loading || searchKind !== "places") {
+      setLoadingPhase(0);
+      return;
+    }
+    const timer = window.setInterval(() => {
+      setLoadingPhase((phase) => (phase + 1) % PLACE_LOADING_LABELS.length);
+    }, 1800);
+    return () => window.clearInterval(timer);
+  }, [loading, searchKind]);
 
   function scrollToFallback() {
     window.requestAnimationFrame(() => {
@@ -742,7 +763,7 @@ export default function HomePage() {
       {!hasSearched && !results && !watchEventsResult && !loading ? (
         <>
           <section id="search" className="relative isolate overflow-hidden bg-ink px-4 pb-10 pt-4 sm:px-6 sm:pb-12 sm:pt-5 lg:px-8 lg:pb-14">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_50%_-15%,rgba(214,90,46,0.38),transparent_58%),radial-gradient(circle_at_12%_28%,rgba(214,90,46,0.16),transparent_34%),radial-gradient(circle_at_88%_10%,rgba(242,239,231,0.14),transparent_30%),linear-gradient(180deg,#0A1323_0%,#0c1729_50%,#0A1323_100%)]" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_50%_-15%,rgba(52,199,89,0.12),transparent_58%),radial-gradient(circle_at_88%_8%,rgba(10,132,255,0.08),transparent_32%),linear-gradient(180deg,#0A1323_0%,#0c1729_50%,#0A1323_100%)]" />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0A1323] via-[#0A1323]/70 to-transparent sm:h-28" />
             <div className="relative z-10 mx-auto grid w-full max-w-5xl gap-5 py-5 sm:gap-6 sm:py-7 lg:gap-7 lg:py-8">
               <MarketingHero />
@@ -766,17 +787,12 @@ export default function HomePage() {
                 onShowZipFallback={showZipFallback}
                 onSubmitManualLocation={(input) => void resolveManualLocation(input)}
               />
-              <KoiSpecialtyModule
-                busy={loading || locating || resolvingManual}
-                onSelect={(lookingFor, exampleQuery) =>
-                  searchBoxRef.current?.fillHalfwayIntent(lookingFor, exampleQuery)
-                }
-              />
+              <KoiContextBar coordinates={locationContext.locationACoordinates} />
               <section className="w-full min-w-0" aria-labelledby="more-ways-title">
-                <h2 id="more-ways-title" className="text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-clay">
+                <h2 id="more-ways-title" className="text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-white/45">
                   More ways to ask Koi
                 </h2>
-                <div className="mt-4">
+                <div className="mt-3">
                   <KoiPathCards
                     busy={loading || locating || resolvingManual}
                     onGoSomewhere={() => searchBoxRef.current?.fillQuery(KOI_GO_SOMEWHERE_QUERY)}
@@ -784,6 +800,12 @@ export default function HomePage() {
                   />
                 </div>
               </section>
+              <KoiSpecialtyModule
+                busy={loading || locating || resolvingManual}
+                onSelect={(lookingFor, exampleQuery) =>
+                  searchBoxRef.current?.fillHalfwayIntent(lookingFor, exampleQuery)
+                }
+              />
               <TrendingSearchesSection
                 busy={loading || locating || resolvingManual}
                 onSelect={(option) => {
@@ -829,7 +851,7 @@ export default function HomePage() {
                   ? "Finding streaming picks"
                   : searchKind === "events"
                     ? "Finding watch picks"
-                    : "Finding places"
+                    : loadingPhaseLabel
               }
               resultCountLabel={resultCountLabel}
               title={watchEventsResult ? watchEventsResult.title : "Recommended places"}
@@ -853,7 +875,7 @@ export default function HomePage() {
           ) : null}
 
           {error ? (
-            <div className="mt-5 rounded-lg border border-[#FFD2D2] bg-[#FFF1F1] p-4 text-sm font-semibold text-clay">
+            <div className="mt-5 rounded-lg border border-events/20 bg-events/10 p-4 text-sm font-semibold text-events">
               {error}
             </div>
           ) : null}
@@ -996,7 +1018,7 @@ function MarketingHero() {
             </span>
             <span className="mt-1.5 block text-[clamp(2.125rem,8vw,3.5rem)] leading-[0.9]">
               <span className="text-white/95">where to </span>
-              <span className="text-clay">meet.</span>
+              <span className="text-koi">meet.</span>
             </span>
           </h1>
           <p className="mt-4 max-w-xl text-[0.9375rem] font-normal leading-6 tracking-[-0.01em] text-[#B8B0A3] sm:text-base sm:leading-7">
@@ -1045,7 +1067,7 @@ function CompactResultsHeader({
               <button
                 type="button"
                 onClick={onShareOptions}
-                className="inline-flex h-10 items-center justify-center rounded-full bg-clay px-4 text-sm font-bold text-white transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25"
+                className="inline-flex h-10 items-center justify-center rounded-full bg-koi px-4 text-sm font-bold text-white transition hover:bg-koi-hover focus:outline-none focus:ring-4 focus:ring-koi/25"
               >
                 Share this meetup
               </button>
@@ -1102,7 +1124,7 @@ function ShareDialog({
           <button
             type="button"
             onClick={copyLink}
-            className="inline-flex h-11 items-center justify-center rounded-full bg-clay px-4 text-sm font-bold text-white transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25"
+            className="inline-flex h-11 items-center justify-center rounded-full bg-koi px-4 text-sm font-bold text-white transition hover:bg-koi-hover focus:outline-none focus:ring-4 focus:ring-koi/25"
           >
             Copy Link
           </button>
@@ -1198,7 +1220,7 @@ function SiteHeader() {
         </a>
         <a
           href="#ask-koi"
-          className="inline-flex h-9 shrink-0 items-center justify-center rounded-full bg-clay px-3 text-xs font-black text-white transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25 sm:h-10 sm:px-5 sm:text-sm"
+          className="inline-flex h-9 shrink-0 items-center justify-center rounded-full bg-koi px-3 text-xs font-black text-white transition hover:bg-koi-hover focus:outline-none focus:ring-4 focus:ring-koi/25 sm:h-10 sm:px-5 sm:text-sm"
         >
           {BRAND.askLabel}
         </a>
@@ -1247,13 +1269,13 @@ function MeetInMiddleLoader() {
         <div className="absolute left-8 right-8 top-1/2 h-px -translate-y-1/2 bg-line" />
         <div className="meet-middle-dot meet-middle-dot-left absolute left-8 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-[#2D3E57] shadow-[0_0_0_8px_rgba(45,62,87,0.12)]" />
         <div className="meet-middle-dot meet-middle-dot-right absolute right-8 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-ink shadow-[0_0_0_8px_rgba(18,50,74,0.10)]" />
-        <div className="meet-middle-pin absolute left-1/2 top-1/2 grid h-10 w-10 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-clay text-white shadow-[0_12px_28px_rgba(255,107,95,0.28)] ring-8 ring-clay/10">
+        <div className="meet-middle-pin absolute left-1/2 top-1/2 grid h-10 w-10 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-koi text-white shadow-glow ring-8 ring-koi/10">
           <span className="h-3 w-3 rounded-full bg-white" />
         </div>
       </div>
       <div className="mt-4 text-center">
         <p className="text-sm font-black text-ink">Finding the midpoint</p>
-        <p className="mt-1 text-xs font-semibold text-slate">Balancing drive times and local options.</p>
+        <p className="mt-1 text-xs font-semibold text-slate">Calculating drive times and ranking locations.</p>
       </div>
     </div>
   );
@@ -1275,7 +1297,7 @@ function Footer() {
         <div className="sm:text-right">
           <p className="leading-6">Questions, ideas, or feedback?</p>
           <p className="leading-6">We&apos;d love to hear from you.</p>
-          <a href={feedbackHref} className="mt-3 inline-flex font-bold text-clay hover:text-[#E07A5F]">
+          <a href={feedbackHref} className="mt-3 inline-flex font-bold text-koi hover:text-koi/80">
             Send Feedback -&gt;
           </a>
         </div>
@@ -1286,15 +1308,15 @@ function Footer() {
 
 function SharedHalfwayReferralBanner({ onStartSearch }: { onStartSearch: () => void }) {
   return (
-    <div className="rounded-lg border border-clay/25 bg-clay/[0.08] p-4 sm:p-5">
-      <p className="text-sm font-black text-ink">Shared meetup spot</p>
+    <div className="rounded-card border border-line bg-paper p-4 shadow-soft sm:p-5">
+      <p className="text-sm font-bold text-ink">Shared meetup spot</p>
       <p className="mt-1 text-sm leading-6 text-slate">
         Planning your own meetup? Ask Koi to find a spot that works for both of you.
       </p>
       <button
         type="button"
         onClick={onStartSearch}
-        className="mt-4 inline-flex h-10 items-center justify-center rounded-full bg-clay px-5 text-sm font-bold text-white transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25"
+        className="mt-4 inline-flex h-10 items-center justify-center rounded-full bg-koi px-5 text-sm font-bold text-white transition hover:bg-koi-hover focus:outline-none focus:ring-4 focus:ring-koi/25"
       >
         Ask Koi your own question
       </button>
@@ -1321,7 +1343,7 @@ function TrendingSearchesSection({
 
   return (
     <section className="w-full min-w-0" aria-labelledby="trending-searches-title">
-      <h2 id="trending-searches-title" className="text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-clay">
+      <h2 id="trending-searches-title" className="text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-white/45">
         Trending Searches
       </h2>
       {halfwaySearches.length ? (
@@ -1380,7 +1402,7 @@ function RecentSearchesSection({
     <section className="w-full min-w-0">
       <div className="flex min-w-0 items-start justify-between gap-3 sm:items-center sm:gap-4">
         <div className="min-w-0 flex-1">
-          <h2 className="text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-clay">Recent Searches</h2>
+          <h2 className="text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-white/45">Recent Searches</h2>
         </div>
         <button
           type="button"

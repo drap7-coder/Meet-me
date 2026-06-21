@@ -29,7 +29,7 @@ export function WatchEventsResults({ result, loadingMore = false, onLoadMore }: 
               type="button"
               onClick={onLoadMore}
               disabled={loadingMore}
-              className="h-12 rounded-full border border-clay bg-white px-5 text-sm font-black text-clay transition hover:bg-[#FFF4EC] focus:outline-none focus:ring-4 focus:ring-clay/15 disabled:cursor-not-allowed disabled:opacity-50"
+              className="h-12 rounded-full border border-clay bg-white px-5 text-sm font-black text-clay transition hover:bg-[#EDFFED] focus:outline-none focus:ring-4 focus:ring-clay/15 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loadingMore ? "Loading more picks..." : "Show more picks"}
             </button>
@@ -51,7 +51,7 @@ export function WatchEventsResults({ result, loadingMore = false, onLoadMore }: 
 
           <div
             className={`mt-4 rounded-lg border p-4 ${
-              result.preview ? "border-clay/25 bg-[#FFF4EC]" : "border-[#B7E4C7] bg-[#F3FBF6]"
+              result.preview ? "border-clay/25 bg-[#EDFFED]" : "border-[#B7E4C7] bg-[#F3FBF6]"
             }`}
           >
             <p className="text-sm font-black text-ink">{sidebarTitle}</p>

@@ -143,7 +143,7 @@ export function LocationForm({
                 }
                 className={`h-10 rounded-full px-3 text-sm font-black transition ${
                   selected
-                    ? "bg-clay text-white shadow-[0_8px_18px_rgba(255,107,95,0.18)]"
+                    ? "bg-clay text-white shadow-[0_8px_18px_rgba(57,255,20,0.18)]"
                     : "text-ink hover:bg-white"
                 }`}
               >
@@ -251,7 +251,7 @@ export function LocationForm({
                 onClick={() => togglePreference(preference.id)}
                 className={`rounded-full border px-3 py-2 text-center text-sm font-bold transition ${
                   selected
-                    ? "border-clay bg-clay text-white shadow-[0_8px_18px_rgba(255,107,95,0.18)]"
+                    ? "border-clay bg-clay text-white shadow-[0_8px_18px_rgba(57,255,20,0.18)]"
                     : "border-line bg-white text-ink hover:border-clay/40 hover:bg-sky"
                 }`}
               >
@@ -280,7 +280,7 @@ export function LocationForm({
       <button
         type="submit"
         disabled={loading}
-        className="mt-6 h-11 w-full rounded-full bg-clay px-5 font-bold text-white shadow-[0_10px_24px_rgba(214,90,46,0.24)] transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25 disabled:cursor-not-allowed disabled:bg-ink/30 sm:h-12"
+        className="mt-6 h-11 w-full rounded-full bg-clay px-5 font-bold text-white shadow-[0_10px_24px_rgba(46,204,64,0.24)] transition hover:bg-[#24A832] focus:outline-none focus:ring-4 focus:ring-clay/25 disabled:cursor-not-allowed disabled:bg-ink/30 sm:h-12"
       >
         {loading
           ? `${(submitLabel ?? submitCopy).replace("Find", "Finding")}...`
@@ -511,7 +511,7 @@ function LocationInput({
           }}
           onFocus={() => setOpen(true)}
           placeholder={placeholder}
-          className="koi-address-input h-11 w-full px-4 pr-11 text-base outline-none transition sm:h-12"
+          className="koi-field h-11 w-full px-4 pr-11 text-base outline-none transition sm:h-12"
         />
         {value ? (
           <button
@@ -526,7 +526,7 @@ function LocationInput({
       </div>
       {placeId ? <p className="text-xs font-semibold text-clay">Location selected</p> : null}
       {isLocating ? <p className="text-xs font-semibold text-slate">Requesting your location...</p> : null}
-      {error ? <p className="text-xs font-semibold text-clay">{error}</p> : null}
+      {error ? <p className="text-xs font-semibold text-events">{error}</p> : null}
       {status ? <p className="text-xs font-semibold text-slate">{status}</p> : null}
       {open && suggestions.length ? (
         <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-lg border border-line bg-mint shadow-soft">

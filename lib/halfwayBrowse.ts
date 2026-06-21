@@ -9,7 +9,6 @@ export type HalfwayChip = {
   cardIcon: string;
   cardTitle: string;
   cardSubtitle: string;
-  chipStyle?: "fluoro" | "cyan" | "magenta";
 };
 
 /** Featured halfway examples — Koi's specialty module and emphasized trending. */
@@ -21,8 +20,7 @@ export const KOI_SPECIALTY_CHIPS: HalfwayChip[] = [
     query: KOI_EXAMPLE.halfwayQuery,
     cardIcon: "🍽️",
     cardTitle: "Dinner halfway",
-    cardSubtitle: "Find a restaurant that works for both",
-    chipStyle: "fluoro"
+    cardSubtitle: "Find a restaurant that works for both"
   },
   {
     id: "specialty-brewery",
@@ -31,8 +29,7 @@ export const KOI_SPECIALTY_CHIPS: HalfwayChip[] = [
     query: KOI_EXAMPLE.breweryHalfwayQuery,
     cardIcon: "🍺",
     cardTitle: "Brewery halfway",
-    cardSubtitle: "Drinks midway between two spots",
-    chipStyle: "cyan"
+    cardSubtitle: "Drinks midway between two spots"
   },
   {
     id: "specialty-lunch",
@@ -41,8 +38,7 @@ export const KOI_SPECIALTY_CHIPS: HalfwayChip[] = [
     query: KOI_EXAMPLE.lunchHalfwayQuery,
     cardIcon: "🥪",
     cardTitle: "Lunch between offices",
-    cardSubtitle: "Quick lunch meetup between workplaces",
-    chipStyle: "magenta"
+    cardSubtitle: "Quick lunch meetup between workplaces"
   },
   {
     id: "specialty-happy-hour",
@@ -51,8 +47,7 @@ export const KOI_SPECIALTY_CHIPS: HalfwayChip[] = [
     query: formatHalfwayExample("Happy hour"),
     cardIcon: "🍸",
     cardTitle: "Happy hour halfway",
-    cardSubtitle: "Drinks that work for both commutes",
-    chipStyle: "fluoro"
+    cardSubtitle: "Drinks that work for both commutes"
   }
 ];
 

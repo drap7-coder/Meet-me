@@ -88,7 +88,7 @@ export function WatchEventsCard({ item }: Props) {
           <button
             type="button"
             onClick={toggleExpanded}
-            className="rounded-full border border-clay bg-white px-4 py-2 text-sm font-black text-clay transition hover:bg-[#FFF4EC] focus:outline-none focus:ring-4 focus:ring-clay/15"
+            className="rounded-full border border-clay bg-white px-4 py-2 text-sm font-black text-clay transition hover:bg-[#EDFFED] focus:outline-none focus:ring-4 focus:ring-clay/15"
           >
             {expanded ? "Hide details" : "Show details"}
           </button>
@@ -141,7 +141,7 @@ export function WatchEventsCard({ item }: Props) {
                 provider: item.provider
               })
             }
-            className="font-semibold text-clay underline decoration-clay/40 underline-offset-2 hover:text-[#B94A22]"
+            className="font-semibold text-clay underline decoration-clay/40 underline-offset-2 hover:text-[#24A832]"
           >
             Open full details on TMDB
           </a>
@@ -161,7 +161,7 @@ export function WatchEventsCard({ item }: Props) {
                 provider: item.provider
               })
             }
-            className="rounded-full bg-clay px-3 py-2.5 text-center text-sm font-bold text-white transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25"
+            className="rounded-full bg-clay px-3 py-2.5 text-center text-sm font-bold text-white transition hover:bg-[#24A832] focus:outline-none focus:ring-4 focus:ring-clay/25"
           >
             {item.actionLabel}
           </a>

@@ -30,14 +30,14 @@ export function WatchCategorySelector({ value, onChange }: Props) {
               aria-pressed={selected}
               className={`category-card group flex min-w-0 items-center justify-center rounded-[18px] border-2 bg-white px-3 py-4 text-center shadow-[0_8px_18px_rgba(17,24,39,0.03)] transition sm:justify-start sm:p-4 sm:text-left sm:shadow-[0_10px_26px_rgba(17,24,39,0.04)] ${
                 selected
-                  ? "selected border-[var(--mmh-coral)] !bg-[#FFF4EC] text-ink !shadow-[0_0_0_4px_rgba(214,90,46,0.10),0_14px_30px_rgba(214,90,46,0.12)]"
+                  ? "selected border-[var(--mmh-coral)] !bg-[#EDFFED] text-ink !shadow-[0_0_0_4px_rgba(46,204,64,0.10),0_14px_30px_rgba(46,204,64,0.12)]"
                   : "border-[#D8DDE6] text-ink hover:border-ink/25 hover:shadow-soft"
               }`}
             >
               <div className="flex min-w-0 flex-col items-center gap-2.5 sm:flex-row sm:gap-3">
                 <span
                   className={`category-icon-wrapper grid shrink-0 place-items-center rounded-full transition ${
-                    selected ? "bg-[var(--mmh-coral)] text-white shadow-[0_10px_22px_rgba(214,90,46,0.24)]" : "bg-[#F7F1E8] text-slate"
+                    selected ? "bg-[var(--mmh-coral)] text-white shadow-[0_10px_22px_rgba(46,204,64,0.24)]" : "bg-[#F7F1E8] text-slate"
                   }`}
                 >
                   <CategoryIcon category={group.iconCategory} className={`category-icon ${selected ? "text-white" : "text-slate"}`} />
@@ -72,7 +72,7 @@ export function WatchCategorySelector({ value, onChange }: Props) {
                 aria-pressed={selected}
                 className={`category-card group flex min-w-0 flex-col items-center justify-center rounded-[16px] border-2 bg-white px-3 py-3 text-center transition sm:flex-row sm:justify-start sm:text-left ${
                   selected
-                    ? "selected border-[var(--mmh-coral)] !bg-[#FFF4EC] text-ink !shadow-[0_0_0_4px_rgba(214,90,46,0.10)]"
+                    ? "selected border-[var(--mmh-coral)] !bg-[#EDFFED] text-ink !shadow-[0_0_0_4px_rgba(46,204,64,0.10)]"
                     : "border-[#D8DDE6] text-ink hover:border-ink/25 hover:bg-sky"
                 }`}
               >

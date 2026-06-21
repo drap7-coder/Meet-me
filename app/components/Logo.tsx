@@ -108,7 +108,7 @@ export function Logo({
     "object-contain",
     !bare && "drop-shadow-[0_10px_24px_rgba(10,19,35,0.12)]",
     onDark &&
-      "drop-shadow-[0_0_28px_rgba(214,90,46,0.42)] drop-shadow-[0_10px_28px_rgba(0,0,0,0.38)]"
+      "drop-shadow-[0_0_24px_rgba(52,199,89,0.28)] drop-shadow-[0_10px_28px_rgba(0,0,0,0.38)]"
   ]
     .filter(Boolean)
     .join(" ");

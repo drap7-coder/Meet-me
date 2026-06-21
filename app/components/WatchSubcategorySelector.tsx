@@ -26,7 +26,7 @@ export function WatchSubcategorySelector({ value, onChange }: Props) {
               onClick={() => onChange(option.id)}
               className={`rounded-full border px-3 py-2 text-sm font-bold transition focus:outline-none focus:ring-4 focus:ring-clay/10 ${
                 selected
-                  ? "border-clay bg-clay text-white shadow-[0_8px_18px_rgba(255,107,95,0.18)]"
+                  ? "border-clay bg-clay text-white shadow-[0_8px_18px_rgba(57,255,20,0.18)]"
                   : "border-line bg-white text-ink hover:border-clay/40 hover:bg-sky"
               }`}
             >

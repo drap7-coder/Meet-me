@@ -7,7 +7,7 @@ import {
   venueToCalendarDetails
 } from "@/lib/calendar";
 import { CategoryIcon } from "@/app/components/CategoryIcon";
-import { KoiMatchBadge } from "@/app/components/KoiMatchBadge";
+import { FairMeetupBadge } from "@/app/components/KoiMatchBadge";
 import { copyTextToClipboard } from "@/lib/share";
 import { trackEvent } from "@/lib/analytics";
 import { getCategoryConfig, getCategoryLabel, getPrimaryCategoryId } from "@/lib/categories";
@@ -122,7 +122,7 @@ export function VenueCard({
         <div className="min-w-0">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             {searchMode === "midpoint" ? (
-              <KoiMatchBadge
+              <FairMeetupBadge
                 minutesA={hasTravelTimes ? venue.travelFromA.durationMinutes : null}
                 minutesB={hasTravelTimes ? venue.travelFromB.durationMinutes : null}
               />
@@ -262,7 +262,7 @@ export function VenueCard({
           target="_blank"
           rel="noreferrer"
           onClick={handleDirectionsClick}
-          className="rounded-full bg-clay px-3 py-2.5 text-center text-sm font-bold text-white transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25"
+          className="rounded-full bg-clay px-3 py-2.5 text-center text-sm font-bold text-white transition hover:bg-[#24A832] focus:outline-none focus:ring-4 focus:ring-clay/25"
         >
           Get directions
         </a>
@@ -415,7 +415,7 @@ function CalendarSheet({
             target="_blank"
             rel="noreferrer"
             onClick={() => trackCalendar("google")}
-            className="inline-flex h-11 items-center justify-center rounded-full bg-clay px-3 text-sm font-bold text-white transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25"
+            className="inline-flex h-11 items-center justify-center rounded-full bg-clay px-3 text-sm font-bold text-white transition hover:bg-[#24A832] focus:outline-none focus:ring-4 focus:ring-clay/25"
           >
             Google Calendar
           </a>

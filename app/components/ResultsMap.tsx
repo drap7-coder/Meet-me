@@ -72,7 +72,7 @@ function MapMarker({ label, kind }: { label: string; kind: string }) {
       <span className="relative grid h-16 w-16 place-items-center">
         <span className="absolute inset-0 rounded-full bg-clay/20 animate-pulse" />
         <span className="absolute h-12 w-12 rounded-full bg-clay/20" />
-        <span className="relative grid h-9 w-9 place-items-center rounded-full bg-clay shadow-[0_18px_36px_rgba(255,107,107,0.28)]">
+        <span className="relative grid h-9 w-9 place-items-center rounded-full bg-clay shadow-[0_18px_36px_rgba(57,255,20,0.28)]">
           <span className="h-3.5 w-3.5 rounded-full bg-white" />
         </span>
       </span>

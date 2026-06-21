@@ -22,23 +22,34 @@ const config: Config = {
       },
       colors: {
         ink: "#0A1323",
+        graphite: "#1A2332",
+        card: "#232F42",
         slate: "#5F6F82",
         moss: "#0A1323",
         mint: "#F2EFE7",
         paper: "#FFFDF8",
-        clay: "#D65A2E",
-        coral: "#E08A7A",
+        clay: "#34C759",
+        coral: "#E07A5F",
         indigo: "#2D3E57",
         sky: "#F7F1E8",
         line: "#E5DDD0",
-        fluoro: "#55FF55",
-        "fluoro-bright": "#39FF14",
-        "fluoro-cyan": "#00FFFF",
-        "fluoro-magenta": "#FF55FF"
+        koi: "#34C759",
+        "koi-hover": "#2A9D47",
+        watch: "#0A84FF",
+        events: "#E07A5F",
+        food: "#F5A623",
+        drinks: "#F59E0B",
+        outdoor: "#14B8A6",
+        muted: "#8B95A8"
       },
       boxShadow: {
         soft: "0 18px 50px rgba(10, 19, 35, 0.10)",
-        glow: "0 16px 34px rgba(214, 90, 46, 0.24)"
+        glow: "0 16px 40px rgba(52, 199, 89, 0.18)",
+        card: "0 8px 32px rgba(0, 0, 0, 0.22)"
+      },
+      borderRadius: {
+        card: "18px",
+        pill: "999px"
       }
     }
   },

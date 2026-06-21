@@ -1255,10 +1255,7 @@ function TrendingSearchesSection({
   }, []);
 
   return (
-    <section
-      className="w-full min-w-0 overflow-hidden rounded-[22px] border border-white/15 bg-paper/96 p-5 shadow-[0_16px_40px_rgba(10,19,35,0.16),0_0_0_1px_rgba(255,255,255,0.1)_inset] sm:p-6"
-      aria-labelledby="trending-searches-title"
-    >
+    <section className="w-full min-w-0" aria-labelledby="trending-searches-title">
       <h2 id="trending-searches-title" className="text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-clay">
         Trending Searches
       </h2>
@@ -1294,7 +1291,7 @@ function RecentSearchesSection({
   if (!meetups.length) return null;
 
   return (
-    <section className="w-full min-w-0 overflow-hidden rounded-[22px] border border-white/15 bg-paper/96 p-5 shadow-[0_16px_40px_rgba(10,19,35,0.16),0_0_0_1px_rgba(255,255,255,0.1)_inset] sm:p-6">
+    <section className="w-full min-w-0">
       <div className="flex min-w-0 items-start justify-between gap-3 sm:items-center sm:gap-4">
         <div className="min-w-0 flex-1">
           <h2 className="text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-clay">Recent Searches</h2>
@@ -1302,7 +1299,7 @@ function RecentSearchesSection({
         <button
           type="button"
           onClick={onClear}
-          className="shrink-0 rounded-lg border border-line bg-mint px-3 py-2 text-sm font-bold text-slate transition hover:border-clay hover:text-clay"
+          className="shrink-0 rounded-lg border border-white/20 bg-[#111c30] px-3 py-2 text-sm font-bold text-white/75 transition hover:border-white/35 hover:text-white"
         >
           Clear
         </button>

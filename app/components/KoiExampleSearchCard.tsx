@@ -22,7 +22,7 @@ export function KoiExampleSearchCard({ icon, title, subtitle, accent, disabled =
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="group flex w-full min-w-0 items-start gap-3 rounded-[18px] border border-line bg-mint p-3.5 text-left shadow-[0_8px_22px_rgba(17,24,39,0.04)] transition hover:border-clay/50 hover:bg-white hover:shadow-[0_12px_28px_rgba(17,24,39,0.08)] focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60 sm:gap-4 sm:p-4"
+      className="group flex w-full min-w-0 items-start gap-3 rounded-[18px] border border-white/20 bg-[#111c30] p-3.5 text-left font-sans shadow-[0_8px_22px_rgba(0,0,0,0.18)] transition hover:border-white/30 hover:bg-[#162238] hover:shadow-[0_12px_28px_rgba(0,0,0,0.24)] focus:outline-none focus:ring-4 focus:ring-white/10 disabled:cursor-not-allowed disabled:opacity-60 sm:gap-4 sm:p-4"
     >
       <span
         className={`grid h-12 w-12 shrink-0 place-items-center rounded-full text-[1.35rem] leading-none transition duration-200 group-hover:scale-[1.04] sm:h-14 sm:w-14 sm:text-[1.5rem] ${iconShellClass}`}
@@ -31,8 +31,8 @@ export function KoiExampleSearchCard({ icon, title, subtitle, accent, disabled =
         {icon}
       </span>
       <span className="min-w-0 flex-1 pt-0.5">
-        <span className="block text-base font-black leading-snug text-ink">{title}</span>
-        <span className="mt-1 block text-sm font-medium leading-5 text-slate">{subtitle}</span>
+        <span className="block text-base font-bold leading-snug tracking-[-0.025em] text-white">{title}</span>
+        <span className="mt-1 block text-sm font-medium leading-5 tracking-[-0.01em] text-white/65">{subtitle}</span>
       </span>
     </button>
   );

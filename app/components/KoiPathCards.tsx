@@ -49,18 +49,18 @@ function WatchSomethingIcon({ className = "h-10 w-10" }: { className?: string })
 const iconShellClass =
   "grid h-[4.75rem] w-[4.75rem] shrink-0 place-items-center rounded-full transition duration-200 group-hover:scale-[1.03] sm:h-20 sm:w-20";
 
+const cardClassName =
+  "group flex min-w-0 items-center gap-4 rounded-[20px] border border-white/20 bg-[#111c30] px-4 py-5 text-left font-sans shadow-[0_10px_26px_rgba(0,0,0,0.18)] transition hover:border-white/30 hover:bg-[#162238] hover:shadow-[0_14px_34px_rgba(0,0,0,0.24)] focus:outline-none focus:ring-4 focus:ring-white/10 disabled:cursor-not-allowed disabled:opacity-60 sm:gap-5 sm:px-5 sm:py-6";
+
 export function KoiPathCards({ busy = false, onGoSomewhere, onWatchSomething }: Props) {
   return (
-    <section
-      className="w-full min-w-0 overflow-hidden rounded-[22px] border border-white/15 bg-paper/96 p-5 shadow-[0_16px_40px_rgba(10,19,35,0.16),0_0_0_1px_rgba(255,255,255,0.1)_inset] sm:p-6"
-      aria-label="Choose places or watch"
-    >
+    <section className="w-full min-w-0" aria-label="Choose places or watch">
       <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
         <button
           type="button"
           disabled={busy}
           onClick={onGoSomewhere}
-          className="group flex min-w-0 items-center gap-4 rounded-[20px] border-2 border-clay/35 bg-[#FFFCFA] px-4 py-5 text-left shadow-[0_10px_26px_rgba(17,24,39,0.04)] transition hover:border-clay hover:shadow-[0_14px_34px_rgba(214,90,46,0.16)] focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60 sm:gap-5 sm:px-5 sm:py-6"
+          className={cardClassName}
         >
           <span
             className={`${iconShellClass} bg-clay text-white shadow-[0_12px_28px_rgba(214,90,46,0.32)] group-hover:bg-[#C44E28] group-hover:shadow-[0_14px_32px_rgba(214,90,46,0.38)]`}
@@ -68,8 +68,8 @@ export function KoiPathCards({ busy = false, onGoSomewhere, onWatchSomething }: 
             <GoSomewhereIcon className="h-10 w-10 sm:h-11 sm:w-11" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-lg font-black leading-tight text-ink sm:text-xl">Go Somewhere</span>
-            <span className="mt-1 block text-sm font-semibold leading-6 text-slate">
+            <span className="block text-lg font-bold leading-tight tracking-[-0.025em] text-white sm:text-xl">Go Somewhere</span>
+            <span className="mt-1 block text-sm font-medium leading-6 tracking-[-0.01em] text-white/65">
               Restaurants, coffee, drinks, activities, and halfway meetups.
             </span>
           </span>
@@ -79,16 +79,16 @@ export function KoiPathCards({ busy = false, onGoSomewhere, onWatchSomething }: 
           type="button"
           disabled={busy}
           onClick={onWatchSomething}
-          className="group flex min-w-0 items-center gap-4 rounded-[20px] border-2 border-line bg-white px-4 py-5 text-left shadow-[0_10px_26px_rgba(17,24,39,0.04)] transition hover:border-ink/20 hover:shadow-[0_14px_34px_rgba(10,19,35,0.14)] focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60 sm:gap-5 sm:px-5 sm:py-6"
+          className={cardClassName}
         >
           <span
-            className={`${iconShellClass} bg-ink text-white shadow-[0_12px_28px_rgba(10,19,35,0.28)] group-hover:bg-[#152238] group-hover:shadow-[0_14px_32px_rgba(10,19,35,0.34)]`}
+            className={`${iconShellClass} bg-ink text-white shadow-[0_12px_28px_rgba(10,19,35,0.28)] ring-2 ring-white/15 group-hover:bg-[#152238] group-hover:shadow-[0_14px_32px_rgba(10,19,35,0.34)]`}
           >
             <WatchSomethingIcon className="h-10 w-10 sm:h-11 sm:w-11" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-lg font-black leading-tight text-ink sm:text-xl">Watch Something</span>
-            <span className="mt-1 block text-sm font-semibold leading-6 text-slate">
+            <span className="block text-lg font-bold leading-tight tracking-[-0.025em] text-white sm:text-xl">Watch Something</span>
+            <span className="mt-1 block text-sm font-medium leading-6 tracking-[-0.01em] text-white/65">
               Movies, TV shows, sports, and streaming picks.
             </span>
           </span>

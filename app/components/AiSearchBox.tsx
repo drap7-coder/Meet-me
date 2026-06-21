@@ -261,8 +261,8 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
         </label>
       </form>
 
-      {hasLocation && locationStatus ? (
-        <p className="mt-3 text-xs font-medium tracking-wide text-[#176644] sm:text-sm">{locationStatus}</p>
+      {hasLocation && locationStatus && !showLocationActions && !showManualFallback ? (
+        <p className="mt-3 text-xs leading-5 text-slate/90">{locationStatus}</p>
       ) : !showLocationActions && !showManualFallback ? (
         <div className="mt-3">
           <button
@@ -273,8 +273,8 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
           >
             {locating || locationUiState === "requesting" ? "Checking location..." : "📍 Use my location"}
           </button>
-          <p className="mt-1 max-w-md text-xs leading-5 text-slate/90">
-            We&apos;ll use your location to improve nearby recommendations.
+          <p className="mt-1 max-w-md text-xs leading-5 text-slate/80">
+            Optional — helps with nearby place searches.
           </p>
         </div>
       ) : null}
@@ -306,7 +306,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
           className="mt-3 rounded-xl border border-line/80 bg-mint/80 p-3"
           aria-live="polite"
         >
-          <p className="text-sm font-semibold text-ink">Location didn&apos;t work. Enter a ZIP code or city.</p>
+          <p className="text-sm font-semibold text-ink">Location blocked? Enter a ZIP code instead.</p>
           <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
             <input
               type="text"

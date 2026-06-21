@@ -14,6 +14,6 @@ export const BRAND = {
   footerDescription:
     "Ask Koi to find places to meet and things to watch — one ask, one answer.",
   heroSubheadline:
-    "Find the right place, movie, or show without sorting through tabs, filters, and maybes.",
+    "Find a place to go or something to watch — one ask, one answer.",
   searchPlaceholder: "Ask Koi anything..."
 };

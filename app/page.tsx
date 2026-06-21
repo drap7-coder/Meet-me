@@ -2,7 +2,8 @@
 
 import { EmptyState } from "@/app/components/EmptyState";
 import { AiSearchBox, type AiSearchBoxHandle } from "@/app/components/AiSearchBox";
-import { KoiCapabilityExamples } from "@/app/components/KoiCapabilityExamples";
+import { KoiPathCards } from "@/app/components/KoiPathCards";
+import { KOI_GO_SOMEWHERE_QUERY, KOI_WATCH_SOMETHING_QUERY } from "@/lib/koiBrowse";
 import { CategoryIcon } from "@/app/components/CategoryIcon";
 import { LocationForm } from "@/app/components/LocationForm";
 import { Logo } from "@/app/components/Logo";
@@ -267,7 +268,7 @@ export default function HomePage() {
       setShowLocationActions(false);
       setLocationStatus("");
       if (retry ?? pendingRetry) {
-        setError("Location didn't work. Enter a ZIP code or city.");
+        setError("Location blocked? Enter a ZIP code instead.");
       }
       return;
     }
@@ -295,7 +296,7 @@ export default function HomePage() {
       setShowManualFallback(true);
       setShowLocationActions(false);
       if (retry ?? pendingRetry) {
-        setError("Location didn't work. Enter a ZIP code or city.");
+        setError("Location blocked? Enter a ZIP code instead.");
       }
     } finally {
       setLocating(false);
@@ -746,9 +747,10 @@ export default function HomePage() {
                 onShowZipFallback={showZipFallback}
                 onSubmitManualLocation={(input) => void resolveManualLocation(input)}
               />
-              <KoiCapabilityExamples
+              <KoiPathCards
                 busy={loading || locating || resolvingManual}
-                onSelect={(option) => searchBoxRef.current?.fillQuery(option.query, option.watchSubcategory)}
+                onGoSomewhere={() => searchBoxRef.current?.fillQuery(KOI_GO_SOMEWHERE_QUERY)}
+                onWatchSomething={() => searchBoxRef.current?.fillQuery(KOI_WATCH_SOMETHING_QUERY, "tv_shows")}
               />
               <TrendingSearchesSection
                 busy={loading || locating || resolvingManual}

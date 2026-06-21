@@ -83,49 +83,8 @@ export const KOI_BROWSE_LANES: KoiBrowseLane[] = [
 
 export type KoiFeaturedExample = KoiBrowseOption;
 
-export type KoiCapabilityExample = KoiBrowseOption & {
-  icon: string;
-  title: string;
-  subtitle: string;
-};
-
-/** Visual homepage examples that demonstrate Koi capabilities. */
-export const KOI_CAPABILITY_EXAMPLES: KoiCapabilityExample[] = [
-  {
-    id: "cap-coffee-halfway",
-    icon: "☕",
-    title: "Meet halfway for coffee",
-    subtitle: "Find a fair midpoint between two places",
-    label: "Meet halfway for coffee",
-    query: "Coffee halfway between Hoboken and Princeton"
-  },
-  {
-    id: "cap-family-movies",
-    icon: "🎬",
-    title: "Family movies tonight",
-    subtitle: "See what is playing at theaters near you",
-    label: "Family movies tonight",
-    query: "Family movies playing nearby tonight",
-    watchSubcategory: "movies"
-  },
-  {
-    id: "cap-streaming-tv",
-    icon: "📺",
-    title: "Streaming TV series",
-    subtitle: "Get picks worth watching tonight",
-    label: "Streaming TV series",
-    query: "Best TV series to stream tonight",
-    watchSubcategory: "tv_shows"
-  },
-  {
-    id: "cap-breweries",
-    icon: "🍺",
-    title: "Breweries nearby",
-    subtitle: "Discover spots close to you",
-    label: "Breweries nearby",
-    query: "Breweries near me"
-  }
-];
+export const KOI_GO_SOMEWHERE_QUERY = "Coffee halfway between Hoboken and Princeton";
+export const KOI_WATCH_SOMETHING_QUERY = "What should I stream tonight?";
 
 /** Compact prompt chips under the ask box. */
 export const KOI_FEATURED_EXAMPLES: KoiFeaturedExample[] = [

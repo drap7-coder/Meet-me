@@ -17,7 +17,13 @@ type EventName =
   | "watch_events_completed"
   | "watch_events_card_viewed"
   | "watch_events_card_expanded"
-  | "watch_events_action_clicked";
+  | "watch_events_action_clicked"
+  | "halfway_mode_selected"
+  | "halfway_search_submitted"
+  | "halfway_result_clicked"
+  | "halfway_result_shared"
+  | "halfway_share_opened"
+  | "halfway_recipient_search_started";
 
 type EventProperties = Record<string, string | number | boolean | null | undefined>;
 

@@ -7,6 +7,7 @@ import {
   venueToCalendarDetails
 } from "@/lib/calendar";
 import { CategoryIcon } from "@/app/components/CategoryIcon";
+import { KoiMatchBadge } from "@/app/components/KoiMatchBadge";
 import { copyTextToClipboard } from "@/lib/share";
 import { trackEvent } from "@/lib/analytics";
 import { getCategoryConfig, getCategoryLabel, getPrimaryCategoryId } from "@/lib/categories";
@@ -46,6 +47,12 @@ export function VenueCard({
   const viewed = useRef(false);
   const timeA = formatMinutes(venue.travelFromA.durationMinutes);
   const timeB = formatMinutes(venue.travelFromB.durationMinutes);
+  const hasTravelTimes =
+    searchMode === "midpoint" &&
+    typeof venue.travelFromA.durationMinutes === "number" &&
+    typeof venue.travelFromB.durationMinutes === "number" &&
+    venue.travelFromA.status === "OK" &&
+    venue.travelFromB.status === "OK";
   const venueAction = getVenueAction(venue, searchCategory);
   const collegeResearchLinks = getPrimaryCategoryId(searchCategory) === "colleges" ? getCollegeResearchLinks(venue) : null;
   const reviewSnippet = venue.reviewQuote || venue.reviewSummary;
@@ -89,6 +96,24 @@ export function VenueCard({
       category: venue.category,
       placeType: venue.types?.[0] ?? venue.category
     });
+    if (searchMode === "midpoint") {
+      trackEvent("halfway_result_clicked", {
+        category: venue.category,
+        rank,
+        action: "directions"
+      });
+    }
+  }
+
+  function handleShareClick() {
+    if (searchMode === "midpoint") {
+      trackEvent("halfway_result_clicked", {
+        category: venue.category,
+        rank,
+        action: "share"
+      });
+    }
+    onShare(venue);
   }
 
   return (
@@ -96,9 +121,16 @@ export function VenueCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <span className="inline-flex rounded-lg bg-clay px-3 py-1 text-xs font-bold text-white">
-              {match.badge}
-            </span>
+            {searchMode === "midpoint" ? (
+              <KoiMatchBadge
+                minutesA={hasTravelTimes ? venue.travelFromA.durationMinutes : null}
+                minutesB={hasTravelTimes ? venue.travelFromB.durationMinutes : null}
+              />
+            ) : (
+              <span className="inline-flex rounded-lg bg-clay px-3 py-1 text-xs font-bold text-white">
+                {match.badge}
+              </span>
+            )}
           </div>
           <h3 className="text-xl font-black leading-tight text-ink">{venue.name}</h3>
           <p className="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold text-slate">
@@ -110,6 +142,18 @@ export function VenueCard({
 
       <div className="mt-4 rounded-lg border border-line bg-mint p-4">
         <p className="text-sm font-black text-ink">Why Koi picked it</p>
+        {searchMode === "midpoint" && hasTravelTimes ? (
+          <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+            <div>
+              <span className="text-xs font-bold uppercase text-slate">You</span>
+              <p className="mt-0.5 font-bold text-ink">{timeA}</p>
+            </div>
+            <div>
+              <span className="text-xs font-bold uppercase text-slate">Them</span>
+              <p className="mt-0.5 font-bold text-ink">{timeB}</p>
+            </div>
+          </div>
+        ) : null}
         <p className="mt-2 text-sm leading-6 text-slate">{match.explanation}</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {match.tags.map((tag) => (
@@ -224,7 +268,7 @@ export function VenueCard({
         </a>
         <button
           type="button"
-          onClick={() => onShare(venue)}
+          onClick={handleShareClick}
           className="rounded-full border border-line bg-paper px-3 py-2.5 text-sm font-bold text-ink transition hover:border-clay hover:text-clay focus:outline-none focus:ring-4 focus:ring-ink/10"
         >
           Share
@@ -566,17 +610,17 @@ function getMatchExplanation({
   } else if (rank === 1 && typeof diff === "number" && diff <= 10 && typeof rating === "number" && rating >= 4.3) {
     badge = "Best Overall Match";
     explanation = categoryConfig?.explanation ?? "A strong mix of balanced travel times, good reviews, and a convenient location.";
-  } else if (typeof diff === "number" && diff <= 5) {
-    badge = "Most Balanced";
-    explanation = "This spot keeps the trip balanced, with nearly equal travel times for both people.";
+  } else if (typeof diff === "number" && diff <= 5 && typeof a === "number" && typeof b === "number") {
+    badge = "Koi Match";
+    explanation = "This spot keeps the trip close to even, with nearly equal travel times for both people.";
   } else if (isClosestToHalfway) {
-    badge = "Closest to midpoint";
-    explanation = "This option is closest to the midpoint area between both starting points.";
+    badge = "Near the midpoint";
+    explanation = "This option is close to the midpoint area between both starting points.";
   } else if (onePersonSavesTime) {
     badge = `Better for ${onePersonSavesTime}`;
     explanation = "Good option, but one person has a noticeably shorter trip.";
   } else if (isShortestCombined && rank <= 5) {
-    badge = "Most Balanced";
+    badge = "Koi Match";
     explanation = "This option keeps the overall drive practical while staying close to the midpoint.";
   }
 
@@ -586,7 +630,8 @@ function getMatchExplanation({
     tags: buildMatchTags({
       venue,
       searchMode,
-      categoryLabel
+      categoryLabel,
+      isClosestToHalfway
     }),
     details: {
       balance: searchMode === "single" ? `About ${formatMinutes(venue.travelFromA.durationMinutes)} from your search location.` : describeBalance(diff),
@@ -601,23 +646,38 @@ function getMatchExplanation({
 function buildMatchTags({
   venue,
   searchMode,
-  categoryLabel
+  categoryLabel,
+  isClosestToHalfway
 }: {
   venue: ScoredVenue;
   searchMode: SearchMode;
   categoryLabel: string;
+  isClosestToHalfway: boolean;
 }) {
-  const tags = [`Good match for ${categoryLabel.toLowerCase()}`];
-  for (const preference of venue.preferenceMatches.slice(0, 2)) {
-    tags.push(getPreferenceLabel(preference));
-  }
-  if (venue.openNow === true) tags.push("Timing");
-  if (typeof venue.rating === "number" && venue.rating >= 4.3) tags.push("Reviews");
-  if (searchMode === "single") {
-    tags.push("Nearby");
+  const tags: string[] = [];
+  const diff = venue.timeDifferenceMinutes;
+  const hasTimes =
+    typeof venue.travelFromA.durationMinutes === "number" &&
+    typeof venue.travelFromB.durationMinutes === "number" &&
+    venue.travelFromA.status === "OK" &&
+    venue.travelFromB.status === "OK";
+
+  if (searchMode === "midpoint") {
+    if (hasTimes && typeof diff === "number" && diff <= 10) tags.push("Balanced travel times");
+    if (typeof venue.rating === "number" && venue.rating >= 4.3) tags.push("Highly rated");
+    if (venue.openNow === true) tags.push("Open now");
+    if (isClosestToHalfway) tags.push("Near both starting points");
+    else if (!hasTimes) tags.push("Good meetup option");
   } else {
-    tags.push("Balanced travel");
+    tags.push(`Good match for ${categoryLabel.toLowerCase()}`);
+    for (const preference of venue.preferenceMatches.slice(0, 2)) {
+      tags.push(getPreferenceLabel(preference));
+    }
+    if (venue.openNow === true) tags.push("Timing");
+    if (typeof venue.rating === "number" && venue.rating >= 4.3) tags.push("Reviews");
+    tags.push("Nearby");
   }
+
   return Array.from(new Set(tags)).slice(0, 4);
 }
 

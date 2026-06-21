@@ -3,6 +3,8 @@
 import type { SearchHalfwayRequest, WatchSubcategory } from "@/lib/types";
 import type { CurrentLocationContext } from "@/lib/currentLocation";
 import type { LocationUiState } from "@/lib/locationInput";
+import { trackEvent } from "@/lib/analytics";
+import { buildHalfwaySearchQuery } from "@/lib/halfwayBrowse";
 import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
 import { recordTrendingSearch } from "@/lib/trendingSearches";
 import { BRAND } from "@/src/config/branding";
@@ -39,7 +41,11 @@ type ParseSearchResult = {
 export type AiSearchBoxHandle = {
   runQuery: (query: string, watchSubcategory?: WatchSubcategory) => void;
   fillQuery: (query: string, watchSubcategory?: WatchSubcategory) => void;
+  fillHalfwayIntent: (lookingFor: string, exampleQuery?: string) => void;
+  setGuidedMode: (mode: GuidedSearchMode) => void;
 };
+
+type GuidedSearchMode = null | "spot" | "halfway";
 
 function AiSparkleIcon() {
   return (
@@ -104,22 +110,41 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   const [error, setError] = useState("");
   const [manualLocationInput, setManualLocationInput] = useState("");
   const [watchActiveSubcategory, setWatchActiveSubcategory] = useState<WatchSubcategory>(DEFAULT_WATCH_SUBCATEGORY);
+  const [guidedMode, setGuidedMode] = useState<GuidedSearchMode>(null);
+  const [locationA, setLocationA] = useState("");
+  const [locationB, setLocationB] = useState("");
+  const [halfwayLookingFor, setHalfwayLookingFor] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const scrollToSearch = useCallback(() => {
+    window.requestAnimationFrame(() => {
+      containerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }, []);
 
   const fillQuery = useCallback((searchQuery: string, watchSubcategory?: WatchSubcategory) => {
     const trimmed = searchQuery.trim();
     if (!trimmed) return;
     if (watchSubcategory) setWatchActiveSubcategory(watchSubcategory);
+    setGuidedMode(null);
     setQuery(trimmed);
     setError("");
+    scrollToSearch();
     window.requestAnimationFrame(() => {
-      containerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       inputRef.current?.focus({ preventScroll: true });
       const length = trimmed.length;
       inputRef.current?.setSelectionRange(length, length);
     });
-  }, []);
+  }, [scrollToSearch]);
+
+  const fillHalfwayIntent = useCallback((lookingFor: string, exampleQuery?: string) => {
+    setGuidedMode("halfway");
+    setHalfwayLookingFor(lookingFor);
+    if (exampleQuery) setQuery(exampleQuery);
+    setError("");
+    scrollToSearch();
+  }, [scrollToSearch]);
 
   const runSearch = useCallback(
     async (searchQuery: string, watchSubcategory = watchActiveSubcategory) => {
@@ -165,6 +190,9 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
 
         if (!data.form) throw new Error(data.error ?? "I could not understand that search.");
         recordTrendingSearch(trimmed);
+        if (data.form.searchMode === "midpoint") {
+          trackEvent("halfway_search_submitted", { source: "freeform" });
+        }
         onParsed(data.form);
       } catch (parseError) {
         setError(parseError instanceof Error ? parseError.message : "I could not understand that search.");
@@ -193,10 +221,52 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
         if (watchSubcategory) setWatchActiveSubcategory(watchSubcategory);
         void runSearch(searchQuery, watchSubcategory);
       },
-      fillQuery
+      fillQuery,
+      fillHalfwayIntent,
+      setGuidedMode: (mode) => {
+        setGuidedMode(mode);
+        scrollToSearch();
+      }
     }),
-    [fillQuery, runSearch]
+    [fillHalfwayIntent, fillQuery, runSearch, scrollToSearch]
   );
+
+  function handleGuidedModeChange(mode: Exclude<GuidedSearchMode, null>) {
+    const next = guidedMode === mode ? null : mode;
+    setGuidedMode(next);
+    if (next === "halfway") {
+      trackEvent("halfway_mode_selected", { mode: "halfway" });
+    }
+    setError("");
+  }
+
+  function submitHalfwayGuided(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (loading || parsing) return;
+
+    const a = locationA.trim();
+    const b = locationB.trim();
+    const lookingFor = halfwayLookingFor.trim();
+
+    if (!a || !b || !lookingFor) {
+      setError("Add both locations and what you are looking for.");
+      return;
+    }
+
+    trackEvent("halfway_search_submitted", { source: "guided" });
+
+    const form: SearchHalfwayRequest = {
+      locationA: a,
+      locationB: b,
+      category: "custom",
+      searchMode: "midpoint",
+      meetupMode: "single",
+      customQuery: lookingFor
+    };
+
+    setError("");
+    onParsed(form);
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -218,6 +288,26 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     : "inline-flex items-center gap-1.5 text-left text-base font-bold text-ink transition hover:text-clay focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60 sm:text-lg";
   const locationHintClass = onHero ? "mt-1 max-w-md text-xs leading-5 text-white/55" : "mt-1 max-w-md text-xs leading-5 text-slate/80";
   const locationStatusClass = onHero ? "mt-3 text-xs leading-5 text-white/70" : "mt-3 text-xs leading-5 text-slate/90";
+  const guidedInputClass =
+    "h-11 w-full rounded-full border border-line bg-white px-4 text-base text-ink outline-none transition placeholder:text-slate/60 focus:border-clay focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60";
+  const pillClass = (active: boolean) =>
+    onHero
+      ? `inline-flex h-9 items-center rounded-full px-4 text-sm font-bold transition focus:outline-none focus:ring-4 focus:ring-white/15 disabled:cursor-not-allowed disabled:opacity-60 ${
+          active
+            ? "border border-clay bg-clay text-white"
+            : "border border-white/20 bg-white/10 text-white/90 hover:border-white/35 hover:bg-white/15"
+        }`
+      : `inline-flex h-9 items-center rounded-full px-4 text-sm font-bold transition focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60 ${
+          active
+            ? "border border-clay bg-clay text-white"
+            : "border border-line bg-white text-ink hover:border-clay/50 hover:bg-[#FFF4EC]"
+        }`;
+  const searchPlaceholder =
+    guidedMode === "spot"
+      ? BRAND.searchPlaceholderSpot
+      : guidedMode === "halfway"
+        ? buildHalfwaySearchQuery(locationA, locationB, halfwayLookingFor) || "Add locations above, or ask in plain language below"
+        : BRAND.searchPlaceholderFreeform;
 
   return (
     <div ref={containerRef} id="ask-koi" className="w-full min-w-0 max-w-full scroll-mt-24">
@@ -228,6 +318,74 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
         <h2 id="ai-search-title" className="sr-only">
           {BRAND.askLabel}
         </h2>
+
+        <div className="mb-3 flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => handleGuidedModeChange("spot")}
+            className={pillClass(guidedMode === "spot")}
+          >
+            Find a Spot
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => handleGuidedModeChange("halfway")}
+            className={pillClass(guidedMode === "halfway")}
+          >
+            Meet Halfway
+          </button>
+        </div>
+
+        {guidedMode === "halfway" ? (
+          <form onSubmit={submitHalfwayGuided} className="mb-3 grid gap-2 sm:grid-cols-2">
+            <label className="block min-w-0 sm:col-span-1">
+              <span className={`mb-1 block text-xs font-bold ${onHero ? "text-white/75" : "text-slate"}`}>Location A</span>
+              <input
+                type="text"
+                value={locationA}
+                onChange={(event) => setLocationA(event.target.value)}
+                placeholder="Cherry Hill"
+                disabled={busy}
+                className={guidedInputClass}
+              />
+            </label>
+            <label className="block min-w-0 sm:col-span-1">
+              <span className={`mb-1 block text-xs font-bold ${onHero ? "text-white/75" : "text-slate"}`}>Location B</span>
+              <input
+                type="text"
+                value={locationB}
+                onChange={(event) => setLocationB(event.target.value)}
+                placeholder="King of Prussia"
+                disabled={busy}
+                className={guidedInputClass}
+              />
+            </label>
+            <label className="block min-w-0 sm:col-span-2">
+              <span className={`mb-1 block text-xs font-bold ${onHero ? "text-white/75" : "text-slate"}`}>
+                What are you looking for?
+              </span>
+              <input
+                type="text"
+                value={halfwayLookingFor}
+                onChange={(event) => setHalfwayLookingFor(event.target.value)}
+                placeholder="Coffee, dinner, brewery, lunch, date night"
+                disabled={busy}
+                className={guidedInputClass}
+              />
+            </label>
+            <div className="sm:col-span-2">
+              <button
+                type="submit"
+                disabled={busy}
+                className="inline-flex h-11 w-full items-center justify-center rounded-full bg-clay px-5 text-sm font-bold text-white transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+              >
+                Find halfway spot
+              </button>
+            </div>
+          </form>
+        ) : null}
 
         <form onSubmit={handleSubmit} className="w-full min-w-0">
           <label className="block w-full min-w-0">
@@ -250,7 +408,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
                       void runSearch(query);
                     }
                   }}
-                  placeholder={BRAND.searchPlaceholder}
+                  placeholder={searchPlaceholder}
                   rows={2}
                   className="m-0 min-h-[2.75rem] w-0 min-w-0 flex-1 resize-none appearance-none border-0 bg-transparent py-1.5 text-base leading-6 text-ink outline-none placeholder:text-slate/55 [field-sizing:content] sm:min-h-[3rem] sm:py-2 sm:text-[1.0625rem]"
                 />

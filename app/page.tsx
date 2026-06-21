@@ -3,8 +3,10 @@
 import { EmptyState } from "@/app/components/EmptyState";
 import { AiSearchBox, type AiSearchBoxHandle } from "@/app/components/AiSearchBox";
 import { KoiPathCards } from "@/app/components/KoiPathCards";
+import { KoiSpecialtyModule } from "@/app/components/KoiSpecialtyModule";
 import { KOI_GO_SOMEWHERE_QUERY, KOI_WATCH_SOMETHING_QUERY } from "@/lib/koiBrowse";
 import { KoiExampleSearchCard } from "@/app/components/KoiExampleSearchCard";
+import { isHalfwayQuery, extractLookingForFromHalfwayQuery } from "@/lib/halfwayBrowse";
 import { LocationForm } from "@/app/components/LocationForm";
 import { Logo } from "@/app/components/Logo";
 import { RoadDivider } from "@/app/components/BrandRoad";
@@ -88,6 +90,7 @@ export default function HomePage() {
   const [error, setError] = useState("");
   const [shareMessage, setShareMessage] = useState("");
   const [currentShareUrl, setCurrentShareUrl] = useState("");
+  const [openedFromSharedHalfway, setOpenedFromSharedHalfway] = useState(false);
   const [shareDialog, setShareDialog] = useState<ShareDialogState | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [recentMeetups, setRecentMeetups] = useState<RecentMeetup[]>([]);
@@ -151,6 +154,10 @@ export default function HomePage() {
           category,
           hasPreferences: preferences.length > 0
         });
+        if (searchMode === "midpoint") {
+          trackEvent("halfway_share_opened", { category });
+          setOpenedFromSharedHalfway(true);
+        }
       }
       if (shouldAutoSearch && locationA && (searchMode === "single" || locationB)) {
         submitSearch(nextForm, shareId ? `${window.location.origin}/s/${shareId}` : undefined);
@@ -364,12 +371,16 @@ export default function HomePage() {
   }
 
   function startNewSearch() {
+    if (openedFromSharedHalfway) {
+      trackEvent("halfway_recipient_search_started", { category: form.category });
+    }
     setResults(null);
     setWatchEventsResult(null);
     setSearchKind(null);
     setError("");
     setShareMessage("");
     setCurrentShareUrl("");
+    setOpenedFromSharedHalfway(false);
     setHasSearched(false);
     setShowClassicFallback(false);
     setFallbackKind("none");
@@ -632,7 +643,7 @@ export default function HomePage() {
 
   async function shareVenue(venue: ScoredVenue) {
     const url = currentShareUrl || window.location.href;
-    const text = buildSingleVenueEmailBody(venue, url);
+    const text = buildSingleVenueEmailBody(venue, url, results?.searchMode ?? "midpoint");
     if (!shouldUseNativeShare()) {
       setShareDialog({
         title: "Share this meetup",
@@ -640,6 +651,9 @@ export default function HomePage() {
         subject: "Let’s meet here",
         body: text
       });
+      if (results?.searchMode === "midpoint") {
+        trackEvent("halfway_result_shared", { category: results.category, scope: "venue" });
+      }
       return;
     }
 
@@ -648,6 +662,9 @@ export default function HomePage() {
     if (result === "copied") setShareMessage("Spot copied to clipboard.");
     if (result === "email") setShareMessage("Email draft opened.");
     if (result === "cancelled") setShareMessage("Sharing was cancelled.");
+    if (results?.searchMode === "midpoint") {
+      trackEvent("halfway_result_shared", { category: results.category, scope: "venue" });
+    }
   }
 
   async function shareMeetup() {
@@ -670,7 +687,7 @@ export default function HomePage() {
       const text =
         results.searchMode === "single"
           ? `Here are places that could work near ${shortLocationLabel(results.originA.formattedAddress)}.`
-          : `Here are places that could work between ${shortLocationLabel(results.originA.formattedAddress)} and ${shortLocationLabel(results.originB.formattedAddress)}.`;
+          : buildMeetupEmailBody(results, data.shareUrl);
       if (!shouldUseNativeShare()) {
         setShareDialog({
           title: "Share this meetup",
@@ -691,6 +708,9 @@ export default function HomePage() {
         resultCount: results.venues.length,
         hasPreferences: results.preferences.length > 0
       });
+      if (results.searchMode === "midpoint") {
+        trackEvent("halfway_result_shared", { category: results.category, resultCount: results.venues.length });
+      }
     } catch (error) {
       console.warn("[share] Falling back to URL search sharing.", error);
       const fallbackUrl = currentShareUrl || window.location.href;
@@ -746,14 +766,36 @@ export default function HomePage() {
                 onShowZipFallback={showZipFallback}
                 onSubmitManualLocation={(input) => void resolveManualLocation(input)}
               />
-              <KoiPathCards
+              <KoiSpecialtyModule
                 busy={loading || locating || resolvingManual}
-                onGoSomewhere={() => searchBoxRef.current?.fillQuery(KOI_GO_SOMEWHERE_QUERY)}
-                onWatchSomething={() => searchBoxRef.current?.fillQuery(KOI_WATCH_SOMETHING_QUERY, "tv_shows")}
+                onSelect={(lookingFor, exampleQuery) =>
+                  searchBoxRef.current?.fillHalfwayIntent(lookingFor, exampleQuery)
+                }
               />
+              <section className="w-full min-w-0" aria-labelledby="more-ways-title">
+                <h2 id="more-ways-title" className="text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-clay">
+                  More ways to ask Koi
+                </h2>
+                <div className="mt-4">
+                  <KoiPathCards
+                    busy={loading || locating || resolvingManual}
+                    onGoSomewhere={() => searchBoxRef.current?.fillQuery(KOI_GO_SOMEWHERE_QUERY)}
+                    onWatchSomething={() => searchBoxRef.current?.fillQuery(KOI_WATCH_SOMETHING_QUERY, "tv_shows")}
+                  />
+                </div>
+              </section>
               <TrendingSearchesSection
                 busy={loading || locating || resolvingManual}
-                onSelect={(option) => searchBoxRef.current?.fillQuery(option.query, option.watchSubcategory)}
+                onSelect={(option) => {
+                  if (isHalfwayQuery(option.query)) {
+                    searchBoxRef.current?.fillHalfwayIntent(
+                      extractLookingForFromHalfwayQuery(option.query),
+                      option.query
+                    );
+                    return;
+                  }
+                  searchBoxRef.current?.fillQuery(option.query, option.watchSubcategory);
+                }}
               />
               <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
               <LocationFallbackPanel
@@ -894,6 +936,10 @@ export default function HomePage() {
             ) : null}
 
             <div className="results-panel-enter order-2 grid gap-5 lg:order-1">
+              {openedFromSharedHalfway && results.searchMode === "midpoint" ? (
+                <SharedHalfwayReferralBanner onStartSearch={startNewSearch} />
+              ) : null}
+
               {shareMessage ? <p className="mb-4 text-sm font-semibold text-clay">{shareMessage}</p> : null}
 
               <WeatherCard midpoint={results.midpoint} searchMode={results.searchMode} />
@@ -949,8 +995,8 @@ function MarketingHero() {
               {BRAND.heroHeadlineLead}
             </span>
             <span className="mt-1.5 block text-[clamp(2.125rem,8vw,3.5rem)] leading-[0.9]">
-              <span className="text-white/95">what to </span>
-              <span className="text-clay">do.</span>
+              <span className="text-white/95">where to </span>
+              <span className="text-clay">meet.</span>
             </span>
           </h1>
           <p className="mt-4 max-w-xl text-[0.9375rem] font-normal leading-6 tracking-[-0.01em] text-[#B8B0A3] sm:text-base sm:leading-7">
@@ -1238,6 +1284,24 @@ function Footer() {
   );
 }
 
+function SharedHalfwayReferralBanner({ onStartSearch }: { onStartSearch: () => void }) {
+  return (
+    <div className="rounded-lg border border-clay/25 bg-clay/[0.08] p-4 sm:p-5">
+      <p className="text-sm font-black text-ink">Shared meetup spot</p>
+      <p className="mt-1 text-sm leading-6 text-slate">
+        Planning your own meetup? Ask Koi to find a spot that works for both of you.
+      </p>
+      <button
+        type="button"
+        onClick={onStartSearch}
+        className="mt-4 inline-flex h-10 items-center justify-center rounded-full bg-clay px-5 text-sm font-bold text-white transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25"
+      >
+        Ask Koi your own question
+      </button>
+    </div>
+  );
+}
+
 function TrendingSearchesSection({
   busy,
   onSelect
@@ -1252,27 +1316,51 @@ function TrendingSearchesSection({
     return subscribeTrendingSearches(() => setSearches(getTrendingSearches()));
   }, []);
 
+  const halfwaySearches = searches.filter((option) => isHalfwayQuery(option.query));
+  const standardSearches = searches.filter((option) => !isHalfwayQuery(option.query));
+
   return (
     <section className="w-full min-w-0" aria-labelledby="trending-searches-title">
       <h2 id="trending-searches-title" className="text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-clay">
         Trending Searches
       </h2>
-      <div className="mt-4 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
-        {searches.map((option) => {
-          const card = getTrendingCardDisplay(option);
-          return (
-            <KoiExampleSearchCard
-              key={option.id}
-              icon={card.icon}
-              title={card.title}
-              subtitle={card.subtitle}
-              accent={card.accent}
-              disabled={busy}
-              onClick={() => onSelect(option)}
-            />
-          );
-        })}
-      </div>
+      {halfwaySearches.length ? (
+        <div className="mt-4 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+          {halfwaySearches.map((option) => {
+            const card = getTrendingCardDisplay(option);
+            return (
+              <KoiExampleSearchCard
+                key={option.id}
+                icon={card.icon}
+                title={card.title}
+                subtitle={card.subtitle}
+                accent={card.accent}
+                featured
+                disabled={busy}
+                onClick={() => onSelect(option)}
+              />
+            );
+          })}
+        </div>
+      ) : null}
+      {standardSearches.length ? (
+        <div className={`grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 ${halfwaySearches.length ? "mt-3" : "mt-4"}`}>
+          {standardSearches.map((option) => {
+            const card = getTrendingCardDisplay(option);
+            return (
+              <KoiExampleSearchCard
+                key={option.id}
+                icon={card.icon}
+                title={card.title}
+                subtitle={card.subtitle}
+                accent={card.accent}
+                disabled={busy}
+                onClick={() => onSelect(option)}
+              />
+            );
+          })}
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -1305,6 +1393,7 @@ function RecentSearchesSection({
       <div className="mt-4 grid min-w-0 grid-cols-1 gap-3">
         {meetups.slice(0, 2).map((meetup) => {
           const card = getRecentMeetupCardDisplay(meetup);
+          const isHalfway = meetup.searchMode !== "single";
           return (
             <KoiExampleSearchCard
               key={meetup.id}
@@ -1312,6 +1401,7 @@ function RecentSearchesSection({
               title={card.title}
               subtitle={card.subtitle}
               accent="places"
+              featured={isHalfway}
               onClick={() => onSelect(meetup)}
             />
           );
@@ -1361,7 +1451,34 @@ function formatMinutes(value: number | null) {
   return minutes ? `${hours}h ${minutes}m` : `${hours}h`;
 }
 
-function buildSingleVenueEmailBody(venue: ScoredVenue, currentUrl: string) {
+function buildSingleVenueEmailBody(venue: ScoredVenue, currentUrl: string, searchMode: SearchHalfwayResponse["searchMode"] = "midpoint") {
+  const a = formatMinutes(venue.travelFromA.durationMinutes);
+  const b = formatMinutes(venue.travelFromB.durationMinutes);
+  const hasTimes =
+    typeof venue.travelFromA.durationMinutes === "number" &&
+    typeof venue.travelFromB.durationMinutes === "number" &&
+    venue.travelFromA.status === "OK" &&
+    venue.travelFromB.status === "OK";
+
+  if (searchMode === "midpoint" && hasTimes) {
+    return [
+      "Found a spot that works for both of us.",
+      "",
+      venue.name,
+      venue.address,
+      "",
+      `${a} for me.`,
+      `${b} for you.`,
+      "",
+      "Think this works?",
+      "",
+      currentUrl,
+      "",
+      "Ask Koi your own question:",
+      BRAND.url
+    ].join("\n");
+  }
+
   return [
     "Koi found a meetup option:",
     "",
@@ -1369,8 +1486,8 @@ function buildSingleVenueEmailBody(venue: ScoredVenue, currentUrl: string) {
     venue.address,
     "",
     "Drive times:",
-    `Me: ${formatMinutes(venue.travelFromA.durationMinutes)}`,
-    `You: ${formatMinutes(venue.travelFromB.durationMinutes)}`,
+    `Me: ${a}`,
+    `You: ${b}`,
     "",
     "View details:",
     currentUrl
@@ -1378,6 +1495,33 @@ function buildSingleVenueEmailBody(venue: ScoredVenue, currentUrl: string) {
 }
 
 function buildMeetupEmailBody(results: SearchHalfwayResponse, currentUrl: string) {
+  const topVenue = results.venues[0];
+  const hasTimes =
+    topVenue &&
+    typeof topVenue.travelFromA.durationMinutes === "number" &&
+    typeof topVenue.travelFromB.durationMinutes === "number" &&
+    topVenue.travelFromA.status === "OK" &&
+    topVenue.travelFromB.status === "OK";
+
+  if (results.searchMode === "midpoint" && topVenue && hasTimes) {
+    return [
+      "Found a spot that works for both of us.",
+      "",
+      topVenue.name,
+      topVenue.address,
+      "",
+      `${formatMinutes(topVenue.travelFromA.durationMinutes)} for me.`,
+      `${formatMinutes(topVenue.travelFromB.durationMinutes)} for you.`,
+      "",
+      "Think this works?",
+      "",
+      currentUrl,
+      "",
+      "Ask Koi your own question:",
+      BRAND.url
+    ].join("\n");
+  }
+
   const recommendations = results.venues.slice(0, 3).map((venue, index) => {
     const rating = typeof venue.rating === "number" ? `${venue.rating.toFixed(1)} stars` : "Not rated";
     return `${index + 1}. ${venue.name} — ${venue.category} — ${rating} — ${formatDriveComparison(venue)}`;

@@ -18,50 +18,58 @@ type TrendingStat = {
 const FALLBACK_TRENDING: KoiBrowseOption[] = [
   {
     id: "trend-coffee-halfway",
-    label: "Coffee halfway between Hoboken and Princeton",
-    query: "Coffee halfway between Hoboken and Princeton",
+    label: "Coffee halfway",
+    query: "Coffee halfway between Cherry Hill and King of Prussia",
     cardIcon: "☕",
-    cardTitle: "Halfway coffee",
-    cardSubtitle: "Fair meetup between two places",
+    cardTitle: "Coffee halfway",
+    cardSubtitle: "Meet for coffee between two places",
     cardAccent: "places"
   },
   {
-    id: "trend-pizza",
-    label: "Pizza near me",
-    query: "Pizza near me",
-    cardIcon: "🍕",
-    cardTitle: "Pizza near me",
-    cardSubtitle: "Find spots close to you",
+    id: "trend-dinner-halfway",
+    label: "Dinner halfway",
+    query: "Dinner halfway between us",
+    cardIcon: "🍽️",
+    cardTitle: "Dinner halfway",
+    cardSubtitle: "Find a restaurant that works for both",
+    cardAccent: "places"
+  },
+  {
+    id: "trend-netflix",
+    label: "Netflix comedy",
+    query: "Netflix comedy tonight",
+    watchSubcategory: "tv_shows",
+    cardIcon: "📺",
+    cardTitle: "Netflix comedy",
+    cardSubtitle: "Streaming picks for tonight",
+    cardAccent: "watch"
+  },
+  {
+    id: "trend-sports-bar",
+    label: "Sports bar",
+    query: "Sports bar near me",
+    cardIcon: "🏈",
+    cardTitle: "Sports bar",
+    cardSubtitle: "Catch the game nearby",
+    cardAccent: "places"
+  },
+  {
+    id: "trend-italian",
+    label: "Italian restaurant",
+    query: "Italian restaurant near me",
+    cardIcon: "🍝",
+    cardTitle: "Italian restaurant",
+    cardSubtitle: "Local dining recommendations",
     cardAccent: "places"
   },
   {
     id: "trend-stream",
-    label: "What should I stream tonight?",
-    query: "What should I stream tonight?",
+    label: "What should I watch tonight?",
+    query: "What should I watch tonight?",
     watchSubcategory: "tv_shows",
     cardIcon: "📺",
     cardTitle: "Stream tonight",
     cardSubtitle: "TV and streaming picks",
-    cardAccent: "watch"
-  },
-  {
-    id: "trend-movies-near",
-    label: "Movies playing near me",
-    query: "Movies playing near me",
-    watchSubcategory: "movies",
-    cardIcon: "🎬",
-    cardTitle: "Movies near me",
-    cardSubtitle: "Theaters playing tonight",
-    cardAccent: "watch"
-  },
-  {
-    id: "trend-sports",
-    label: "Sports on TV tonight",
-    query: "Sports on TV tonight",
-    watchSubcategory: "tv_shows",
-    cardIcon: "🏈",
-    cardTitle: "Sports on TV",
-    cardSubtitle: "Games and matches tonight",
     cardAccent: "watch"
   }
 ];

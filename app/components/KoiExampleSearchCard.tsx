@@ -7,13 +7,23 @@ type Props = {
   title: string;
   subtitle: string;
   accent: TrendingCardDisplay["accent"];
+  featured?: boolean;
   disabled?: boolean;
   onClick: () => void;
 };
 
-export function KoiExampleSearchCard({ icon, title, subtitle, accent, disabled = false, onClick }: Props) {
-  const browseCardClassName =
-    "group border border-white/15 bg-white/[0.03] shadow-none transition hover:border-white/22 hover:bg-white/[0.05] focus:outline-none focus:ring-4 focus:ring-white/10 disabled:cursor-not-allowed disabled:opacity-60";
+export function KoiExampleSearchCard({
+  icon,
+  title,
+  subtitle,
+  accent,
+  featured = false,
+  disabled = false,
+  onClick
+}: Props) {
+  const browseCardClassName = featured
+    ? "group border border-clay/35 bg-clay/[0.08] shadow-none transition hover:border-clay/50 hover:bg-clay/[0.12] focus:outline-none focus:ring-4 focus:ring-clay/15 disabled:cursor-not-allowed disabled:opacity-60"
+    : "group border border-white/15 bg-white/[0.03] shadow-none transition hover:border-white/22 hover:bg-white/[0.05] focus:outline-none focus:ring-4 focus:ring-white/10 disabled:cursor-not-allowed disabled:opacity-60";
 
   const iconShellClass =
     accent === "watch"
@@ -34,6 +44,11 @@ export function KoiExampleSearchCard({ icon, title, subtitle, accent, disabled =
         {icon}
       </span>
       <span className="min-w-0 flex-1 pt-0.5">
+        {featured ? (
+          <span className="mb-1 inline-flex rounded-full bg-clay/15 px-2 py-0.5 text-[0.625rem] font-bold uppercase tracking-[0.12em] text-clay">
+            Meet halfway
+          </span>
+        ) : null}
         <span className="block text-base font-bold leading-snug tracking-[-0.025em] text-white">{title}</span>
         <span className="mt-1 block text-sm font-medium leading-5 tracking-[-0.01em] text-white/65">{subtitle}</span>
       </span>

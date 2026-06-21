@@ -2,6 +2,7 @@
 
 import { EmptyState } from "@/app/components/EmptyState";
 import { AiSearchBox, type AiSearchBoxHandle } from "@/app/components/AiSearchBox";
+import { SavedLocationBadge } from "@/app/components/SavedLocationBadge";
 import { KoiPathCards } from "@/app/components/KoiPathCards";
 import { KoiSpecialtyModule } from "@/app/components/KoiSpecialtyModule";
 import { KoiContextBar } from "@/app/components/KoiContextBar";
@@ -43,6 +44,7 @@ import {
   type LocationUiState
 } from "@/lib/locationInput";
 import { getSavedUserLocation, mergeSavedUserLocation, saveUserLocation } from "@/lib/savedUserLocation";
+import { getSearchAccent } from "@/lib/searchAccent";
 import { type KoiBrowseOption } from "@/lib/koiBrowse";
 import { getTrendingCardDisplay, getTrendingSearches, subscribeTrendingSearches } from "@/lib/trendingSearches";
 import type { KoiBotMode, LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory, WatchEventsApiResponse, WatchEventsMoreResult, WatchEventsResult, WatchSubcategory } from "@/lib/types";
@@ -78,6 +80,47 @@ const PLACE_LOADING_LABELS = [
   "Finding best options..."
 ];
 
+function readStoredLocationSnapshot() {
+  const stored = getSavedUserLocation();
+  if (!stored?.locationA?.trim()) {
+    return {
+      savedLocation: { locationA: "" } as CurrentLocationContext,
+      savedUserAddress: "",
+      locationStatus: ""
+    };
+  }
+
+  const address = stored.locationA.trim();
+  if (stored.locationACoordinates) {
+    return {
+      savedLocation: {
+        locationA: address,
+        locationAPlaceId: stored.locationAPlaceId,
+        locationACoordinates: stored.locationACoordinates
+      },
+      savedUserAddress: address,
+      locationStatus: formatLocationStatusLabel(shortLocationLabel(address))
+    };
+  }
+
+  return {
+    savedLocation: { locationA: "" } as CurrentLocationContext,
+    savedUserAddress: address,
+    locationStatus: ""
+  };
+}
+
+function restoreStoredLocation(setters: {
+  setSavedLocation: (value: CurrentLocationContext) => void;
+  setSavedUserAddress: (value: string) => void;
+  setLocationStatus: (value: string) => void;
+}) {
+  const snapshot = readStoredLocationSnapshot();
+  setters.setSavedLocation(snapshot.savedLocation);
+  setters.setSavedUserAddress(snapshot.savedUserAddress);
+  if (snapshot.locationStatus) setters.setLocationStatus(snapshot.locationStatus);
+}
+
 export default function HomePage() {
   const [form, setForm] = useState<SearchHalfwayRequest>(initialForm);
   const [results, setResults] = useState<SearchHalfwayResponse | null>(null);
@@ -87,9 +130,9 @@ export default function HomePage() {
   const [showClassicFallback, setShowClassicFallback] = useState(false);
   const [fallbackKind, setFallbackKind] = useState<FallbackKind>("none");
   const [pendingRetry, setPendingRetry] = useState<PendingRetry | null>(null);
-  const [locationStatus, setLocationStatus] = useState("");
-  const [savedLocation, setSavedLocation] = useState<CurrentLocationContext>({ locationA: "" });
-  const [savedUserAddress, setSavedUserAddress] = useState("");
+  const [locationStatus, setLocationStatus] = useState(() => readStoredLocationSnapshot().locationStatus);
+  const [savedLocation, setSavedLocation] = useState(() => readStoredLocationSnapshot().savedLocation);
+  const [savedUserAddress, setSavedUserAddress] = useState(() => readStoredLocationSnapshot().savedUserAddress);
   const [locationUiState, setLocationUiState] = useState<LocationUiState>("idle");
   const [showManualFallback, setShowManualFallback] = useState(false);
   const [showLocationActions, setShowLocationActions] = useState(false);
@@ -162,9 +205,12 @@ export default function HomePage() {
     if (savedLocation.locationACoordinates && savedLocation.locationA?.trim()) {
       return shortLocationLabel(savedLocation.locationA);
     }
+    if (savedUserAddress.trim()) return shortLocationLabel(savedUserAddress);
     if (locationStatus) return parseLocationStatusLabel(locationStatus);
     return "";
-  }, [savedLocation, locationStatus]);
+  }, [savedLocation, savedUserAddress, locationStatus]);
+
+  const activeAccent = useMemo(() => getSearchAccent(searchKind), [searchKind]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -211,17 +257,7 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    const stored = getSavedUserLocation();
-    if (!stored?.locationA?.trim()) return;
-    setSavedUserAddress(stored.locationA.trim());
-    if (stored.locationACoordinates) {
-      setSavedLocation({
-        locationA: stored.locationA,
-        locationAPlaceId: stored.locationAPlaceId,
-        locationACoordinates: stored.locationACoordinates
-      });
-      setLocationStatus(formatLocationStatusLabel(shortLocationLabel(stored.locationA)));
-    }
+    restoreStoredLocation({ setSavedLocation, setSavedUserAddress, setLocationStatus });
   }, []);
 
   useEffect(() => {
@@ -365,7 +401,7 @@ export default function HomePage() {
       };
       await applyResolvedLocation(nextForm, "browser_success", retry ?? pendingRetry);
     } catch {
-      setLocationStatus("");
+      restoreStoredLocation({ setSavedLocation, setSavedUserAddress, setLocationStatus });
       setLocationUiState("browser_failed");
       setShowManualFallback(true);
       setShowLocationActions(false);
@@ -897,11 +933,13 @@ export default function HomePage() {
           {hasSearched || results || watchEventsResult || loading ? (
             <CompactResultsHeader
               loading={loading}
+              searchKind={searchKind}
+              locationLabel={activeLocationLabel}
               loadingLabel={
                 searchKind === "watch"
                   ? "Finding streaming picks"
                   : searchKind === "events"
-                    ? "Finding watch picks"
+                    ? "Finding local events"
                     : loadingPhaseLabel
               }
               resultCountLabel={resultCountLabel}
@@ -926,7 +964,9 @@ export default function HomePage() {
           ) : null}
 
           {error ? (
-            <div className="mt-5 rounded-lg border border-events/20 bg-events/10 p-4 text-sm font-semibold text-events">
+            <div
+              className={`mt-5 rounded-lg border p-4 text-sm font-semibold ${activeAccent.borderMuted} ${activeAccent.bgMuted} ${activeAccent.text}`}
+            >
               {error}
             </div>
           ) : null}
@@ -980,7 +1020,11 @@ export default function HomePage() {
         {loading ? (
           <section className="mt-8 grid gap-4 lg:grid-cols-[1fr_420px]">
             <div className="grid gap-3">
-              {searchKind === "watch" || searchKind === "events" ? <WatchEventsLoader /> : <MeetInMiddleLoader />}
+              {searchKind === "watch" || searchKind === "events" ? (
+                <WatchEventsLoader searchKind={searchKind} />
+              ) : (
+                <MeetInMiddleLoader />
+              )}
               {[0, 1, 2].map((item) => (
                 <div key={item} className="h-48 animate-pulse rounded-lg bg-sky shadow-soft" />
               ))}
@@ -1016,7 +1060,9 @@ export default function HomePage() {
                 <SharedHalfwayReferralBanner onStartSearch={startNewSearch} />
               ) : null}
 
-              {shareMessage ? <p className="mb-4 text-sm font-semibold text-clay">{shareMessage}</p> : null}
+              {shareMessage ? (
+                <p className={`mb-4 text-sm font-semibold ${activeAccent.text}`}>{shareMessage}</p>
+              ) : null}
 
               <WeatherCard midpoint={results.midpoint} searchMode={results.searchMode} />
 
@@ -1091,6 +1137,8 @@ function CompactResultsHeader({
   resultCountLabel,
   title,
   originSummary,
+  locationLabel = "",
+  searchKind = null,
   canShareOptions,
   onShareOptions,
   onNewSearch
@@ -1100,28 +1148,40 @@ function CompactResultsHeader({
   resultCountLabel: string;
   title: string;
   originSummary: string;
+  locationLabel?: string;
+  searchKind?: "places" | "watch" | "events" | null;
   canShareOptions: boolean;
   onShareOptions: () => void;
   onNewSearch: () => void;
 }) {
+  const accent = getSearchAccent(searchKind);
+  const accentClass = accent.text;
+  const newSearchHoverClass = accent.hoverBorder;
+  const primaryButtonClass = accent.btnPrimary;
+
   return (
     <section className="pt-[max(72px,calc(env(safe-area-inset-top)+64px))]">
       <div className="rounded-lg border border-line bg-paper p-5 shadow-soft sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-sm font-bold uppercase tracking-wide text-clay">{BRAND.name}</p>
-            <p className="mt-2 text-sm font-bold uppercase tracking-wide text-clay">
+          <div className="min-w-0 flex-1">
+            <p className={`text-sm font-bold uppercase tracking-wide ${accentClass}`}>{BRAND.name}</p>
+            <p className={`mt-2 text-sm font-bold uppercase tracking-wide ${accentClass}`}>
               {loading ? loadingLabel : resultCountLabel || "Results"}
             </p>
             <h1 className="mt-1 text-3xl font-black tracking-tight text-ink sm:text-4xl">{title}</h1>
             {originSummary ? <p className="mt-2 text-sm leading-6 text-slate">{originSummary}</p> : null}
+            {locationLabel ? (
+              <div className="mt-3">
+                <SavedLocationBadge label={locationLabel} compact />
+              </div>
+            ) : null}
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
             {canShareOptions ? (
               <button
                 type="button"
                 onClick={onShareOptions}
-                className="inline-flex h-10 items-center justify-center rounded-full bg-koi px-4 text-sm font-bold text-white transition hover:bg-koi-hover focus:outline-none focus:ring-4 focus:ring-koi/25"
+                className={`inline-flex h-10 items-center justify-center rounded-full px-4 text-sm font-bold text-white transition focus:outline-none focus:ring-4 ${primaryButtonClass}`}
               >
                 Share this meetup
               </button>
@@ -1129,7 +1189,7 @@ function CompactResultsHeader({
             <button
               type="button"
               onClick={onNewSearch}
-              className="inline-flex h-10 items-center justify-center rounded-full border border-line bg-paper px-4 text-sm font-bold text-ink transition hover:border-clay hover:text-clay focus:outline-none focus:ring-4 focus:ring-ink/10"
+              className={`inline-flex h-10 items-center justify-center rounded-full border border-line bg-paper px-4 text-sm font-bold text-ink transition focus:outline-none focus:ring-4 focus:ring-ink/10 ${newSearchHoverClass}`}
             >
               New search
             </button>
@@ -1163,13 +1223,13 @@ function ShareDialog({
       <div className="w-full max-w-sm rounded-[24px] border border-line bg-white p-5 shadow-[0_24px_80px_rgba(17,24,39,0.24)]">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-bold uppercase tracking-wide text-clay">Share</p>
+            <p className="text-sm font-bold uppercase tracking-wide text-koi">Share</p>
             <h2 className="mt-1 text-2xl font-black tracking-tight text-ink">{dialog.title}</h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-line px-3 py-1.5 text-sm font-bold text-slate transition hover:border-clay hover:text-clay"
+            className="rounded-lg border border-line px-3 py-1.5 text-sm font-bold text-slate transition hover:border-koi hover:text-koi"
           >
             Close
           </button>
@@ -1185,7 +1245,7 @@ function ShareDialog({
           <a
             href={mailto}
             onClick={() => setStatus("Email draft opened.")}
-            className="inline-flex h-11 items-center justify-center rounded-full border border-line bg-paper px-4 text-sm font-bold text-ink transition hover:border-clay hover:text-clay focus:outline-none focus:ring-4 focus:ring-ink/10"
+            className="inline-flex h-11 items-center justify-center rounded-full border border-line bg-paper px-4 text-sm font-bold text-ink transition hover:border-koi hover:text-koi focus:outline-none focus:ring-4 focus:ring-ink/10"
           >
             Email Results
           </a>
@@ -1283,29 +1343,39 @@ function SiteHeader() {
   );
 }
 
-function WatchEventsLoader() {
+function WatchEventsLoader({ searchKind }: { searchKind: "watch" | "events" }) {
+  const accent = getSearchAccent(searchKind);
+  const labels =
+    searchKind === "events" ? ["Comedy", "Live music", "Sports"] : ["Movies", "TV", "Theaters"];
+
   return (
     <div
       className="rounded-[24px] border border-line bg-paper p-5 shadow-[0_14px_38px_rgba(18,50,74,0.08)] sm:p-6"
       role="status"
       aria-live="polite"
-      aria-label="Finding watch options"
+      aria-label={searchKind === "events" ? "Finding local events" : "Finding watch options"}
     >
       <div className="mx-auto grid max-w-md gap-3">
         <div className="grid grid-cols-3 gap-2">
-          {["Movies", "TV", "Theaters"].map((label) => (
+          {labels.map((label) => (
             <div key={label} className="rounded-lg bg-sky px-3 py-4 text-center text-xs font-black uppercase tracking-[0.12em] text-slate">
               {label}
             </div>
           ))}
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-sky">
-          <div className="h-full w-2/3 animate-pulse rounded-full bg-clay/70" />
+          <div className={`h-full w-2/3 animate-pulse rounded-full ${accent.progress}`} />
         </div>
       </div>
       <div className="mt-4 text-center">
-        <p className="text-sm font-black text-ink">Finding watch picks</p>
-        <p className="mt-1 text-xs font-semibold text-slate">Matching your ask to streaming picks and nearby theaters.</p>
+        <p className="text-sm font-black text-ink">
+          {searchKind === "events" ? "Finding local events" : "Finding watch picks"}
+        </p>
+        <p className="mt-1 text-xs font-semibold text-slate">
+          {searchKind === "events"
+            ? "Matching your ask to comedy, music, sports, and more nearby."
+            : "Matching your ask to streaming picks and nearby theaters."}
+        </p>
       </div>
     </div>
   );

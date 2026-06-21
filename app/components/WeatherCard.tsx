@@ -110,7 +110,7 @@ export function WeatherCard({ midpoint, searchMode = "midpoint" }: Props) {
     <article className="rounded-lg border border-line bg-paper p-5 shadow-soft sm:p-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-bold uppercase tracking-wide text-clay">
+          <p className="text-sm font-bold uppercase tracking-wide text-koi">
             {searchMode === "single" ? "Nearby weather" : "Midpoint weather"}
           </p>
           <h2 className="mt-2 text-2xl font-black tracking-tight text-ink">

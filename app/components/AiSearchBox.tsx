@@ -10,6 +10,7 @@ import { DEFAULT_WATCH_SUBCATEGORY, EVENTS_PLACEHOLDER } from "@/lib/watchBrowse
 import { LOCAL_HAPPENINGS_OPTIONS } from "@/lib/localHappenings";
 import { recordTrendingSearch } from "@/lib/trendingSearches";
 import { BRAND } from "@/src/config/branding";
+import { SavedLocationBadge } from "@/app/components/SavedLocationBadge";
 import { FormEvent, forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 
 type Props = {
@@ -67,19 +68,6 @@ function AiSparkleIcon() {
     >
       <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1" />
       <circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none" opacity="0.35" />
-    </svg>
-  );
-}
-
-function LocationPinIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      className="h-3.5 w-3.5 shrink-0 text-watch"
-      fill="currentColor"
-    >
-      <path d="M12 2a6 6 0 0 0-6 6c0 4.5 6 12 6 12s6-7.5 6-12a6 6 0 0 0-6-6Zm0 8.25A2.25 2.25 0 1 1 12 6a2.25 2.25 0 0 1 0 4.5Z" />
     </svg>
   );
 }
@@ -528,18 +516,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
                 </button>
               </div>
               {hasLocation && activeLocationLabel && !showLocationActions && !showManualFallback ? (
-                <div
-                  className="flex items-center gap-2 border-t border-watch/15 bg-[#F0F7FF] px-3 py-2 sm:px-4"
-                  aria-live="polite"
-                >
-                  <span className="inline-flex items-center gap-1 rounded-full bg-watch/10 px-2 py-0.5 text-[0.6875rem] font-bold uppercase tracking-[0.08em] text-slate">
-                    <LocationPinIcon />
-                    Location
-                  </span>
-                  <span className="min-w-0 truncate text-sm font-bold text-watch drop-shadow-[0_0_10px_rgba(10,132,255,0.35)]">
-                    {activeLocationLabel}
-                  </span>
-                </div>
+                <SavedLocationBadge label={activeLocationLabel} />
               ) : null}
             </div>
           </label>

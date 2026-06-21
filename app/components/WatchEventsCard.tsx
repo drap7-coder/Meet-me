@@ -1,6 +1,7 @@
 "use client";
 
 import { trackEvent } from "@/lib/analytics";
+import { botModeToSearchKind, getSearchAccent } from "@/lib/searchAccent";
 import type { WatchEventsRecommendation } from "@/lib/types";
 import { useEffect, useRef, useState } from "react";
 
@@ -14,9 +15,10 @@ function isSearchSuggestion(item: WatchEventsRecommendation) {
 }
 
 function badgeClass(item: WatchEventsRecommendation, botMode: "watch" | "events") {
+  const accent = getSearchAccent(botModeToSearchKind(botMode));
   if (isSearchSuggestion(item)) return "bg-events text-white";
-  if (botMode === "events" && item.kind === "things_to_do") return "bg-events text-white";
-  return "bg-clay text-white";
+  if (botMode === "events" && item.kind === "things_to_do") return `${accent.bg} text-white`;
+  return `${accent.bg} text-white`;
 }
 
 function previewBadge(item: WatchEventsRecommendation) {
@@ -25,6 +27,7 @@ function previewBadge(item: WatchEventsRecommendation) {
 }
 
 export function WatchEventsCard({ item, botMode = "watch" }: Props) {
+  const accent = getSearchAccent(botModeToSearchKind(botMode));
   const [expanded, setExpanded] = useState(false);
   const cardRef = useRef<HTMLElement | null>(null);
   const viewed = useRef(false);
@@ -66,7 +69,7 @@ export function WatchEventsCard({ item, botMode = "watch" }: Props) {
     <article
       ref={cardRef}
       className={`rounded-lg border bg-paper p-5 shadow-soft sm:p-6 ${
-        searchSuggestion ? "border-events/25" : botMode === "events" ? "border-events/15" : "border-line"
+        searchSuggestion ? "border-events/25" : accent.panelBorder
       }`}
     >
       <div className="flex items-start gap-4">
@@ -92,7 +95,7 @@ export function WatchEventsCard({ item, botMode = "watch" }: Props) {
                 {previewBadge(item)}
               </span>
             ) : (
-              <span className="inline-flex rounded-full bg-[#E8F5EE] px-2.5 py-1 text-xs font-bold text-[#176644]">
+              <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${accent.liveBadge}`}>
                 {botMode === "events" ? "Live venue" : item.mediaType === "tv" ? "Live TV pick" : "Live pick"}
               </span>
             )}
@@ -118,11 +121,7 @@ export function WatchEventsCard({ item, botMode = "watch" }: Props) {
           <button
             type="button"
             onClick={toggleExpanded}
-            className={`rounded-full border bg-white px-4 py-2 text-sm font-black transition focus:outline-none focus:ring-4 ${
-              botMode === "events"
-                ? "border-events text-events hover:bg-events/10 focus:ring-events/15"
-                : "border-clay text-clay hover:bg-[#EDFFED] focus:ring-clay/15"
-            }`}
+            className={`rounded-full border bg-white px-4 py-2 text-sm font-black transition focus:outline-none focus:ring-4 ${accent.btnOutline}`}
           >
             {expanded ? "Hide details" : "Show details"}
           </button>
@@ -131,7 +130,7 @@ export function WatchEventsCard({ item, botMode = "watch" }: Props) {
 
       {(!isLivePick || expanded) && (
         <>
-          <div className={`mt-4 rounded-lg border p-4 ${searchSuggestion ? "border-events/15 bg-events/5" : "border-line bg-mint"}`}>
+          <div className={`mt-4 rounded-lg border p-4 ${searchSuggestion ? accent.panelSoft : "border-line bg-mint"}`}>
             <p className="text-sm font-black text-ink">Why Koi picked it</p>
             <p className="mt-2 text-sm leading-6 text-slate">{item.explanation}</p>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -150,7 +149,7 @@ export function WatchEventsCard({ item, botMode = "watch" }: Props) {
             {item.meta.map((entry) => (
               <div
                 key={entry.label}
-                className={`rounded-lg px-3 py-2.5 ${searchSuggestion ? "bg-events/5 ring-1 ring-events/10" : "bg-sky"}`}
+                className={`rounded-lg px-3 py-2.5 ${searchSuggestion ? `${accent.bgSoft} ring-1 ${accent.borderSoft}` : "bg-sky"}`}
               >
                 <div className="text-xs font-bold uppercase text-slate">{entry.label}</div>
                 <div className="mt-1 font-bold text-ink">{entry.value}</div>
@@ -178,7 +177,7 @@ export function WatchEventsCard({ item, botMode = "watch" }: Props) {
                 provider: item.provider
               })
             }
-            className="font-semibold text-clay underline decoration-clay/40 underline-offset-2 hover:text-[#24A832]"
+            className={`font-semibold ${accent.link}`}
           >
             Open full details on TMDB
           </a>
@@ -198,11 +197,7 @@ export function WatchEventsCard({ item, botMode = "watch" }: Props) {
                 provider: item.provider
               })
             }
-            className={`rounded-full px-3 py-2.5 text-center text-sm font-bold text-white transition focus:outline-none focus:ring-4 ${
-              searchSuggestion || botMode === "events"
-                ? "bg-events hover:bg-[#CF6A52] focus:ring-events/25"
-                : "bg-clay hover:bg-[#24A832] focus:ring-clay/25"
-            }`}
+            className={`rounded-full px-3 py-2.5 text-center text-sm font-bold transition focus:outline-none focus:ring-4 ${accent.btnPrimary}`}
           >
             {item.actionLabel}
           </a>

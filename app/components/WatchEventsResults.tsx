@@ -1,6 +1,7 @@
 "use client";
 
 import type { WatchEventsResult } from "@/lib/types";
+import { botModeToSearchKind, getSearchAccent } from "@/lib/searchAccent";
 import { WatchEventsCard } from "@/app/components/WatchEventsCard";
 
 type Props = {
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export function WatchEventsResults({ result, loadingMore = false, onLoadMore }: Props) {
+  const accent = getSearchAccent(botModeToSearchKind(result.botMode));
   const sidebarTitle = result.preview
     ? "Preview mode"
     : result.botMode === "events"
@@ -29,7 +31,7 @@ export function WatchEventsResults({ result, loadingMore = false, onLoadMore }: 
               type="button"
               onClick={onLoadMore}
               disabled={loadingMore}
-              className="h-12 rounded-full border border-clay bg-white px-5 text-sm font-black text-clay transition hover:bg-[#EDFFED] focus:outline-none focus:ring-4 focus:ring-clay/15 disabled:cursor-not-allowed disabled:opacity-50"
+              className={`h-12 rounded-full border bg-white px-5 text-sm font-black transition focus:outline-none focus:ring-4 disabled:cursor-not-allowed disabled:opacity-50 ${accent.btnOutline}`}
             >
               {loadingMore ? "Loading more picks..." : "Show more picks"}
             </button>
@@ -39,16 +41,8 @@ export function WatchEventsResults({ result, loadingMore = false, onLoadMore }: 
       </div>
 
       <aside className="results-panel-enter order-1 lg:order-2">
-        <div
-          className={`rounded-lg border bg-paper p-5 shadow-soft ${
-            result.botMode === "events" ? "border-events/15" : "border-line"
-          }`}
-        >
-          <p
-            className={`text-sm font-black uppercase tracking-[0.14em] ${
-              result.botMode === "events" ? "text-events" : "text-clay"
-            }`}
-          >
+        <div className={`rounded-lg border bg-paper p-5 shadow-soft ${accent.panelBorder}`}>
+          <p className={`text-sm font-black uppercase tracking-[0.14em] ${accent.text}`}>
             {result.intentLabel}
           </p>
           <h2 className="mt-2 text-2xl font-black tracking-tight text-ink">Your search</h2>
@@ -60,13 +54,7 @@ export function WatchEventsResults({ result, loadingMore = false, onLoadMore }: 
           </div>
 
           <div
-            className={`mt-4 rounded-lg border p-4 ${
-              result.preview
-                ? result.botMode === "events"
-                  ? "border-events/20 bg-events/5"
-                  : "border-clay/25 bg-[#EDFFED]"
-                : "border-[#B7E4C7] bg-[#F3FBF6]"
-            }`}
+            className={`mt-4 rounded-lg border p-4 ${result.preview ? accent.panelSoft : accent.panelLive}`}
           >
             <p className="text-sm font-black text-ink">{sidebarTitle}</p>
             <p className="mt-2 text-sm leading-6 text-slate">{result.message}</p>

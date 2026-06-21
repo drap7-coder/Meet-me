@@ -34,7 +34,7 @@ export function ResultsMap({ originA, originB, midpoint, venues, searchMode }: P
         <div className="absolute inset-0 bg-[linear-gradient(rgba(17,24,39,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(17,24,39,0.03)_1px,transparent_1px)] bg-[length:64px_64px]" />
         <div className="absolute inset-x-10 top-1/2 h-px -translate-y-1/2 rounded-full bg-line/60" />
         <div className="absolute inset-y-10 left-1/2 w-px -translate-x-1/2 rounded-full bg-line/60" />
-        <div className="absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-clay/10 blur-2xl" />
+        <div className="absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-koi/10 blur-2xl" />
         {points.map((point) => {
           const position = project(point.location, bounds);
           const isMidpoint = point.kind === "midpoint";
@@ -50,7 +50,7 @@ export function ResultsMap({ originA, originB, midpoint, venues, searchMode }: P
           );
         })}
         <div className="absolute left-4 top-4 rounded-lg border border-line bg-paper/95 p-3 shadow-[0_14px_34px_rgba(17,24,39,0.08)] backdrop-blur">
-          <p className="text-xs font-black uppercase tracking-[0.14em] text-clay">Fairness at a glance</p>
+          <p className="text-xs font-black uppercase tracking-[0.14em] text-koi">Fairness at a glance</p>
           <p className="mt-1 max-w-[240px] text-sm font-semibold leading-5 text-slate">
             {isSingleLocation ? "See the search center and the best places nearby." : "See both starting points and the best places between them."}
           </p>
@@ -58,7 +58,7 @@ export function ResultsMap({ originA, originB, midpoint, venues, searchMode }: P
         <div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-2 rounded-lg border border-line bg-paper/95 p-3 text-xs font-bold text-slate shadow-[0_14px_34px_rgba(17,24,39,0.08)] backdrop-blur">
           {isSingleLocation ? null : <LegendDot className="bg-indigo" label="Person A" />}
           {isSingleLocation ? null : <LegendDot className="bg-ink" label="Person B" />}
-          <LegendDot className="bg-clay" label={isSingleLocation ? "Search center" : "Midpoint"} />
+          <LegendDot className="bg-koi" label={isSingleLocation ? "Search center" : "Midpoint"} />
           <LegendDot className="bg-white ring-1 ring-line" label="Ranked destinations" />
         </div>
       </div>
@@ -70,9 +70,9 @@ function MapMarker({ label, kind }: { label: string; kind: string }) {
   if (kind === "midpoint") {
     return (
       <span className="relative grid h-16 w-16 place-items-center">
-        <span className="absolute inset-0 rounded-full bg-clay/20 animate-pulse" />
-        <span className="absolute h-12 w-12 rounded-full bg-clay/20" />
-        <span className="relative grid h-9 w-9 place-items-center rounded-full bg-clay shadow-[0_18px_36px_rgba(57,255,20,0.28)]">
+        <span className="absolute inset-0 rounded-full bg-koi/20 animate-pulse" />
+        <span className="absolute h-12 w-12 rounded-full bg-koi/20" />
+        <span className="relative grid h-9 w-9 place-items-center rounded-full bg-koi shadow-[0_18px_36px_rgba(57,255,20,0.28)]">
           <span className="h-3.5 w-3.5 rounded-full bg-white" />
         </span>
       </span>

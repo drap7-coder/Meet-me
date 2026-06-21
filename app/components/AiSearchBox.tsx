@@ -12,7 +12,7 @@ import {
 } from "@/lib/koiBrowse";
 import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
 import { BRAND } from "@/src/config/branding";
-import { FormEvent, useState } from "react";
+import { FormEvent, forwardRef, useCallback, useImperativeHandle, useState } from "react";
 
 type Props = {
   loading: boolean;
@@ -34,18 +34,25 @@ type ParseSearchResult = {
   needsLocation?: boolean;
 };
 
-export function AiSearchBox({
-  loading,
-  locationStatus,
-  locationContext,
-  onParsed,
-  onWatchSearch,
-  onEventsSearch,
-  onNeedsFullFallback,
-  onNeedsLocation,
-  onUseLocation,
-  locating = false
-}: Props) {
+export type AiSearchBoxHandle = {
+  runQuery: (query: string, watchSubcategory?: WatchSubcategory) => void;
+};
+
+export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearchBox(
+  {
+    loading,
+    locationStatus,
+    locationContext,
+    onParsed,
+    onWatchSearch,
+    onEventsSearch,
+    onNeedsFullFallback,
+    onNeedsLocation,
+    onUseLocation,
+    locating = false
+  },
+  ref
+) {
   const [query, setQuery] = useState("");
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState("");
@@ -53,55 +60,78 @@ export function AiSearchBox({
   const [activeBrowseLane, setActiveBrowseLane] = useState<KoiBrowseLaneId>(DEFAULT_BROWSE_LANE_ID);
   const [watchActiveSubcategory, setWatchActiveSubcategory] = useState<WatchSubcategory>(DEFAULT_WATCH_SUBCATEGORY);
 
-  async function runSearch(searchQuery: string, watchSubcategory = watchActiveSubcategory) {
-    const trimmed = searchQuery.trim();
-    if (!trimmed) {
-      setError("Try something like: Coffee halfway between Hoboken and Princeton.");
-      return;
-    }
+  const runSearch = useCallback(
+    async (searchQuery: string, watchSubcategory = watchActiveSubcategory) => {
+      const trimmed = searchQuery.trim();
+      if (!trimmed) {
+        setError("Try something like: Coffee halfway between Hoboken and Princeton.");
+        return;
+      }
 
-    if (loading || parsing) return;
+      if (loading || parsing) return;
 
-    setQuery(trimmed);
-    setActiveBrowseLane(getBrowseLaneForQuery(trimmed).id);
-    setParsing(true);
-    setError("");
+      setQuery(trimmed);
+      setActiveBrowseLane(getBrowseLaneForQuery(trimmed).id);
+      setParsing(true);
+      setError("");
 
-    try {
-      const response = await fetch("/api/parse-search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: trimmed, context: locationContext })
-      });
-      const data = (await response.json()) as ParseSearchResult;
-      if (!response.ok) {
-        if (response.status === 422 && data.needsLocation && data.form) {
-          onNeedsLocation(data.form);
-          setError(data.error ?? "Add your location to search nearby.");
+      try {
+        const response = await fetch("/api/parse-search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: trimmed, context: locationContext })
+        });
+        const data = (await response.json()) as ParseSearchResult;
+        if (!response.ok) {
+          if (response.status === 422 && data.needsLocation && data.form) {
+            onNeedsLocation(data.form);
+            setError(data.error ?? "Add your location to search nearby.");
+            return;
+          }
+          throw new Error(data.error ?? "I could not understand that search.");
+        }
+
+        if (data.botMode === "watch") {
+          onWatchSearch(trimmed, watchSubcategory);
           return;
         }
-        throw new Error(data.error ?? "I could not understand that search.");
-      }
 
-      if (data.botMode === "watch") {
-        onWatchSearch(trimmed, watchSubcategory);
-        return;
-      }
+        if (data.botMode === "events") {
+          onEventsSearch(trimmed);
+          return;
+        }
 
-      if (data.botMode === "events") {
-        onEventsSearch(trimmed);
-        return;
+        if (!data.form) throw new Error(data.error ?? "I could not understand that search.");
+        onParsed(data.form);
+      } catch (parseError) {
+        setError(parseError instanceof Error ? parseError.message : "I could not understand that search.");
+        onNeedsFullFallback();
+      } finally {
+        setParsing(false);
       }
+    },
+    [
+      loading,
+      parsing,
+      locationContext,
+      onEventsSearch,
+      onNeedsFullFallback,
+      onNeedsLocation,
+      onParsed,
+      onWatchSearch,
+      watchActiveSubcategory
+    ]
+  );
 
-      if (!data.form) throw new Error(data.error ?? "I could not understand that search.");
-      onParsed(data.form);
-    } catch (parseError) {
-      setError(parseError instanceof Error ? parseError.message : "I could not understand that search.");
-      onNeedsFullFallback();
-    } finally {
-      setParsing(false);
-    }
-  }
+  useImperativeHandle(
+    ref,
+    () => ({
+      runQuery: (searchQuery, watchSubcategory) => {
+        void runSearch(searchQuery, watchSubcategory);
+      }
+    }),
+    [runSearch]
+  );
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -152,6 +182,20 @@ export function AiSearchBox({
         >
           {parsing ? "Understanding..." : loading ? "Finding picks..." : BRAND.askLabel}
         </button>
+        {locationStatus ? (
+          <p className="rounded-full border border-[#B7E4C7] bg-[#F3FBF6] px-4 py-2.5 text-center text-sm font-semibold text-[#176644]">
+            {locationStatus}
+          </p>
+        ) : (
+          <button
+            type="button"
+            onClick={onUseLocation}
+            disabled={locating || busy}
+            className="h-11 rounded-full border-2 border-line bg-white px-5 text-sm font-bold text-ink transition hover:border-clay hover:bg-[#FFF4EC] focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60 sm:h-12 sm:text-base"
+          >
+            {locating ? "Checking location..." : "📍 Use my location"}
+          </button>
+        )}
       </form>
 
       {error ? (
@@ -181,19 +225,7 @@ export function AiSearchBox({
         })}
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-        {locationStatus ? (
-          <p className="text-xs font-semibold text-[#176644]">{locationStatus}</p>
-        ) : (
-          <button
-            type="button"
-            onClick={onUseLocation}
-            disabled={locating || busy}
-            className="text-xs font-semibold text-slate underline decoration-line underline-offset-4 transition hover:text-clay disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {locating ? "Checking location..." : "Use my location"}
-          </button>
-        )}
+      <div className="mt-3">
         <button
           type="button"
           onClick={() => setShowMoreIdeas((current) => !current)}
@@ -217,4 +249,4 @@ export function AiSearchBox({
       ) : null}
     </section>
   );
-}
+});

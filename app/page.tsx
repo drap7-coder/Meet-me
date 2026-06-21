@@ -1,7 +1,7 @@
 "use client";
 
 import { EmptyState } from "@/app/components/EmptyState";
-import { AiSearchBox } from "@/app/components/AiSearchBox";
+import { AiSearchBox, type AiSearchBoxHandle } from "@/app/components/AiSearchBox";
 import { CategoryIcon } from "@/app/components/CategoryIcon";
 import { LocationForm } from "@/app/components/LocationForm";
 import { Logo } from "@/app/components/Logo";
@@ -31,9 +31,10 @@ import {
   resolveCurrentLocationInForm
 } from "@/lib/currentLocation";
 import { getCurrentPosition, reverseGeocodeCoordinates } from "@/lib/geolocation";
+import { KOI_POPULAR_SEARCHES, type KoiBrowseOption } from "@/lib/koiBrowse";
 import type { KoiBotMode, LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory, WatchEventsApiResponse, WatchEventsMoreResult, WatchEventsResult, WatchSubcategory } from "@/lib/types";
 import { BRAND } from "@/src/config/branding";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const initialForm: SearchHalfwayRequest = {
   locationA: "",
@@ -77,6 +78,7 @@ export default function HomePage() {
   const [hasSearched, setHasSearched] = useState(false);
   const [recentMeetups, setRecentMeetups] = useState<RecentMeetup[]>([]);
   const [showRoadDividerPreview, setShowRoadDividerPreview] = useState(false);
+  const searchBoxRef = useRef<AiSearchBoxHandle>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -616,6 +618,7 @@ export default function HomePage() {
             <div className="relative z-10 mx-auto grid w-full max-w-5xl gap-4 py-4 sm:gap-5 sm:py-5 lg:py-6">
               <MarketingHero />
               <AiSearchBox
+                ref={searchBoxRef}
                 loading={loading}
                 locationStatus={locationStatus}
                 locationContext={{
@@ -632,6 +635,10 @@ export default function HomePage() {
                 onUseLocation={() => void requestUserLocation()}
               />
               <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
+              <PopularSearchesSection
+                busy={loading || locating}
+                onSelect={(option) => searchBoxRef.current?.runQuery(option.query, option.watchSubcategory)}
+              />
               <LocationFallbackPanel
                 form={form}
                 loading={loading}
@@ -695,6 +702,7 @@ export default function HomePage() {
           {error && !loading && !results && !watchEventsResult ? (
           <section id="search" className="mt-5 grid w-full max-w-5xl gap-5">
               <AiSearchBox
+                ref={searchBoxRef}
                 loading={loading}
                 locationStatus={locationStatus}
                 locationContext={{
@@ -797,8 +805,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      <FeedbackSection />
-      <SeoContentSection />
       <Footer />
       {shareDialog ? (
         <ShareDialog
@@ -808,45 +814,6 @@ export default function HomePage() {
         />
       ) : null}
     </main>
-  );
-}
-
-function SeoContentSection() {
-  const items = [
-    {
-      title: "Places",
-      text:
-        "Find restaurants, coffee, drinks, shopping, activities, and halfway spots near one location or balanced between two starting points."
-    },
-    {
-      title: "Watch",
-      text:
-        "Find movies, TV shows, streaming picks, and nearby theaters based on your mood, genre, title, or location."
-    }
-  ];
-
-  return (
-    <section className="px-4 pb-12 sm:px-6 lg:px-8" aria-labelledby="what-koi-helps-with">
-      <div className="mx-auto max-w-7xl">
-        <div className="border-t border-line pt-8">
-          <p className="text-sm font-bold uppercase tracking-wide text-clay">What Koi helps with</p>
-          <h2 id="what-koi-helps-with" className="mt-3 max-w-3xl text-3xl font-black tracking-tight text-ink sm:text-4xl">
-            One ask. One useful answer.
-          </h2>
-          <p className="mt-3 max-w-2xl text-base leading-7 text-slate">
-            Koi understands natural-language requests for places to meet and things to watch, then keeps the search simple.
-          </p>
-          <div className="mt-6 grid gap-3 md:grid-cols-2">
-            {items.map((item) => (
-              <article key={item.title} className="rounded-lg border border-line bg-paper p-5 shadow-[0_10px_28px_rgba(10,19,35,0.05)]">
-                <h3 className="text-lg font-black text-ink">{item.title}</h3>
-                <p className="mt-2 text-sm font-medium leading-6 text-slate">{item.text}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
   );
 }
 
@@ -1128,41 +1095,6 @@ function MeetInMiddleLoader() {
   );
 }
 
-function FeedbackSection() {
-  const feedbackHref = `mailto:nathandrapkin@gmail.com?subject=${encodeURIComponent(
-    `${BRAND.name} feedback`
-  )}&body=${encodeURIComponent("What worked:\n\nWhat felt confusing:\n\nWhat I'd like you to add:\n")}`;
-
-  return (
-    <section className="px-4 py-12 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl rounded-lg border border-line bg-paper p-6 shadow-soft sm:p-8 lg:p-10">
-        <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
-          <div>
-            <p className="text-sm font-bold uppercase tracking-wide text-clay">Beta feedback</p>
-            <h2 className="mt-3 text-3xl font-black tracking-tight text-ink sm:text-4xl">
-              Help shape {BRAND.name}.
-            </h2>
-            <p className="mt-3 max-w-2xl text-base leading-7 text-slate">
-              We're actively building this product and would love your feedback.
-            </p>
-            <div className="mt-5 grid gap-2 text-sm font-semibold text-slate sm:grid-cols-3">
-              <span className="rounded-lg border border-line bg-sky px-3 py-2">What worked</span>
-              <span className="rounded-lg border border-line bg-sky px-3 py-2">What felt confusing</span>
-              <span className="rounded-lg border border-line bg-sky px-3 py-2">What you'd like us to add</span>
-            </div>
-          </div>
-          <a
-            href={feedbackHref}
-            className="inline-flex h-11 items-center justify-center rounded-full bg-clay px-5 text-sm font-bold text-white shadow-[0_10px_24px_rgba(214,90,46,0.24)] transition hover:bg-[#B94A22] focus:outline-none focus:ring-4 focus:ring-clay/25"
-          >
-            Send Feedback
-          </a>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function Footer() {
   const feedbackHref = `mailto:nathandrapkin@gmail.com?subject=${encodeURIComponent(
     `${BRAND.name} feedback`
@@ -1185,6 +1117,39 @@ function Footer() {
         </div>
       </div>
     </footer>
+  );
+}
+
+function PopularSearchesSection({
+  busy,
+  onSelect
+}: {
+  busy: boolean;
+  onSelect: (option: KoiBrowseOption) => void;
+}) {
+  return (
+    <section
+      className="w-full min-w-0 overflow-hidden rounded-[20px] border border-white/10 bg-paper/95 p-4 shadow-[0_12px_32px_rgba(10,19,35,0.14)] sm:p-5"
+      aria-labelledby="popular-searches-title"
+    >
+      <p className="text-sm font-bold uppercase tracking-wide text-clay">Popular Searches</p>
+      <h2 id="popular-searches-title" className="mt-1 text-lg font-black tracking-tight text-ink sm:text-xl">
+        Try one of these to see how Koi thinks.
+      </h2>
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        {KOI_POPULAR_SEARCHES.map((option) => (
+          <button
+            key={option.id}
+            type="button"
+            disabled={busy}
+            onClick={() => onSelect(option)}
+            className="rounded-xl border border-line bg-white px-3 py-3 text-left text-sm font-semibold leading-snug text-slate transition hover:border-clay hover:bg-[#FFF4EC] hover:text-ink focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </section>
   );
 }
 

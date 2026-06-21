@@ -16,32 +16,30 @@ export function SavedLocationBadge({ label, compact = false, className = "" }: P
   const trimmed = label.trim();
   if (!trimmed) return null;
 
+  const labelClass =
+    "min-w-0 flex-1 truncate text-sm font-bold leading-5 text-watch drop-shadow-[0_0_10px_rgba(10,132,255,0.35)]";
+
   if (compact) {
     return (
       <div
-        className={`inline-flex max-w-full items-center gap-2 rounded-full border border-watch/20 bg-[#F0F7FF] px-3 py-1.5 ${className}`}
+        className={`inline-flex max-w-full min-w-0 items-center gap-2 rounded-full border border-watch/20 bg-[#F0F7FF] px-3 py-1.5 ${className}`}
         aria-live="polite"
+        title={trimmed}
       >
         <LocationPinIcon />
-        <span className="truncate text-sm font-bold text-watch drop-shadow-[0_0_10px_rgba(10,132,255,0.35)]">
-          {trimmed}
-        </span>
+        <span className={labelClass}>{trimmed}</span>
       </div>
     );
   }
 
   return (
     <div
-      className={`flex items-center gap-2 border-t border-watch/15 bg-[#F0F7FF] px-3 py-2 sm:px-4 ${className}`}
+      className={`flex w-full min-w-0 items-center gap-2 border-t border-watch/15 bg-[#F0F7FF] px-3 py-2.5 sm:px-4 ${className}`}
       aria-live="polite"
+      title={trimmed}
     >
-      <span className="inline-flex items-center gap-1 rounded-full bg-watch/10 px-2 py-0.5 text-[0.6875rem] font-bold uppercase tracking-[0.08em] text-slate">
-        <LocationPinIcon />
-        Location
-      </span>
-      <span className="min-w-0 truncate text-sm font-bold text-watch drop-shadow-[0_0_10px_rgba(10,132,255,0.35)]">
-        {trimmed}
-      </span>
+      <LocationPinIcon />
+      <span className={labelClass}>{trimmed}</span>
     </div>
   );
 }

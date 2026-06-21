@@ -264,7 +264,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
         <form onSubmit={handleSubmit} className="w-full min-w-0">
           <label className="block w-full min-w-0">
             <span className="sr-only">{BRAND.askLabel}</span>
-            <div className="group/search w-full min-w-0 overflow-hidden rounded-[18px] bg-white shadow-[0_2px_16px_rgba(10,19,35,0.05)] transition focus-within:shadow-[0_4px_28px_rgba(10,19,35,0.08)]">
+            <div className="group/search w-full min-w-0 overflow-x-clip rounded-[18px] bg-white shadow-[0_2px_16px_rgba(10,19,35,0.05)] transition focus-within:shadow-[0_4px_28px_rgba(10,19,35,0.08)]">
               <div className="flex w-full min-w-0 items-center gap-2 px-2.5 py-2.5 sm:px-3 sm:py-3">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center sm:h-10 sm:w-10">
                   <AiSparkleIcon />

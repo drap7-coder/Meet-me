@@ -20,15 +20,17 @@ export function KoiCapabilityExamples({ busy = false, onSelect }: Props) {
             type="button"
             disabled={busy}
             onClick={() => onSelect(example)}
-            className="group koi-premium-card flex w-full min-w-0 items-start gap-3 p-3.5 text-left font-sans transition hover:bg-white/[0.06] focus:outline-none focus:ring-4 focus:ring-white/10 disabled:cursor-not-allowed disabled:opacity-60 sm:gap-4 sm:p-4"
+            className="group koi-premium-card flex w-full min-w-0 items-start gap-3 overflow-visible p-3.5 text-left font-sans transition hover:bg-white/[0.06] focus:outline-none focus:ring-4 focus:ring-white/10 disabled:cursor-not-allowed disabled:opacity-60 sm:gap-4 sm:p-4"
           >
             <span
-              className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/[0.06] text-[1.35rem] leading-none transition duration-200 group-hover:scale-[1.03] sm:h-14 sm:w-14 sm:text-[1.5rem]"
+              className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/[0.06] text-[1.35rem] leading-none sm:h-14 sm:w-14 sm:text-[1.5rem]"
               aria-hidden="true"
             >
               {example.icon}
             </span>
-            <span className="min-w-0 flex-1 pt-1 text-base font-bold leading-snug tracking-[-0.025em] text-white">{example.label}</span>
+            <span className="min-w-0 flex-1 py-0.5 text-base font-bold leading-normal tracking-[-0.025em] text-white">
+              {example.label}
+            </span>
           </button>
         ))}
       </div>

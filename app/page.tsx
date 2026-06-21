@@ -34,7 +34,7 @@ import {
   resolveCurrentLocationInForm,
   type CurrentLocationContext
 } from "@/lib/currentLocation";
-import { getCurrentPosition, geocodeManualLocation, reverseGeocodeCoordinates } from "@/lib/geolocation";
+import { getCurrentPosition, geocodeManualLocation, reverseGeocodeCoordinates, shortLocationLabel } from "@/lib/geolocation";
 import {
   formatLocationStatusLabel,
   isValidManualLocationInput,
@@ -851,7 +851,7 @@ export default function HomePage() {
 
       {!hasSearched && !results && !watchEventsResult && !loading ? (
         <>
-          <section id="search" className="relative isolate overflow-hidden bg-ink px-4 pb-10 pt-4 sm:px-6 sm:pb-12 sm:pt-5 lg:px-8 lg:pb-14">
+          <section id="search" className="relative isolate overflow-x-clip bg-ink px-4 pb-10 pt-4 sm:px-6 sm:pb-12 sm:pt-5 lg:px-8 lg:pb-14">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_50%_-15%,rgba(52,199,89,0.12),transparent_58%),radial-gradient(circle_at_88%_8%,rgba(10,132,255,0.08),transparent_32%),linear-gradient(180deg,#0A1323_0%,#0c1729_50%,#0A1323_100%)]" />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0A1323] via-[#0A1323]/70 to-transparent sm:h-28" />
             <div className="relative z-10 mx-auto grid w-full max-w-5xl gap-5 py-5 sm:gap-6 sm:py-7 lg:gap-7 lg:py-8">
@@ -1167,7 +1167,7 @@ function CompactResultsHeader({
             <h1 className="mt-1 text-3xl font-black tracking-tight text-ink sm:text-4xl">{title}</h1>
             {originSummary ? <p className="mt-2 text-sm leading-6 text-slate">{originSummary}</p> : null}
             {locationLabel ? (
-              <div className="mt-3">
+              <div className="mt-3 min-w-0 max-w-full">
                 <SavedLocationBadge label={locationLabel} compact />
               </div>
             ) : null}
@@ -1560,10 +1560,6 @@ function formatDriveComparison(venue: ScoredVenue) {
 
 function wait(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
-}
-
-function shortLocationLabel(address: string) {
-  return address.split(",")[0]?.trim() || "Person";
 }
 
 function findClosestVenueId(venues: ScoredVenue[], midpoint: LatLng) {

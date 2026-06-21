@@ -1,19 +1,16 @@
 "use client";
 
 import { CategoryIcon } from "@/app/components/CategoryIcon";
-import { CATEGORY_GROUPS, DEFAULT_MEETUP_MODE, getPrimaryCategoryId } from "@/lib/categories";
-import type { MeetupMode, VenueCategory } from "@/lib/types";
+import { CATEGORY_GROUPS, getPrimaryCategoryId } from "@/lib/categories";
+import type { VenueCategory } from "@/lib/types";
 import { useState } from "react";
 
 type Props = {
   value: VenueCategory;
-  mode?: MeetupMode;
   onChange: (category: VenueCategory) => void;
-  onModeChange?: (mode: MeetupMode) => void;
 };
 
-export function CategorySelector({ value, mode = DEFAULT_MEETUP_MODE, onChange }: Props) {
-  void mode;
+export function CategorySelector({ value, onChange }: Props) {
   const [showMore, setShowMore] = useState(false);
   const activePrimaryId = getPrimaryCategoryId(value);
   const activePrimary = CATEGORY_GROUPS.find((group) => group.id === activePrimaryId) ?? CATEGORY_GROUPS[0];

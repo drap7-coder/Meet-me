@@ -80,7 +80,7 @@ export type VenueCategory =
   | "dessert"
   | "custom";
 
-export type MeetupMode = "single" | "district";
+export type MeetupMode = "single";
 
 export type SearchMode = "single" | "midpoint";
 

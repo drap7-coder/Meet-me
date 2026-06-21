@@ -5,7 +5,8 @@ import { FairMeetupPreview } from "@/app/components/FairMeetupPreview";
 import { KoiCapabilityExamples } from "@/app/components/KoiCapabilityExamples";
 import { KoiThinkingLoader } from "@/app/components/KoiThinkingLoader";
 import { AiSearchBox, type AiSearchBoxHandle } from "@/app/components/AiSearchBox";
-import { SavedLocationBadge } from "@/app/components/SavedLocationBadge";
+import { CompactResultsHeader } from "@/app/components/home/CompactResultsHeader";
+import { MarketingHero } from "@/app/components/home/MarketingHero";
 import { KoiExampleSearchCard } from "@/app/components/KoiExampleSearchCard";
 import { LocationForm } from "@/app/components/LocationForm";
 import { Logo } from "@/app/components/Logo";
@@ -36,12 +37,11 @@ import {
 } from "@/lib/currentLocation";
 import { getCurrentPosition, geocodeManualLocation, reverseGeocodeCoordinates, shortLocationLabel } from "@/lib/geolocation";
 import {
-  formatLocationStatusLabel,
   isValidManualLocationInput,
-  parseLocationStatusLabel,
   type LocationUiState
 } from "@/lib/locationInput";
-import { getSavedUserLocation, mergeSavedUserLocation } from "@/lib/savedUserLocation";
+import { readStoredLocationSnapshot, resolveLocationChipLabel, restoreStoredLocation } from "@/lib/homeLocation";
+import { mergeSavedUserLocation, getSavedUserLocation } from "@/lib/savedUserLocation";
 import { getSearchAccent } from "@/lib/searchAccent";
 import { KOI_PICK_DISPLAY_LIMIT, THINKING_PROGRESS_LABELS } from "@/lib/koiCapabilityExamples";
 import type { KoiBotMode, LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory, WatchEventsApiResponse, WatchEventsResult, WatchSubcategory } from "@/lib/types";
@@ -69,50 +69,6 @@ type FallbackKind = "none" | "location" | "full";
 type PendingRetry =
   | { kind: "events"; query: string }
   | { kind: "places"; form: SearchHalfwayRequest };
-
-function readStoredLocationSnapshot() {
-  const stored = getSavedUserLocation();
-  if (!stored?.locationA?.trim()) {
-    return {
-      savedLocation: { locationA: "" } as CurrentLocationContext,
-      savedUserAddress: "",
-      locationStatus: ""
-    };
-  }
-
-  const address = stored.locationA.trim();
-  if (stored.locationACoordinates) {
-    return {
-      savedLocation: {
-        locationA: address,
-        locationAPlaceId: stored.locationAPlaceId,
-        locationACoordinates: stored.locationACoordinates
-      },
-      savedUserAddress: address,
-      locationStatus: formatLocationStatusLabel(shortLocationLabel(address))
-    };
-  }
-
-  return {
-    savedLocation: {
-      locationA: address,
-      locationAPlaceId: stored.locationAPlaceId
-    },
-    savedUserAddress: address,
-    locationStatus: formatLocationStatusLabel(shortLocationLabel(address))
-  };
-}
-
-function restoreStoredLocation(setters: {
-  setSavedLocation: (value: CurrentLocationContext) => void;
-  setSavedUserAddress: (value: string) => void;
-  setLocationStatus: (value: string) => void;
-}) {
-  const snapshot = readStoredLocationSnapshot();
-  setters.setSavedLocation(snapshot.savedLocation);
-  setters.setSavedUserAddress(snapshot.savedUserAddress);
-  if (snapshot.locationStatus) setters.setLocationStatus(snapshot.locationStatus);
-}
 
 export default function HomePage() {
   const [form, setForm] = useState<SearchHalfwayRequest>(initialForm);
@@ -1056,100 +1012,6 @@ export default function HomePage() {
   );
 }
 
-function MarketingHero() {
-  return (
-    <div className="w-full min-w-0">
-      <div className="flex w-full min-w-0 items-center gap-4 sm:gap-5">
-        <Logo size="hero" onDark className="shrink-0" />
-        <div className="min-w-0 flex-1">
-          <h1 className="font-semibold tracking-[-0.045em]">
-            <span className="block text-[clamp(2.125rem,8vw,3.5rem)] leading-[0.9] text-white">
-              {BRAND.heroHeadlineLead}
-            </span>
-            <span className="mt-1.5 block text-[clamp(2.125rem,8vw,3.5rem)] leading-[0.9]">
-              <span className="text-white/95">where to </span>
-              <span className="text-koi">meet.</span>
-            </span>
-          </h1>
-          <p className="mt-4 max-w-xl text-[0.9375rem] font-normal leading-6 tracking-[-0.01em] text-[#B8B0A3] sm:text-base sm:leading-7">
-            <span className="block">{BRAND.heroSubheadline}</span>
-            <span className="mt-1 block text-white/55">{BRAND.heroSubheadlineTagline}</span>
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function CompactResultsHeader({
-  loading,
-  loadingLabel = "Finding places",
-  resultCountLabel,
-  title,
-  originSummary,
-  locationLabel = "",
-  searchKind = null,
-  canShareOptions,
-  onShareOptions,
-  onNewSearch
-}: {
-  loading: boolean;
-  loadingLabel?: string;
-  resultCountLabel: string;
-  title: string;
-  originSummary: string;
-  locationLabel?: string;
-  searchKind?: "places" | "watch" | "events" | null;
-  canShareOptions: boolean;
-  onShareOptions: () => void;
-  onNewSearch: () => void;
-}) {
-  const accent = getSearchAccent(searchKind);
-  const accentClass = accent.text;
-  const newSearchHoverClass = accent.hoverBorder;
-  const primaryButtonClass = accent.btnPrimary;
-
-  return (
-    <section className="pt-[max(72px,calc(env(safe-area-inset-top)+64px))]">
-      <div className="rounded-lg border border-line bg-paper p-5 shadow-soft sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="min-w-0 flex-1">
-            <p className={`text-sm font-bold uppercase tracking-wide ${accentClass}`}>{BRAND.name}</p>
-            <p className={`mt-2 text-sm font-bold uppercase tracking-wide ${accentClass}`}>
-              {loading ? loadingLabel : resultCountLabel || "Results"}
-            </p>
-            <h1 className="mt-1 text-3xl font-black tracking-tight text-ink sm:text-4xl">{title}</h1>
-            {originSummary ? <p className="mt-2 text-sm leading-6 text-slate">{originSummary}</p> : null}
-            {locationLabel ? (
-              <div className="mt-3 min-w-0 max-w-full">
-                <SavedLocationBadge label={locationLabel} compact />
-              </div>
-            ) : null}
-          </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            {canShareOptions ? (
-              <button
-                type="button"
-                onClick={onShareOptions}
-                className={`inline-flex h-10 items-center justify-center rounded-full px-4 text-sm font-bold text-white transition focus:outline-none focus:ring-4 ${primaryButtonClass}`}
-              >
-                Share this meetup
-              </button>
-            ) : null}
-            <button
-              type="button"
-              onClick={onNewSearch}
-              className={`inline-flex h-10 items-center justify-center rounded-full border border-line bg-paper px-4 text-sm font-bold text-ink transition focus:outline-none focus:ring-4 focus:ring-ink/10 ${newSearchHoverClass}`}
-            >
-              New search
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function ShareDialog({
   dialog,
   onCopied,
@@ -1510,33 +1372,6 @@ function buildMeetupEmailBody(results: SearchHalfwayResponse, currentUrl: string
 
 function formatDriveComparison(venue: ScoredVenue) {
   return `${formatMinutes(venue.travelFromA.durationMinutes)} / ${formatMinutes(venue.travelFromB.durationMinutes)}`;
-}
-
-function resolveLocationChipLabel(
-  savedLocation: CurrentLocationContext,
-  savedUserAddress: string,
-  locationStatus: string,
-  locationUiState: LocationUiState
-) {
-  const raw = savedLocation.locationA?.trim() || savedUserAddress.trim();
-  if (raw) {
-    const label = shortLocationLabel(raw);
-    if (label && label !== "you") return label;
-    if (locationUiState === "browser_success" || savedLocation.locationACoordinates) {
-      return "Current location";
-    }
-  }
-
-  if (locationStatus) {
-    const parsed = parseLocationStatusLabel(locationStatus);
-    if (parsed && parsed !== "you") return parsed;
-  }
-
-  if (locationUiState === "browser_success" || savedLocation.locationACoordinates) {
-    return "Current location";
-  }
-
-  return "";
 }
 
 function wait(ms: number) {

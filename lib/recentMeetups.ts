@@ -231,7 +231,7 @@ export function getRecentMeetupCardDisplay(meetup: RecentMeetup): RecentMeetupCa
       ? `Near ${shortLocationLabel(meetup.originA)}`
       : `${shortLocationLabel(meetup.originA)} ↔ ${shortLocationLabel(meetup.originB)}`;
 
-  const modeLabel = (meetup.meetupMode ?? "single") === "district" ? "District" : "Single place";
+  const modeLabel = "Single place";
   const subtitle = `${getRecentMeetupCategoryLabel(meetup)} · ${modeLabel} · ${formatRecentMeetupDate(meetup.timestamp)}`;
 
   return {

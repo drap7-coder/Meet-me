@@ -620,9 +620,6 @@ function getMatchExplanation({
     } else {
       explanation = `A solid ${categoryLabel.toLowerCase()} option near your selected location.`;
     }
-  } else if (rank === 1 && meetupMode === "district") {
-    badge = "Best District";
-    explanation = categoryConfig?.explanation ?? "A strong district-style match near the midpoint with multiple nearby stops.";
   } else if (primaryPreference && rank <= 3) {
     badge = categoryConfig?.resultBadge ?? "Best Overall Match";
     explanation = `A strong ${venue.category.toLowerCase()} option near the midpoint with ${preferencePhrase} and workable travel times.`;
@@ -655,7 +652,7 @@ function getMatchExplanation({
     details: {
       balance: searchMode === "single" ? `About ${formatMinutes(venue.travelFromA.durationMinutes)} from your search location.` : describeBalance(diff),
       rating: describeRating(rating, venue.reviewCount),
-      category: `Matches your ${getCategoryLabel(searchCategory).toLowerCase()} search in ${meetupMode === "district" ? "district" : "single place"} mode.`,
+      category: `Matches your ${getCategoryLabel(searchCategory).toLowerCase()} search.`,
       preference: describePreferenceMatch(venue.preferenceMatches),
       convenience: describeConvenience(venue, isClosestToHalfway, isShortestCombined, categoryLabel, searchMode)
     }

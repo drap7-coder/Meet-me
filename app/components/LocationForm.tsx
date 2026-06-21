@@ -226,7 +226,6 @@ export function LocationForm({
         ) : (
           <CategorySelector
             value={form.category}
-            mode={form.meetupMode}
             onChange={(category: VenueCategory) => update("category", category)}
           />
         )}

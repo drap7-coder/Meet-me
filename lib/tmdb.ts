@@ -1,3 +1,5 @@
+import { withTmdbCache } from "@/lib/tmdbCache";
+
 const TMDB_API_BASE = "https://api.themoviedb.org/3";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w342";
 const TMDB_MAX_DISCOVER_PAGE = 5;
@@ -366,28 +368,30 @@ function normalizeTv(show: TmdbTvResponse): TmdbPick {
 }
 
 async function tmdbFetch<T>(path: string, params: Record<string, string> = {}) {
-  const apiKey = process.env.TMDB_API_KEY?.trim();
-  const readToken = process.env.TMDB_READ_ACCESS_TOKEN?.trim();
-  if (!apiKey && !readToken) {
-    throw new Error("TMDB is not configured. Set TMDB_API_KEY or TMDB_READ_ACCESS_TOKEN.");
-  }
+  return withTmdbCache<T>(path, params, async () => {
+    const apiKey = process.env.TMDB_API_KEY?.trim();
+    const readToken = process.env.TMDB_READ_ACCESS_TOKEN?.trim();
+    if (!apiKey && !readToken) {
+      throw new Error("TMDB is not configured. Set TMDB_API_KEY or TMDB_READ_ACCESS_TOKEN.");
+    }
 
-  const url = new URL(`${TMDB_API_BASE}${path}`);
-  if (apiKey) url.searchParams.set("api_key", apiKey);
-  for (const [key, value] of Object.entries(params)) {
-    url.searchParams.set(key, value);
-  }
+    const url = new URL(`${TMDB_API_BASE}${path}`);
+    if (apiKey) url.searchParams.set("api_key", apiKey);
+    for (const [key, value] of Object.entries(params)) {
+      url.searchParams.set(key, value);
+    }
 
-  const headers: HeadersInit = {};
-  if (readToken) headers.Authorization = `Bearer ${readToken}`;
+    const headers: HeadersInit = {};
+    if (readToken) headers.Authorization = `Bearer ${readToken}`;
 
-  const response = await fetch(url, { cache: "no-store", headers });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`TMDB request failed with ${response.status}: ${text.slice(0, 180)}`);
-  }
+    const response = await fetch(url, { cache: "no-store", headers });
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`TMDB request failed with ${response.status}: ${text.slice(0, 180)}`);
+    }
 
-  return response.json() as Promise<T>;
+    return response.json() as Promise<T>;
+  });
 }
 
 function formatTmdbDate(value: Date) {

@@ -46,6 +46,39 @@ export async function reverseGeocodeCoordinates(coordinates: LatLng) {
   return { locationA: fallbackLabel, locationAPlaceId: undefined };
 }
 
+export async function geocodeManualLocation(input: string) {
+  const trimmed = input.trim();
+  const response = await fetch("/api/geocode", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ address: trimmed })
+  });
+  const data = (await response.json()) as {
+    formattedAddress?: string;
+    placeId?: string;
+    location?: LatLng;
+    lat?: number;
+    lng?: number;
+    error?: string;
+  };
+
+  if (!response.ok) {
+    throw new Error(data.error ?? "Geocoding failed.");
+  }
+
+  const lat = data.location?.lat ?? data.lat;
+  const lng = data.location?.lng ?? data.lng;
+  if (typeof lat !== "number" || typeof lng !== "number") {
+    throw new Error("Geocoding failed.");
+  }
+
+  return {
+    locationA: data.formattedAddress?.trim() || trimmed,
+    locationAPlaceId: data.placeId,
+    locationACoordinates: { lat, lng } satisfies LatLng
+  };
+}
+
 export function shortLocationLabel(address: string) {
   const trimmed = address.trim();
   if (!trimmed) return "you";

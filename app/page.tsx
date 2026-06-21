@@ -30,7 +30,12 @@ import {
   needsCurrentLocationResolution,
   resolveCurrentLocationInForm
 } from "@/lib/currentLocation";
-import { getCurrentPosition, reverseGeocodeCoordinates } from "@/lib/geolocation";
+import { getCurrentPosition, geocodeManualLocation, reverseGeocodeCoordinates } from "@/lib/geolocation";
+import {
+  formatLocationStatusLabel,
+  isValidManualLocationInput,
+  type LocationUiState
+} from "@/lib/locationInput";
 import { KOI_POPULAR_SEARCHES, type KoiBrowseOption } from "@/lib/koiBrowse";
 import { getTrendingSearches, subscribeTrendingSearches } from "@/lib/trendingSearches";
 import type { KoiBotMode, LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory, WatchEventsApiResponse, WatchEventsMoreResult, WatchEventsResult, WatchSubcategory } from "@/lib/types";
@@ -69,7 +74,12 @@ export default function HomePage() {
   const [fallbackKind, setFallbackKind] = useState<FallbackKind>("none");
   const [pendingRetry, setPendingRetry] = useState<PendingRetry | null>(null);
   const [locationStatus, setLocationStatus] = useState("");
+  const [locationUiState, setLocationUiState] = useState<LocationUiState>("idle");
+  const [showManualFallback, setShowManualFallback] = useState(false);
+  const [showLocationActions, setShowLocationActions] = useState(false);
+  const [manualLocationError, setManualLocationError] = useState("");
   const [locating, setLocating] = useState(false);
+  const [resolvingManual, setResolvingManual] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingMoreWatchEvents, setLoadingMoreWatchEvents] = useState(false);
   const [error, setError] = useState("");
@@ -141,20 +151,99 @@ export default function HomePage() {
     scrollToFallback();
   }
 
+  async function applyResolvedLocation(
+    nextForm: SearchHalfwayRequest,
+    uiState: Extract<LocationUiState, "browser_success" | "manual_success">,
+    retry?: PendingRetry | null
+  ) {
+    setForm(nextForm);
+    setLocationStatus(formatLocationStatusLabel(shortLocationLabel(nextForm.locationA)));
+    setLocationUiState(uiState);
+    setShowManualFallback(false);
+    setShowLocationActions(false);
+    setManualLocationError("");
+
+    const activeRetry = retry ?? pendingRetry;
+    if (activeRetry?.kind === "events") {
+      setShowClassicFallback(false);
+      setFallbackKind("none");
+      setPendingRetry(null);
+      await submitEventsSearch(activeRetry.query, nextForm);
+      return;
+    }
+    if (activeRetry?.kind === "places") {
+      setShowClassicFallback(false);
+      setFallbackKind("none");
+      setPendingRetry(null);
+      runParsedSearch({
+        ...activeRetry.form,
+        locationA: nextForm.locationA,
+        locationAPlaceId: nextForm.locationAPlaceId,
+        locationACoordinates: nextForm.locationACoordinates,
+        searchMode: "single"
+      });
+    }
+  }
+
+  async function resolveManualLocation(input: string) {
+    const trimmed = input.trim();
+    if (!trimmed) {
+      setManualLocationError("Enter a ZIP code or city.");
+      setLocationUiState("manual_error");
+      return;
+    }
+    if (!isValidManualLocationInput(trimmed)) {
+      setManualLocationError("We couldn't find that location. Try a ZIP code or city/state.");
+      setLocationUiState("manual_error");
+      return;
+    }
+
+    setResolvingManual(true);
+    setManualLocationError("");
+    setLocationUiState("manual_resolving");
+    try {
+      const resolved = await geocodeManualLocation(trimmed);
+      const nextForm: SearchHalfwayRequest = {
+        ...form,
+        locationA: resolved.locationA,
+        locationAPlaceId: resolved.locationAPlaceId,
+        locationACoordinates: resolved.locationACoordinates,
+        searchMode: "single"
+      };
+      await applyResolvedLocation(nextForm, "manual_success");
+    } catch {
+      setManualLocationError("We couldn't find that location. Try a ZIP code or city/state.");
+      setLocationUiState("manual_error");
+      setShowManualFallback(true);
+    } finally {
+      setResolvingManual(false);
+    }
+  }
+
+  function showZipFallback() {
+    setShowLocationActions(false);
+    setShowManualFallback(true);
+    setManualLocationError("");
+  }
+
   async function requestUserLocation(retry?: PendingRetry | null) {
     if (typeof window === "undefined" || !window.navigator?.geolocation) {
-      setError("Location is not available in this browser.");
+      setLocationUiState("browser_failed");
+      setShowManualFallback(true);
+      setShowLocationActions(false);
+      setLocationStatus("");
       if (retry ?? pendingRetry) {
-        openLocationFallback(
-          retry ?? pendingRetry!,
-          "Add where you are to continue."
-        );
+        setError("Location didn't work. Enter a ZIP code or city.");
       }
       return;
     }
 
     setLocating(true);
-    setLocationStatus("Checking your location...");
+    setLocationUiState("requesting");
+    setShowManualFallback(false);
+    setShowLocationActions(false);
+    setManualLocationError("");
+    setLocationStatus("");
     try {
       const coordinates = await getCurrentPosition();
       const resolved = await reverseGeocodeCoordinates(coordinates);
@@ -165,37 +254,14 @@ export default function HomePage() {
         locationACoordinates: coordinates,
         searchMode: "single"
       };
-      setForm(nextForm);
-      setLocationStatus(`Using your location: ${shortLocationLabel(resolved.locationA)}`);
-
-      const activeRetry = retry ?? pendingRetry;
-      if (activeRetry?.kind === "events") {
-        setShowClassicFallback(false);
-        setFallbackKind("none");
-        setPendingRetry(null);
-        await submitEventsSearch(activeRetry.query, nextForm);
-        return;
-      }
-      if (activeRetry?.kind === "places") {
-        setShowClassicFallback(false);
-        setFallbackKind("none");
-        setPendingRetry(null);
-        runParsedSearch({
-          ...activeRetry.form,
-          locationA: nextForm.locationA,
-          locationAPlaceId: nextForm.locationAPlaceId,
-          locationACoordinates: nextForm.locationACoordinates,
-          searchMode: "single"
-        });
-      }
+      await applyResolvedLocation(nextForm, "browser_success", retry ?? pendingRetry);
     } catch {
       setLocationStatus("");
-      setError("Couldn’t access your location. Type a city or address below.");
+      setLocationUiState("browser_failed");
+      setShowManualFallback(true);
+      setShowLocationActions(false);
       if (retry ?? pendingRetry) {
-        openLocationFallback(
-          retry ?? pendingRetry!,
-          "Couldn’t access your location. Add where you are to continue."
-        );
+        setError("Location didn't work. Enter a ZIP code or city.");
       }
     } finally {
       setLocating(false);
@@ -289,7 +355,9 @@ export default function HomePage() {
     const resolvedForm = resolveCurrentLocationInForm(nextForm, form);
     if (needsCurrentLocationResolution(resolvedForm)) {
       setPendingRetry({ kind: "places", form: resolvedForm });
-      void requestUserLocation({ kind: "places", form: resolvedForm });
+      setShowLocationActions(true);
+      setShowManualFallback(false);
+      setError("Add your location to search nearby.");
       return;
     }
     setShowClassicFallback(false);
@@ -301,7 +369,8 @@ export default function HomePage() {
 
   function handleNeedsLocation(pendingForm: SearchHalfwayRequest) {
     setPendingRetry({ kind: "places", form: pendingForm });
-    void requestUserLocation({ kind: "places", form: pendingForm });
+    setShowLocationActions(true);
+    setShowManualFallback(false);
   }
 
   async function submitWatchSearch(query: string, subcategory: WatchSubcategory = activeWatchSubcategory) {
@@ -351,7 +420,9 @@ export default function HomePage() {
     let eventLocationContext = resolveCurrentLocationInForm(locationContext ?? form, form);
     if (looksLikeCurrentLocationQuery(query) && needsCurrentLocationResolution({ ...eventLocationContext, locationA: "me", searchMode: "single" })) {
       setPendingRetry({ kind: "events", query });
-      await requestUserLocation({ kind: "events", query });
+      setShowLocationActions(true);
+      setShowManualFallback(false);
+      setError("Add your location to search nearby.");
       return;
     }
     if (!eventLocationContext.locationA.trim() || needsCurrentLocationResolution(eventLocationContext)) {
@@ -431,7 +502,7 @@ export default function HomePage() {
 
   function submitLocationFallback() {
     if (!form.locationA.trim()) {
-      setError("Add where you are, or tap Use my location.");
+      setError("Add where you are, or use the location pin in the search box.");
       scrollToFallback();
       return;
     }
@@ -622,26 +693,33 @@ export default function HomePage() {
                 ref={searchBoxRef}
                 loading={loading}
                 locationStatus={locationStatus}
+                locationUiState={locationUiState}
+                showManualFallback={showManualFallback}
+                showLocationActions={showLocationActions}
+                manualLocationError={manualLocationError}
                 locationContext={{
                   locationA: form.locationA,
                   locationAPlaceId: form.locationAPlaceId,
                   locationACoordinates: form.locationACoordinates
                 }}
                 locating={locating}
+                resolvingManual={resolvingManual}
                 onParsed={runParsedSearch}
                 onWatchSearch={runWatchSearch}
                 onEventsSearch={runEventsSearch}
                 onNeedsFullFallback={() => openFullFallback()}
                 onNeedsLocation={handleNeedsLocation}
                 onUseLocation={() => void requestUserLocation()}
+                onShowZipFallback={showZipFallback}
+                onSubmitManualLocation={(input) => void resolveManualLocation(input)}
               />
               <TrendingSearchesSection
-                busy={loading || locating}
+                busy={loading || locating || resolvingManual}
                 onSelect={(option) => searchBoxRef.current?.runQuery(option.query, option.watchSubcategory)}
               />
               <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
               <PopularSearchesSection
-                busy={loading || locating}
+                busy={loading || locating || resolvingManual}
                 onSelect={(option) => searchBoxRef.current?.runQuery(option.query, option.watchSubcategory)}
               />
               <LocationFallbackPanel
@@ -710,18 +788,25 @@ export default function HomePage() {
                 ref={searchBoxRef}
                 loading={loading}
                 locationStatus={locationStatus}
+                locationUiState={locationUiState}
+                showManualFallback={showManualFallback}
+                showLocationActions={showLocationActions}
+                manualLocationError={manualLocationError}
                 locationContext={{
                   locationA: form.locationA,
                   locationAPlaceId: form.locationAPlaceId,
                   locationACoordinates: form.locationACoordinates
                 }}
                 locating={locating}
+                resolvingManual={resolvingManual}
                 onParsed={runParsedSearch}
                 onWatchSearch={runWatchSearch}
                 onEventsSearch={runEventsSearch}
                 onNeedsFullFallback={() => openFullFallback()}
                 onNeedsLocation={handleNeedsLocation}
                 onUseLocation={() => void requestUserLocation()}
+                onShowZipFallback={showZipFallback}
+                onSubmitManualLocation={(input) => void resolveManualLocation(input)}
               />
               <LocationFallbackPanel
                 form={form}

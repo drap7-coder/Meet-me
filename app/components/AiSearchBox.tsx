@@ -10,6 +10,7 @@ import {
   type KoiBrowseLaneId,
   type KoiBrowseOption
 } from "@/lib/koiBrowse";
+import type { LocationUiState } from "@/lib/locationInput";
 import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
 import { recordTrendingSearch } from "@/lib/trendingSearches";
 import { BRAND } from "@/src/config/branding";
@@ -18,6 +19,9 @@ import { FormEvent, forwardRef, useCallback, useImperativeHandle, useState } fro
 type Props = {
   loading: boolean;
   locationStatus?: string;
+  locationUiState?: LocationUiState;
+  showManualFallback?: boolean;
+  manualLocationError?: string;
   locationContext?: CurrentLocationContext;
   onParsed: (form: SearchHalfwayRequest) => void;
   onWatchSearch: (query: string, subcategory: WatchSubcategory) => void;
@@ -25,8 +29,30 @@ type Props = {
   onNeedsFullFallback: () => void;
   onNeedsLocation: (form: SearchHalfwayRequest) => void;
   onUseLocation: () => void;
+  onShowZipFallback: () => void;
+  onSubmitManualLocation: (input: string) => void;
+  showLocationActions?: boolean;
   locating?: boolean;
+  resolvingManual?: boolean;
 };
+
+function LocationPinIcon({ active }: { active?: boolean }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className={`h-5 w-5 ${active ? "text-[#176644]" : "text-slate"}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 21s6-5.33 6-10a6 6 0 1 0-12 0c0 4.67 6 10 6 10z" />
+      <circle cx="12" cy="11" r="2.5" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
 
 type ParseSearchResult = {
   botMode?: "places" | "watch" | "events";
@@ -43,6 +69,9 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   {
     loading,
     locationStatus,
+    locationUiState = "idle",
+    showManualFallback = false,
+    manualLocationError,
     locationContext,
     onParsed,
     onWatchSearch,
@@ -50,13 +79,18 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     onNeedsFullFallback,
     onNeedsLocation,
     onUseLocation,
-    locating = false
+    onShowZipFallback,
+    onSubmitManualLocation,
+    showLocationActions = false,
+    locating = false,
+    resolvingManual = false
   },
   ref
 ) {
   const [query, setQuery] = useState("");
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState("");
+  const [manualLocationInput, setManualLocationInput] = useState("");
   const [showMoreIdeas, setShowMoreIdeas] = useState(false);
   const [activeBrowseLane, setActiveBrowseLane] = useState<KoiBrowseLaneId>(DEFAULT_BROWSE_LANE_ID);
   const [watchActiveSubcategory, setWatchActiveSubcategory] = useState<WatchSubcategory>(DEFAULT_WATCH_SUBCATEGORY);
@@ -152,7 +186,14 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     void runSearch(option.query, option.watchSubcategory ?? watchActiveSubcategory);
   }
 
+  function handleManualLocationSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    onSubmitManualLocation(manualLocationInput);
+  }
+
   const busy = loading || parsing;
+  const locationBusy = locating || resolvingManual;
+  const hasLocation = Boolean(locationStatus);
   const normalizedSelection = query.trim().toLowerCase();
 
   return (
@@ -168,16 +209,45 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
       <form onSubmit={handleSubmit} className="grid gap-3">
         <label className="grid gap-2">
           <span className="sr-only">{BRAND.askLabel}</span>
-          <textarea
-            value={query}
-            onChange={(event) => {
-              setQuery(event.target.value);
-              if (error) setError("");
-            }}
-            placeholder={BRAND.searchPlaceholder}
-            rows={2}
-            className="min-h-[3.25rem] resize-none rounded-2xl border border-line bg-white px-4 py-3.5 text-base text-ink outline-none transition placeholder:text-slate/60 focus:border-clay focus:ring-4 focus:ring-clay/10 sm:min-h-14 sm:text-lg"
-          />
+          <div className="relative">
+            <textarea
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                if (error) setError("");
+              }}
+              placeholder={BRAND.searchPlaceholder}
+              rows={2}
+              className="min-h-[3.25rem] w-full resize-none rounded-2xl border border-line bg-white py-3.5 pl-4 pr-12 text-base text-ink outline-none transition placeholder:text-slate/60 focus:border-clay focus:ring-4 focus:ring-clay/10 sm:min-h-14 sm:pr-14 sm:text-lg"
+            />
+            <button
+              type="button"
+              onClick={onUseLocation}
+              disabled={locationBusy || busy}
+              title={hasLocation ? locationStatus : undefined}
+              aria-label={
+                hasLocation
+                  ? locationStatus
+                  : locating || locationUiState === "requesting"
+                    ? "Checking location"
+                    : "Use my location"
+              }
+              className={`absolute bottom-2.5 right-2.5 inline-flex h-9 w-9 items-center justify-center rounded-full border transition focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60 sm:bottom-3 sm:right-3 ${
+                hasLocation
+                  ? "border-[#B7E4C7] bg-[#F3FBF6] hover:bg-[#E8F7EE]"
+                  : "border-line bg-white hover:border-clay hover:bg-[#FFF4EC]"
+              }`}
+            >
+              {locating || locationUiState === "requesting" ? (
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate/30 border-t-clay" />
+              ) : (
+                <LocationPinIcon active={hasLocation} />
+              )}
+            </button>
+          </div>
+          {hasLocation && locationStatus ? (
+            <p className="px-1 text-xs font-medium text-[#176644]">{locationStatus}</p>
+          ) : null}
         </label>
         <button
           type="submit"
@@ -188,22 +258,60 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
         </button>
       </form>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        {locationStatus ? (
-          <span className="inline-flex max-w-full items-center rounded-full border border-[#B7E4C7] bg-[#F3FBF6] px-3 py-2 text-xs font-semibold text-[#176644] sm:text-sm">
-            {locationStatus}
-          </span>
-        ) : (
+      {showLocationActions ? (
+        <div className="mt-3 flex flex-wrap gap-2" aria-live="polite">
           <button
             type="button"
             onClick={onUseLocation}
-            disabled={locating || busy}
-            className="inline-flex shrink-0 items-center rounded-full border border-line bg-white px-3 py-2 text-xs font-semibold text-ink transition hover:border-clay hover:bg-[#FFF4EC] focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm"
+            disabled={locationBusy || busy}
+            className="inline-flex h-10 items-center rounded-full border border-line bg-white px-4 text-sm font-semibold text-ink transition hover:border-clay hover:bg-[#FFF4EC] focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {locating ? "Checking location..." : "📍 Use my location"}
+            {locating ? "Checking location..." : "Use Current Location"}
           </button>
-        )}
-      </div>
+          <button
+            type="button"
+            onClick={onShowZipFallback}
+            disabled={locationBusy || busy}
+            className="inline-flex h-10 items-center rounded-full border border-line bg-white px-4 text-sm font-semibold text-ink transition hover:border-clay hover:bg-[#FFF4EC] focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Enter ZIP Code
+          </button>
+        </div>
+      ) : null}
+
+      {showManualFallback ? (
+        <form
+          onSubmit={handleManualLocationSubmit}
+          className="mt-3 rounded-xl border border-line bg-mint/70 p-3"
+          aria-live="polite"
+        >
+          <p className="text-sm font-semibold text-ink">Location didn&apos;t work. Enter a ZIP code or city.</p>
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+            <input
+              type="text"
+              value={manualLocationInput}
+              onChange={(event) => setManualLocationInput(event.target.value)}
+              placeholder="ZIP code or city"
+              autoComplete="postal-code"
+              disabled={locationBusy || busy}
+              className="h-11 min-w-0 flex-1 rounded-full border border-line bg-white px-4 text-base text-ink outline-none transition placeholder:text-slate/60 focus:border-clay focus:ring-4 focus:ring-clay/10"
+            />
+            <button
+              type="submit"
+              disabled={locationBusy || busy}
+              className="inline-flex h-11 shrink-0 items-center justify-center rounded-full border-2 border-line bg-white px-4 text-sm font-bold text-ink transition hover:border-clay hover:bg-[#FFF4EC] focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {resolvingManual ? "Finding..." : "Use this location"}
+            </button>
+          </div>
+          {manualLocationError ? (
+            <p className="mt-2 text-xs font-semibold text-clay">{manualLocationError}</p>
+          ) : null}
+          <p className="mt-2 text-xs leading-5 text-slate">
+            You can still search by typing a place, like &apos;pizza near 19038&apos; or &apos;coffee near Hoboken&apos;.
+          </p>
+        </form>
+      ) : null}
 
       {error ? (
         <p className="mt-3 rounded-lg border border-clay/30 bg-[#FFF4EC] px-3 py-2 text-sm font-semibold text-ink">

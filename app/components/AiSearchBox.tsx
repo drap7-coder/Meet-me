@@ -253,6 +253,13 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   const heroFieldClass = "koi-hero-field h-11 w-full px-4 text-base outline-none transition disabled:cursor-not-allowed disabled:opacity-60";
   const fieldClass = "koi-field h-11 w-full px-4 text-base outline-none transition placeholder:text-slate/60 disabled:cursor-not-allowed disabled:opacity-60";
   const rotatingPlaceholder = KOI_ROTATING_PLACEHOLDERS[placeholderIndex] ?? BRAND.searchPlaceholder;
+  const locationPromptMessage = error.trim() || "Add your location so Koi can search nearby.";
+  const manualPromptMessage = error.trim() || "Enter a city, ZIP code, or address to search nearby.";
+  const showStandaloneError = Boolean(error.trim()) && !showLocationActions && !showManualFallback;
+  const promptPanelClass = onHero
+    ? "rounded-[14px] border border-koi/35 bg-koi/20 p-3 shadow-[0_8px_24px_rgba(52,199,89,0.12)]"
+    : "rounded-[14px] border border-koi/30 bg-koi/10 p-3";
+  const promptTextClass = onHero ? "text-white" : "text-ink";
 
   return (
     <div ref={containerRef} id="ask-koi" className="w-full min-w-0 max-w-full scroll-mt-24">
@@ -308,61 +315,45 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
       </section>
 
       {showLocationActions ? (
-        <div className="mt-3 flex flex-wrap gap-2" aria-live="polite">
-          <div
-            className={
-              onHero
-                ? "mb-1 flex w-full min-w-0 items-start gap-2 rounded-[14px] border border-koi/30 bg-koi/15 px-3 py-2.5"
-                : "mb-1 flex w-full min-w-0 items-start gap-2 rounded-[14px] border border-koi/25 bg-koi/10 px-3 py-2.5"
-            }
-          >
+        <div className={`mt-3 ${promptPanelClass}`} aria-live="polite">
+          <div className="flex items-start gap-2">
             <LocationPinIcon className="mt-0.5 h-4 w-4 shrink-0 text-koi" />
-            <p className={`min-w-0 flex-1 text-sm font-semibold leading-6 ${onHero ? "text-white" : "text-ink"}`}>
-              Add your location so Koi can search nearby.
-            </p>
+            <p className={`min-w-0 flex-1 text-sm font-semibold leading-6 ${promptTextClass}`}>{locationPromptMessage}</p>
           </div>
-          <button
-            type="button"
-            onClick={onUseLocation}
-            disabled={locationBusy || busy}
-            className={
-              onHero
-                ? "inline-flex h-11 items-center rounded-full border border-white/25 bg-white/10 px-5 text-base font-bold text-white transition hover:border-white/40 hover:bg-white/15 focus:outline-none focus:ring-4 focus:ring-white/15 disabled:cursor-not-allowed disabled:opacity-60"
-                : "inline-flex h-11 items-center rounded-full border border-line/80 bg-white px-5 text-base font-bold text-ink shadow-sm transition hover:border-koi/50 hover:bg-koi/10 focus:outline-none focus:ring-4 focus:ring-koi/10 disabled:cursor-not-allowed disabled:opacity-60"
-            }
-          >
-            {locating ? "Checking location..." : "Use my location"}
-          </button>
-          <button
-            type="button"
-            onClick={onShowZipFallback}
-            disabled={locationBusy || busy}
-            className={
-              onHero
-                ? "inline-flex h-10 items-center rounded-full border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white/90 transition hover:border-white/35 hover:bg-white/15 focus:outline-none focus:ring-4 focus:ring-white/15 disabled:cursor-not-allowed disabled:opacity-60"
-                : "inline-flex h-10 items-center rounded-full border border-line/80 bg-white px-4 text-sm font-semibold text-ink shadow-sm transition hover:border-koi/50 hover:bg-koi/10 focus:outline-none focus:ring-4 focus:ring-koi/10 disabled:cursor-not-allowed disabled:opacity-60"
-            }
-          >
-            Enter city or ZIP
-          </button>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={onUseLocation}
+              disabled={locationBusy || busy}
+              className={
+                onHero
+                  ? "inline-flex h-11 items-center rounded-full border border-white/25 bg-white/10 px-5 text-base font-bold text-white transition hover:border-white/40 hover:bg-white/15 focus:outline-none focus:ring-4 focus:ring-white/15 disabled:cursor-not-allowed disabled:opacity-60"
+                  : "inline-flex h-11 items-center rounded-full border border-line/80 bg-white px-5 text-base font-bold text-ink shadow-sm transition hover:border-koi/50 hover:bg-koi/10 focus:outline-none focus:ring-4 focus:ring-koi/10 disabled:cursor-not-allowed disabled:opacity-60"
+              }
+            >
+              {locating ? "Checking location..." : "Use my location"}
+            </button>
+            <button
+              type="button"
+              onClick={onShowZipFallback}
+              disabled={locationBusy || busy}
+              className={
+                onHero
+                  ? "inline-flex h-10 items-center rounded-full border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white/90 transition hover:border-white/35 hover:bg-white/15 focus:outline-none focus:ring-4 focus:ring-white/15 disabled:cursor-not-allowed disabled:opacity-60"
+                  : "inline-flex h-10 items-center rounded-full border border-line/80 bg-white px-4 text-sm font-semibold text-ink shadow-sm transition hover:border-koi/50 hover:bg-koi/10 focus:outline-none focus:ring-4 focus:ring-koi/10 disabled:cursor-not-allowed disabled:opacity-60"
+              }
+            >
+              Enter city or ZIP
+            </button>
+          </div>
         </div>
       ) : null}
 
       {showManualFallback ? (
-        <form
-          onSubmit={handleManualLocationSubmit}
-          className={
-            onHero
-              ? "mt-3 rounded-[14px] border border-koi/30 bg-koi/15 p-3 backdrop-blur-sm"
-              : "mt-3 rounded-card border border-koi/25 bg-koi/10 p-3 shadow-soft"
-          }
-          aria-live="polite"
-        >
+        <form onSubmit={handleManualLocationSubmit} className={`mt-3 ${promptPanelClass}`} aria-live="polite">
           <div className="flex items-start gap-2">
             <LocationPinIcon className="mt-0.5 h-4 w-4 shrink-0 text-koi" />
-            <p className={`min-w-0 flex-1 text-sm font-semibold leading-6 ${onHero ? "text-white" : "text-ink"}`}>
-              Enter a city, ZIP code, or address to search nearby.
-            </p>
+            <p className={`min-w-0 flex-1 text-sm font-semibold leading-6 ${promptTextClass}`}>{manualPromptMessage}</p>
           </div>
           <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
             <div className="relative min-w-0 flex-1">
@@ -399,17 +390,10 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
         </form>
       ) : null}
 
-      {error ? (
-        <div
-          className={
-            onHero
-              ? "mt-3 flex items-start gap-2 rounded-[14px] border border-koi/35 bg-koi/20 px-3 py-2.5 shadow-[0_8px_24px_rgba(52,199,89,0.12)]"
-              : "mt-3 flex items-start gap-2 rounded-[14px] border border-koi/30 bg-koi/10 px-3 py-2.5"
-          }
-          role="status"
-        >
+      {showStandaloneError ? (
+        <div className={`mt-3 flex items-start gap-2 ${promptPanelClass}`} role="status">
           <LocationPinIcon className="mt-0.5 h-4 w-4 shrink-0 text-koi" />
-          <p className={`min-w-0 flex-1 text-sm font-semibold leading-6 ${onHero ? "text-white" : "text-ink"}`}>{error}</p>
+          <p className={`min-w-0 flex-1 text-sm font-semibold leading-6 ${promptTextClass}`}>{error}</p>
         </div>
       ) : null}
     </div>

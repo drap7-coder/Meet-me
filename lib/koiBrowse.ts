@@ -1,5 +1,6 @@
 import type { WatchSubcategory } from "@/lib/types";
 import { detectWatchIntent } from "@/lib/watchEvents";
+import { KOI_EXAMPLE } from "@/lib/koiExamples";
 
 export type KoiBrowseLaneId = "places" | "watch";
 
@@ -31,12 +32,12 @@ export const KOI_BROWSE_LANES: KoiBrowseLane[] = [
     iconCategory: "coffee",
     featured: true,
     options: [
-      { id: "coffee", label: "Coffee halfway", query: "Coffee halfway between Hoboken and Princeton" },
-      { id: "brewery", label: "Brewery halfway", query: "Brewery halfway between us" },
+      { id: "dinner-halfway", label: "Dinner halfway", query: KOI_EXAMPLE.halfwayQuery },
+      { id: "brewery", label: "Brewery halfway", query: KOI_EXAMPLE.breweryHalfwayQuery },
       { id: "pizza", label: "Pizza near me", query: "Pizza near me" },
       { id: "dinner", label: "Dinner near me", query: "Dinner near me" },
       { id: "shopping", label: "Shopping nearby", query: "Shopping near me" },
-      { id: "activities", label: "Something fun", query: "Bowling between Hoboken and Edison" }
+      { id: "activities", label: "Something fun", query: `Bowling between ${KOI_EXAMPLE.locationA} and ${KOI_EXAMPLE.locationB}` }
     ]
   },
   {
@@ -87,12 +88,12 @@ export const KOI_BROWSE_LANES: KoiBrowseLane[] = [
 
 export type KoiFeaturedExample = KoiBrowseOption;
 
-export const KOI_GO_SOMEWHERE_QUERY = "Coffee halfway between Hoboken and Princeton";
-export const KOI_WATCH_SOMETHING_QUERY = "What should I stream tonight?";
+export const KOI_GO_SOMEWHERE_QUERY = KOI_EXAMPLE.spotQuery;
+export const KOI_WATCH_SOMETHING_QUERY = KOI_EXAMPLE.streamQuery;
 
 /** Compact prompt chips under the ask box. */
 export const KOI_FEATURED_EXAMPLES: KoiFeaturedExample[] = [
-  { id: "coffee", label: "Coffee halfway between Hoboken and Princeton", query: "Coffee halfway between Hoboken and Princeton" },
+  { id: "dinner-halfway", label: KOI_EXAMPLE.halfwayQuery, query: KOI_EXAMPLE.halfwayQuery },
   { id: "pizza", label: "Pizza near me", query: "Pizza near me" },
   {
     id: "funny-movies",

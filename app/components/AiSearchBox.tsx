@@ -5,6 +5,7 @@ import type { CurrentLocationContext } from "@/lib/currentLocation";
 import type { LocationUiState } from "@/lib/locationInput";
 import { trackEvent } from "@/lib/analytics";
 import { buildHalfwaySearchQuery } from "@/lib/halfwayBrowse";
+import { KOI_EXAMPLE } from "@/lib/koiExamples";
 import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
 import { recordTrendingSearch } from "@/lib/trendingSearches";
 import { BRAND } from "@/src/config/branding";
@@ -150,7 +151,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     async (searchQuery: string, watchSubcategory = watchActiveSubcategory) => {
       const trimmed = searchQuery.trim();
       if (!trimmed) {
-        setError("Try something like: Coffee halfway between Hoboken and Princeton.");
+        setError(`Try something like: ${KOI_EXAMPLE.halfwayQuery}.`);
         return;
       }
 
@@ -284,12 +285,15 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   const submitLabel = parsing ? "Understanding" : loading ? "Finding picks" : BRAND.askLabel;
   const onHero = surface === "hero";
   const locationButtonClass = onHero
-    ? "inline-flex items-center gap-1.5 text-left text-base font-bold text-white transition hover:text-white/85 focus:outline-none focus:ring-4 focus:ring-white/15 disabled:cursor-not-allowed disabled:opacity-60 sm:text-lg"
-    : "inline-flex items-center gap-1.5 text-left text-base font-bold text-ink transition hover:text-clay focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60 sm:text-lg";
+    ? "inline-flex items-center gap-1.5 text-left text-base font-bold text-fluoro-bright transition hover:text-fluoro focus:outline-none focus:ring-4 focus:ring-fluoro/25 disabled:cursor-not-allowed disabled:opacity-60 sm:text-lg [text-shadow:0_0_12px_rgba(85,255,85,0.35)]"
+    : "inline-flex items-center gap-1.5 text-left text-base font-bold text-ink transition hover:text-[#1B7A1B] focus:outline-none focus:ring-4 focus:ring-fluoro/20 disabled:cursor-not-allowed disabled:opacity-60 sm:text-lg";
   const locationHintClass = onHero ? "mt-1 max-w-md text-xs leading-5 text-white/55" : "mt-1 max-w-md text-xs leading-5 text-slate/80";
-  const locationStatusClass = onHero ? "mt-3 text-xs leading-5 text-white/70" : "mt-3 text-xs leading-5 text-slate/90";
+  const locationStatusClass = onHero ? "mt-3 text-xs leading-5 text-fluoro-bright/90" : "mt-3 text-xs leading-5 text-slate/90";
+  const addressInputClass = onHero
+    ? "koi-address-input koi-address-input-on-dark h-11 w-full px-4 text-base outline-none transition disabled:cursor-not-allowed disabled:opacity-60"
+    : "koi-address-input h-11 w-full px-4 text-base outline-none transition disabled:cursor-not-allowed disabled:opacity-60";
   const guidedInputClass =
-    "h-11 w-full rounded-full border border-line bg-white px-4 text-base text-ink outline-none transition placeholder:text-slate/60 focus:border-clay focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60";
+    "h-11 w-full rounded-md border border-line bg-white px-4 text-base text-ink outline-none transition placeholder:text-slate/60 focus:border-clay focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60";
   const pillClass = (active: boolean) =>
     onHero
       ? `inline-flex h-9 items-center rounded-full px-4 text-sm font-bold transition focus:outline-none focus:ring-4 focus:ring-white/15 disabled:cursor-not-allowed disabled:opacity-60 ${
@@ -341,14 +345,14 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
         {guidedMode === "halfway" ? (
           <form onSubmit={submitHalfwayGuided} className="mb-3 grid gap-2 sm:grid-cols-2">
             <label className="block min-w-0 sm:col-span-1">
-              <span className={`mb-1 block text-xs font-bold ${onHero ? "text-white/75" : "text-slate"}`}>Location A</span>
+              <span className={`mb-1 block text-xs font-bold ${onHero ? "text-fluoro-bright" : "text-[#1B7A1B]"}`}>Your address</span>
               <input
                 type="text"
                 value={locationA}
                 onChange={(event) => setLocationA(event.target.value)}
-                placeholder="Cherry Hill"
+                placeholder={KOI_EXAMPLE.locationA}
                 disabled={busy}
-                className={guidedInputClass}
+                className={addressInputClass}
               />
             </label>
             <label className="block min-w-0 sm:col-span-1">
@@ -357,9 +361,9 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
                 type="text"
                 value={locationB}
                 onChange={(event) => setLocationB(event.target.value)}
-                placeholder="King of Prussia"
+                placeholder={KOI_EXAMPLE.locationB}
                 disabled={busy}
-                className={guidedInputClass}
+                className={addressInputClass}
               />
             </label>
             <label className="block min-w-0 sm:col-span-2">
@@ -370,7 +374,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
                 type="text"
                 value={halfwayLookingFor}
                 onChange={(event) => setHalfwayLookingFor(event.target.value)}
-                placeholder="Coffee, dinner, brewery, lunch, date night"
+                placeholder="Dinner, brewery, lunch, happy hour, date night"
                 disabled={busy}
                 className={guidedInputClass}
               />
@@ -440,7 +444,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
             disabled={locationBusy || busy}
             className={locationButtonClass}
           >
-            {locating || locationUiState === "requesting" ? "Checking location..." : "📍 Use my location"}
+            {locating || locationUiState === "requesting" ? "Checking location..." : "Use my location"}
           </button>
           <p className={locationHintClass}>
             Optional — helps with nearby place searches.
@@ -482,8 +486,8 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
           onSubmit={handleManualLocationSubmit}
           className={
             onHero
-              ? "mt-3 rounded-xl border border-white/15 bg-white/10 p-3 backdrop-blur-sm"
-              : "mt-3 rounded-xl border border-line/80 bg-mint/80 p-3"
+              ? "mt-3 koi-block-panel p-3 backdrop-blur-sm"
+              : "mt-3 rounded-md border-2 border-fluoro/30 bg-mint/80 p-3 shadow-[3px_3px_0_rgba(8,42,14,0.2)]"
           }
           aria-live="polite"
         >
@@ -498,7 +502,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
               placeholder="ZIP code or city"
               autoComplete="postal-code"
               disabled={locationBusy || busy}
-              className="h-11 min-w-0 flex-1 rounded-full border border-line bg-white px-4 text-base text-ink outline-none transition placeholder:text-slate/60 focus:border-clay focus:ring-4 focus:ring-clay/10"
+              className={`h-11 min-w-0 flex-1 px-4 text-base outline-none transition disabled:cursor-not-allowed disabled:opacity-60 ${onHero ? "koi-address-input koi-address-input-on-dark" : "koi-address-input"}`}
             />
             <button
               type="submit"
@@ -516,7 +520,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
             <p className="mt-2 text-xs font-semibold text-clay">{manualLocationError}</p>
           ) : null}
           <p className={`mt-2 text-xs leading-5 ${onHero ? "text-white/55" : "text-slate"}`}>
-            You can still search by typing a place, like &apos;pizza near 19038&apos; or &apos;coffee near Hoboken&apos;.
+            You can still search by typing a place, like &apos;{KOI_EXAMPLE.spotQuery}&apos; or &apos;{KOI_EXAMPLE.italianQuery}&apos;.
           </p>
         </form>
       ) : null}

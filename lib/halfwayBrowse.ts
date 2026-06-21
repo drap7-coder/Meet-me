@@ -1,4 +1,5 @@
 import type { KoiBrowseOption } from "@/lib/koiBrowse";
+import { formatHalfwayExample, KOI_EXAMPLE } from "@/lib/koiExamples";
 
 export type HalfwayChip = {
   id: string;
@@ -8,46 +9,51 @@ export type HalfwayChip = {
   cardIcon: string;
   cardTitle: string;
   cardSubtitle: string;
+  chipStyle?: "fluoro" | "cyan" | "magenta";
 };
 
 /** Featured halfway examples — Koi's specialty module and emphasized trending. */
 export const KOI_SPECIALTY_CHIPS: HalfwayChip[] = [
   {
-    id: "specialty-coffee",
-    label: "Coffee halfway",
-    lookingFor: "Coffee",
-    query: "Coffee halfway between Cherry Hill and King of Prussia",
-    cardIcon: "☕",
-    cardTitle: "Coffee halfway",
-    cardSubtitle: "Meet for coffee between two places",
-  },
-  {
     id: "specialty-dinner",
     label: "Dinner halfway",
     lookingFor: "Dinner",
-    query: "Dinner halfway between us",
+    query: KOI_EXAMPLE.halfwayQuery,
     cardIcon: "🍽️",
     cardTitle: "Dinner halfway",
     cardSubtitle: "Find a restaurant that works for both",
+    chipStyle: "fluoro"
   },
   {
-    id: "specialty-happy-hour",
-    label: "Happy hour halfway",
-    lookingFor: "Happy hour",
-    query: "Happy hour halfway between us",
+    id: "specialty-brewery",
+    label: "Brewery halfway",
+    lookingFor: "Brewery",
+    query: KOI_EXAMPLE.breweryHalfwayQuery,
     cardIcon: "🍺",
-    cardTitle: "Happy hour halfway",
+    cardTitle: "Brewery halfway",
     cardSubtitle: "Drinks midway between two spots",
+    chipStyle: "cyan"
   },
   {
     id: "specialty-lunch",
     label: "Lunch between offices",
     lookingFor: "Lunch",
-    query: "Lunch halfway between our offices",
+    query: KOI_EXAMPLE.lunchHalfwayQuery,
     cardIcon: "🥪",
     cardTitle: "Lunch between offices",
     cardSubtitle: "Quick lunch meetup between workplaces",
+    chipStyle: "magenta"
   },
+  {
+    id: "specialty-happy-hour",
+    label: "Happy hour halfway",
+    lookingFor: "Happy hour",
+    query: formatHalfwayExample("Happy hour"),
+    cardIcon: "🍸",
+    cardTitle: "Happy hour halfway",
+    cardSubtitle: "Drinks that work for both commutes",
+    chipStyle: "fluoro"
+  }
 ];
 
 export function isHalfwayQuery(query: string) {
@@ -63,7 +69,7 @@ export function toHalfwayBrowseOption(chip: HalfwayChip): KoiBrowseOption {
     cardIcon: chip.cardIcon,
     cardTitle: chip.cardTitle,
     cardSubtitle: chip.cardSubtitle,
-    cardAccent: "places",
+    cardAccent: "places"
   };
 }
 

@@ -30,7 +30,11 @@ const config: Config = {
         coral: "#E08A7A",
         indigo: "#2D3E57",
         sky: "#F7F1E8",
-        line: "#E5DDD0"
+        line: "#E5DDD0",
+        fluoro: "#55FF55",
+        "fluoro-bright": "#39FF14",
+        "fluoro-cyan": "#00FFFF",
+        "fluoro-magenta": "#FF55FF"
       },
       boxShadow: {
         soft: "0 18px 50px rgba(10, 19, 35, 0.10)",

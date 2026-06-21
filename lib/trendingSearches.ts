@@ -3,6 +3,7 @@ import {
   KOI_BROWSE_LANES,
   type KoiBrowseOption
 } from "@/lib/koiBrowse";
+import { KOI_EXAMPLE } from "@/lib/koiExamples";
 import type { WatchSubcategory } from "@/lib/types";
 
 const STORAGE_KEY = "koi.trendingSearches.v1";
@@ -17,21 +18,21 @@ type TrendingStat = {
 
 const FALLBACK_TRENDING: KoiBrowseOption[] = [
   {
-    id: "trend-coffee-halfway",
-    label: "Coffee halfway",
-    query: "Coffee halfway between Cherry Hill and King of Prussia",
-    cardIcon: "☕",
-    cardTitle: "Coffee halfway",
-    cardSubtitle: "Meet for coffee between two places",
+    id: "trend-dinner-halfway",
+    label: "Dinner halfway",
+    query: KOI_EXAMPLE.halfwayQuery,
+    cardIcon: "🍽️",
+    cardTitle: "Dinner halfway",
+    cardSubtitle: "Meet between Hoboken and Edison",
     cardAccent: "places"
   },
   {
-    id: "trend-dinner-halfway",
-    label: "Dinner halfway",
-    query: "Dinner halfway between us",
-    cardIcon: "🍽️",
-    cardTitle: "Dinner halfway",
-    cardSubtitle: "Find a restaurant that works for both",
+    id: "trend-brewery-halfway",
+    label: "Brewery halfway",
+    query: KOI_EXAMPLE.breweryHalfwayQuery,
+    cardIcon: "🍺",
+    cardTitle: "Brewery halfway",
+    cardSubtitle: "Drinks between two spots",
     cardAccent: "places"
   },
   {

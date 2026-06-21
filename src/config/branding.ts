@@ -17,6 +17,6 @@ export const BRAND = {
     "Find balanced meetup spots, restaurants, movies, streaming, and local recommendations.",
   heroSubheadlineTagline: "One ask. One answer.",
   searchPlaceholder: "Ask Koi anything...",
-  searchPlaceholderSpot: "Best sushi in Philadelphia, sports bars near me…",
-  searchPlaceholderFreeform: "Coffee halfway between Hoboken and Princeton…"
+  searchPlaceholderSpot: "Sports bar near Hoboken, Italian in Edison…",
+  searchPlaceholderFreeform: "Dinner halfway between Hoboken and Edison…"
 };

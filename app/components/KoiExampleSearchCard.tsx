@@ -22,7 +22,7 @@ export function KoiExampleSearchCard({
   onClick
 }: Props) {
   const browseCardClassName = featured
-    ? "group border border-clay/35 bg-clay/[0.08] shadow-none transition hover:border-clay/50 hover:bg-clay/[0.12] focus:outline-none focus:ring-4 focus:ring-clay/15 disabled:cursor-not-allowed disabled:opacity-60"
+    ? "group koi-featured-card bg-clay/[0.08] shadow-none transition hover:bg-clay/[0.12] focus:outline-none focus:ring-4 focus:ring-fluoro/20 disabled:cursor-not-allowed disabled:opacity-60"
     : "group border border-white/15 bg-white/[0.03] shadow-none transition hover:border-white/22 hover:bg-white/[0.05] focus:outline-none focus:ring-4 focus:ring-white/10 disabled:cursor-not-allowed disabled:opacity-60";
 
   const iconShellClass =
@@ -45,7 +45,7 @@ export function KoiExampleSearchCard({
       </span>
       <span className="min-w-0 flex-1 pt-0.5">
         {featured ? (
-          <span className="mb-1 inline-flex rounded-full bg-clay/15 px-2 py-0.5 text-[0.625rem] font-bold uppercase tracking-[0.12em] text-clay">
+          <span className="mb-1 inline-flex rounded-sm border-2 border-fluoro-bright bg-fluoro-bright/10 px-2 py-0.5 text-[0.625rem] font-bold uppercase tracking-[0.12em] text-fluoro-bright shadow-[1px_1px_0_rgba(0,0,0,0.35)]">
             Meet halfway
           </span>
         ) : null}

@@ -9,14 +9,14 @@ type Props = {
 const browseCardClassName =
   "group border border-white/15 bg-white/[0.03] shadow-none transition hover:border-white/22 hover:bg-white/[0.05] focus:outline-none focus:ring-4 focus:ring-white/10 disabled:cursor-not-allowed disabled:opacity-60";
 
-const cardClassName = `${browseCardClassName} flex min-w-0 items-center gap-4 rounded-[20px] px-4 py-5 text-left font-sans sm:gap-5 sm:px-5 sm:py-6`;
+const cardClassName = `${browseCardClassName} flex min-w-0 items-center gap-4 rounded-md px-4 py-5 text-left font-sans shadow-[3px_3px_0_rgba(0,0,0,0.28)] sm:gap-5 sm:px-5 sm:py-6`;
 
 const iconShellClassName =
   "grid h-12 w-12 shrink-0 place-items-center rounded-full text-[1.35rem] leading-none transition duration-200 group-hover:scale-[1.04] sm:h-14 sm:w-14 sm:text-[1.5rem]";
 
-const placesIconShellClass = `${iconShellClassName} bg-clay shadow-[0_8px_20px_rgba(214,90,46,0.26)] group-hover:bg-[#C44E28] group-hover:shadow-[0_10px_24px_rgba(214,90,46,0.32)]`;
+const placesIconShellClass = `${iconShellClassName} rounded-md bg-clay shadow-[3px_3px_0_rgba(0,0,0,0.35)] group-hover:bg-[#C44E28]`;
 
-const watchIconShellClass = `${iconShellClassName} bg-ink shadow-[0_8px_20px_rgba(10,19,35,0.22)] group-hover:bg-[#152238] group-hover:shadow-[0_10px_24px_rgba(10,19,35,0.28)]`;
+const watchIconShellClass = `${iconShellClassName} rounded-md bg-fluoro-cyan/20 text-fluoro-cyan shadow-[3px_3px_0_rgba(0,0,0,0.35)] ring-2 ring-fluoro-cyan/50 group-hover:bg-fluoro-cyan/30`;
 
 export function KoiPathCards({ busy = false, onGoSomewhere, onWatchSomething }: Props) {
   return (

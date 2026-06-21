@@ -5,6 +5,7 @@ import { EventsCategorySelector } from "@/app/components/EventsCategorySelector"
 import { WatchSubcategorySelector, DEFAULT_WATCH_SUBCATEGORY } from "@/app/components/WatchSubcategorySelector";
 import { Logo } from "@/app/components/Logo";
 import { getPrimaryCategoryId } from "@/lib/categories";
+import { KOI_EXAMPLE } from "@/lib/koiExamples";
 import { PREFERENCES } from "@/lib/preferences";
 import type { KoiBotMode, LatLng, PlaceSuggestion, Preference, SearchHalfwayRequest, VenueCategory, WatchSubcategory } from "@/lib/types";
 import { copyTextToClipboard, shareWithFallback } from "@/lib/share";
@@ -158,7 +159,7 @@ export function LocationForm({
           label={searchMode === "single" ? "Search near" : "Location 1"}
           value={form.locationA}
           placeId={form.locationAPlaceId}
-          placeholder={searchMode === "single" ? "Enter a city, town, address, or ZIP" : "e.g. Hoboken, NJ"}
+          placeholder={searchMode === "single" ? "Enter a city, town, address, or ZIP" : `e.g. ${KOI_EXAMPLE.locationA}, NJ`}
           error={locationError}
           isLocating={isLocating}
           onUseCurrentLocation={useCurrentLocation}
@@ -176,7 +177,7 @@ export function LocationForm({
             label="Location 2"
             value={form.locationB}
             placeId={form.locationBPlaceId}
-            placeholder="e.g. Edison, NJ"
+            placeholder={`e.g. ${KOI_EXAMPLE.locationB}, NJ`}
             onChange={(locationB, locationBPlaceId) => onChange({ ...form, locationB, locationBPlaceId, locationBCoordinates: undefined })}
             onClear={() => onChange({ ...form, locationB: "", locationBPlaceId: undefined, locationBCoordinates: undefined })}
           />
@@ -510,7 +511,7 @@ function LocationInput({
           }}
           onFocus={() => setOpen(true)}
           placeholder={placeholder}
-          className="h-11 w-full rounded-lg border border-line bg-mint px-4 pr-11 text-base text-ink outline-none transition focus:border-clay focus:ring-4 focus:ring-clay/10 sm:h-12"
+          className="koi-address-input h-11 w-full px-4 pr-11 text-base outline-none transition sm:h-12"
         />
         {value ? (
           <button

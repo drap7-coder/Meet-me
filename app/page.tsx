@@ -36,7 +36,7 @@ import {
   isValidManualLocationInput,
   type LocationUiState
 } from "@/lib/locationInput";
-import { KOI_POPULAR_SEARCHES, type KoiBrowseOption } from "@/lib/koiBrowse";
+import { type KoiBrowseOption } from "@/lib/koiBrowse";
 import { getTrendingSearches, subscribeTrendingSearches } from "@/lib/trendingSearches";
 import type { KoiBotMode, LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory, WatchEventsApiResponse, WatchEventsMoreResult, WatchEventsResult, WatchSubcategory } from "@/lib/types";
 import { BRAND } from "@/src/config/branding";
@@ -719,10 +719,6 @@ export default function HomePage() {
                 onSelect={(option) => searchBoxRef.current?.runQuery(option.query, option.watchSubcategory)}
               />
               <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
-              <PopularSearchesSection
-                busy={loading || locating || resolvingManual}
-                onSelect={(option) => searchBoxRef.current?.runQuery(option.query, option.watchSubcategory)}
-              />
               <LocationFallbackPanel
                 form={form}
                 loading={loading}
@@ -1235,38 +1231,6 @@ function TrendingSearchesSection({
       </h2>
       <div className="mt-4 flex flex-wrap gap-2">
         {searches.map((option) => (
-          <button
-            key={option.id}
-            type="button"
-            disabled={busy}
-            onClick={() => onSelect(option)}
-            className="rounded-full border border-line bg-white px-3 py-2 text-xs font-semibold text-slate transition hover:border-clay hover:bg-[#FFF4EC] hover:text-ink focus:outline-none focus:ring-4 focus:ring-clay/10 disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm"
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function PopularSearchesSection({
-  busy,
-  onSelect
-}: {
-  busy: boolean;
-  onSelect: (option: KoiBrowseOption) => void;
-}) {
-  return (
-    <section
-      className="w-full min-w-0 overflow-hidden rounded-[22px] border border-white/15 bg-paper/96 p-5 shadow-[0_16px_40px_rgba(10,19,35,0.16),0_0_0_1px_rgba(255,255,255,0.1)_inset] sm:p-6"
-      aria-labelledby="popular-searches-title"
-    >
-      <h2 id="popular-searches-title" className="text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-clay">
-        Popular Searches
-      </h2>
-      <div className="mt-4 flex flex-wrap gap-2">
-        {KOI_POPULAR_SEARCHES.map((option) => (
           <button
             key={option.id}
             type="button"

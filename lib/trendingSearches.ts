@@ -1,6 +1,5 @@
 import {
   KOI_FEATURED_EXAMPLES,
-  KOI_POPULAR_SEARCHES,
   KOI_BROWSE_LANES,
   type KoiBrowseOption
 } from "@/lib/koiBrowse";
@@ -16,24 +15,18 @@ type TrendingStat = {
   lastUsed: number;
 };
 
-const LABEL_CATALOG: KoiBrowseOption[] = [
-  ...KOI_FEATURED_EXAMPLES,
-  ...KOI_POPULAR_SEARCHES,
-  ...KOI_BROWSE_LANES.flatMap((lane) => lane.options)
-];
-
 const FALLBACK_TRENDING: KoiBrowseOption[] = [
   { id: "trend-pizza", label: "Pizza nearby", query: "Pizza near me" },
+  {
+    id: "trend-halfway",
+    label: "Halfway meetup",
+    query: "Meet a friend halfway between Hoboken and Princeton"
+  },
   {
     id: "trend-stream",
     label: "Stream tonight",
     query: "Best shows to stream tonight",
     watchSubcategory: "tv_shows"
-  },
-  {
-    id: "trend-halfway",
-    label: "Halfway coffee",
-    query: "Coffee halfway between Hoboken and Princeton"
   },
   {
     id: "trend-movies",
@@ -42,10 +35,22 @@ const FALLBACK_TRENDING: KoiBrowseOption[] = [
     watchSubcategory: "movies"
   },
   {
+    id: "trend-superbad",
+    label: "Like Superbad",
+    query: "Find a funny movie like Superbad",
+    watchSubcategory: "movies"
+  },
+  {
     id: "trend-brewery",
-    label: "Breweries nearby",
-    query: "Brewery halfway between us"
+    label: "Doylestown breweries",
+    query: "Breweries near Doylestown"
   }
+];
+
+const LABEL_CATALOG: KoiBrowseOption[] = [
+  ...KOI_FEATURED_EXAMPLES,
+  ...FALLBACK_TRENDING,
+  ...KOI_BROWSE_LANES.flatMap((lane) => lane.options)
 ];
 
 function normalizeQuery(query: string) {

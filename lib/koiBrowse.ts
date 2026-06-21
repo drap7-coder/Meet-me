@@ -107,43 +107,6 @@ export const KOI_FEATURED_EXAMPLES: KoiFeaturedExample[] = [
   }
 ];
 
-/** Homepage popular searches — short labels, full queries. */
-export const KOI_POPULAR_SEARCHES: KoiBrowseOption[] = [
-  {
-    id: "halfway-friend",
-    label: "Halfway meetup",
-    query: "Meet a friend halfway between Hoboken and Princeton"
-  },
-  {
-    id: "pizza-nearby",
-    label: "Pizza nearby",
-    query: "Find a great pizza place nearby"
-  },
-  {
-    id: "funny-movie",
-    label: "Like Superbad",
-    query: "Find a funny movie like Superbad",
-    watchSubcategory: "movies"
-  },
-  {
-    id: "stream-tonight",
-    label: "Stream tonight",
-    query: "Find something worth streaming tonight",
-    watchSubcategory: "tv_shows"
-  },
-  {
-    id: "breweries-doylestown",
-    label: "Doylestown breweries",
-    query: "Breweries near Doylestown"
-  },
-  {
-    id: "movies-nearby-tonight",
-    label: "Movies tonight",
-    query: "Movies playing nearby tonight",
-    watchSubcategory: "movies"
-  }
-];
-
 export const DEFAULT_BROWSE_LANE_ID: KoiBrowseLaneId = "places";
 
 export function getBrowseLaneById(id: KoiBrowseLaneId) {

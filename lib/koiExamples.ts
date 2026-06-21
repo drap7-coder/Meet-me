@@ -7,7 +7,10 @@ export const KOI_EXAMPLE = {
   lunchHalfwayQuery: "Lunch halfway between Hoboken and Edison",
   spotQuery: "Sports bar near Hoboken",
   italianQuery: "Italian restaurant near Edison",
-  streamQuery: "What should I watch tonight?"
+  streamQuery: "Funny comedy shows on Netflix",
+  funnyMoviesQuery: "Funny movies like Superbad",
+  sciFiShowsQuery: "Best sci-fi shows to stream",
+  trendingMoviesQuery: "Trending movies this week"
 } as const;
 
 export function formatHalfwayExample(lookingFor: string) {

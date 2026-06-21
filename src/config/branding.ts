@@ -18,5 +18,5 @@ export const BRAND = {
   heroSubheadlineTagline: "One ask. One answer.",
   searchPlaceholder: "Ask Koi anything...",
   searchPlaceholderSpot: "Sports bar near Hoboken, Italian in Edison…",
-  searchPlaceholderFreeform: "Dinner halfway between Hoboken and Edison…"
+  searchPlaceholderFreeform: "Dinner halfway between Hoboken and Edison, or funny shows on Netflix…"
 };

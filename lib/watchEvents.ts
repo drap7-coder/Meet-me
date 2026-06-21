@@ -40,11 +40,58 @@ const PLACE_CATEGORY_PATTERN =
   /\b(?:coffee|cafe|restaurant|brunch|brewery|breweries|bar|bars|pizza|sushi|italian|mexican|thai|indian|steakhouse|bookstore|bowling|park(?:ing)?|hiking|hotel|mall|shopping)\b/i;
 const SHOW_ME_PLACES_PATTERN =
   /\bshow me\b.*\b(?:coffee|restaurant|place|spot|bar|brewery|food|lunch|dinner|brunch|hotel|park)\b/i;
+const STREAMING_SERVICE_PATTERN =
+  /\b(?:netflix|hulu|disney\+|disney plus|peacock|apple tv|hbo max|max|prime video|paramount\+|amazon prime)\b/i;
+const LIVE_EVENT_SIGNAL_PATTERN =
+  /\b(?:comedy clubs?|comedy shows?|stand[- ]?up|open mic|concert|concerts|festival|festivals|tickets?|box office|game tonight|events near|things to do|this weekend|movie theaters?|movie theatres?|cinema|cinemas)\b/i;
+
+/** Streaming/TMDB asks that should not be routed to live venue search. */
+export function hasStreamingWatchContext(query: string) {
+  const trimmed = query.trim();
+  if (!trimmed) return false;
+
+  if (
+    LIVE_EVENT_SIGNAL_PATTERN.test(trimmed) &&
+    !STREAMING_SERVICE_PATTERN.test(trimmed) &&
+    !/\bstream(?:ing)?\b/i.test(trimmed)
+  ) {
+    return false;
+  }
+
+  if (/\b(?:movie theaters?|movie theatres?|cinema|cinemas|playing nearby|now playing|showtimes?)\b/i.test(trimmed)) {
+    return false;
+  }
+
+  if (STREAMING_SERVICE_PATTERN.test(trimmed)) return true;
+  if (/\bwhat (?:should|can|do) (?:i|we) watch\b/i.test(trimmed)) return true;
+  if (/\bwhere (?:can|to|should) (?:i|we) (?:watch|stream)\b/i.test(trimmed)) return true;
+  if (/\bwhat(?:'s| is) on (?:tv|television)\b/i.test(trimmed)) return true;
+  if (/\b(?:binge[\s-]?watch|stream(?:ing)?)\b/i.test(trimmed) && !/\b(?:concert|festival|game)\b/i.test(trimmed)) {
+    return true;
+  }
+  if (
+    /\b(?:movie|movies|film|films|tv show|tv shows|series)\b/i.test(trimmed) &&
+    !/\b(?:comedy club|comedy show|stand[- ]?up|concert|game tonight)\b/i.test(trimmed)
+  ) {
+    return true;
+  }
+  if (
+    /\b(?:funny|comedy|scary|horror|romantic|action|drama|sci-fi|thriller)\b/i.test(trimmed) &&
+    /\b(?:stream|watch|movie|movies|show|shows|series|tv|film|films|tonight|netflix|hulu)\b/i.test(trimmed) &&
+    !/\b(?:comedy club|comedy show|stand[- ]?up)\b/i.test(trimmed) &&
+    !/\bnear\b/i.test(trimmed)
+  ) {
+    return true;
+  }
+
+  return false;
+}
 
 export function detectWatchIntent(query: string) {
   const trimmed = query.trim();
   if (!trimmed) return false;
   if (SHOW_ME_PLACES_PATTERN.test(trimmed)) return false;
+  if (hasStreamingWatchContext(trimmed)) return true;
 
   const watchPatterns = [
     /\bwhat (?:should|can|do) (?:i|we) watch\b/i,
@@ -75,10 +122,12 @@ export function detectEventsIntent(query: string) {
   const trimmed = query.trim();
   if (!trimmed) return false;
   if (SHOW_ME_PLACES_PATTERN.test(trimmed)) return false;
+  if (hasStreamingWatchContext(trimmed)) return false;
 
   const eventPatterns = [
-    /\b(?:movie theater|movie theatre|cinema|cinemas)\b/i,
-    /\b(?:comedy|concert|concerts|stand[- ]?up|festival|festivals)\b/i,
+    /\b(?:movie theaters?|movie theatres?|cinema|cinemas)\b/i,
+    /\b(?:movies playing|now playing|playing nearby|showtimes?)\b/i,
+    /\b(?:comedy clubs?|comedy shows?|stand[- ]?up|concert|concerts|festival|festivals)\b/i,
     /\b(?:live sports|game tonight|watch the .* game|watch .* game tonight)\b/i,
     /\b(?:tickets?|box office)\b/i,
     /\bfamily[- ]friendly events\b/i,
@@ -119,6 +168,7 @@ export function resolveKoiBotMode(query: string, requestedMode?: KoiBotMode): Ko
   if (requestedMode === "places") return "places";
   if (requestedMode === "watch") return "watch";
   if (requestedMode === "events") return "events";
+  if (hasStreamingWatchContext(query)) return "watch";
   if (detectEventsIntent(query)) return "events";
   if (detectWatchIntent(query)) return "watch";
   return "places";
@@ -306,7 +356,9 @@ export function extractWatchEventsTopic(query: string, intent: WatchEventsIntent
   if (watchMatch?.[1] && intent === "sports") return cleanupWatchEventsFragment(watchMatch[1]);
 
   if (isMovieTheaterEventsQuery(query)) return "movie theaters";
-  if (/\bcomedy\b/i.test(query) && !/\b(?:movie|movies|film)\b/i.test(query)) return "comedy";
+  if (/\bcomedy\b/i.test(query) && !/\b(?:movie|movies|film)\b/i.test(query) && !hasStreamingWatchContext(query)) {
+    return "comedy";
+  }
   if (/\bconcert/i.test(query)) return "concerts";
   if (/\bfamily[- ]friendly events\b/i.test(query)) return "family-friendly events";
   if (/\bthings to do\b/i.test(query)) return "things to do";

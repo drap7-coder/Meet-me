@@ -43,43 +43,37 @@ export const KOI_BROWSE_LANES: KoiBrowseLane[] = [
   {
     id: "watch",
     label: "Watch",
-    description: "Streaming picks, TV, movies, and nearby theaters.",
+    description: "TMDB streaming picks for movies, TV, and trending titles.",
     iconCategory: "events",
     options: [
       {
+        id: "netflix-comedy",
+        label: "Comedy on Netflix",
+        query: KOI_EXAMPLE.streamQuery,
+        watchSubcategory: "tv_shows"
+      },
+      {
         id: "funny-movies",
         label: "Funny movies like Superbad",
-        query: "Funny movies like Superbad",
+        query: KOI_EXAMPLE.funnyMoviesQuery,
         watchSubcategory: "movies"
       },
       {
         id: "sci-fi-tv",
         label: "Best sci-fi shows",
-        query: "Best sci-fi shows to stream",
+        query: KOI_EXAMPLE.sciFiShowsQuery,
         watchSubcategory: "tv_shows"
       },
       {
         id: "stream-tonight",
-        label: "Shows to stream tonight",
-        query: "Best shows to stream tonight",
+        label: "What should I watch tonight?",
+        query: "What should I watch tonight?",
         watchSubcategory: "tv_shows"
-      },
-      {
-        id: "movies-nearby",
-        label: "Movies playing nearby",
-        query: "Movies playing nearby tonight",
-        watchSubcategory: "movies"
-      },
-      {
-        id: "theaters",
-        label: "Movie theaters near me",
-        query: "Movie theaters near me tonight",
-        watchSubcategory: "movies"
       },
       {
         id: "trending",
         label: "Trending movies",
-        query: "Trending movies this week",
+        query: KOI_EXAMPLE.trendingMoviesQuery,
         watchSubcategory: "trending"
       }
     ]
@@ -96,22 +90,22 @@ export const KOI_FEATURED_EXAMPLES: KoiFeaturedExample[] = [
   { id: "dinner-halfway", label: KOI_EXAMPLE.halfwayQuery, query: KOI_EXAMPLE.halfwayQuery },
   { id: "pizza", label: "Pizza near me", query: "Pizza near me" },
   {
-    id: "funny-movies",
-    label: "Funny movies like Superbad",
-    query: "Funny movies like Superbad",
-    watchSubcategory: "movies"
-  },
-  {
-    id: "stream-tonight",
-    label: "Best shows to stream tonight",
-    query: "Best shows to stream tonight",
+    id: "netflix-comedy",
+    label: "Comedy on Netflix",
+    query: KOI_EXAMPLE.streamQuery,
     watchSubcategory: "tv_shows"
   },
   {
-    id: "movies-nearby",
-    label: "Movies playing nearby tonight",
-    query: "Movies playing nearby tonight",
+    id: "funny-movies",
+    label: "Funny movies like Superbad",
+    query: KOI_EXAMPLE.funnyMoviesQuery,
     watchSubcategory: "movies"
+  },
+  {
+    id: "sci-fi-shows",
+    label: "Best sci-fi shows to stream",
+    query: KOI_EXAMPLE.sciFiShowsQuery,
+    watchSubcategory: "tv_shows"
   }
 ];
 

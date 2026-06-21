@@ -10,7 +10,9 @@ const PLACE_EXAMPLES = [
 const WATCH_EXAMPLES = [
   { query: "What should I watch tonight?", expectedBotMode: "watch" },
   { query: "Where can I stream Interstellar?", expectedBotMode: "watch" },
-  { query: "Funny movies like Superbad", expectedBotMode: "watch" }
+  { query: "Funny movies like Superbad", expectedBotMode: "watch" },
+  { query: "Netflix comedy", expectedBotMode: "watch" },
+  { query: "Funny comedy shows on Netflix", expectedBotMode: "watch" }
 ];
 
 const EVENTS_EXAMPLES = [

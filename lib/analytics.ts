@@ -20,6 +20,7 @@ type EventName =
   | "watch_events_action_clicked"
   | "halfway_mode_selected"
   | "spot_mode_selected"
+  | "streaming_mode_selected"
   | "events_mode_selected"
   | "halfway_search_submitted"
   | "halfway_result_clicked"

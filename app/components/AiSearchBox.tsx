@@ -6,9 +6,10 @@ import type { LocationUiState } from "@/lib/locationInput";
 import { trackEvent } from "@/lib/analytics";
 import { buildHalfwaySearchQuery } from "@/lib/halfwayBrowse";
 import { KOI_EXAMPLE } from "@/lib/koiExamples";
-import { DEFAULT_WATCH_SUBCATEGORY, EVENTS_PLACEHOLDER } from "@/lib/watchBrowse";
+import { DEFAULT_WATCH_SUBCATEGORY, EVENTS_PLACEHOLDER, WATCH_PLACEHOLDER } from "@/lib/watchBrowse";
 import { LOCAL_HAPPENINGS_OPTIONS } from "@/lib/localHappenings";
 import { SPOT_OPTIONS, type SpotOptionAccent } from "@/lib/spotBrowse";
+import { STREAMING_OPTIONS, type StreamingOptionAccent } from "@/lib/streamBrowse";
 import { recordTrendingSearch } from "@/lib/trendingSearches";
 import { BRAND } from "@/src/config/branding";
 import { SavedLocationBadge } from "@/app/components/SavedLocationBadge";
@@ -51,10 +52,11 @@ export type AiSearchBoxHandle = {
   fillHalfwayIntent: (lookingFor: string, exampleQuery?: string) => void;
   fillEventsQuery: (query: string) => void;
   fillSpotQuery: (query?: string) => void;
+  fillStreamingQuery: (query?: string, watchSubcategory?: WatchSubcategory) => void;
   setGuidedMode: (mode: GuidedSearchMode) => void;
 };
 
-type GuidedSearchMode = null | "spot" | "halfway" | "events";
+type GuidedSearchMode = null | "spot" | "halfway" | "events" | "streaming";
 
 function AiSparkleIcon() {
   return (
@@ -190,6 +192,19 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     });
   }, [scrollToSearch]);
 
+  const fillStreamingQuery = useCallback((searchQuery?: string, watchSubcategory?: WatchSubcategory) => {
+    setGuidedMode("streaming");
+    if (watchSubcategory) setWatchActiveSubcategory(watchSubcategory);
+    if (searchQuery?.trim()) {
+      setQuery(searchQuery.trim());
+    }
+    setError("");
+    scrollToSearch();
+    window.requestAnimationFrame(() => {
+      inputRef.current?.focus({ preventScroll: true });
+    });
+  }, [scrollToSearch]);
+
   const runSearch = useCallback(
     async (searchQuery: string, watchSubcategory = watchActiveSubcategory) => {
       const trimmed = searchQuery.trim();
@@ -269,12 +284,13 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
       fillHalfwayIntent,
       fillEventsQuery,
       fillSpotQuery,
+      fillStreamingQuery,
       setGuidedMode: (mode) => {
         setGuidedMode(mode);
         scrollToSearch();
       }
     }),
-    [fillEventsQuery, fillHalfwayIntent, fillQuery, fillSpotQuery, runSearch, scrollToSearch]
+    [fillEventsQuery, fillHalfwayIntent, fillQuery, fillSpotQuery, fillStreamingQuery, runSearch, scrollToSearch]
   );
 
   function handleGuidedModeChange(mode: Exclude<GuidedSearchMode, null>) {
@@ -282,6 +298,9 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     setGuidedMode(next);
     if (next === "spot") {
       trackEvent("spot_mode_selected", { mode: "spot" });
+    }
+    if (next === "streaming") {
+      trackEvent("streaming_mode_selected", { mode: "streaming" });
     }
     if (next === "halfway") {
       trackEvent("halfway_mode_selected", { mode: "halfway" });
@@ -298,6 +317,16 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     setQuery(trimmed);
     setError("");
     void runSearch(trimmed);
+  }
+
+  function submitStreamingGuided(queryValue: string, subcategory: WatchSubcategory) {
+    const trimmed = queryValue.trim();
+    if (!trimmed || loading || parsing) return;
+    setWatchActiveSubcategory(subcategory);
+    setQuery(trimmed);
+    setError("");
+    recordTrendingSearch(trimmed, subcategory);
+    onWatchSearch(trimmed, subcategory);
   }
 
   function submitEventsGuided(queryValue: string) {
@@ -362,20 +391,24 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   const fieldClass = "koi-field h-11 w-full px-4 text-base outline-none transition placeholder:text-slate/60 disabled:cursor-not-allowed disabled:opacity-60";
   const addressInputClass = onHero ? heroFieldClass : fieldClass;
   const guidedInputClass = onHero ? heroFieldClass : fieldClass;
-  const pillClass = (active: boolean, accent: "default" | "events" = "default") =>
+  const pillClass = (active: boolean, accent: "default" | "events" | "watch" = "default") =>
     onHero
       ? `inline-flex h-9 items-center rounded-full px-4 text-sm font-bold transition focus:outline-none focus:ring-4 focus:ring-white/15 disabled:cursor-not-allowed disabled:opacity-60 ${
           active
             ? accent === "events"
               ? "border border-events bg-events text-white"
-              : "border border-koi bg-koi text-white"
+              : accent === "watch"
+                ? "border border-watch bg-watch text-white"
+                : "border border-koi bg-koi text-white"
             : "border border-white/15 bg-white/5 text-white/85 hover:border-white/25 hover:bg-white/8"
         }`
       : `inline-flex h-9 items-center rounded-full px-4 text-sm font-semibold transition focus:outline-none focus:ring-4 focus:ring-koi/15 disabled:cursor-not-allowed disabled:opacity-60 ${
           active
             ? accent === "events"
               ? "border border-events bg-events text-white"
-              : "border border-koi bg-koi text-white"
+              : accent === "watch"
+                ? "border border-watch bg-watch text-white"
+                : "border border-koi bg-koi text-white"
             : "border border-line bg-white text-ink hover:border-koi/40 hover:bg-[#EDFFED]"
         }`;
   const searchPlaceholder =
@@ -385,7 +418,9 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
         ? buildHalfwaySearchQuery(locationA, locationB, halfwayLookingFor) || "Add locations above, or ask in plain language below"
         : guidedMode === "events"
           ? EVENTS_PLACEHOLDER
-          : BRAND.searchPlaceholderFreeform;
+          : guidedMode === "streaming"
+            ? WATCH_PLACEHOLDER
+            : BRAND.searchPlaceholderFreeform;
 
   return (
     <div ref={containerRef} id="ask-koi" className="w-full min-w-0 max-w-full scroll-mt-24">
@@ -422,6 +457,14 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
           >
             Find Events
           </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => handleGuidedModeChange("streaming")}
+            className={pillClass(guidedMode === "streaming", "watch")}
+          >
+            Streaming
+          </button>
         </div>
 
         {guidedMode === "spot" ? (
@@ -438,6 +481,28 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
                   disabled={busy}
                   onClick={() => submitSpotGuided(option.query)}
                   className={`rounded-[14px] border px-3 py-2.5 text-left text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${spotOptionClass(option.accent, onHero)}`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {guidedMode === "streaming" ? (
+          <div className="mb-3 rounded-[18px] border border-watch/20 bg-watch/5 p-3 sm:p-4">
+            <p className={`text-sm font-black ${onHero ? "text-white" : "text-watch"}`}>Streaming Picks</p>
+            <p className={`mt-1 text-xs font-semibold leading-5 ${onHero ? "text-white/65" : "text-slate"}`}>
+              Movies, TV series, and trending titles from TMDB.
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {STREAMING_OPTIONS.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => submitStreamingGuided(option.query, option.watchSubcategory)}
+                  className={`rounded-[14px] border px-3 py-2.5 text-left text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${streamOptionClass(option.accent, onHero)}`}
                 >
                   {option.label}
                 </button>
@@ -668,6 +733,27 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     </div>
   );
 });
+
+function streamOptionClass(accent: StreamingOptionAccent, onHero: boolean) {
+  if (accent === "trending") {
+    return onHero
+      ? "border-indigo/40 bg-indigo/10 text-white hover:border-indigo/60"
+      : "border-indigo/35 bg-indigo/10 text-ink hover:border-indigo/60";
+  }
+  if (accent === "series") {
+    return onHero
+      ? "border-watch/45 bg-watch/15 text-white hover:border-watch/65"
+      : "border-watch/40 bg-watch/10 text-ink hover:border-watch/60";
+  }
+  if (accent === "movies") {
+    return onHero
+      ? "border-watch/35 bg-watch/10 text-white hover:border-watch/55"
+      : "border-watch/30 bg-watch/5 text-ink hover:border-watch/50";
+  }
+  return onHero
+    ? "border-watch/35 bg-watch/10 text-white hover:border-watch/55"
+    : "border-watch/30 bg-watch/5 text-ink hover:border-watch/50";
+}
 
 function spotOptionClass(accent: SpotOptionAccent, onHero: boolean) {
   if (accent === "food") {

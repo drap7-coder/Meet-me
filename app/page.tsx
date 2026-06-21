@@ -883,7 +883,9 @@ export default function HomePage() {
                     busy={loading || locating || resolvingManual}
                     onGoSomewhere={() => searchBoxRef.current?.fillSpotQuery(KOI_GO_SOMEWHERE_QUERY)}
                     onFindEvents={() => searchBoxRef.current?.fillEventsQuery(KOI_FIND_EVENTS_QUERY)}
-                    onWatchSomething={() => searchBoxRef.current?.fillQuery(KOI_WATCH_SOMETHING_QUERY, "tv_shows")}
+                    onWatchSomething={() =>
+                      searchBoxRef.current?.fillStreamingQuery(KOI_WATCH_SOMETHING_QUERY, "tv_shows")
+                    }
                   />
                 </div>
               </section>

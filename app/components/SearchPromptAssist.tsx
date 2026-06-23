@@ -63,6 +63,8 @@ type AssistContextValue = {
   vibeRefinements: ReturnType<typeof vibeRefinementsFor>;
   surface: "hero" | "page";
   pickMode: (mode: Exclude<SelectedMode, null>) => void;
+  pickExplore: () => void;
+  pickMeetHalfway: () => void;
   pickLocalWhat: (id: LocalChipCategoryId) => void;
   pickStreamingType: (id: "movies" | "tv_shows") => void;
   toggleType: (id: string) => void;
@@ -235,6 +237,52 @@ export function SearchPromptAssistProvider({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [builderMode]);
 
+  function pickExplore() {
+    commit((prev) => {
+      const active = prev.selectedMode === "local" && prev.where !== "halfway";
+      if (active) {
+        return initialBuilderState(seed);
+      }
+
+      return {
+        ...prev,
+        selectedMode: "local",
+        localWhat: null,
+        typeId: null,
+        extras: new Set<string>(),
+        when: null,
+        where: "near",
+        streamingType: null,
+        streamingVibe: null,
+        genre: null,
+        streamingServices: new Set<string>()
+      };
+    });
+  }
+
+  function pickMeetHalfway() {
+    commit((prev) => {
+      const active = prev.selectedMode === "local" && prev.where === "halfway";
+      if (active) {
+        return initialBuilderState(seed);
+      }
+
+      return {
+        ...prev,
+        selectedMode: "local",
+        localWhat: "food",
+        typeId: null,
+        extras: new Set<string>(),
+        when: null,
+        where: "halfway",
+        streamingType: null,
+        streamingVibe: null,
+        genre: null,
+        streamingServices: new Set<string>()
+      };
+    });
+  }
+
   function pickLocalWhat(id: LocalChipCategoryId) {
     commit((prev) => {
       if (prev.selectedMode === "local" && prev.localWhat === id) {
@@ -343,6 +391,8 @@ export function SearchPromptAssistProvider({
         vibeRefinements,
         surface,
         pickMode,
+        pickExplore,
+        pickMeetHalfway,
         pickLocalWhat,
         pickStreamingType,
         toggleType,
@@ -361,14 +411,16 @@ export function SearchPromptAssistProvider({
 
 /** Premium Streaming / Explore cards — render above the ask input. */
 export function SearchPromptModePicker() {
-  const { busy, state, pickMode, surface } = useAssistContext();
+  const { busy, state, pickMode, pickExplore, pickMeetHalfway, surface } = useAssistContext();
   const onPage = surface === "page";
+  const exploreSelected = state.selectedMode === "local" && state.where !== "halfway";
+  const halfwaySelected = state.selectedMode === "local" && state.where === "halfway";
 
   return (
     <section className="grid gap-2.5" aria-label="Choose a path">
       <HeroSectionLabel onPage={onPage}>{CONCIERGE_TAGLINE}</HeroSectionLabel>
 
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="-mx-0.5 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-0.5 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
         <ModePickChip
           emoji="🍿"
           title="Streaming"
@@ -378,16 +430,29 @@ export function SearchPromptModePicker() {
           onPick={() => pickMode("streaming")}
           onPage={onPage}
           tone="streaming"
+          className="snap-start min-w-[11.75rem] flex-1 sm:min-w-0"
         />
         <ModePickChip
           emoji="🧭"
           title="Explore"
           subtitle="Food, drinks & local spots"
           busy={busy}
-          selected={state.selectedMode === "local"}
-          onPick={() => pickMode("local")}
+          selected={exploreSelected}
+          onPick={pickExplore}
           onPage={onPage}
           tone="explore"
+          className="snap-start min-w-[11.75rem] flex-1 sm:min-w-0"
+        />
+        <ModePickChip
+          emoji="📍"
+          title="Meet Halfway"
+          subtitle="Fairest spot for the group"
+          busy={busy}
+          selected={halfwaySelected}
+          onPick={pickMeetHalfway}
+          onPage={onPage}
+          tone="halfway"
+          className="snap-start min-w-[11.75rem] flex-1 sm:min-w-0"
         />
       </div>
     </section>

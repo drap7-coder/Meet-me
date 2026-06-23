@@ -1,3 +1,5 @@
+type ModeTone = "streaming" | "explore" | "halfway";
+
 type ModePickChipProps = {
   emoji: string;
   title: string;
@@ -5,8 +7,9 @@ type ModePickChipProps = {
   selected: boolean;
   busy: boolean;
   onPage?: boolean;
-  tone: "streaming" | "explore";
+  tone: ModeTone;
   onPick: () => void;
+  className?: string;
 };
 
 export function ModePickChip({
@@ -17,33 +20,33 @@ export function ModePickChip({
   busy,
   onPage = false,
   tone,
-  onPick
+  onPick,
+  className = ""
 }: ModePickChipProps) {
-  const streamingSelected = tone === "streaming" && selected;
-  const exploreSelected = tone === "explore" && selected;
-
   const heroClass = [
-    "koi-mode-chip group flex w-full min-w-0 items-start gap-3 rounded-2xl px-3.5 py-3 text-left focus:outline-none focus:ring-4 focus:ring-koi/15 disabled:cursor-not-allowed disabled:opacity-40",
-    streamingSelected && "koi-mode-chip--streaming",
-    exploreSelected && "koi-mode-chip--explore"
+    "koi-mode-chip group flex w-full min-w-0 items-center gap-3.5 rounded-2xl px-4 py-4 text-left min-h-[5.5rem] focus:outline-none focus:ring-4 focus:ring-koi/15 disabled:cursor-not-allowed disabled:opacity-40",
+    `koi-mode-chip--${tone}`,
+    selected && "koi-mode-chip--selected",
+    className
   ]
     .filter(Boolean)
     .join(" ");
 
   const pageClass = [
-    "koi-mode-chip-page group flex w-full min-w-0 items-start gap-3 rounded-2xl px-3.5 py-3 text-left focus:outline-none focus:ring-4 focus:ring-koi/15 disabled:cursor-not-allowed disabled:opacity-40",
-    streamingSelected && "koi-mode-chip-page--streaming",
-    exploreSelected && "koi-mode-chip-page--explore"
+    "koi-mode-chip-page group flex w-full min-w-0 items-center gap-3.5 rounded-2xl px-4 py-4 text-left min-h-[5.5rem] focus:outline-none focus:ring-4 focus:ring-koi/15 disabled:cursor-not-allowed disabled:opacity-40",
+    `koi-mode-chip-page--${tone}`,
+    selected && "koi-mode-chip-page--selected",
+    className
   ]
     .filter(Boolean)
     .join(" ");
 
   const iconClass = onPage
-    ? "flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-white text-xl leading-none shadow-soft ring-1 ring-line/50"
-    : "koi-mode-chip__icon flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] text-xl leading-none";
+    ? `koi-mode-chip-page__icon koi-mode-chip-page__icon--${tone} flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-[1.35rem] leading-none`
+    : `koi-mode-chip__icon koi-mode-chip__icon--${tone} flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-[1.35rem] leading-none`;
 
   const titleClass = onPage ? "text-sm font-bold leading-tight text-ink" : "text-sm font-bold leading-tight text-white";
-  const subtitleClass = onPage ? "text-xs font-medium leading-snug text-slate/70" : "text-xs font-medium leading-snug text-white/58";
+  const subtitleClass = onPage ? "text-xs font-medium leading-snug text-slate/75" : "text-xs font-medium leading-snug text-white/62";
 
   return (
     <button
@@ -57,7 +60,7 @@ export function ModePickChip({
       <span className={iconClass} aria-hidden="true">
         {emoji}
       </span>
-      <span className="grid min-w-0 gap-1 pt-0.5">
+      <span className="grid min-w-0 flex-1 gap-1">
         <span className={titleClass}>{title}</span>
         <span className={subtitleClass}>{subtitle}</span>
       </span>

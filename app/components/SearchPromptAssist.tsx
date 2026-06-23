@@ -218,27 +218,7 @@ export function SearchPromptAssistProvider({ busy = false, onPickQuery, onExpand
   );
 }
 
-/** Near Me · Choose Location · Halfway — sits directly above the ask input. */
-export function SearchWhereChips() {
-  const { busy, state, isStreaming, setWhere } = useAssistContext();
-  if (isStreaming) return null;
-
-  return (
-    <div className="flex flex-wrap items-center gap-2 px-0.5" aria-label="Where to search">
-      <span className="text-[0.625rem] font-bold uppercase tracking-[0.18em] text-white/40">Where</span>
-      <AssistChip label="Near Me" busy={busy} selected={state.where === "near"} onPick={() => setWhere("near")} />
-      <AssistChip
-        label="Choose Location"
-        busy={busy}
-        selected={state.where === "choose"}
-        onPick={() => setWhere("choose")}
-      />
-      <AssistChip label="Halfway" busy={busy} selected={state.where === "halfway"} onPick={() => setWhere("halfway")} />
-    </div>
-  );
-}
-
-/** What · Vibe · When — sits below the ask input with Advanced Search. */
+/** What · Vibe · Where · When — sits below the ask input with Advanced Search. */
 export function SearchPromptChips() {
   const {
     busy,
@@ -249,6 +229,7 @@ export function SearchPromptChips() {
     toggleType,
     toggleExtra,
     toggleWhen,
+    setWhere,
     pickWatchType,
     toggleGenre
   } = useAssistContext();
@@ -315,6 +296,22 @@ export function SearchPromptChips() {
             ))}
           </ChipGroup>
 
+          <ChipGroup label="Where">
+            <AssistChip label="Near Me" busy={busy} selected={state.where === "near"} onPick={() => setWhere("near")} />
+            <AssistChip
+              label="Choose Location"
+              busy={busy}
+              selected={state.where === "choose"}
+              onPick={() => setWhere("choose")}
+            />
+            <AssistChip
+              label="Halfway"
+              busy={busy}
+              selected={state.where === "halfway"}
+              onPick={() => setWhere("halfway")}
+            />
+          </ChipGroup>
+
           <ChipGroup label="When">
             <AssistChip
               label="Open Now"
@@ -335,11 +332,10 @@ export function SearchPromptChips() {
   );
 }
 
-/** @deprecated Use SearchPromptAssistProvider + SearchWhereChips + SearchPromptChips */
+/** @deprecated Use SearchPromptAssistProvider + SearchPromptChips */
 export function SearchPromptAssist(props: Omit<ProviderProps, "children">) {
   return (
     <SearchPromptAssistProvider {...props}>
-      <SearchWhereChips />
       <SearchPromptChips />
     </SearchPromptAssistProvider>
   );

@@ -17,7 +17,6 @@ import { ResultsMap } from "@/app/components/ResultsMap";
 import {
   SearchPromptAssistProvider,
   SearchPromptChips,
-  SearchWhereChips,
   type PickQueryOptions
 } from "@/app/components/SearchPromptAssist";
 import type { SearchBuilderMode } from "@/lib/searchBuilderOptions";
@@ -850,7 +849,6 @@ export default function HomePage() {
                 onPickQuery={fillSuggestedQuery}
                 onExpandBuilder={(mode) => expandBuilder(mode ?? "halfway")}
               >
-                <SearchWhereChips />
                 <AiSearchBox
                   ref={searchBoxRef}
                   loading={loading}
@@ -964,7 +962,6 @@ export default function HomePage() {
                 onPickQuery={fillSuggestedQuery}
                 onExpandBuilder={(mode) => expandBuilder(mode ?? "halfway")}
               >
-                <SearchWhereChips />
                 <AiSearchBox
                   ref={searchBoxRef}
                   surface="page"

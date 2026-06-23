@@ -38,7 +38,7 @@ const CONCIERGE_TAGLINE = "Tap chips to build your ask, or just type it.";
 
 export type BuilderState = {
   selectedMode: SelectedMode;
-  localWhat: LocalChipCategoryId;
+  localWhat: LocalChipCategoryId | null;
   typeId: string | null;
   extras: Set<string>;
   when: WhenId | null;
@@ -88,7 +88,7 @@ function initialBuilderState(seed?: Pick<PickQueryOptions, "category" | "watchSu
 
   return {
     selectedMode: "local",
-    localWhat: "food",
+    localWhat: null,
     typeId: null,
     extras: new Set<string>(),
     when: null,
@@ -163,7 +163,9 @@ export function SearchPromptAssistProvider({
 
   function pickLocalWhat(id: LocalChipCategoryId) {
     commit((prev) => {
-      if (prev.selectedMode === "local" && prev.localWhat === id) return prev;
+      if (prev.selectedMode === "local" && prev.localWhat === id) {
+        return { ...prev, localWhat: null, typeId: null, extras: new Set<string>() };
+      }
       return {
         ...prev,
         selectedMode: "local",
@@ -215,7 +217,7 @@ export function SearchPromptAssistProvider({
     commit((prev) => ({
       ...prev,
       selectedMode: "local",
-      localWhat: prev.selectedMode === "local" ? prev.localWhat : "food",
+      localWhat: prev.selectedMode === "local" ? prev.localWhat : null,
       where: id,
       streamingType: null,
       genre: null
@@ -229,9 +231,11 @@ export function SearchPromptAssistProvider({
     });
   }
 
-  const isStreaming = state.selectedMode === "streaming";
-  const typeRefinements = isStreaming ? [] : typeRefinementsFor(state.localWhat);
-  const vibeRefinements = isStreaming || !groupHasVibeOptions(state.localWhat) ? [] : vibeRefinementsFor(state.localWhat);
+  const isStreaming = state.selectedMode === "streaming" && Boolean(state.streamingType);
+  const exploreCategory = state.selectedMode === "local" ? state.localWhat : null;
+  const typeRefinements = exploreCategory ? typeRefinementsFor(exploreCategory) : [];
+  const vibeRefinements =
+    exploreCategory && groupHasVibeOptions(exploreCategory) ? vibeRefinementsFor(exploreCategory) : [];
 
   return (
     <AssistContext.Provider
@@ -257,12 +261,11 @@ export function SearchPromptAssistProvider({
   );
 }
 
-/** Streaming + Local chip modules below the ask input. Where/When live in Advanced Search. */
+/** Streaming + Explore chip modules below the ask input. Where/When live in Advanced Search. */
 export function SearchPromptChips() {
   const {
     busy,
     state,
-    isStreaming,
     typeRefinements,
     vibeRefinements,
     pickLocalWhat,
@@ -274,18 +277,18 @@ export function SearchPromptChips() {
   } = useAssistContext();
 
   const onPage = surface === "page";
+  const moduleBoxClass = `grid gap-2.5 rounded-[16px] border p-3 sm:p-3.5 ${
+    onPage ? "border-line/80 bg-paper shadow-soft" : "border-white/12 bg-white/[0.04]"
+  }`;
   const showGenres = state.selectedMode === "streaming" && Boolean(state.streamingType);
+  const showExploreDetails = state.selectedMode === "local" && Boolean(state.localWhat);
   const streamGenres = state.streamingType ? getWatchGenresForSubcategory(state.streamingType) : [];
 
   return (
     <section className="grid gap-3" aria-label="Prompt builder">
       <p className={`px-0.5 text-sm font-semibold ${onPage ? "text-slate" : "text-white/70"}`}>{CONCIERGE_TAGLINE}</p>
 
-      <div
-        className={`grid gap-2.5 rounded-[16px] border p-3 sm:p-3.5 ${
-          onPage ? "border-line/80 bg-paper shadow-soft" : "border-white/12 bg-white/[0.04]"
-        }`}
-      >
+      <div className={moduleBoxClass}>
         <ChipGroup label="📺 Streaming" onPage={onPage}>
           {WATCH_SUBCATEGORIES.map((option) => (
             <AssistChip
@@ -318,8 +321,8 @@ export function SearchPromptChips() {
 
       <div className={`h-px ${onPage ? "bg-line/70" : "bg-white/10"}`} aria-hidden="true" />
 
-      <div className="grid gap-2.5">
-        <ChipGroup label="📍 Local" onPage={onPage}>
+      <div className={moduleBoxClass}>
+        <ChipGroup label="🧭 Explore" onPage={onPage}>
           {LOCAL_CHIP_CATEGORIES.map((def) => (
             <AssistChip
               key={def.id}
@@ -333,7 +336,7 @@ export function SearchPromptChips() {
           ))}
         </ChipGroup>
 
-        {!isStreaming ? (
+        {showExploreDetails && state.localWhat ? (
           <>
             <ChipGroup label={localChipCategoryById(state.localWhat).subtypeLabel} onPage={onPage}>
               {typeRefinements.map((refinement) => (
@@ -485,12 +488,15 @@ function builderModeForWhere(where: WhereId): SearchBuilderMode {
 
 function categoryFor(state: BuilderState): VenueCategory {
   if (state.selectedMode === "streaming") return "custom";
-  return venueCategoryForChip(state.localWhat, state.typeId);
+  return venueCategoryForChip(state.localWhat ?? "food", state.typeId);
 }
 
 export function buildPlaceQuery(state: BuilderState): string {
-  const def = localChipCategoryById(state.localWhat);
-  const refs = [...typeRefinementsFor(state.localWhat), ...vibeRefinementsFor(state.localWhat)];
+  const def = localChipCategoryById(state.localWhat ?? "food");
+  const refs = [
+    ...typeRefinementsFor(state.localWhat ?? "food"),
+    ...vibeRefinementsFor(state.localWhat ?? "food")
+  ];
   const type = refs.find((item) => item.group === "type" && item.id === state.typeId);
 
   const noun = type?.noun ?? def.noun;

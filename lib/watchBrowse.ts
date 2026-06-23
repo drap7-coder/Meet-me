@@ -48,10 +48,14 @@ export const WATCH_GENRES_BY_SUBCATEGORY: Partial<Record<WatchSubcategory, Watch
     { id: "action", label: "💥 Action", queryWord: "action", query: "Best action movies tonight" },
     { id: "comedy", label: "😂 Comedy", queryWord: "comedy", query: "Best comedy movies tonight" },
     { id: "drama", label: "🎭 Drama", queryWord: "drama", query: "Best drama movies tonight" },
-    { id: "horror", label: "👻 Horror", queryWord: "horror", query: "Best horror movies tonight" },
+    {
+      id: "horror_thriller",
+      label: "👻 Horror & Thriller",
+      queryWord: "horror and thriller",
+      query: "Best horror and thriller movies tonight"
+    },
     { id: "romance", label: "💕 Romance", queryWord: "romance", query: "Best romance movies tonight" },
     { id: "sci-fi", label: "🚀 Sci-Fi", queryWord: "sci-fi", query: "Best sci-fi movies tonight" },
-    { id: "thriller", label: "🔪 Thriller", queryWord: "thriller", query: "Best thriller movies tonight" },
     { id: "documentary", label: "🎥 Documentary", queryWord: "documentary", query: "Best documentary movies tonight" },
     { id: "family", label: "👨‍👩‍👧 Family", queryWord: "family", query: "Best family movies tonight" }
   ],
@@ -59,7 +63,12 @@ export const WATCH_GENRES_BY_SUBCATEGORY: Partial<Record<WatchSubcategory, Watch
     { id: "action", label: "💥 Action & Adventure", queryWord: "action", query: "Best action TV shows tonight" },
     { id: "comedy", label: "😂 Comedy", queryWord: "comedy", query: "Best comedy TV shows tonight" },
     { id: "drama", label: "🎭 Drama", queryWord: "drama", query: "Best drama TV shows tonight" },
-    { id: "horror", label: "🕵️ Mystery & Thriller", queryWord: "mystery", query: "Best mystery TV shows tonight" },
+    {
+      id: "horror_thriller",
+      label: "👻 Horror & Thriller",
+      queryWord: "horror and thriller",
+      query: "Best horror and thriller TV shows tonight"
+    },
     { id: "romance", label: "💕 Romance", queryWord: "romance", query: "Best romance TV shows tonight" },
     { id: "sci-fi", label: "🚀 Sci-Fi & Fantasy", queryWord: "sci-fi", query: "Best sci-fi TV shows tonight" },
     { id: "documentary", label: "🎥 Documentary", queryWord: "documentary", query: "Best documentary series tonight" },
@@ -69,10 +78,14 @@ export const WATCH_GENRES_BY_SUBCATEGORY: Partial<Record<WatchSubcategory, Watch
     { id: "action", label: "💥 Action", queryWord: "action", query: "Trending action movies and shows tonight" },
     { id: "comedy", label: "😂 Comedy", queryWord: "comedy", query: "Trending comedy movies and shows tonight" },
     { id: "drama", label: "🎭 Drama", queryWord: "drama", query: "Trending drama movies and shows tonight" },
-    { id: "horror", label: "👻 Horror", queryWord: "horror", query: "Trending horror movies and shows tonight" },
+    {
+      id: "horror_thriller",
+      label: "👻 Horror & Thriller",
+      queryWord: "horror and thriller",
+      query: "Trending horror and thriller movies and shows tonight"
+    },
     { id: "romance", label: "💕 Romance", queryWord: "romance", query: "Trending romance movies and shows tonight" },
     { id: "sci-fi", label: "🚀 Sci-Fi", queryWord: "sci-fi", query: "Trending sci-fi movies and shows tonight" },
-    { id: "thriller", label: "🔪 Thriller", queryWord: "thriller", query: "Trending thriller movies and shows tonight" },
     { id: "documentary", label: "🎥 Documentary", queryWord: "documentary", query: "Trending documentary movies and shows tonight" },
     { id: "family", label: "👨‍👩‍👧 Family", queryWord: "family", query: "Trending family movies and shows tonight" }
   ]
@@ -88,7 +101,10 @@ export function getWatchGenresForSubcategory(subcategory: WatchSubcategory) {
 
 export function resolveWatchGenreQueryWord(subcategory: WatchSubcategory | null, genreId: string | null) {
   if (!subcategory || !genreId) return null;
-  return getWatchGenresForSubcategory(subcategory).find((option) => option.id === genreId)?.queryWord ?? null;
+  const option = getWatchGenresForSubcategory(subcategory).find((item) => item.id === genreId);
+  if (option) return option.queryWord;
+  if (genreId === "horror" || genreId === "thriller") return "horror and thriller";
+  return null;
 }
 
 export function getWatchGenreGroupLabel(subcategory: WatchSubcategory): string {

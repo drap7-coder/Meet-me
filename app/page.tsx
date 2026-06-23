@@ -651,6 +651,7 @@ export default function HomePage() {
       if (options?.category) next.category = options.category;
       if (options?.watchSubcategory) next.watchSubcategory = options.watchSubcategory;
       else if (options?.category && options.category !== "custom") next.watchSubcategory = undefined;
+      if (options?.searchMode) next.searchMode = options.searchMode;
       return next;
     });
   }

@@ -1,19 +1,12 @@
 "use client";
 
-import type { SearchHalfwayRequest, VenueCategory, WatchSubcategory } from "@/lib/types";
-import {
-  DEFAULT_SHOPPING_SUBCATEGORY,
-  isShoppingCategory,
-  SHOPPING_SUBCATEGORIES
-} from "@/lib/shoppingBrowse";
-import {
-  DEFAULT_WATCH_SUBCATEGORY
-} from "@/lib/watchBrowse";
+import type { SearchHalfwayRequest, WatchSubcategory } from "@/lib/types";
+import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
+import { isShoppingCategory } from "@/lib/shoppingBrowse";
 import { LocationPinIcon } from "@/app/components/SavedLocationBadge";
 import type { ReactNode } from "react";
 import { useState } from "react";
 
-type SearchLane = "restaurants" | "drinks" | "coffee" | "shopping" | "streaming";
 type RadiusOption = "10 min" | "20 min" | "30 min" | "Flexible";
 type ResultMode = "best" | "more" | "halfway";
 
@@ -28,14 +21,6 @@ type Props = {
   onUseLocation: () => void;
 };
 
-const LANES: Array<{ id: SearchLane; label: string; category: VenueCategory; query: string }> = [
-  { id: "restaurants", label: "Restaurants", category: "restaurant", query: "restaurant" },
-  { id: "drinks", label: "Drinks", category: "cocktail_bars", query: "drinks" },
-  { id: "coffee", label: "Coffee", category: "coffee", query: "coffee shop" },
-  { id: "shopping", label: "Shopping", category: DEFAULT_SHOPPING_SUBCATEGORY.category, query: "shopping" },
-  { id: "streaming", label: "Streaming", category: "custom", query: "what should I watch" }
-];
-
 const RADIUS_OPTIONS: RadiusOption[] = ["10 min", "20 min", "30 min", "Flexible"];
 
 export function ClassicSearchControls({
@@ -48,34 +33,15 @@ export function ClassicSearchControls({
   onSearchWatch,
   onUseLocation
 }: Props) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const [radius, setRadius] = useState<RadiusOption>("20 min");
-  const [resultMode, setResultMode] = useState<ResultMode>("best");
-  const [activeShoppingId, setActiveShoppingId] = useState(
-    () =>
-      SHOPPING_SUBCATEGORIES.find((item) => item.category === form.category)?.id ??
-      DEFAULT_SHOPPING_SUBCATEGORY.id
+  const [resultMode, setResultMode] = useState<ResultMode>(
+    form.searchMode === "midpoint" ? "halfway" : "best"
   );
-  const activeLane = laneForForm(form);
-  const isStreaming = activeLane === "streaming";
+  const isStreaming = form.category === "custom" && Boolean(form.watchSubcategory);
   const searchMode = resultMode === "halfway" ? "midpoint" : "single";
-  const showRefinementHint = !isStreaming && categoryShowsRefinements(form.category);
   const needsSecondLocation = searchMode === "midpoint";
   const watchSubcategory = form.watchSubcategory ?? DEFAULT_WATCH_SUBCATEGORY;
-
-  function selectLane(lane: SearchLane) {
-    const config = LANES.find((item) => item.id === lane) ?? LANES[0];
-    setExpanded(true);
-    onChange({
-      ...form,
-      category: config.category,
-      customQuery: lane === "streaming" ? config.query : "",
-      watchSubcategory: lane === "streaming" ? DEFAULT_WATCH_SUBCATEGORY : undefined
-    });
-    if (lane === "shopping") {
-      setActiveShoppingId(DEFAULT_SHOPPING_SUBCATEGORY.id);
-    }
-  }
 
   function setLocationA(locationA: string) {
     onChange({
@@ -104,7 +70,7 @@ export function ClassicSearchControls({
       return;
     }
 
-    onSearchPlaces(buildPlaceForm(form, searchMode, radius, activeShoppingId));
+    onSearchPlaces(buildPlaceForm(form, searchMode, radius));
   }
 
   return (
@@ -112,75 +78,27 @@ export function ClassicSearchControls({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.16em] text-koi">Classic Search</p>
-          <h2 className="mt-1 text-lg font-black tracking-tight text-white">
-            {isStreaming ? "Find something to stream" : "Refine without the perfect prompt"}
-          </h2>
+          <h2 className="mt-1 text-lg font-black tracking-tight text-white">Advanced controls</h2>
+          <p className="mt-1 text-xs font-medium leading-5 text-white/55">
+            Set location and how results are ranked. The chips above build your ask.
+          </p>
         </div>
         <button
           type="button"
           onClick={() => setExpanded((value) => !value)}
-          className="rounded-full border border-white/18 bg-white/10 px-3 py-2 text-sm font-bold text-white/85 transition hover:border-koi/50 hover:bg-koi/15"
+          className="rounded-full border border-white/18 bg-white/10 px-3 py-2 text-sm font-bold text-white/85 transition hover:border-white/35 hover:bg-white/15"
         >
           {expanded ? "Hide controls" : "Show controls"}
         </button>
       </div>
 
-      {!isStreaming ? (
-        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
-          {LANES.filter((lane) => lane.id !== "streaming").map((lane) => {
-            const selected = activeLane === lane.id;
-            return (
-              <button
-                key={lane.id}
-                type="button"
-                onClick={() => selectLane(lane.id)}
-                aria-pressed={selected}
-                className={`min-h-10 rounded-full border px-3 py-2 text-sm font-black transition ${
-                  selected
-                    ? "border-koi bg-koi text-white shadow-[0_8px_18px_rgba(255,90,0,0.24)]"
-                    : "border-white/16 bg-white/[0.06] text-white/85 hover:border-koi/50 hover:bg-koi/10"
-                }`}
-              >
-                {lane.label}
-              </button>
-            );
-          })}
-          <button
-            type="button"
-            onClick={() => selectLane("streaming")}
-            className="min-h-10 rounded-full border border-white/16 bg-white/[0.06] px-3 py-2 text-sm font-black text-white/85 transition hover:border-koi/50 hover:bg-koi/10"
-          >
-            Streaming
-          </button>
-        </div>
-      ) : (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="inline-flex min-h-10 items-center rounded-full border border-koi bg-koi px-4 text-sm font-black text-white shadow-[0_8px_18px_rgba(255,90,0,0.24)]">
-            Streaming
-          </span>
-          <button
-            type="button"
-            onClick={() => selectLane("restaurants")}
-            className="min-h-10 rounded-full border border-white/16 bg-white/[0.06] px-4 py-2 text-sm font-bold text-white/85 transition hover:border-koi/50 hover:bg-koi/10"
-          >
-            ← Back to places
-          </button>
-        </div>
-      )}
-
       {expanded ? (
         <div className="mt-4 grid gap-4 rounded-[16px] border border-white/10 bg-ink/35 p-3 sm:p-4">
           {isStreaming ? (
             <p className="text-sm font-medium leading-6 text-white/60">
-              Pick movies or shows and a genre in the chips above, then search for streaming picks.
+              Streaming picks come from your ask above. Tap search for tonight&apos;s picks.
             </p>
-          ) : showRefinementHint ? (
-            <p className="text-sm font-medium leading-6 text-white/60">
-              Pick refinements in the chips above, then set location and search.
-            </p>
-          ) : null}
-
-          {!isStreaming ? (
+          ) : (
             <>
               <div className="grid gap-3">
                 <div className="flex flex-wrap gap-2">
@@ -248,13 +166,11 @@ export function ClassicSearchControls({
                 </ControlGroup>
               </div>
             </>
-          ) : null}
+          )}
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs font-semibold leading-5 text-white/55">
-              {isStreaming
-                ? "Use the streaming chips above to refine your pick."
-                : "Ask Koi is the magic. Classic Search is the seatbelt."}
+              Ask Koi is the magic. Classic Search is the seatbelt.
             </p>
             <button
               type="button"
@@ -288,8 +204,8 @@ function Chip({ selected, onClick, children }: { selected: boolean; onClick: () 
       aria-pressed={selected}
       className={`rounded-full border px-3 py-2 text-sm font-bold transition ${
         selected
-          ? "border-koi bg-koi text-white"
-          : "border-white/14 bg-white/[0.06] text-white/85 hover:border-koi/50 hover:bg-koi/10"
+          ? "border-white/55 bg-white/15 text-white"
+          : "border-white/14 bg-white/[0.06] text-white/85 hover:border-white/30 hover:bg-white/10"
       }`}
     >
       {children}
@@ -297,58 +213,34 @@ function Chip({ selected, onClick, children }: { selected: boolean; onClick: () 
   );
 }
 
-function categoryShowsRefinements(category: VenueCategory) {
-  return (
-    category === "restaurant" ||
-    category === "coffee" ||
-    isShoppingCategory(category) ||
-    ["cocktail_bars", "breweries", "wine_bars", "lounges", "pubs", "rooftop_bars", "sports_bars", "bar"].includes(
-      category
-    )
-  );
-}
-
-function laneForForm(form: SearchHalfwayRequest): SearchLane {
-  if (form.category === "custom" && form.watchSubcategory) return "streaming";
-  if (isShoppingCategory(form.category)) return "shopping";
-  if (form.category === "coffee") return "coffee";
-  if (["cocktail_bars", "breweries", "wine_bars", "lounges", "pubs", "rooftop_bars", "sports_bars", "bar"].includes(form.category)) {
-    return "drinks";
-  }
-  return "restaurants";
-}
-
 function buildPlaceForm(
   form: SearchHalfwayRequest,
   searchMode: SearchHalfwayRequest["searchMode"],
-  radius: RadiusOption,
-  activeShoppingId: string
+  radius: RadiusOption
 ): SearchHalfwayRequest {
-  const customQuery = buildPlaceQuery(form, radius, activeShoppingId);
   const needsCustomQuery = radius !== "Flexible";
+  const customQuery = needsCustomQuery ? buildPlaceQuery(form, radius) : form.customQuery;
 
   return {
     ...form,
     searchMode,
     locationB: searchMode === "single" ? "" : form.locationB,
     category: needsCustomQuery ? "custom" : form.category,
-    customQuery: needsCustomQuery ? customQuery : form.customQuery
+    customQuery
   };
 }
 
-function buildPlaceQuery(form: SearchHalfwayRequest, radius: RadiusOption, activeShoppingId: string) {
-  const parts: string[] = [];
-  const shoppingMatch = SHOPPING_SUBCATEGORIES.find((item) => item.id === activeShoppingId);
-  const categoryWord =
+function buildPlaceQuery(form: SearchHalfwayRequest, radius: RadiusOption) {
+  const noun =
     form.category === "coffee"
       ? "coffee shop"
       : form.category === "cocktail_bars"
         ? "cocktail bar"
         : isShoppingCategory(form.category)
-          ? (shoppingMatch?.query.replace(" near me", "") ?? "shopping")
+          ? "shops"
           : "restaurant";
 
-  parts.push(categoryWord);
+  const parts = [noun];
   if (radius !== "Flexible") parts.push(`within ${radius}`);
   return parts.join(" ");
 }

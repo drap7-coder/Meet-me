@@ -171,7 +171,16 @@ export function SearchPromptAssistProvider({
   useEffect(() => {
     if (!seed?.watchSubcategory || seed.category !== "custom") return;
     setState((prev) => {
-      if (prev.selectedMode === "streaming" && prev.streamingType === seed.watchSubcategory) return prev;
+      const seededType = normalizeStreamType(seed.watchSubcategory);
+      if (!seededType) return prev;
+
+      if (prev.selectedMode === "streaming") {
+        if (prev.streamingType === seededType) return prev;
+        const next = { ...prev, streamingType: seededType };
+        syncFilters(next);
+        return next;
+      }
+
       const next = initialBuilderState(seed);
       syncFilters(next);
       return next;
@@ -844,7 +853,7 @@ function resolveFilterPreview(state: BuilderState): FilterPreview | null {
     isStreaming,
     options: {
       category: categoryFor(state),
-      watchSubcategory: isStreaming ? streamType ?? "movies" : undefined,
+      watchSubcategory: isStreaming ? streamType ?? undefined : undefined,
       streamingServiceIds: isStreaming ? [...state.streamingServices] : undefined,
       searchMode: !isStreaming && state.where === "halfway" ? "midpoint" : "single",
       builderMode: builderModeForWhere(state.where)

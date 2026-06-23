@@ -961,14 +961,14 @@ export default function HomePage() {
                   onSubmitManualLocation={(input) => void resolveManualLocation(input)}
                   streamingSearch={form.category === "custom" && Boolean(form.watchSubcategory)}
                 />
-                <SelectedFiltersPanel
-                  busy={loading || locating || resolvingManual}
-                  onSearch={runFilterSearch}
-                />
                 <HeroPopularSearches busy={loading || locating || resolvingManual} />
                 <div className="h-px bg-white/10" aria-hidden="true" />
                 <SearchPromptModePicker />
                 <SearchPromptDetailChips />
+                <SelectedFiltersPanel
+                  busy={loading || locating || resolvingManual}
+                  onSearch={runFilterSearch}
+                />
                 <PersistentLocationBar
                   label={activeLocationLabel}
                   busy={loading || locating || resolvingManual}
@@ -1076,13 +1076,13 @@ export default function HomePage() {
                   onSubmitManualLocation={(input) => void resolveManualLocation(input)}
                   streamingSearch={form.category === "custom" && Boolean(form.watchSubcategory)}
                 />
+                <HeroPopularSearches busy={loading || locating || resolvingManual} />
+                <SearchPromptModePicker />
+                <SearchPromptDetailChips />
                 <SelectedFiltersPanel
                   busy={loading || locating || resolvingManual}
                   onSearch={runFilterSearch}
                 />
-                <HeroPopularSearches busy={loading || locating || resolvingManual} />
-                <SearchPromptModePicker />
-                <SearchPromptDetailChips />
                 <PersistentLocationBar
                   label={activeLocationLabel}
                   busy={loading || locating || resolvingManual}

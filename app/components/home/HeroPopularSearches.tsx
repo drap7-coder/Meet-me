@@ -1,6 +1,7 @@
 "use client";
 
 import type { PickQueryOptions } from "@/app/components/SearchPromptAssist";
+import { useSearchPromptAssist } from "@/app/components/SearchPromptAssist";
 import { HeroSectionLabel } from "@/app/components/home/HeroSectionLabel";
 
 export type HeroPopularSearch = {
@@ -52,10 +53,10 @@ export const HERO_POPULAR_SEARCHES: HeroPopularSearch[] = [
 
 type Props = {
   busy?: boolean;
-  onSelect: (query: string, options?: PickQueryOptions) => void;
 };
 
-export function HeroPopularSearches({ busy = false, onSelect }: Props) {
+export function HeroPopularSearches({ busy = false }: Props) {
+  const { applyPopularPreset } = useSearchPromptAssist();
   return (
     <section className="grid gap-2" aria-label="Popular searches">
       <HeroSectionLabel subtle>Popular searches</HeroSectionLabel>
@@ -65,7 +66,7 @@ export function HeroPopularSearches({ busy = false, onSelect }: Props) {
             key={item.id}
             type="button"
             disabled={busy}
-            onClick={() => onSelect(item.query, item.options)}
+            onClick={() => applyPopularPreset(item)}
             className="koi-popular-chip group flex w-full min-w-0 items-center gap-2 rounded-xl px-3 py-2.5 text-left text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
             <span aria-hidden="true" className="shrink-0 text-[0.9375rem] leading-none opacity-80">

@@ -6,6 +6,7 @@ import { AiSearchBox, type AiSearchBoxHandle } from "@/app/components/AiSearchBo
 import { CompactResultsHeader } from "@/app/components/home/CompactResultsHeader";
 import { MarketingHero } from "@/app/components/home/MarketingHero";
 import { HeroPopularSearches } from "@/app/components/home/HeroPopularSearches";
+import { SelectedFiltersPanel } from "@/app/components/home/SelectedFiltersPanel";
 import { ShareDialog, type ShareDialogState } from "@/app/components/home/ShareDialog";
 import { Footer, SiteHeader } from "@/app/components/home/SiteChrome";
 import { ClassicSearchControls } from "@/app/components/ClassicSearchControls";
@@ -716,13 +717,12 @@ export default function HomePage() {
     });
   }
 
-  function fillSuggestedQuery(query: string, options?: PickQueryOptions) {
-    if (query.trim()) setLastAskQuery(query.trim());
-    searchBoxRef.current?.fillQuery(query, options?.watchSubcategory);
+  function handleFiltersChange(options: PickQueryOptions) {
     const stored = getActiveLocationContext();
     if (options?.builderMode) setBuilderMode(options.builderMode);
     else if (options?.searchMode === "midpoint") setBuilderMode("halfway");
     if (options?.streamingServiceIds !== undefined) setActiveStreamingServiceIds(options.streamingServiceIds);
+    if (options?.watchSubcategory) setActiveWatchSubcategory(options.watchSubcategory);
     setForm((current) => {
       const next = { ...current };
       if (!next.locationA.trim() && stored.locationA?.trim()) {
@@ -736,6 +736,37 @@ export default function HomePage() {
       if (options?.searchMode) next.searchMode = options.searchMode;
       return next;
     });
+  }
+
+  function runFilterSearch(query: string, options: PickQueryOptions, isStreaming: boolean) {
+    if (query.trim()) setLastAskQuery(query.trim());
+    handleFiltersChange(options);
+
+    if (isStreaming || options.watchSubcategory) {
+      void submitWatchSearch(
+        query,
+        options.watchSubcategory ?? activeWatchSubcategory,
+        options.streamingServiceIds ?? activeStreamingServiceIds
+      );
+      return;
+    }
+
+    const stored = getActiveLocationContext();
+    const searchForm: SearchHalfwayRequest = {
+      ...form,
+      category: options.category ?? form.category,
+      customQuery: query,
+      searchMode: options.searchMode ?? form.searchMode ?? "single",
+      watchSubcategory: undefined,
+      locationA: stored.locationA?.trim() || form.locationA || "me",
+      locationB: options.searchMode === "midpoint" ? form.locationB : ""
+    };
+
+    runParsedSearch(
+      searchForm,
+      query,
+      options.builderMode === "destination" ? { preserveSavedHomeLocation: true } : undefined
+    );
   }
 
   function submitLocationFallback() {
@@ -903,7 +934,7 @@ export default function HomePage() {
               <SearchPromptAssistProvider
                 busy={loading || locating || resolvingManual}
                 builderMode={builderMode}
-                onPickQuery={fillSuggestedQuery}
+                onFiltersChange={handleFiltersChange}
                 seed={promptAssistSeed}
               >
                 <AiSearchBox
@@ -916,7 +947,6 @@ export default function HomePage() {
                   showLocationActions={showLocationActions}
                   manualLocationError={manualLocationError}
                   locationContext={locationContext}
-                  searchFormHint={form}
                   defaultUserAddress={savedUserAddress}
                   locating={locating}
                   resolvingManual={resolvingManual}
@@ -931,9 +961,14 @@ export default function HomePage() {
                   onSubmitManualLocation={(input) => void resolveManualLocation(input)}
                   streamingSearch={form.category === "custom" && Boolean(form.watchSubcategory)}
                 />
-                <HeroPopularSearches busy={loading || locating || resolvingManual} onSelect={fillSuggestedQuery} />
+                <SelectedFiltersPanel
+                  busy={loading || locating || resolvingManual}
+                  onSearch={runFilterSearch}
+                />
+                <HeroPopularSearches busy={loading || locating || resolvingManual} />
                 <div className="h-px bg-white/10" aria-hidden="true" />
                 <SearchPromptModePicker />
+                <SearchPromptDetailChips />
                 <PersistentLocationBar
                   label={activeLocationLabel}
                   busy={loading || locating || resolvingManual}
@@ -949,7 +984,6 @@ export default function HomePage() {
                   onSearchPlaces={runPlacesSearchFromBuilder}
                   onSearchWatch={runWatchSearch}
                 />
-                <SearchPromptDetailChips />
               </SearchPromptAssistProvider>
               <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
               <LocationFallbackPanel
@@ -1014,11 +1048,41 @@ export default function HomePage() {
               <SearchPromptAssistProvider
                 busy={loading || locating || resolvingManual}
                 builderMode={builderMode}
-                onPickQuery={fillSuggestedQuery}
+                onFiltersChange={handleFiltersChange}
                 seed={promptAssistSeed}
                 surface="page"
               >
+                <AiSearchBox
+                  ref={searchBoxRef}
+                  surface="page"
+                  loading={loading}
+                  locationStatus={locationStatus}
+                  locationUiState={locationUiState}
+                  showManualFallback={showManualFallback}
+                  showLocationActions={showLocationActions}
+                  manualLocationError={manualLocationError}
+                  locationContext={locationContext}
+                  defaultUserAddress={savedUserAddress}
+                  locating={locating}
+                  resolvingManual={resolvingManual}
+                  onParsed={runParsedSearch}
+                  onWatchSearch={runWatchSearch}
+                  onEventsSearch={runEventsSearch}
+                  onNeedsFullFallback={() => openFullFallback()}
+                  onNeedsLocation={handleNeedsLocation}
+                  onPersistUserAddress={persistUserAddress}
+                  onUseLocation={() => void requestUserLocation()}
+                  onShowZipFallback={showZipFallback}
+                  onSubmitManualLocation={(input) => void resolveManualLocation(input)}
+                  streamingSearch={form.category === "custom" && Boolean(form.watchSubcategory)}
+                />
+                <SelectedFiltersPanel
+                  busy={loading || locating || resolvingManual}
+                  onSearch={runFilterSearch}
+                />
+                <HeroPopularSearches busy={loading || locating || resolvingManual} />
                 <SearchPromptModePicker />
+                <SearchPromptDetailChips />
                 <PersistentLocationBar
                   label={activeLocationLabel}
                   busy={loading || locating || resolvingManual}
@@ -1034,32 +1098,6 @@ export default function HomePage() {
                   onSearchPlaces={runPlacesSearchFromBuilder}
                   onSearchWatch={runWatchSearch}
                   surface="page"
-                />
-                <SearchPromptDetailChips />
-                <AiSearchBox
-                  ref={searchBoxRef}
-                  surface="page"
-                  loading={loading}
-                  locationStatus={locationStatus}
-                  locationUiState={locationUiState}
-                  showManualFallback={showManualFallback}
-                  showLocationActions={showLocationActions}
-                  manualLocationError={manualLocationError}
-                  locationContext={locationContext}
-                  searchFormHint={form}
-                  defaultUserAddress={savedUserAddress}
-                  locating={locating}
-                  resolvingManual={resolvingManual}
-                  onParsed={runParsedSearch}
-                  onWatchSearch={runWatchSearch}
-                  onEventsSearch={runEventsSearch}
-                  onNeedsFullFallback={() => openFullFallback()}
-                  onNeedsLocation={handleNeedsLocation}
-                  onPersistUserAddress={persistUserAddress}
-                  onUseLocation={() => void requestUserLocation()}
-                  onShowZipFallback={showZipFallback}
-                  onSubmitManualLocation={(input) => void resolveManualLocation(input)}
-                  streamingSearch={form.category === "custom" && Boolean(form.watchSubcategory)}
                 />
               </SearchPromptAssistProvider>
               <LocationFallbackPanel

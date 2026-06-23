@@ -35,7 +35,7 @@ export function ClassicSearchControls({
   const expanded = expandedProp ?? expandedInternal;
   const setExpanded = onExpandedChange ?? setExpandedInternal;
 
-  const { promptQuery } = useSearchPromptAssist();
+  const { filterPreview } = useSearchPromptAssist();
   const isStreaming = form.category === "custom" && Boolean(form.watchSubcategory);
   const onPage = surface === "page";
   const toggleClass = onPage
@@ -70,11 +70,11 @@ export function ClassicSearchControls({
 
   function submitBuilderSearch() {
     if (isStreaming) {
-      onSearchWatch(promptQuery.trim() || "what should I watch tonight", watchSubcategory);
+      onSearchWatch(filterPreview?.query.trim() || "what should I watch tonight", watchSubcategory);
       return;
     }
 
-    const query = promptQuery.trim() || "restaurants near me";
+    const query = filterPreview?.query.trim() || "restaurants near me";
     const searchForm: SearchHalfwayRequest = {
       ...form,
       customQuery: query,
@@ -137,7 +137,7 @@ export function ClassicSearchControls({
         <div className={innerPanelClass}>
           {isStreaming ? (
             <p className={helperTextClass}>
-              Streaming picks come from your ask above. Use the chips to refine, then search.
+              Streaming picks come from your selected filters. Refine below, then tap Search.
             </p>
           ) : (
             <>

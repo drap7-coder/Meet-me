@@ -11,6 +11,7 @@ import {
   type LocalChipCategoryId
 } from "@/lib/searchBuilderOptions";
 import { STREAMING_SERVICES, streamingServiceQueryPhrase } from "@/lib/streamingServices";
+import type { HeroPopularSearch } from "@/app/components/home/HeroPopularSearches";
 import { HeroSectionLabel } from "@/app/components/home/HeroSectionLabel";
 import { ModePickChip } from "@/app/components/ModePickChip";
 import { StreamingServiceChip } from "@/app/components/StreamingServiceChip";
@@ -29,7 +30,7 @@ export type PickQueryOptions = {
 type ProviderProps = {
   busy?: boolean;
   builderMode?: SearchBuilderMode;
-  onPickQuery: (query: string, options?: PickQueryOptions) => void;
+  onFiltersChange?: (options: PickQueryOptions) => void;
   seed?: Pick<PickQueryOptions, "category" | "watchSubcategory">;
   surface?: "hero" | "page";
   children: ReactNode;
@@ -54,10 +55,23 @@ export type BuilderState = {
   streamingServices: Set<string>;
 };
 
+export type FilterPill = {
+  id: string;
+  label: string;
+};
+
+export type FilterPreview = {
+  query: string;
+  options: PickQueryOptions;
+  isStreaming: boolean;
+};
+
 type AssistContextValue = {
   busy: boolean;
   state: BuilderState;
   promptQuery: string;
+  filterPills: FilterPill[];
+  filterPreview: FilterPreview | null;
   isStreaming: boolean;
   typeRefinements: ReturnType<typeof typeRefinementsFor>;
   vibeRefinements: ReturnType<typeof vibeRefinementsFor>;
@@ -74,6 +88,8 @@ type AssistContextValue = {
   toggleGenre: (genre: string) => void;
   toggleStreamingVibe: (vibe: WatchStreamVibe) => void;
   toggleStreamingService: (id: string) => void;
+  removeFilterPill: (pillId: string) => void;
+  applyPopularPreset: (preset: HeroPopularSearch) => void;
 };
 
 const AssistContext = createContext<AssistContextValue | null>(null);
@@ -123,7 +139,7 @@ function initialBuilderState(seed?: Pick<PickQueryOptions, "category" | "watchSu
 export function SearchPromptAssistProvider({
   busy = false,
   builderMode,
-  onPickQuery,
+  onFiltersChange,
   seed,
   surface = "hero",
   children
@@ -131,36 +147,25 @@ export function SearchPromptAssistProvider({
   const [state, setState] = useState<BuilderState>(() => initialBuilderState(seed));
   const [promptQuery, setPromptQuery] = useState("");
 
-  function syncQuery(next: BuilderState) {
-    const streamType = normalizeStreamType(next.streamingType);
-    const isStreaming =
-      next.selectedMode === "streaming" &&
-      (Boolean(streamType) || next.streamingServices.size > 0 || Boolean(next.streamingVibe));
-    const isExplore = next.selectedMode === "local" && Boolean(next.localWhat);
-
-    if (!isStreaming && !isExplore) {
-      setPromptQuery("");
-      return;
+  function syncFilters(next: BuilderState) {
+    const preview = resolveFilterPreview(next);
+    setPromptQuery(preview?.query ?? "");
+    if (preview?.options) {
+      onFiltersChange?.(preview.options);
     }
-
-    const query = isStreaming ? buildStreamQuery(next) : buildPlaceQuery(next);
-    if (!query) return;
-    setPromptQuery(query);
-    onPickQuery(query, {
-      category: categoryFor(next),
-      watchSubcategory: isStreaming ? streamType ?? "movies" : undefined,
-      streamingServiceIds: isStreaming ? [...next.streamingServices] : undefined,
-      searchMode: !isStreaming && next.where === "halfway" ? "midpoint" : "single",
-      builderMode: builderModeForWhere(next.where)
-    });
   }
 
   function commit(updater: (prev: BuilderState) => BuilderState) {
     setState((prev) => {
       const next = updater(prev);
-      syncQuery(next);
+      syncFilters(next);
       return next;
     });
+  }
+
+  function replaceState(next: BuilderState) {
+    setState(next);
+    syncFilters(next);
   }
 
   useEffect(() => {
@@ -168,7 +173,7 @@ export function SearchPromptAssistProvider({
     setState((prev) => {
       if (prev.selectedMode === "streaming" && prev.streamingType === seed.watchSubcategory) return prev;
       const next = initialBuilderState(seed);
-      syncQuery(next);
+      syncFilters(next);
       return next;
     });
     // Keep chip state aligned when the page form switches streaming subcategory.
@@ -176,7 +181,7 @@ export function SearchPromptAssistProvider({
   }, [seed?.category, seed?.watchSubcategory]);
 
   useEffect(() => {
-    syncQuery(state);
+    syncFilters(state);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -231,7 +236,7 @@ export function SearchPromptAssistProvider({
     setState((prev) => {
       if (prev.where === where) return prev;
       const next = { ...prev, where };
-      syncQuery(next);
+      syncFilters(next);
       return next;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -374,7 +379,17 @@ export function SearchPromptAssistProvider({
     });
   }
 
-  const isStreaming = state.selectedMode === "streaming" && Boolean(normalizeStreamType(state.streamingType));
+  function removeFilterPill(pillId: string) {
+    commit((prev) => removeFilterFromState(prev, pillId));
+  }
+
+  function applyPopularPreset(preset: HeroPopularSearch) {
+    replaceState(builderStateFromPopularPreset(preset));
+  }
+
+  const filterPreview = resolveFilterPreview(state);
+  const filterPills = buildFilterPills(state);
+  const isStreaming = Boolean(filterPreview?.isStreaming);
   const exploreCategory = state.selectedMode === "local" ? state.localWhat : null;
   const typeRefinements = exploreCategory ? typeRefinementsFor(exploreCategory) : [];
   const vibeRefinements =
@@ -386,6 +401,8 @@ export function SearchPromptAssistProvider({
         busy,
         state,
         promptQuery,
+        filterPills,
+        filterPreview,
         isStreaming,
         typeRefinements,
         vibeRefinements,
@@ -401,7 +418,9 @@ export function SearchPromptAssistProvider({
         setWhere,
         toggleGenre,
         toggleStreamingVibe,
-        toggleStreamingService
+        toggleStreamingService,
+        removeFilterPill,
+        applyPopularPreset
       }}
     >
       {children}
@@ -806,4 +825,188 @@ export function buildStreamQuery(state: BuilderState): string {
   }
 
   return `What should I watch${providerPhrase}${timing}?`;
+}
+
+function resolveFilterPreview(state: BuilderState): FilterPreview | null {
+  const streamType = normalizeStreamType(state.streamingType);
+  const isStreaming =
+    state.selectedMode === "streaming" &&
+    (Boolean(streamType) || state.streamingServices.size > 0 || Boolean(state.streamingVibe));
+  const isExplore = state.selectedMode === "local" && Boolean(state.localWhat);
+
+  if (!isStreaming && !isExplore) return null;
+
+  const query = isStreaming ? buildStreamQuery(state) : buildPlaceQuery(state);
+  if (!query.trim()) return null;
+
+  return {
+    query,
+    isStreaming,
+    options: {
+      category: categoryFor(state),
+      watchSubcategory: isStreaming ? streamType ?? "movies" : undefined,
+      streamingServiceIds: isStreaming ? [...state.streamingServices] : undefined,
+      searchMode: !isStreaming && state.where === "halfway" ? "midpoint" : "single",
+      builderMode: builderModeForWhere(state.where)
+    }
+  };
+}
+
+function buildFilterPills(state: BuilderState): FilterPill[] {
+  const pills: FilterPill[] = [];
+
+  if (state.selectedMode === "streaming") {
+    pills.push({ id: "mode-streaming", label: "Streaming" });
+  } else if (state.selectedMode === "local" && state.where === "halfway") {
+    pills.push({ id: "mode-halfway", label: "Meet Halfway" });
+  } else if (state.selectedMode === "local") {
+    pills.push({ id: "mode-explore", label: "Explore" });
+  }
+
+  for (const serviceId of state.streamingServices) {
+    const service = STREAMING_SERVICES.find((item) => item.id === serviceId);
+    pills.push({ id: `service-${serviceId}`, label: service?.label ?? serviceId });
+  }
+
+  if (state.streamingType === "movies" || state.streamingType === "tv_shows") {
+    const typeLabel = WATCH_TYPE_OPTIONS.find((option) => option.id === state.streamingType)?.label ?? state.streamingType;
+    pills.push({ id: `stream-type-${state.streamingType}`, label: typeLabel });
+  }
+
+  if (state.streamingVibe) {
+    const vibeLabel = WATCH_VIBE_OPTIONS.find((option) => option.id === state.streamingVibe)?.label ?? state.streamingVibe;
+    pills.push({ id: `stream-vibe-${state.streamingVibe}`, label: vibeLabel });
+  }
+
+  if (state.genre && state.streamingType) {
+    const genreLabel =
+      getWatchGenresForSubcategory(state.streamingType).find((option) => option.id === state.genre)?.label ??
+      state.genre;
+    pills.push({ id: `stream-genre-${state.genre}`, label: genreLabel });
+  }
+
+  if (state.localWhat) {
+    const categoryLabel = LOCAL_CHIP_CATEGORIES.find((item) => item.id === state.localWhat)?.label ?? state.localWhat;
+    pills.push({ id: `local-${state.localWhat}`, label: categoryLabel });
+  }
+
+  if (state.localWhat && state.typeId) {
+    const typeLabel =
+      typeRefinementsFor(state.localWhat).find((item) => item.id === state.typeId)?.label ?? state.typeId;
+    pills.push({ id: `type-${state.typeId}`, label: typeLabel });
+  }
+
+  for (const extraId of state.extras) {
+    if (!state.localWhat) continue;
+    const extraLabel =
+      vibeRefinementsFor(state.localWhat).find((item) => item.id === extraId)?.label ?? extraId;
+    pills.push({ id: `extra-${extraId}`, label: extraLabel });
+  }
+
+  if (state.when === "open_now") pills.push({ id: "when-open_now", label: "Open now" });
+  if (state.when === "tonight") pills.push({ id: "when-tonight", label: "Tonight" });
+
+  if (state.selectedMode === "local" && state.where === "choose") {
+    pills.push({ id: "where-choose", label: "Choose location" });
+  }
+
+  return pills;
+}
+
+function removeFilterFromState(state: BuilderState, pillId: string): BuilderState {
+  if (pillId === "mode-streaming" || pillId === "mode-explore" || pillId === "mode-halfway") {
+    return initialBuilderState();
+  }
+
+  if (pillId.startsWith("service-")) {
+    const serviceId = pillId.slice("service-".length);
+    const streamingServices = new Set(state.streamingServices);
+    streamingServices.delete(serviceId);
+    return { ...state, streamingServices };
+  }
+
+  if (pillId.startsWith("stream-type-")) {
+    return { ...state, streamingType: null, streamingVibe: null, genre: null };
+  }
+
+  if (pillId.startsWith("stream-vibe-")) {
+    return { ...state, streamingVibe: null };
+  }
+
+  if (pillId.startsWith("stream-genre-")) {
+    return { ...state, genre: null };
+  }
+
+  if (pillId.startsWith("local-")) {
+    return { ...state, localWhat: null, typeId: null, extras: new Set<string>() };
+  }
+
+  if (pillId.startsWith("type-")) {
+    return { ...state, typeId: null };
+  }
+
+  if (pillId.startsWith("extra-")) {
+    const extraId = pillId.slice("extra-".length);
+    const extras = new Set(state.extras);
+    extras.delete(extraId);
+    return { ...state, extras };
+  }
+
+  if (pillId === "when-open_now" || pillId === "when-tonight") {
+    return { ...state, when: null };
+  }
+
+  if (pillId === "where-choose") {
+    return { ...state, where: "near" };
+  }
+
+  return state;
+}
+
+function builderStateFromPopularPreset(preset: HeroPopularSearch): BuilderState {
+  const opts = preset.options;
+  const tonight = /\btonight\b/i.test(preset.query);
+
+  if (opts?.watchSubcategory || (opts?.category === "custom" && opts.streamingServiceIds?.length)) {
+    return {
+      selectedMode: "streaming",
+      localWhat: null,
+      typeId: null,
+      extras: new Set<string>(),
+      when: tonight ? "tonight" : null,
+      where: "near",
+      streamingType: normalizeStreamType(opts.watchSubcategory) ?? "movies",
+      streamingVibe: null,
+      genre: null,
+      streamingServices: new Set(opts.streamingServiceIds ?? [])
+    };
+  }
+
+  if (opts?.category === "shopping") {
+    return {
+      selectedMode: "local",
+      localWhat: "shopping",
+      typeId: null,
+      extras: new Set<string>(),
+      when: null,
+      where: "near",
+      streamingType: null,
+      streamingVibe: null,
+      genre: null,
+      streamingServices: new Set<string>()
+    };
+  }
+
+  return {
+    selectedMode: "local",
+    localWhat: "food",
+    typeId: null,
+    extras: new Set<string>(),
+    when: tonight ? "tonight" : null,
+    where: opts?.builderMode === "halfway" || opts?.searchMode === "midpoint" ? "halfway" : "near",
+    streamingType: null,
+    streamingVibe: null,
+    genre: null,
+    streamingServices: new Set<string>()
+  };
 }

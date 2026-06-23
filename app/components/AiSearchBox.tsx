@@ -19,7 +19,6 @@ type Props = {
   showManualFallback?: boolean;
   manualLocationError?: string;
   locationContext?: CurrentLocationContext;
-  searchFormHint?: SearchHalfwayRequest;
   defaultUserAddress?: string;
   onParsed: (form: SearchHalfwayRequest, query: string) => void;
   onWatchSearch: (query: string, subcategory: WatchSubcategory) => void;
@@ -109,7 +108,6 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     showManualFallback = false,
     manualLocationError,
     locationContext,
-    searchFormHint,
     onParsed,
     onWatchSearch,
     onEventsSearch,
@@ -200,7 +198,6 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
           body: JSON.stringify({
             query: trimmed,
             context: locationContext,
-            form: searchFormHint,
             botMode: streamingSearch ? "watch" : undefined
           })
         });
@@ -245,7 +242,6 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
       onNeedsLocation,
       onParsed,
       onWatchSearch,
-      searchFormHint,
       watchActiveSubcategory,
       streamingSearch
     ]
@@ -355,7 +351,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
 
       {!showLocationActions && !showManualFallback && !showStandaloneError ? (
         <p className={`mt-2 px-1 text-xs font-semibold ${onHero ? "text-white/45" : "text-slate/70"}`}>
-          {onHero ? "Tap a popular search or category, or type your ask." : "Press Enter to ask, or tap the arrow to send."}
+          {onHero ? "Type a free-form ask, or build filters below and tap Search." : "Press Enter for a free-form ask, or use filters below and tap Search."}
         </p>
       ) : null}
 

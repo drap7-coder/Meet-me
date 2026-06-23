@@ -2,17 +2,18 @@
 
 import { EmptyState } from "@/app/components/EmptyState";
 import { FairMeetupPreview } from "@/app/components/FairMeetupPreview";
-import { KoiCapabilityExamples } from "@/app/components/KoiCapabilityExamples";
 import { KoiThinkingLoader } from "@/app/components/KoiThinkingLoader";
 import { AiSearchBox, type AiSearchBoxHandle } from "@/app/components/AiSearchBox";
 import { CompactResultsHeader } from "@/app/components/home/CompactResultsHeader";
 import { MarketingHero } from "@/app/components/home/MarketingHero";
 import { ShareDialog, type ShareDialogState } from "@/app/components/home/ShareDialog";
 import { Footer, SiteHeader } from "@/app/components/home/SiteChrome";
+import { ClassicSearchControls } from "@/app/components/ClassicSearchControls";
 import { KoiExampleSearchCard } from "@/app/components/KoiExampleSearchCard";
 import { LocationForm } from "@/app/components/LocationForm";
 import { RoadDivider } from "@/app/components/BrandRoad";
 import { ResultsMap } from "@/app/components/ResultsMap";
+import { SearchPromptAssist, type PickQueryOptions } from "@/app/components/SearchPromptAssist";
 import { VenueCard } from "@/app/components/VenueCard";
 import { WatchEventsResults } from "@/app/components/WatchEventsResults";
 import { WeatherCard } from "@/app/components/WeatherCard";
@@ -52,7 +53,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 const initialForm: SearchHalfwayRequest = {
   locationA: "",
   locationB: "",
-  category: "coffee",
+  category: "restaurant",
   searchMode: "midpoint",
   meetupMode: "single",
   customQuery: ""
@@ -603,6 +604,18 @@ export default function HomePage() {
     void submitEventsSearch(query);
   }
 
+  function fillSuggestedQuery(query: string, options?: PickQueryOptions) {
+    searchBoxRef.current?.fillQuery(query, options?.watchSubcategory);
+    if (!options?.category && !options?.watchSubcategory) return;
+    setForm((current) => {
+      const next = { ...current };
+      if (options?.category) next.category = options.category;
+      if (options?.watchSubcategory) next.watchSubcategory = options.watchSubcategory;
+      else if (options?.category && options.category !== "custom") next.watchSubcategory = undefined;
+      return next;
+    });
+  }
+
   function submitLocationFallback() {
     if (!form.locationA.trim()) {
       setError("Add where you are, or tap Use my location below the search box.");
@@ -756,7 +769,7 @@ export default function HomePage() {
       {!hasSearched && !results && !watchEventsResult && !loading ? (
         <>
           <section id="search" className="relative isolate overflow-x-clip bg-ink px-4 pb-10 pt-4 sm:px-6 sm:pb-12 sm:pt-5 lg:px-8 lg:pb-14">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_50%_-15%,rgba(52,199,89,0.12),transparent_58%),radial-gradient(circle_at_88%_8%,rgba(10,132,255,0.08),transparent_32%),linear-gradient(180deg,#0A1323_0%,#0c1729_50%,#0A1323_100%)]" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_50%_-15%,rgba(255,90,0,0.14),transparent_58%),radial-gradient(circle_at_88%_8%,rgba(10,132,255,0.08),transparent_32%),linear-gradient(180deg,#0A1323_0%,#0c1729_50%,#0A1323_100%)]" />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0A1323] via-[#0A1323]/70 to-transparent sm:h-28" />
             <div className="relative z-10 mx-auto grid w-full max-w-5xl gap-5 py-5 sm:gap-6 sm:py-7 lg:gap-7 lg:py-8">
               <MarketingHero />
@@ -784,11 +797,21 @@ export default function HomePage() {
                 onShowZipFallback={showZipFallback}
                 onSubmitManualLocation={(input) => void resolveManualLocation(input)}
               />
-              <KoiCapabilityExamples
+              <SearchPromptAssist
+                form={form}
                 busy={loading || locating || resolvingManual}
-                onSelect={(example) =>
-                  searchBoxRef.current?.runQuery(example.query, example.watchSubcategory)
-                }
+                onPickQuery={fillSuggestedQuery}
+              />
+              <ClassicSearchControls
+                form={form}
+                loading={loading}
+                locationLabel={activeLocationLabel}
+                locating={locating}
+                onChange={setForm}
+                onSearchPlaces={runParsedSearch}
+                onSearchWatch={runWatchSearch}
+                onSearchEvents={runEventsSearch}
+                onUseLocation={() => void requestUserLocation()}
               />
               <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
               <LocationFallbackPanel
@@ -880,6 +903,22 @@ export default function HomePage() {
                 onUseLocation={() => void requestUserLocation()}
                 onShowZipFallback={showZipFallback}
                 onSubmitManualLocation={(input) => void resolveManualLocation(input)}
+              />
+              <SearchPromptAssist
+                form={form}
+                busy={loading || locating || resolvingManual}
+                onPickQuery={fillSuggestedQuery}
+              />
+              <ClassicSearchControls
+                form={form}
+                loading={loading}
+                locationLabel={activeLocationLabel}
+                locating={locating}
+                onChange={setForm}
+                onSearchPlaces={runParsedSearch}
+                onSearchWatch={runWatchSearch}
+                onSearchEvents={runEventsSearch}
+                onUseLocation={() => void requestUserLocation()}
               />
               <LocationFallbackPanel
                 form={form}

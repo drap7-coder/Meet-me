@@ -48,7 +48,7 @@ export const CATEGORY_GROUPS: PrimaryCategoryConfig[] = [
     id: "food",
     label: "Food",
     description: "Dining & cuisines",
-    accent: "from-[#EDFFED] to-white",
+    accent: "from-[#FFF3E8] to-white",
     subcategories: [
       category("italian", "Italian", "Pasta, pizza, trattorias, and neighborhood Italian restaurants.", "Best Food Match", "An Italian food match near the midpoint with fair travel times.", {
         single: ["Italian restaurant", "trattoria", "pasta restaurant", "Italian food"],
@@ -92,7 +92,7 @@ export const CATEGORY_GROUPS: PrimaryCategoryConfig[] = [
     id: "drinks",
     label: "Drinks",
     description: "Breweries, wine bars & more",
-    accent: "from-[#EDFFED] to-white",
+    accent: "from-[#FFF3E8] to-white",
     subcategories: [
       category("breweries", "Breweries", "Casual drinks, open seating, and group-friendly energy.", "Best Food Match", "A brewery-focused match near the midpoint with workable travel times for both people.", {
         single: ["brewery", "craft brewery", "brewpub", "beer garden"],

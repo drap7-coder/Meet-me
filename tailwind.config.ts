@@ -28,13 +28,13 @@ const config: Config = {
         moss: "#0A1323",
         mint: "#F2EFE7",
         paper: "#FFFDF8",
-        clay: "#34C759",
+        clay: "#FF5A00",
         coral: "#E07A5F",
         indigo: "#2D3E57",
         sky: "#F7F1E8",
         line: "#E5DDD0",
-        koi: "#34C759",
-        "koi-hover": "#2A9D47",
+        koi: "#FF5A00",
+        "koi-hover": "#E64A00",
         watch: "#0A84FF",
         events: "#E07A5F",
         food: "#F5A623",
@@ -44,7 +44,7 @@ const config: Config = {
       },
       boxShadow: {
         soft: "0 18px 50px rgba(10, 19, 35, 0.10)",
-        glow: "0 16px 40px rgba(52, 199, 89, 0.18)",
+        glow: "0 16px 40px rgba(255, 90, 0, 0.20)",
         card: "0 8px 32px rgba(0, 0, 0, 0.22)"
       },
       borderRadius: {

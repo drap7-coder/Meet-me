@@ -6,11 +6,11 @@
   color-scheme: light;
   background: #f2efe7;
   --mmh-navy: #0a1323;
-  --mmh-coral: #34c759;
+  --mmh-coral: #ff5a00;
   --mmh-paper: #fffdf8;
   --mmh-muted: #5f6f82;
-  --koi-green: #34c759;
-  --koi-green-hover: #2a9d47;
+  --koi-green: #ff5a00;
+  --koi-green-hover: #e64a00;
   --koi-watch-blue: #0a84ff;
   --koi-card: #232f42;
 }
@@ -48,7 +48,7 @@ select {
 }
 
 ::selection {
-  background: rgba(52, 199, 89, 0.35);
+  background: rgba(255, 90, 0, 0.35);
   color: var(--mmh-navy);
 }
 
@@ -137,7 +137,7 @@ select {
   justify-content: center;
   border: 1px solid #d8dee8;
   border-radius: 999px;
-  background: #edffed;
+  background: #fff3e8;
   color: var(--mmh-navy);
   padding: 10px 14px;
   font-size: 0.9rem;

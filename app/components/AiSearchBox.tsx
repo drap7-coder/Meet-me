@@ -253,7 +253,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   const manualPromptMessage = error.trim() || "Enter a city, ZIP code, or address to search nearby.";
   const showStandaloneError = Boolean(error.trim()) && !showLocationActions && !showManualFallback;
   const promptPanelClass = onHero
-    ? "rounded-[14px] border border-koi/35 bg-koi/20 p-3 shadow-[0_8px_24px_rgba(52,199,89,0.12)]"
+    ? "rounded-[14px] border border-koi/35 bg-koi/20 p-3 shadow-[0_8px_24px_rgba(255,90,0,0.14)]"
     : "rounded-[14px] border border-koi/30 bg-koi/10 p-3";
   const promptTextClass = onHero ? "text-white" : "text-ink";
 

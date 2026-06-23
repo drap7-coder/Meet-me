@@ -28,7 +28,7 @@ export function BrandPin() {
     <>
       <path
         d="M116 4C122.6 4 128 9.4 128 16C128 24.1 119.4 32.6 116 36.5C112.6 32.6 104 24.1 104 16C104 9.4 109.4 4 116 4Z"
-        fill="#34C759"
+        fill="#FF5A00"
       />
       <circle cx="116" cy="16" r="4.5" fill="#FFFFFF" />
     </>

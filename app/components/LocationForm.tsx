@@ -143,7 +143,7 @@ export function LocationForm({
                 }
                 className={`h-10 rounded-full px-3 text-sm font-black transition ${
                   selected
-                    ? "bg-clay text-white shadow-[0_8px_18px_rgba(57,255,20,0.18)]"
+                    ? "bg-clay text-white shadow-[0_8px_18px_rgba(255,90,0,0.22)]"
                     : "text-ink hover:bg-white"
                 }`}
               >
@@ -250,7 +250,7 @@ export function LocationForm({
                 onClick={() => togglePreference(preference.id)}
                 className={`rounded-full border px-3 py-2 text-center text-sm font-bold transition ${
                   selected
-                    ? "border-clay bg-clay text-white shadow-[0_8px_18px_rgba(57,255,20,0.18)]"
+                    ? "border-clay bg-clay text-white shadow-[0_8px_18px_rgba(255,90,0,0.22)]"
                     : "border-line bg-white text-ink hover:border-clay/40 hover:bg-sky"
                 }`}
               >
@@ -279,7 +279,7 @@ export function LocationForm({
       <button
         type="submit"
         disabled={loading}
-        className="mt-6 h-11 w-full rounded-full bg-clay px-5 font-bold text-white shadow-[0_10px_24px_rgba(46,204,64,0.24)] transition hover:bg-[#24A832] focus:outline-none focus:ring-4 focus:ring-clay/25 disabled:cursor-not-allowed disabled:bg-ink/30 sm:h-12"
+        className="mt-6 h-11 w-full rounded-full bg-clay px-5 font-bold text-white shadow-[0_10px_24px_rgba(255,90,0,0.26)] transition hover:bg-koi-hover focus:outline-none focus:ring-4 focus:ring-clay/25 disabled:cursor-not-allowed disabled:bg-ink/30 sm:h-12"
       >
         {loading
           ? `${(submitLabel ?? submitCopy).replace("Find", "Finding")}...`

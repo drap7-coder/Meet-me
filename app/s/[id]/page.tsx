@@ -1,9 +1,9 @@
-import { getShare, sharePayloadToSearchRequest } from "@/lib/shareStore";
+import { storageProvider } from "@/lib/providers/storageProvider";
 import { redirect } from "next/navigation";
 
 export default async function SharedMeetupPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const payload = await getShare(id);
+  const payload = await storageProvider.getShare(id);
 
   if (!payload) {
     return (
@@ -25,7 +25,7 @@ export default async function SharedMeetupPage({ params }: { params: Promise<{ i
     );
   }
 
-  const request = sharePayloadToSearchRequest(payload);
+  const request = storageProvider.sharePayloadToSearchRequest(payload);
   const query = new URLSearchParams();
   query.set("a", request.locationA);
   if (request.locationAPlaceId) query.set("aPlaceId", request.locationAPlaceId);

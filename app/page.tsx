@@ -892,6 +892,21 @@ export default function HomePage() {
                 seed={promptAssistSeed}
               >
                 <SearchPromptModePicker />
+                <PersistentLocationBar
+                  label={activeLocationLabel}
+                  busy={loading || locating || resolvingManual}
+                  onChange={openLocationChange}
+                />
+                <ClassicSearchControls
+                  form={form}
+                  loading={loading}
+                  savedLocationLabel={activeLocationLabel}
+                  expanded={builderExpanded}
+                  onExpandedChange={handleBuilderExpanded}
+                  mode={builderMode}
+                  onSearchPlaces={runPlacesSearchFromBuilder}
+                  onSearchWatch={runWatchSearch}
+                />
                 <SearchPromptDetailChips />
                 <AiSearchBox
                   ref={searchBoxRef}
@@ -915,21 +930,6 @@ export default function HomePage() {
                   onShowZipFallback={showZipFallback}
                   onSubmitManualLocation={(input) => void resolveManualLocation(input)}
                   streamingSearch={form.category === "custom" && Boolean(form.watchSubcategory)}
-                />
-                <PersistentLocationBar
-                  label={activeLocationLabel}
-                  busy={loading || locating || resolvingManual}
-                  onChange={openLocationChange}
-                />
-                <ClassicSearchControls
-                  form={form}
-                  loading={loading}
-                  savedLocationLabel={activeLocationLabel}
-                  expanded={builderExpanded}
-                  onExpandedChange={handleBuilderExpanded}
-                  mode={builderMode}
-                  onSearchPlaces={runPlacesSearchFromBuilder}
-                  onSearchWatch={runWatchSearch}
                 />
               </SearchPromptAssistProvider>
               <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
@@ -1000,6 +1000,22 @@ export default function HomePage() {
                 surface="page"
               >
                 <SearchPromptModePicker />
+                <PersistentLocationBar
+                  label={activeLocationLabel}
+                  busy={loading || locating || resolvingManual}
+                  onChange={openLocationChange}
+                />
+                <ClassicSearchControls
+                  form={form}
+                  loading={loading}
+                  savedLocationLabel={activeLocationLabel}
+                  expanded={builderExpanded}
+                  onExpandedChange={handleBuilderExpanded}
+                  mode={builderMode}
+                  onSearchPlaces={runPlacesSearchFromBuilder}
+                  onSearchWatch={runWatchSearch}
+                  surface="page"
+                />
                 <SearchPromptDetailChips />
                 <AiSearchBox
                   ref={searchBoxRef}
@@ -1024,22 +1040,6 @@ export default function HomePage() {
                   onShowZipFallback={showZipFallback}
                   onSubmitManualLocation={(input) => void resolveManualLocation(input)}
                   streamingSearch={form.category === "custom" && Boolean(form.watchSubcategory)}
-                />
-                <PersistentLocationBar
-                  label={activeLocationLabel}
-                  busy={loading || locating || resolvingManual}
-                  onChange={openLocationChange}
-                />
-                <ClassicSearchControls
-                  form={form}
-                  loading={loading}
-                  savedLocationLabel={activeLocationLabel}
-                  expanded={builderExpanded}
-                  onExpandedChange={handleBuilderExpanded}
-                  mode={builderMode}
-                  onSearchPlaces={runPlacesSearchFromBuilder}
-                  onSearchWatch={runWatchSearch}
-                  surface="page"
                 />
               </SearchPromptAssistProvider>
               <LocationFallbackPanel

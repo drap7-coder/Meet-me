@@ -54,10 +54,22 @@ const initialForm: SearchHalfwayRequest = {
   locationA: "",
   locationB: "",
   category: "restaurant",
-  searchMode: "midpoint",
+  searchMode: "single",
   meetupMode: "single",
   customQuery: ""
 };
+
+function formWithStoredLocation(base: SearchHalfwayRequest = initialForm): SearchHalfwayRequest {
+  const stored = getSavedUserLocation();
+  if (!stored?.locationA?.trim()) return base;
+
+  return {
+    ...base,
+    locationA: base.locationA.trim() || stored.locationA,
+    locationAPlaceId: base.locationAPlaceId ?? stored.locationAPlaceId,
+    locationACoordinates: base.locationACoordinates ?? stored.locationACoordinates
+  };
+}
 
 type FallbackKind = "none" | "location" | "full";
 
@@ -200,6 +212,10 @@ export default function HomePage() {
         submitSearch(nextForm, shareId ? `${window.location.origin}/s/${shareId}` : undefined);
       }
     }
+  }, []);
+
+  useEffect(() => {
+    setForm((current) => formWithStoredLocation(current));
   }, []);
 
   useEffect(() => {
@@ -423,6 +439,23 @@ export default function HomePage() {
     }
   }
 
+  function handleFormChange(nextForm: SearchHalfwayRequest) {
+    const locationChanged =
+      nextForm.locationA.trim() !== form.locationA.trim() ||
+      nextForm.locationAPlaceId !== form.locationAPlaceId ||
+      JSON.stringify(nextForm.locationACoordinates) !== JSON.stringify(form.locationACoordinates);
+
+    if (nextForm.locationA.trim() && locationChanged) {
+      persistSavedLocation({
+        locationA: nextForm.locationA,
+        locationAPlaceId: nextForm.locationAPlaceId,
+        locationACoordinates: nextForm.locationACoordinates
+      });
+    }
+
+    setForm(nextForm);
+  }
+
   function startNewSearch() {
     if (openedFromSharedHalfway) {
       trackEvent("halfway_recipient_search_started", { category: form.category });
@@ -440,6 +473,7 @@ export default function HomePage() {
     setPendingRetry(null);
     setShowLocationActions(false);
     setShowManualFallback(false);
+    setForm(formWithStoredLocation(initialForm));
     syncUserLocationFromStorage();
     window.history.replaceState(null, "", "/");
     window.requestAnimationFrame(() => document.getElementById("search")?.scrollIntoView({ behavior: "smooth" }));
@@ -606,9 +640,14 @@ export default function HomePage() {
 
   function fillSuggestedQuery(query: string, options?: PickQueryOptions) {
     searchBoxRef.current?.fillQuery(query, options?.watchSubcategory);
-    if (!options?.category && !options?.watchSubcategory) return;
+    const stored = getActiveLocationContext();
     setForm((current) => {
       const next = { ...current };
+      if (!next.locationA.trim() && stored.locationA?.trim()) {
+        next.locationA = stored.locationA;
+        next.locationAPlaceId = stored.locationAPlaceId;
+        next.locationACoordinates = stored.locationACoordinates;
+      }
       if (options?.category) next.category = options.category;
       if (options?.watchSubcategory) next.watchSubcategory = options.watchSubcategory;
       else if (options?.category && options.category !== "custom") next.watchSubcategory = undefined;
@@ -807,10 +846,9 @@ export default function HomePage() {
                 loading={loading}
                 locationLabel={activeLocationLabel}
                 locating={locating}
-                onChange={setForm}
+                onChange={handleFormChange}
                 onSearchPlaces={runParsedSearch}
                 onSearchWatch={runWatchSearch}
-                onSearchEvents={runEventsSearch}
                 onUseLocation={() => void requestUserLocation()}
               />
               <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
@@ -819,14 +857,14 @@ export default function HomePage() {
                 loading={loading}
                 pendingQuery={pendingRetry?.kind === "events" ? pendingRetry.query : undefined}
                 hidden={!showClassicFallback || fallbackKind !== "location"}
-                onChange={setForm}
+                onChange={handleFormChange}
                 onSubmit={submitLocationFallback}
               />
               <ClassicSearchPanel
                 form={form}
                 loading={loading}
                 discoveryMode="places"
-                onChange={setForm}
+                onChange={handleFormChange}
                 onSubmit={submitClassicSearch}
                 hidden={!showClassicFallback || fallbackKind !== "full"}
               />
@@ -914,10 +952,9 @@ export default function HomePage() {
                 loading={loading}
                 locationLabel={activeLocationLabel}
                 locating={locating}
-                onChange={setForm}
+                onChange={handleFormChange}
                 onSearchPlaces={runParsedSearch}
                 onSearchWatch={runWatchSearch}
-                onSearchEvents={runEventsSearch}
                 onUseLocation={() => void requestUserLocation()}
               />
               <LocationFallbackPanel
@@ -925,14 +962,14 @@ export default function HomePage() {
                 loading={loading}
                 pendingQuery={pendingRetry?.kind === "events" ? pendingRetry.query : undefined}
                 hidden={!showClassicFallback || fallbackKind !== "location"}
-                onChange={setForm}
+                onChange={handleFormChange}
                 onSubmit={submitLocationFallback}
               />
               <ClassicSearchPanel
                 form={form}
                 loading={loading}
                 discoveryMode="places"
-                onChange={setForm}
+                onChange={handleFormChange}
                 onSubmit={submitClassicSearch}
                 hidden={!showClassicFallback || fallbackKind !== "full"}
               />

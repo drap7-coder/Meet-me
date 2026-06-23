@@ -1,5 +1,15 @@
 "use client";
 
+import {
+  DEFAULT_SHOPPING_SUBCATEGORY,
+  isShoppingCategory,
+  SHOPPING_SUBCATEGORIES,
+  shoppingQueryForLocation
+} from "@/lib/shoppingBrowse";
+import {
+  getWatchGenresForSubcategory,
+  WATCH_SUBCATEGORIES
+} from "@/lib/watchBrowse";
 import type { SearchHalfwayRequest, VenueCategory, WatchSubcategory } from "@/lib/types";
 import { useState } from "react";
 
@@ -21,15 +31,29 @@ type QuickChip = {
   watchSubcategory?: WatchSubcategory;
 };
 
-const CONCIERGE_TAGLINE = "Ask about dinner, drinks, or events.";
+type AssistMode = "browse" | "places" | "streaming";
 
-const QUICK_CHIPS: QuickChip[] = [
+const CONCIERGE_TAGLINE = "Ask about dinner, drinks, shopping, or what to stream.";
+
+const PLACE_CHIPS: QuickChip[] = [
   { label: "Restaurants", query: "Restaurants near me tonight", category: "restaurant" },
   { label: "Drinks", query: "Cocktail bars near me tonight", category: "cocktail_bars" },
   { label: "Coffee", query: "Coffee near me", category: "coffee" },
-  { label: "Events", query: "Events near me this weekend", category: "events" },
   { label: "Near Me", query: "Best places near me", category: "restaurant" }
 ];
+
+const STREAMING_CHIP: QuickChip = {
+  label: "Streaming",
+  query: "What should I watch tonight?",
+  category: "custom",
+  watchSubcategory: "movies"
+};
+
+const SHOPPING_CHIP: QuickChip = {
+  label: "Shopping",
+  query: "Shopping near me",
+  category: DEFAULT_SHOPPING_SUBCATEGORY.category
+};
 
 const HALFWAY_REFINEMENT: QuickChip = {
   label: "Halfway",
@@ -48,17 +72,103 @@ const BASE_REFINEMENTS: QuickChip[] = [
   { label: "Steakhouse", query: "Upscale steakhouse near me tonight" }
 ];
 
-export function SearchPromptAssist({ form, busy = false, onPickQuery }: Props) {
-  const [categorySelected, setCategorySelected] = useState(false);
-  const refinements = contextualRefinements(form);
+const WATCH_TYPE_CHIPS = WATCH_SUBCATEGORIES.filter(
+  (option) => option.id === "movies" || option.id === "tv_shows"
+);
 
-  function pickCategory(chip: QuickChip) {
-    setCategorySelected(true);
-    onPickQuery(chip.query, { category: chip.category, watchSubcategory: chip.watchSubcategory });
+export function SearchPromptAssist({ form, busy = false, onPickQuery }: Props) {
+  const [mode, setMode] = useState<AssistMode>("browse");
+  const [watchSubcategory, setWatchSubcategory] = useState<WatchSubcategory>(
+    form.watchSubcategory === "tv_shows" ? "tv_shows" : "movies"
+  );
+  const placeRefinements = contextualRefinements(form);
+  const genreChips = streamingGenreChips(watchSubcategory);
+
+  function pickPlaceCategory(chip: QuickChip) {
+    setMode("places");
+    onPickQuery(chip.query, { category: chip.category, watchSubcategory: undefined });
   }
 
-  function pickRefinement(chip: QuickChip) {
-    onPickQuery(chip.query, { category: chip.category, watchSubcategory: chip.watchSubcategory });
+  function pickPlaceRefinement(chip: QuickChip) {
+    onPickQuery(chip.query, { category: chip.category ?? form.category, watchSubcategory: undefined });
+  }
+
+  function pickStreaming() {
+    setMode("streaming");
+    setWatchSubcategory("movies");
+    onPickQuery(STREAMING_CHIP.query, {
+      category: "custom",
+      watchSubcategory: "movies"
+    });
+  }
+
+  function pickShopping() {
+    setMode("places");
+    onPickQuery(SHOPPING_CHIP.query, {
+      category: DEFAULT_SHOPPING_SUBCATEGORY.category,
+      watchSubcategory: undefined
+    });
+  }
+
+  function pickWatchType(subcategory: WatchSubcategory) {
+    setWatchSubcategory(subcategory);
+    const label = subcategory === "tv_shows" ? "TV show" : "movie";
+    onPickQuery(`What ${label} should I watch tonight?`, {
+      category: "custom",
+      watchSubcategory: subcategory
+    });
+  }
+
+  function pickGenre(query: string) {
+    onPickQuery(query, { category: "custom", watchSubcategory });
+  }
+
+  function backToBrowse() {
+    setMode("browse");
+  }
+
+  if (mode === "streaming") {
+    return (
+      <section className="grid gap-3" aria-label="Search suggestions">
+        <div className="flex items-center justify-between gap-2">
+          <p className="px-0.5 text-sm font-semibold text-white/70">Streaming picks</p>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={backToBrowse}
+            className="shrink-0 rounded-full border border-white/16 bg-white/[0.08] px-3 py-1.5 text-xs font-bold text-white/85 transition hover:border-koi/55 hover:bg-koi/14 disabled:opacity-60"
+          >
+            ← Places
+          </button>
+        </div>
+
+        <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Movies or shows">
+          {WATCH_TYPE_CHIPS.map((option) => (
+            <AssistChip
+              key={option.id}
+              label={option.label}
+              busy={busy}
+              selected={watchSubcategory === option.id}
+              onPick={() => pickWatchType(option.id)}
+            />
+          ))}
+        </div>
+
+        {genreChips.length ? (
+          <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Streaming genres">
+            {genreChips.map((chip) => (
+              <AssistChip
+                key={chip.id}
+                label={chip.label}
+                busy={busy}
+                subtle
+                onPick={() => pickGenre(chip.query)}
+              />
+            ))}
+          </div>
+        ) : null}
+      </section>
+    );
   }
 
   return (
@@ -66,15 +176,23 @@ export function SearchPromptAssist({ form, busy = false, onPickQuery }: Props) {
       <p className="px-0.5 text-sm font-semibold text-white/70">{CONCIERGE_TAGLINE}</p>
 
       <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Quick start categories">
-        {QUICK_CHIPS.map((chip) => (
-          <AssistChip key={chip.label} chip={chip} busy={busy} onPick={() => pickCategory(chip)} />
+        {PLACE_CHIPS.map((chip) => (
+          <AssistChip key={chip.label} label={chip.label} busy={busy} onPick={() => pickPlaceCategory(chip)} />
         ))}
+        <AssistChip label={SHOPPING_CHIP.label} busy={busy} onPick={pickShopping} />
+        <AssistChip label={STREAMING_CHIP.label} busy={busy} onPick={pickStreaming} />
       </div>
 
-      {categorySelected && refinements.length ? (
+      {mode === "places" && placeRefinements.length ? (
         <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Refine search">
-          {refinements.map((chip) => (
-            <AssistChip key={chip.label} chip={chip} busy={busy} subtle onPick={() => pickRefinement(chip)} />
+          {placeRefinements.map((chip) => (
+            <AssistChip
+              key={chip.label}
+              label={chip.label}
+              busy={busy}
+              subtle
+              onPick={() => pickPlaceRefinement(chip)}
+            />
           ))}
         </div>
       ) : null}
@@ -83,14 +201,16 @@ export function SearchPromptAssist({ form, busy = false, onPickQuery }: Props) {
 }
 
 function AssistChip({
-  chip,
+  label,
   busy,
   subtle = false,
+  selected = false,
   onPick
 }: {
-  chip: QuickChip;
+  label: string;
   busy: boolean;
   subtle?: boolean;
+  selected?: boolean;
   onPick: () => void;
 }) {
   return (
@@ -98,13 +218,16 @@ function AssistChip({
       type="button"
       disabled={busy}
       onClick={onPick}
+      aria-pressed={selected}
       className={`shrink-0 rounded-full border px-3.5 py-2 text-sm font-bold transition focus:outline-none focus:ring-4 focus:ring-koi/15 disabled:cursor-not-allowed disabled:opacity-60 ${
-        subtle
-          ? "border-white/12 bg-white/[0.055] text-white/75 hover:border-koi/45 hover:bg-koi/10"
-          : "border-white/16 bg-white/[0.08] text-white hover:border-koi/55 hover:bg-koi/14"
+        selected
+          ? "border-koi bg-koi text-white shadow-[0_8px_18px_rgba(255,90,0,0.24)]"
+          : subtle
+            ? "border-white/12 bg-white/[0.055] text-white/75 hover:border-koi/45 hover:bg-koi/10"
+            : "border-white/16 bg-white/[0.08] text-white hover:border-koi/55 hover:bg-koi/14"
       }`}
     >
-      {chip.label}
+      {label}
     </button>
   );
 }
@@ -113,16 +236,6 @@ function contextualRefinements(form: SearchHalfwayRequest): QuickChip[] {
   const location = form.locationA.trim() || "me";
   const restaurantQuery = (query: string) => query.replace("near me", `near ${location}`);
   const category = form.category;
-
-  if (category === "events") {
-    return [
-      { label: "Tonight", query: `Events near ${location} tonight` },
-      { label: "Date Night", query: `Fun date night near ${location} this Friday` },
-      { label: "Live Music", query: `Live music near ${location} tonight` },
-      { label: "Outdoor", query: `Outdoor events near ${location} this weekend` },
-      HALFWAY_REFINEMENT
-    ];
-  }
 
   if (category === "coffee") {
     return [
@@ -133,11 +246,14 @@ function contextualRefinements(form: SearchHalfwayRequest): QuickChip[] {
     ];
   }
 
-  if (category === "custom" && form.watchSubcategory) {
+  if (isShoppingCategory(category)) {
     return [
-      { label: "Tonight", query: "What should I watch tonight?", watchSubcategory: "movies" },
-      { label: "Date Night", query: "Date night movies to stream", watchSubcategory: "movies" },
-      { label: "Funny", query: "Funny movies like Superbad", watchSubcategory: "movies" }
+      ...SHOPPING_SUBCATEGORIES.map((subcategory) => ({
+        label: subcategory.label,
+        query: shoppingQueryForLocation(subcategory.query, location),
+        category: subcategory.category
+      })),
+      HALFWAY_REFINEMENT
     ];
   }
 
@@ -148,4 +264,12 @@ function contextualRefinements(form: SearchHalfwayRequest): QuickChip[] {
     })),
     HALFWAY_REFINEMENT
   ];
+}
+
+function streamingGenreChips(subcategory: WatchSubcategory) {
+  return getWatchGenresForSubcategory(subcategory).map((genre) => ({
+    id: genre.id,
+    label: genre.label,
+    query: genre.query
+  }));
 }

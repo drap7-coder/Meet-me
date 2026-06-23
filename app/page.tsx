@@ -1,7 +1,6 @@
 "use client";
 
 import { EmptyState } from "@/app/components/EmptyState";
-import { FairMeetupPreview } from "@/app/components/FairMeetupPreview";
 import { KoiThinkingLoader } from "@/app/components/KoiThinkingLoader";
 import { AiSearchBox, type AiSearchBoxHandle } from "@/app/components/AiSearchBox";
 import { CompactResultsHeader } from "@/app/components/home/CompactResultsHeader";
@@ -939,7 +938,6 @@ export default function HomePage() {
                 />
                 <SearchPromptDetailChips />
               </SearchPromptAssistProvider>
-              <FairMeetupPreview />
               <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
               <LocationFallbackPanel
                 form={form}

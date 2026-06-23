@@ -1,6 +1,6 @@
 "use client";
 
-import { FairMeetupMap } from "@/app/components/FairMeetupMap";
+import { FuturisticMeetupMap } from "@/app/components/FuturisticMeetupMap";
 import { KOI_DESIGN } from "@/src/config/design";
 
 export function FairMeetupPreview() {
@@ -16,7 +16,7 @@ export function FairMeetupPreview() {
         Fair meetup preview between Beatrix and Charlotte
       </h2>
 
-      <FairMeetupMap />
+      <FuturisticMeetupMap />
 
       <div className="mt-5 rounded-[14px] border border-koi/25 bg-koi/10 px-4 py-3.5 text-center">
         <p className="text-sm font-black leading-5 text-koi">✓ Fair Meetup Found</p>

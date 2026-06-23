@@ -464,6 +464,101 @@ select {
   }
 }
 
+/* Futuristic fair-meetup map */
+.futurist-map-shell {
+  isolation: isolate;
+}
+
+.futurist-road-base {
+  fill: none;
+  stroke: rgba(34, 211, 238, 0.22);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.futurist-road-main {
+  stroke-width: 4.5;
+}
+
+.futurist-road-stream {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 6 18;
+  stroke-dashoffset: 120;
+  opacity: 0;
+  animation: futurist-data-stream 2.6s ease-out 3 forwards;
+}
+
+.futurist-road-stream-main {
+  stroke-width: 2.5;
+  animation-duration: 3s;
+}
+
+.futurist-data-node {
+  opacity: 0;
+  filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.9));
+  animation: futurist-node-fade 2.4s ease-out 3 forwards;
+}
+
+.futurist-data-node-b {
+  filter: drop-shadow(0 0 4px rgba(255, 90, 0, 0.85));
+  animation-delay: 0.4s;
+}
+
+.futurist-data-node-c {
+  animation-delay: 0.8s;
+}
+
+.futurist-mid-pulse {
+  animation: futurist-mid-glow 3.2s ease-out 1 forwards;
+}
+
+@keyframes futurist-data-stream {
+  0% {
+    opacity: 0;
+    stroke-dashoffset: 120;
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.35;
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes futurist-node-fade {
+  0% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.15;
+  }
+}
+
+@keyframes futurist-mid-glow {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .koi-thinking-swim,
   .koi-thinking-ripple,
@@ -473,5 +568,17 @@ select {
 
   .koi-thinking-progress {
     width: 66%;
+  }
+
+  .futurist-road-stream,
+  .futurist-data-node,
+  .futurist-mid-pulse {
+    animation: none;
+    opacity: 0.35;
+    stroke-dashoffset: 0;
+  }
+
+  .futurist-data-node {
+    opacity: 0.5;
   }
 }

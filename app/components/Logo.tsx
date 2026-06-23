@@ -1,7 +1,7 @@
 import { BRAND } from "@/src/config/branding";
 import Image from "next/image";
 
-const MARK_SRC = "/branding/koi-mark.svg";
+const MARK_SRC = "/branding/koi-mark-transparent.png";
 
 type LogoSize = "sm" | "md" | "lg" | "xl" | "hero";
 type LogoVariant = "mark" | "lockup";

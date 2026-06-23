@@ -74,7 +74,11 @@ export async function parseSearch(input: {
   if ((!locationA && looksLikeCurrentLocationQuery(query)) || isCurrentLocationReference(locationA)) {
     locationA = "me";
   }
-  const categoryIntent = resolveSearchCategoryFromQuery(query, parsed.category);
+  const categoryIntent = resolveSearchCategoryFromQuery(
+    query,
+    parsed.category,
+    readFormCategoryHint(input.form)
+  );
   const searchMode =
     parsed.search_mode === "single" || (locationA && !locationB && !looksLikeMidpointQuery(query))
       ? "single"
@@ -176,13 +180,15 @@ async function parseWithOllama(query: string): Promise<ParsedSearchIntent> {
             "Return only JSON with keys location_a, location_b, category, search_mode.",
             "Do not geocode, calculate midpoint, search places, rank venues, or add coordinates.",
             "Use short human-readable place strings. Include state when the user provides or implies it confidently.",
-            "Use category as the requested venue/activity type, such as coffee, Italian, breweries, cocktail bars, park, hiking, bookstore, bowling, shopping mall, stores, ramen, or movies (movies are handled separately).",
+            "Use category as the requested venue/activity type, such as coffee, Italian, breweries, cocktail bars, park, hiking, bookstore, bowling, shopping mall, stores, ramen, or restaurant.",
+            "When the user asks about eating, dinner, lunch, food, or what is worth eating, use category restaurant.",
             "Use search_mode midpoint when the user wants a place between two locations.",
             "Use search_mode single when the user wants places near, in, or around one location. For single searches, put the place in location_a and leave location_b empty.",
             "When the user says near me, around me, or my location, set location_a to me and search_mode to single.",
             "If a value is missing, return an empty string for that key.",
             "Example: Meet for coffee halfway between Hoboken and Edison -> {\"location_a\":\"Hoboken, NJ\",\"location_b\":\"Edison, NJ\",\"category\":\"coffee\",\"search_mode\":\"midpoint\"}.",
-            "Example: Find coffee near Hoboken -> {\"location_a\":\"Hoboken, NJ\",\"location_b\":\"\",\"category\":\"coffee\",\"search_mode\":\"single\"}."
+            "Example: Find coffee near Hoboken -> {\"location_a\":\"Hoboken, NJ\",\"location_b\":\"\",\"category\":\"coffee\",\"search_mode\":\"single\"}.",
+            "Example: What's worth eating near me tonight -> {\"location_a\":\"me\",\"location_b\":\"\",\"category\":\"restaurant\",\"search_mode\":\"single\"}."
           ].join("\n")
         },
         {
@@ -261,13 +267,15 @@ function buildParserPrompt(query: string) {
     "Return only JSON with keys location_a, location_b, category, search_mode.",
     "Do not geocode, calculate midpoint, search places, rank venues, or add coordinates.",
     "Use short human-readable place strings. Include state when the user provides or implies it confidently.",
-    "Use category as the requested venue/activity type, such as coffee, Italian, breweries, cocktail bars, park, hiking, bookstore, bowling, shopping mall, stores, ramen, or outlet mall.",
+    "Use category as the requested venue/activity type, such as coffee, Italian, breweries, cocktail bars, park, hiking, bookstore, bowling, shopping mall, stores, ramen, or restaurant.",
+    "When the user asks about eating, dinner, lunch, food, or what is worth eating, use category restaurant.",
     "Use search_mode midpoint when the user wants a place between two locations.",
     "Use search_mode single when the user wants places near, in, or around one location. For single searches, put the place in location_a and leave location_b empty.",
     "When the user says near me, around me, or my location, set location_a to me and search_mode to single.",
     "If a value is missing, return an empty string for that key.",
     "Example: Meet for coffee halfway between Hoboken and Edison -> {\"location_a\":\"Hoboken, NJ\",\"location_b\":\"Edison, NJ\",\"category\":\"coffee\",\"search_mode\":\"midpoint\"}.",
     "Example: Find coffee near Hoboken -> {\"location_a\":\"Hoboken, NJ\",\"location_b\":\"\",\"category\":\"coffee\",\"search_mode\":\"single\"}.",
+    "Example: What's worth eating near me tonight -> {\"location_a\":\"me\",\"location_b\":\"\",\"category\":\"restaurant\",\"search_mode\":\"single\"}.",
     "",
     `User query: ${query}`
   ].join("\n");
@@ -334,6 +342,12 @@ function parseRequestedBotMode(value: unknown): KoiBotMode | undefined {
   if (value === "places" || value === "watch" || value === "events") return value;
   if (value === "watch_events") return "events";
   return undefined;
+}
+
+function readFormCategoryHint(form: unknown): SearchHalfwayRequest["category"] | undefined {
+  if (!form || typeof form !== "object") return undefined;
+  const category = (form as SearchHalfwayRequest).category;
+  return typeof category === "string" && category.trim() ? category : undefined;
 }
 
 function buildPlacesParseResponse(

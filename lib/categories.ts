@@ -380,7 +380,11 @@ export function mapCategoryIntent(input: string | null | undefined): { category:
     cuisine: "restaurant",
     dining: "restaurant",
     restaurants: "restaurant",
+    restaurant: "restaurant",
     eat: "restaurant",
+    eating: "restaurant",
+    meals: "restaurant",
+    meal: "restaurant",
     italian_food: "italian",
     barbecue: "bbq",
     barbeque: "bbq",
@@ -485,7 +489,8 @@ export function mapCategoryIntent(input: string | null | undefined): { category:
 
 export function resolveSearchCategoryFromQuery(
   query: string,
-  parsedCategory?: string
+  parsedCategory?: string,
+  hintedCategory?: VenueCategory
 ): { category: VenueCategory; customQuery?: string } {
   const matched = matchCategoryInQuery(query);
   if (matched) return { category: matched };
@@ -499,8 +504,17 @@ export function resolveSearchCategoryFromQuery(
     if (rematched) return { category: rematched };
   }
 
+  if (looksLikeFoodIntent(query)) {
+    return { category: "restaurant" };
+  }
+
   if (/\b(?:meet|meeting|halfway|between|spot|place)\b/i.test(query)) {
     return { category: "restaurant" };
+  }
+
+  const hint = hintedCategory ? normalizeCategory(hintedCategory) : null;
+  if (hint && hint !== "custom") {
+    return { category: hint };
   }
 
   if (parsed) {
@@ -508,6 +522,19 @@ export function resolveSearchCategoryFromQuery(
   }
 
   return { category: "custom", customQuery: query.trim() };
+}
+
+function looksLikeFoodIntent(query: string) {
+  const normalized = query.toLowerCase().replace(/&/g, "and");
+  return (
+    /\b(?:worth eating|place to eat|places to eat|where to eat|what to eat|grab a bite|get food|good food|something to eat|hungry|dining out|go eat|out to eat)\b/i.test(
+      normalized
+    ) ||
+    /\b(?:eat|eating|food|dinner|lunch|brunch|restaurant)\b.*\b(?:tonight|today|near me|nearby|around me)\b/i.test(
+      normalized
+    ) ||
+    /\bwhat(?:'s| is)\s+(?:good|worth)\b.*\b(?:eat|food|dinner|lunch|brunch|restaurant)\b/i.test(normalized)
+  );
 }
 
 function matchCategoryInQuery(query: string): VenueCategory | null {
@@ -541,6 +568,11 @@ function matchCategoryInQuery(query: string): VenueCategory | null {
     { pattern: /\bhotels?\b/, category: "hotels" },
     { pattern: /\bbrunch spots?\b|\bbrunch\b/, category: "brunch" },
     { pattern: /\bbreakfast spots?\b|\bbreakfast\b/, category: "breakfast" },
+    {
+      pattern:
+        /\bworth eating\b|\bplace to eat\b|\bplaces to eat\b|\bwhere to eat\b|\bwhat to eat\b|\bgrab a bite\b|\bsomething to eat\b|\beating\b|\beats?\b|\bmeal\b|\bhungry\b/,
+      category: "restaurant"
+    },
     { pattern: /\brestaurants?\b|\bdinner\b|\blunch\b|\bfood\b|\bdining\b/, category: "restaurant" },
     { pattern: /\bdrinks?\b|\bcocktails?\b|\bbars?\b|\bpubs?\b|\btaverns?\b/, category: "cocktail_bars" }
   ];

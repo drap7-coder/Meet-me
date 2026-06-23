@@ -916,6 +916,7 @@ export default function HomePage() {
                   showLocationActions={showLocationActions}
                   manualLocationError={manualLocationError}
                   locationContext={locationContext}
+                  searchFormHint={form}
                   defaultUserAddress={savedUserAddress}
                   locating={locating}
                   resolvingManual={resolvingManual}
@@ -1045,6 +1046,7 @@ export default function HomePage() {
                   showLocationActions={showLocationActions}
                   manualLocationError={manualLocationError}
                   locationContext={locationContext}
+                  searchFormHint={form}
                   defaultUserAddress={savedUserAddress}
                   locating={locating}
                   resolvingManual={resolvingManual}

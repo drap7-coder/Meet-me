@@ -19,6 +19,7 @@ type Props = {
   showManualFallback?: boolean;
   manualLocationError?: string;
   locationContext?: CurrentLocationContext;
+  searchFormHint?: SearchHalfwayRequest;
   defaultUserAddress?: string;
   onParsed: (form: SearchHalfwayRequest, query: string) => void;
   onWatchSearch: (query: string, subcategory: WatchSubcategory) => void;
@@ -108,6 +109,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     showManualFallback = false,
     manualLocationError,
     locationContext,
+    searchFormHint,
     onParsed,
     onWatchSearch,
     onEventsSearch,
@@ -198,6 +200,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
           body: JSON.stringify({
             query: trimmed,
             context: locationContext,
+            form: searchFormHint,
             botMode: streamingSearch ? "watch" : undefined
           })
         });
@@ -242,6 +245,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
       onNeedsLocation,
       onParsed,
       onWatchSearch,
+      searchFormHint,
       watchActiveSubcategory,
       streamingSearch
     ]

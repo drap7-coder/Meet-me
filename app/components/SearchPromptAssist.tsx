@@ -332,35 +332,16 @@ export function SearchPromptAssistProvider({
   );
 }
 
-/** Streaming + Explore chip modules below the ask input. Where/When live in Advanced Search. */
-export function SearchPromptChips() {
-  const {
-    busy,
-    state,
-    typeRefinements,
-    vibeRefinements,
-    pickMode,
-    pickLocalWhat,
-    pickStreamingType,
-    toggleType,
-    toggleExtra,
-    toggleGenre,
-    toggleStreamingService,
-    surface
-  } = useAssistContext();
-
+/** Premium Streaming / Explore cards — render above the ask input. */
+export function SearchPromptModePicker() {
+  const { busy, state, pickMode, surface } = useAssistContext();
   const onPage = surface === "page";
   const moduleBoxClass = `grid gap-3 rounded-[18px] border p-3.5 sm:gap-3.5 sm:p-4 ${
     onPage ? "border-line/80 bg-paper shadow-soft" : "border-white/12 bg-white/[0.04] backdrop-blur-sm"
   }`;
-  const showStreamingType = state.selectedMode === "streaming";
-  const showStreamingDetails = showStreamingType && Boolean(state.streamingType);
-  const showExploreCategories = state.selectedMode === "local";
-  const showExploreDetails = showExploreCategories && Boolean(state.localWhat);
-  const streamGenres = state.streamingType ? getWatchGenresForSubcategory(state.streamingType) : [];
 
   return (
-    <section className="grid gap-3" aria-label="Prompt builder">
+    <section className="grid gap-3" aria-label="Choose a path">
       <p
         className={`px-0.5 text-sm font-semibold tracking-wide sm:text-[0.9375rem] ${
           onPage ? "text-slate" : "text-white/75"
@@ -392,10 +373,44 @@ export function SearchPromptChips() {
             tone="explore"
           />
         </div>
+      </div>
+    </section>
+  );
+}
 
+/** Refinement chips — render below the ask input after a path is chosen. */
+export function SearchPromptDetailChips() {
+  const {
+    busy,
+    state,
+    typeRefinements,
+    vibeRefinements,
+    pickLocalWhat,
+    pickStreamingType,
+    toggleType,
+    toggleExtra,
+    toggleGenre,
+    toggleStreamingService,
+    surface
+  } = useAssistContext();
+
+  const onPage = surface === "page";
+  const moduleBoxClass = `grid gap-3 rounded-[18px] border p-3.5 sm:gap-3.5 sm:p-4 ${
+    onPage ? "border-line/80 bg-paper shadow-soft" : "border-white/12 bg-white/[0.04] backdrop-blur-sm"
+  }`;
+  const showStreamingType = state.selectedMode === "streaming";
+  const showStreamingDetails = showStreamingType && Boolean(state.streamingType);
+  const showExploreCategories = state.selectedMode === "local";
+  const showExploreDetails = showExploreCategories && Boolean(state.localWhat);
+  const streamGenres = state.streamingType ? getWatchGenresForSubcategory(state.streamingType) : [];
+
+  if (!showStreamingType && !showExploreCategories) return null;
+
+  return (
+    <section className="grid gap-3" aria-label="Prompt refinements">
+      <div className={moduleBoxClass}>
         {showStreamingType ? (
           <>
-            <div className={`h-px ${onPage ? "bg-line/60" : "bg-white/10"}`} aria-hidden="true" />
             <ChipGroup label="Type" onPage={onPage}>
               {WATCH_SUBCATEGORIES.map((option) => (
                 <AssistChip
@@ -412,6 +427,7 @@ export function SearchPromptChips() {
 
             {showStreamingDetails ? (
               <>
+                <div className={`h-px ${onPage ? "bg-line/60" : "bg-white/10"}`} aria-hidden="true" />
                 <ChipGroup label="Streaming Services" onPage={onPage}>
                   {STREAMING_SERVICES.map((service) => (
                     <StreamingServiceChip
@@ -444,7 +460,6 @@ export function SearchPromptChips() {
 
         {showExploreCategories ? (
           <>
-            <div className={`h-px ${onPage ? "bg-line/60" : "bg-white/10"}`} aria-hidden="true" />
             <ChipGroup label="Category" onPage={onPage}>
               {LOCAL_CHIP_CATEGORIES.map((def) => (
                 <AssistChip
@@ -461,6 +476,7 @@ export function SearchPromptChips() {
 
             {showExploreDetails && state.localWhat ? (
               <>
+                <div className={`h-px ${onPage ? "bg-line/60" : "bg-white/10"}`} aria-hidden="true" />
                 <ChipGroup label={localChipCategoryById(state.localWhat).subtypeLabel} onPage={onPage}>
                   {typeRefinements.map((refinement) => (
                     <AssistChip
@@ -494,6 +510,16 @@ export function SearchPromptChips() {
         ) : null}
       </div>
     </section>
+  );
+}
+
+/** @deprecated Prefer SearchPromptModePicker + ask input + SearchPromptDetailChips. */
+export function SearchPromptChips() {
+  return (
+    <>
+      <SearchPromptModePicker />
+      <SearchPromptDetailChips />
+    </>
   );
 }
 

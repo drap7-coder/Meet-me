@@ -16,7 +16,8 @@ import { RoadDivider } from "@/app/components/BrandRoad";
 import { ResultsMap } from "@/app/components/ResultsMap";
 import {
   SearchPromptAssistProvider,
-  SearchPromptChips,
+  SearchPromptDetailChips,
+  SearchPromptModePicker,
   type PickQueryOptions
 } from "@/app/components/SearchPromptAssist";
 import type { SearchBuilderMode } from "@/lib/searchBuilderOptions";
@@ -890,6 +891,7 @@ export default function HomePage() {
                 onPickQuery={fillSuggestedQuery}
                 seed={promptAssistSeed}
               >
+                <SearchPromptModePicker />
                 <AiSearchBox
                   ref={searchBoxRef}
                   loading={loading}
@@ -918,7 +920,7 @@ export default function HomePage() {
                   busy={loading || locating || resolvingManual}
                   onChange={openLocationChange}
                 />
-                <SearchPromptChips />
+                <SearchPromptDetailChips />
                 {!isStreamingForm ? (
                   <ClassicSearchControls
                     form={form}
@@ -998,6 +1000,7 @@ export default function HomePage() {
                 onPickQuery={fillSuggestedQuery}
                 seed={promptAssistSeed}
               >
+                <SearchPromptModePicker />
                 <AiSearchBox
                   ref={searchBoxRef}
                   surface="page"
@@ -1027,7 +1030,7 @@ export default function HomePage() {
                   busy={loading || locating || resolvingManual}
                   onChange={openLocationChange}
                 />
-                <SearchPromptChips />
+                <SearchPromptDetailChips />
                 {!isStreamingForm ? (
                   <ClassicSearchControls
                     form={form}

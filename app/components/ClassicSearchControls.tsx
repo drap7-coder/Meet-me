@@ -12,6 +12,7 @@ import {
   type ResultMode,
   type SearchBuilderMode
 } from "@/lib/searchBuilderOptions";
+import type { SearchSubmitOptions } from "@/lib/searchLocation";
 import type { SearchHalfwayRequest, WatchSubcategory } from "@/lib/types";
 import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
 import type { ReactNode } from "react";
@@ -26,7 +27,7 @@ type Props = {
   preferredMode?: SearchBuilderMode;
   onPreferredModeApplied?: () => void;
   onChange: (form: SearchHalfwayRequest) => void;
-  onSearchPlaces: (form: SearchHalfwayRequest) => void;
+  onSearchPlaces: (form: SearchHalfwayRequest, options?: SearchSubmitOptions) => void;
   onSearchWatch: (query: string, subcategory: WatchSubcategory) => void;
 };
 
@@ -136,12 +137,13 @@ export function ClassicSearchControls({
     };
 
     if (mode === "destination" && destination.trim()) {
+      // Destination is ephemeral: sent on the search payload only, not saved as home location.
       searchForm.locationA = destination.trim();
       searchForm.locationAPlaceId = undefined;
       searchForm.locationACoordinates = undefined;
     }
 
-    onSearchPlaces(searchForm);
+    onSearchPlaces(searchForm, mode === "destination" ? { preserveSavedHomeLocation: true } : undefined);
   }
 
   if (!expanded) {

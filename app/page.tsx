@@ -16,6 +16,7 @@ import { RoadDivider } from "@/app/components/BrandRoad";
 import { ResultsMap } from "@/app/components/ResultsMap";
 import { SearchPromptAssist, type PickQueryOptions } from "@/app/components/SearchPromptAssist";
 import type { SearchBuilderMode } from "@/lib/searchBuilderOptions";
+import { formForSessionAfterSearch, type SearchSubmitOptions } from "@/lib/searchLocation";
 import { VenueCard } from "@/app/components/VenueCard";
 import { WatchEventsResults } from "@/app/components/WatchEventsResults";
 import { WeatherCard } from "@/app/components/WeatherCard";
@@ -449,6 +450,7 @@ export default function HomePage() {
       nextForm.locationAPlaceId !== form.locationAPlaceId ||
       JSON.stringify(nextForm.locationACoordinates) !== JSON.stringify(form.locationACoordinates);
 
+    // Home location persists only from explicit builder/location edits — never from destination search submits.
     if (nextForm.locationA.trim() && locationChanged) {
       persistSavedLocation({
         locationA: nextForm.locationA,
@@ -489,7 +491,7 @@ export default function HomePage() {
     submitSearch(nextForm);
   }
 
-  function runParsedSearch(nextForm: SearchHalfwayRequest) {
+  function runParsedSearch(nextForm: SearchHalfwayRequest, options?: SearchSubmitOptions) {
     setWatchEventsResult(null);
     const resolvedForm = resolveCurrentLocationInForm(nextForm, getActiveLocationContext());
     if (needsCurrentLocationResolution(resolvedForm)) {
@@ -503,7 +505,7 @@ export default function HomePage() {
     setFallbackKind("none");
     setPendingRetry(null);
     setShowLocationActions(false);
-    setForm(resolvedForm);
+    setForm(formForSessionAfterSearch(resolvedForm, getActiveLocationContext(), options));
     submitSearch(resolvedForm);
   }
 

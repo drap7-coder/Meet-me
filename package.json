@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test:parser": "npx tsx scripts/test-parse-search.ts",
-    "test:routing": "npx tsx scripts/test-bot-mode-routing.ts"
+    "test:routing": "npx tsx scripts/test-bot-mode-routing.ts",
+    "test:destination-location": "npx tsx scripts/test-destination-location.ts"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",

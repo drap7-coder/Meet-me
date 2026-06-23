@@ -22,7 +22,7 @@ type Props = {
 type PlaceWhatId = "restaurant" | "drinks" | "coffee" | "shopping";
 type WhatId = PlaceWhatId | "streaming";
 type WhenId = "open_now" | "tonight";
-type WhereId = "near" | "halfway";
+type WhereId = "near" | "choose" | "halfway";
 
 type WhatDef = { id: WhatId; label: string; noun: string; category: VenueCategory };
 
@@ -160,6 +160,7 @@ export function SearchPromptAssist({ busy = false, onPickQuery, onExpandBuilder 
 
   function setWhere(id: WhereId) {
     if (id === "halfway") onExpandBuilder?.("halfway");
+    if (id === "choose") onExpandBuilder?.("destination");
     const what = state.what && state.what !== "streaming" ? state.what : "restaurant";
     commit({ ...state, what, where: id });
   }
@@ -239,13 +240,28 @@ export function SearchPromptAssist({ busy = false, onPickQuery, onExpandBuilder 
             ))}
           </ChipGroup>
 
-          <ChipGroup label="When / where">
+          <ChipGroup label="Where">
             <AssistChip
               label="Near Me"
               busy={busy}
               selected={state.where === "near"}
               onPick={() => setWhere("near")}
             />
+            <AssistChip
+              label="Choose Location"
+              busy={busy}
+              selected={state.where === "choose"}
+              onPick={() => setWhere("choose")}
+            />
+            <AssistChip
+              label="Halfway"
+              busy={busy}
+              selected={state.where === "halfway"}
+              onPick={() => setWhere("halfway")}
+            />
+          </ChipGroup>
+
+          <ChipGroup label="When">
             <AssistChip
               label="Open Now"
               busy={busy}
@@ -257,12 +273,6 @@ export function SearchPromptAssist({ busy = false, onPickQuery, onExpandBuilder 
               busy={busy}
               selected={state.when === "tonight"}
               onPick={() => toggleWhen("tonight")}
-            />
-            <AssistChip
-              label="Halfway"
-              busy={busy}
-              selected={state.where === "halfway"}
-              onPick={() => setWhere(state.where === "halfway" ? "near" : "halfway")}
             />
           </ChipGroup>
         </>
@@ -341,7 +351,9 @@ function buildPlaceQuery(state: BuilderState): string {
   if (state.extras.has("outdoor")) suffixes.push("with outdoor seating");
   if (state.extras.has("work")) suffixes.push("good for working");
 
-  suffixes.push(state.where === "halfway" ? "halfway between us" : "near me");
+  if (state.where === "halfway") suffixes.push("halfway between us");
+  else if (state.where === "choose") suffixes.push("near a specific location");
+  else suffixes.push("near me");
 
   if (state.when === "open_now") suffixes.push("open now");
   else if (state.when === "tonight") suffixes.push("tonight");

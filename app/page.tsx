@@ -840,6 +840,12 @@ export default function HomePage() {
             <div className="relative z-10 mx-auto grid w-full max-w-5xl gap-5 py-5 sm:gap-6 sm:py-7 lg:gap-7 lg:py-8">
               <MarketingHero />
               <FairMeetupPreview />
+              <SearchPromptAssist
+                form={form}
+                busy={loading || locating || resolvingManual}
+                onPickQuery={fillSuggestedQuery}
+                onExpandBuilder={(mode) => expandBuilder(mode ?? "halfway")}
+              />
               <AiSearchBox
                 ref={searchBoxRef}
                 loading={loading}
@@ -866,12 +872,6 @@ export default function HomePage() {
                 label={activeLocationLabel}
                 busy={loading || locating || resolvingManual}
                 onChange={openLocationChange}
-              />
-              <SearchPromptAssist
-                form={form}
-                busy={loading || locating || resolvingManual}
-                onPickQuery={fillSuggestedQuery}
-                onExpandBuilder={(mode) => expandBuilder(mode ?? "halfway")}
               />
               <ClassicSearchControls
                 form={form}
@@ -952,6 +952,12 @@ export default function HomePage() {
 
           {error && !loading && !results && !watchEventsResult ? (
           <section id="search" className="mt-5 grid w-full max-w-5xl gap-5">
+              <SearchPromptAssist
+                form={form}
+                busy={loading || locating || resolvingManual}
+                onPickQuery={fillSuggestedQuery}
+                onExpandBuilder={(mode) => expandBuilder(mode ?? "halfway")}
+              />
               <AiSearchBox
                 ref={searchBoxRef}
                 surface="page"
@@ -979,12 +985,6 @@ export default function HomePage() {
                 label={activeLocationLabel}
                 busy={loading || locating || resolvingManual}
                 onChange={openLocationChange}
-              />
-              <SearchPromptAssist
-                form={form}
-                busy={loading || locating || resolvingManual}
-                onPickQuery={fillSuggestedQuery}
-                onExpandBuilder={(mode) => expandBuilder(mode ?? "halfway")}
               />
               <ClassicSearchControls
                 form={form}

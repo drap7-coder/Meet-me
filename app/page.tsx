@@ -57,6 +57,7 @@ import { getSearchAccent } from "@/lib/searchAccent";
 import { KOI_PICK_DISPLAY_LIMIT, THINKING_PROGRESS_LABELS } from "@/lib/koiCapabilityExamples";
 import type { KoiBotMode, LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory, WatchEventsApiResponse, WatchEventsResult, WatchSubcategory } from "@/lib/types";
 import { BRAND } from "@/src/config/branding";
+import { PAGE_CONTAINER } from "@/lib/pageLayout";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 const initialForm: SearchHalfwayRequest = {
@@ -882,10 +883,10 @@ export default function HomePage() {
 
       {showLandingHero ? (
         <>
-          <section id="search" className="relative isolate overflow-x-clip bg-ink px-4 pb-8 pt-2 sm:px-6 sm:pb-10 lg:px-8">
+          <section id="search" className="relative isolate overflow-x-clip bg-ink pb-8 pt-2 sm:pb-10">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_50%_-15%,rgba(255,90,0,0.14),transparent_58%),radial-gradient(circle_at_88%_8%,rgba(10,132,255,0.08),transparent_32%),linear-gradient(180deg,#0A1323_0%,#0c1729_50%,#0A1323_100%)]" />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#0A1323] via-[#0A1323]/70 to-transparent sm:h-24" />
-            <div className="relative z-10 mx-auto grid w-full max-w-5xl gap-4 py-2 sm:gap-5 sm:py-4">
+            <div className={`relative z-10 grid w-full gap-4 py-2 sm:gap-5 sm:py-4 ${PAGE_CONTAINER}`}>
               <MarketingHero />
               <SearchPromptAssistProvider
                 busy={loading || locating || resolvingManual}
@@ -960,8 +961,8 @@ export default function HomePage() {
         </>
       ) : null}
 
-      <div className="bg-mint px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
+      <div className="bg-mint">
+        <div className={PAGE_CONTAINER}>
           {hasSearched || results || watchEventsResult || loading ? (
             <CompactResultsHeader
               loading={loading}
@@ -997,7 +998,7 @@ export default function HomePage() {
           ) : null}
 
           {error && !loading && !results && !watchEventsResult ? (
-          <section id="search" className="mt-5 grid w-full max-w-5xl gap-5">
+          <section id="search" className="mt-5 grid w-full gap-5">
               <SearchPromptAssistProvider
                 busy={loading || locating || resolvingManual}
                 builderMode={builderMode}

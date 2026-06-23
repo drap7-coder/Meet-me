@@ -1,5 +1,6 @@
 import { Logo } from "@/app/components/Logo";
 import { BRAND } from "@/src/config/branding";
+import { PAGE_CONTAINER } from "@/lib/pageLayout";
 
 type SiteHeaderProps = {
   variant?: "light" | "dark";
@@ -16,7 +17,7 @@ export function SiteHeader({ variant = "light" }: SiteHeaderProps) {
           : "sticky top-0 z-50 border-b border-line/80 bg-paper/90 pt-[env(safe-area-inset-top)] shadow-[0_1px_0_rgba(10,19,35,0.06)] backdrop-blur-sm"
       }
     >
-      <div className="mx-auto flex h-[52px] w-full max-w-7xl items-center justify-between gap-2 px-3 sm:h-[56px] sm:gap-3 sm:px-6 lg:px-8">
+      <div className={`flex h-[52px] w-full items-center justify-between gap-2 sm:h-[56px] sm:gap-3 ${PAGE_CONTAINER}`}>
         <a
           href="/"
           className="group inline-flex min-w-0 flex-1 items-center gap-2 sm:gap-2.5"
@@ -45,8 +46,8 @@ export function Footer() {
   )}&body=${encodeURIComponent("Questions, ideas, or feedback:\n")}`;
 
   return (
-    <footer className="bg-ink px-4 py-10 text-[#B8B0A3] sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-7xl flex-col gap-6 text-sm sm:flex-row sm:items-end sm:justify-between">
+    <footer className="bg-ink py-10 text-[#B8B0A3]">
+      <div className={`flex flex-col gap-6 text-sm sm:flex-row sm:items-end sm:justify-between ${PAGE_CONTAINER}`}>
         <div>
           <Logo variant="lockup" size="sm" className="[&_.font-serif]:text-white" />
           <p className="mt-3 font-semibold text-white/90">Currently in Beta</p>

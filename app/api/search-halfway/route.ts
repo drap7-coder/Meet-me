@@ -1,5 +1,5 @@
-import { searchHalfway } from "@/lib/google";
 import { normalizeCategory } from "@/lib/categories";
+import { googlePlacesProvider } from "@/lib/providers/googlePlacesProvider";
 import { logApiError } from "@/lib/serverLog";
 import type { SearchHalfwayRequest } from "@/lib/types";
 import { NextResponse } from "next/server";
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Enter a custom search term." }, { status: 400 });
     }
 
-    const result = await searchHalfway({ ...body, category: normalizeCategory(body.category) });
+    const result = await googlePlacesProvider.searchHalfway({ ...body, category: normalizeCategory(body.category) });
     return NextResponse.json(result);
   } catch (error) {
     logApiError("/api/search-halfway", error);

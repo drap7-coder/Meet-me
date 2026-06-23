@@ -1,11 +1,11 @@
-import { autocompleteLocations } from "@/lib/google";
+import { googlePlacesProvider } from "@/lib/providers/googlePlacesProvider";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const input = typeof body.input === "string" ? body.input : "";
-    const suggestions = await autocompleteLocations(input);
+    const suggestions = await googlePlacesProvider.autocompleteLocations(input);
     return NextResponse.json({ suggestions });
   } catch (error) {
     return NextResponse.json(

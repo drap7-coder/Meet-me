@@ -2,6 +2,7 @@
 
 import type { LatLng } from "@/lib/types";
 import { trackEvent } from "@/lib/analytics";
+import { openMeteoWeatherProvider } from "@/lib/providers/weatherProvider";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type Props = {
@@ -23,20 +24,6 @@ type WeatherSummary = {
   weatherCode: number;
 };
 
-type OpenMeteoResponse = {
-  current?: {
-    temperature_2m?: number;
-    apparent_temperature?: number;
-    weather_code?: number;
-    wind_speed_10m?: number;
-    time?: string;
-  };
-  hourly?: {
-    time?: string[];
-    precipitation_probability?: number[];
-  };
-};
-
 export function WeatherCard({ midpoint, searchMode = "midpoint" }: Props) {
   const [weatherState, setWeatherState] = useState<WeatherState>({ status: "loading" });
   const tracked = useRef(false);
@@ -48,42 +35,19 @@ export function WeatherCard({ midpoint, searchMode = "midpoint" }: Props) {
     async function loadWeather() {
       setWeatherState({ status: "loading" });
       try {
-        const params = new URLSearchParams({
-          latitude: String(midpoint.lat),
-          longitude: String(midpoint.lng),
-          current: "temperature_2m,apparent_temperature,weather_code,wind_speed_10m",
-          hourly: "precipitation_probability",
-          temperature_unit: "fahrenheit",
-          wind_speed_unit: "mph",
-          forecast_days: "1",
-          timezone: "auto"
-        });
-
-        const response = await fetch(`https://api.open-meteo.com/v1/forecast?${params.toString()}`, {
-          signal: controller.signal
-        });
-        if (!response.ok) throw new Error("Weather unavailable.");
-
-        const data = (await response.json()) as OpenMeteoResponse;
-        const current = data.current;
-        if (
-          typeof current?.temperature_2m !== "number" ||
-          typeof current.apparent_temperature !== "number" ||
-          typeof current.weather_code !== "number" ||
-          typeof current.wind_speed_10m !== "number"
-        ) {
-          throw new Error("Weather unavailable.");
-        }
-
+        const weather = await openMeteoWeatherProvider.getCurrentWeather(
+          { lat: midpoint.lat, lng: midpoint.lng },
+          controller.signal
+        );
         setWeatherState({
           status: "ready",
           weather: {
-            temperature: Math.round(current.temperature_2m),
-            feelsLike: Math.round(current.apparent_temperature),
-            condition: describeWeather(current.weather_code),
-            rainChance: findCurrentRainChance(data, current.time),
-            windSpeed: Math.round(current.wind_speed_10m),
-            weatherCode: current.weather_code
+            temperature: weather.temperature,
+            feelsLike: weather.feelsLike,
+            condition: describeWeather(weather.weatherCode),
+            rainChance: weather.rainChance,
+            windSpeed: weather.windSpeed,
+            weatherCode: weather.weatherCode
           }
         });
       } catch (error) {
@@ -163,16 +127,6 @@ function WeatherMetric({ label, value }: { label: string; value: string }) {
       <div className="mt-1 font-bold text-ink">{value}</div>
     </div>
   );
-}
-
-function findCurrentRainChance(data: OpenMeteoResponse, currentTime?: string) {
-  const times = data.hourly?.time;
-  const probabilities = data.hourly?.precipitation_probability;
-  if (!times?.length || !probabilities?.length) return null;
-
-  const index = currentTime ? times.indexOf(currentTime.slice(0, 13) + ":00") : 0;
-  const probability = probabilities[index >= 0 ? index : 0];
-  return typeof probability === "number" ? probability : null;
 }
 
 function describeWeather(code: number) {

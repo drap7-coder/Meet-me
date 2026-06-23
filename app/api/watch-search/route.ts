@@ -1,5 +1,5 @@
-import { buildWatchSearchMore, buildWatchSearchResult } from "@/lib/watchSearch";
 import { logApiError } from "@/lib/serverLog";
+import { watchProvider } from "@/lib/providers/watchProvider";
 import type { WatchSubcategory } from "@/lib/types";
 import { NextResponse } from "next/server";
 
@@ -14,10 +14,10 @@ export async function POST(request: Request) {
     const subcategory = parseSubcategory(body.subcategory);
     const excludeKeys = parseExcludeKeys(body.excludeKeys);
     if (excludeKeys.length) {
-      return NextResponse.json(await buildWatchSearchMore(query, excludeKeys, subcategory));
+      return NextResponse.json(await watchProvider.more(query, excludeKeys, subcategory));
     }
 
-    return NextResponse.json(await buildWatchSearchResult(query, subcategory));
+    return NextResponse.json(await watchProvider.search(query, subcategory));
   } catch (error) {
     logApiError("/api/watch-search", error);
     return NextResponse.json({ error: "Watch search failed." }, { status: 400 });

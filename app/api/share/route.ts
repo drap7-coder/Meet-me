@@ -1,4 +1,5 @@
-import { createShare, type SharePayload } from "@/lib/shareStore";
+import { storageProvider } from "@/lib/providers/storageProvider";
+import type { SharePayload } from "@/lib/shareStore";
 import type { SearchHalfwayRequest, SearchHalfwayResponse } from "@/lib/types";
 import { NextResponse } from "next/server";
 
@@ -41,7 +42,7 @@ export async function POST(request: Request) {
       createdAt: new Date().toISOString()
     };
 
-    const shortId = await createShare(payload);
+    const shortId = await storageProvider.createShare(payload);
     const shareUrl = new URL(`/s/${shortId}`, getAppUrl(request)).toString();
 
     return NextResponse.json({ shortId, shareUrl });

@@ -1,5 +1,5 @@
 import { readRequestSearchForm } from "@/lib/apiLocationContext";
-import { buildEventsResult } from "@/lib/eventsSearch";
+import { eventsProvider } from "@/lib/providers/eventsProvider";
 import { logApiError } from "@/lib/serverLog";
 import { isMovieTheaterEventsQuery } from "@/lib/watchEvents";
 import { resolveWatchPlaceSearchForm } from "@/lib/watchPlaceSearch";
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
       return NextResponse.json(response);
     }
 
-    return NextResponse.json(await buildEventsResult(query, locationContext));
+    return NextResponse.json(await eventsProvider.search(query, locationContext));
   } catch (error) {
     logApiError("/api/watch-events", error);
     return NextResponse.json({ error: "Events search failed." }, { status: 400 });

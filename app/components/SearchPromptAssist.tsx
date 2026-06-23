@@ -2,6 +2,7 @@
 
 import { SHOPPING_SUBCATEGORIES } from "@/lib/shoppingBrowse";
 import type { SearchHalfwayRequest, VenueCategory, WatchSubcategory } from "@/lib/types";
+import type { SearchBuilderMode } from "@/lib/searchBuilderOptions";
 import type { ReactNode } from "react";
 import { useState } from "react";
 
@@ -15,6 +16,7 @@ type Props = {
   form: SearchHalfwayRequest;
   busy?: boolean;
   onPickQuery: (query: string, options?: PickQueryOptions) => void;
+  onExpandBuilder?: (mode?: SearchBuilderMode) => void;
 };
 
 type PlaceWhatId = "restaurant" | "drinks" | "coffee" | "shopping";
@@ -113,7 +115,7 @@ type BuilderState = {
   genre: string | null;
 };
 
-export function SearchPromptAssist({ busy = false, onPickQuery }: Props) {
+export function SearchPromptAssist({ busy = false, onPickQuery, onExpandBuilder }: Props) {
   const [state, setState] = useState<BuilderState>(() => ({
     what: "restaurant",
     typeId: null,
@@ -157,7 +159,9 @@ export function SearchPromptAssist({ busy = false, onPickQuery }: Props) {
   }
 
   function setWhere(id: WhereId) {
-    commit({ ...state, where: id });
+    if (id === "halfway") onExpandBuilder?.("halfway");
+    const what = state.what && state.what !== "streaming" ? state.what : "restaurant";
+    commit({ ...state, what, where: id });
   }
 
   function pickWatchType(id: WatchSubcategory) {

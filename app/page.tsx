@@ -9,11 +9,13 @@ import { MarketingHero } from "@/app/components/home/MarketingHero";
 import { ShareDialog, type ShareDialogState } from "@/app/components/home/ShareDialog";
 import { Footer, SiteHeader } from "@/app/components/home/SiteChrome";
 import { ClassicSearchControls } from "@/app/components/ClassicSearchControls";
+import { PersistentLocationBar } from "@/app/components/PersistentLocationBar";
 import { KoiExampleSearchCard } from "@/app/components/KoiExampleSearchCard";
 import { LocationForm } from "@/app/components/LocationForm";
 import { RoadDivider } from "@/app/components/BrandRoad";
 import { ResultsMap } from "@/app/components/ResultsMap";
 import { SearchPromptAssist, type PickQueryOptions } from "@/app/components/SearchPromptAssist";
+import type { SearchBuilderMode } from "@/lib/searchBuilderOptions";
 import { VenueCard } from "@/app/components/VenueCard";
 import { WatchEventsResults } from "@/app/components/WatchEventsResults";
 import { WeatherCard } from "@/app/components/WeatherCard";
@@ -104,6 +106,8 @@ export default function HomePage() {
   const [hasSearched, setHasSearched] = useState(false);
   const [recentMeetups, setRecentMeetups] = useState<RecentMeetup[]>([]);
   const [showRoadDividerPreview, setShowRoadDividerPreview] = useState(false);
+  const [builderExpanded, setBuilderExpanded] = useState(false);
+  const [builderPreferredMode, setBuilderPreferredMode] = useState<SearchBuilderMode | undefined>();
   const [loadingPhase, setLoadingPhase] = useState(0);
   const searchBoxRef = useRef<AiSearchBoxHandle>(null);
   const loadingPhaseLabel =
@@ -638,9 +642,29 @@ export default function HomePage() {
     void submitEventsSearch(query);
   }
 
+  function expandBuilder(mode?: SearchBuilderMode) {
+    setBuilderExpanded(true);
+    if (mode) setBuilderPreferredMode(mode);
+  }
+
+  function openLocationChange() {
+    if (activeLocationLabel.trim()) {
+      setShowManualFallback(true);
+      setShowLocationActions(false);
+    } else {
+      setShowLocationActions(true);
+      setShowManualFallback(false);
+    }
+    setManualLocationError("");
+    window.requestAnimationFrame(() => {
+      document.getElementById("ask-koi")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }
+
   function fillSuggestedQuery(query: string, options?: PickQueryOptions) {
     searchBoxRef.current?.fillQuery(query, options?.watchSubcategory);
     const stored = getActiveLocationContext();
+    if (options?.searchMode === "midpoint") expandBuilder("halfway");
     setForm((current) => {
       const next = { ...current };
       if (!next.locationA.trim() && stored.locationA?.trim()) {
@@ -818,7 +842,6 @@ export default function HomePage() {
                 ref={searchBoxRef}
                 loading={loading}
                 locationStatus={locationStatus}
-                locationLabel={activeLocationLabel}
                 locationUiState={locationUiState}
                 showManualFallback={showManualFallback}
                 showLocationActions={showLocationActions}
@@ -837,20 +860,28 @@ export default function HomePage() {
                 onShowZipFallback={showZipFallback}
                 onSubmitManualLocation={(input) => void resolveManualLocation(input)}
               />
+              <PersistentLocationBar
+                label={activeLocationLabel}
+                busy={loading || locating || resolvingManual}
+                onChange={openLocationChange}
+              />
               <SearchPromptAssist
                 form={form}
                 busy={loading || locating || resolvingManual}
                 onPickQuery={fillSuggestedQuery}
+                onExpandBuilder={(mode) => expandBuilder(mode ?? "halfway")}
               />
               <ClassicSearchControls
                 form={form}
                 loading={loading}
-                locationLabel={activeLocationLabel}
-                locating={locating}
+                savedLocationLabel={activeLocationLabel}
+                expanded={builderExpanded}
+                onExpandedChange={setBuilderExpanded}
+                preferredMode={builderPreferredMode}
+                onPreferredModeApplied={() => setBuilderPreferredMode(undefined)}
                 onChange={handleFormChange}
                 onSearchPlaces={runParsedSearch}
                 onSearchWatch={runWatchSearch}
-                onUseLocation={() => void requestUserLocation()}
               />
               <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
               <LocationFallbackPanel
@@ -924,7 +955,6 @@ export default function HomePage() {
                 surface="page"
                 loading={loading}
                 locationStatus={locationStatus}
-                locationLabel={activeLocationLabel}
                 locationUiState={locationUiState}
                 showManualFallback={showManualFallback}
                 showLocationActions={showLocationActions}
@@ -943,20 +973,28 @@ export default function HomePage() {
                 onShowZipFallback={showZipFallback}
                 onSubmitManualLocation={(input) => void resolveManualLocation(input)}
               />
+              <PersistentLocationBar
+                label={activeLocationLabel}
+                busy={loading || locating || resolvingManual}
+                onChange={openLocationChange}
+              />
               <SearchPromptAssist
                 form={form}
                 busy={loading || locating || resolvingManual}
                 onPickQuery={fillSuggestedQuery}
+                onExpandBuilder={(mode) => expandBuilder(mode ?? "halfway")}
               />
               <ClassicSearchControls
                 form={form}
                 loading={loading}
-                locationLabel={activeLocationLabel}
-                locating={locating}
+                savedLocationLabel={activeLocationLabel}
+                expanded={builderExpanded}
+                onExpandedChange={setBuilderExpanded}
+                preferredMode={builderPreferredMode}
+                onPreferredModeApplied={() => setBuilderPreferredMode(undefined)}
                 onChange={handleFormChange}
                 onSearchPlaces={runParsedSearch}
                 onSearchWatch={runWatchSearch}
-                onUseLocation={() => void requestUserLocation()}
               />
               <LocationFallbackPanel
                 form={form}

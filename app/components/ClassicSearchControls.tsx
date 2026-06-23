@@ -1,148 +1,283 @@
 "use client";
 
+import {
+  BUILDER_CATEGORIES,
+  buildStructuredQuery,
+  cuisineOptionsForGroup,
+  groupHasCuisineOptions,
+  RADIUS_OPTIONS,
+  resolveBuilderCategory,
+  venueCategoryForBuilder,
+  type RadiusOption,
+  type ResultMode,
+  type SearchBuilderMode
+} from "@/lib/searchBuilderOptions";
 import type { SearchHalfwayRequest, WatchSubcategory } from "@/lib/types";
 import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
-import { isShoppingCategory } from "@/lib/shoppingBrowse";
-import { LocationPinIcon } from "@/app/components/SavedLocationBadge";
 import type { ReactNode } from "react";
-import { useState } from "react";
-
-type RadiusOption = "10 min" | "20 min" | "30 min" | "Flexible";
-type ResultMode = "best" | "more" | "halfway";
+import { useEffect, useState } from "react";
 
 type Props = {
   form: SearchHalfwayRequest;
   loading: boolean;
-  locationLabel?: string;
-  locating?: boolean;
+  savedLocationLabel?: string;
+  expanded?: boolean;
+  onExpandedChange?: (expanded: boolean) => void;
+  preferredMode?: SearchBuilderMode;
+  onPreferredModeApplied?: () => void;
   onChange: (form: SearchHalfwayRequest) => void;
   onSearchPlaces: (form: SearchHalfwayRequest) => void;
   onSearchWatch: (query: string, subcategory: WatchSubcategory) => void;
-  onUseLocation: () => void;
 };
 
-const RADIUS_OPTIONS: RadiusOption[] = ["10 min", "20 min", "30 min", "Flexible"];
+const MODE_OPTIONS: Array<{ id: SearchBuilderMode; label: string; hint: string }> = [
+  { id: "near_me", label: "Near Me", hint: "Search from your saved location" },
+  { id: "halfway", label: "Halfway", hint: "Meet in the middle between two places" },
+  { id: "destination", label: "Destination", hint: "Search near a venue or landmark" }
+];
 
 export function ClassicSearchControls({
   form,
   loading,
-  locationLabel = "",
-  locating = false,
+  savedLocationLabel = "",
+  expanded: expandedProp,
+  onExpandedChange,
+  preferredMode,
+  onPreferredModeApplied,
   onChange,
   onSearchPlaces,
-  onSearchWatch,
-  onUseLocation
+  onSearchWatch
 }: Props) {
-  const [expanded, setExpanded] = useState(false);
-  const [radius, setRadius] = useState<RadiusOption>("20 min");
-  const [resultMode, setResultMode] = useState<ResultMode>(
-    form.searchMode === "midpoint" ? "halfway" : "best"
-  );
+  const [expandedInternal, setExpandedInternal] = useState(false);
+  const expanded = expandedProp ?? expandedInternal;
+  const setExpanded = onExpandedChange ?? setExpandedInternal;
+
   const isStreaming = form.category === "custom" && Boolean(form.watchSubcategory);
-  const searchMode = resultMode === "halfway" ? "midpoint" : "single";
-  const needsSecondLocation = searchMode === "midpoint";
+  const initialCategory = resolveBuilderCategory(form.category);
+  const [mode, setMode] = useState<SearchBuilderMode>(() =>
+    form.searchMode === "midpoint" ? "halfway" : "near_me"
+  );
+  const [categoryGroup, setCategoryGroup] = useState(initialCategory.group);
+  const [cuisineId, setCuisineId] = useState<string>("any");
+  const [radius, setRadius] = useState<RadiusOption>("20 min");
+  const [resultMode, setResultMode] = useState<ResultMode>("best");
+  const [destination, setDestination] = useState("");
   const watchSubcategory = form.watchSubcategory ?? DEFAULT_WATCH_SUBCATEGORY;
 
-  function setLocationA(locationA: string) {
-    onChange({
-      ...form,
-      locationA,
-      locationAPlaceId: undefined,
-      locationACoordinates: undefined,
-      searchMode
+  useEffect(() => {
+    if (form.searchMode === "midpoint") {
+      setMode("halfway");
+    }
+  }, [form.searchMode]);
+
+  useEffect(() => {
+    if (!preferredMode) return;
+    setMode(preferredMode);
+    if (preferredMode === "halfway") {
+      onChange({ ...form, searchMode: "midpoint" });
+    } else {
+      onChange({ ...form, searchMode: "single", locationB: "" });
+    }
+    onPreferredModeApplied?.();
+  }, [preferredMode]); // eslint-disable-line react-hooks/exhaustive-deps -- apply once when parent requests a mode
+
+  const categoryDef = BUILDER_CATEGORIES.find((item) => item.group === categoryGroup) ?? BUILDER_CATEGORIES[0];
+  const cuisineOptions = cuisineOptionsForGroup(categoryGroup);
+  const showCuisine = groupHasCuisineOptions(categoryGroup);
+
+  function updateForm(patch: Partial<SearchHalfwayRequest>) {
+    onChange({ ...form, ...patch });
+  }
+
+  function selectMode(nextMode: SearchBuilderMode) {
+    setMode(nextMode);
+    updateForm({
+      searchMode: nextMode === "halfway" ? "midpoint" : "single",
+      locationB: nextMode === "halfway" ? form.locationB : ""
     });
   }
 
-  function setLocationB(locationB: string) {
-    onChange({
-      ...form,
-      locationB,
-      locationBPlaceId: undefined,
-      locationBCoordinates: undefined,
-      searchMode
-    });
+  function selectCategory(group: typeof categoryGroup) {
+    setCategoryGroup(group);
+    setCuisineId("any");
+    const next = BUILDER_CATEGORIES.find((item) => item.group === group);
+    if (next) updateForm({ category: next.id, watchSubcategory: undefined });
   }
 
-  function submitClassicSearch() {
+  function selectCuisine(id: string) {
+    setCuisineId(id);
+    const venueCategory = venueCategoryForBuilder(categoryDef.id, id);
+    updateForm({ category: venueCategory, watchSubcategory: undefined });
+  }
+
+  function submitBuilderSearch() {
     if (isStreaming) {
-      const query = form.customQuery?.trim() || "what should I watch tonight";
-      onSearchWatch(query, watchSubcategory);
+      onSearchWatch(form.customQuery?.trim() || "what should I watch tonight", watchSubcategory);
       return;
     }
 
-    onSearchPlaces(buildPlaceForm(form, searchMode, radius));
+    const venueCategory = venueCategoryForBuilder(categoryDef.id, cuisineId);
+    const query = buildStructuredQuery({
+      mode,
+      category: venueCategory,
+      cuisineId,
+      radius,
+      locationA: mode === "destination" ? destination : form.locationA,
+      locationB: form.locationB
+    });
+
+    const searchForm: SearchHalfwayRequest = {
+      ...form,
+      category: venueCategory,
+      customQuery: query,
+      searchMode: mode === "halfway" ? "midpoint" : "single",
+      locationB: mode === "halfway" ? form.locationB : "",
+      watchSubcategory: undefined
+    };
+
+    if (mode === "destination" && destination.trim()) {
+      searchForm.locationA = destination.trim();
+      searchForm.locationAPlaceId = undefined;
+      searchForm.locationACoordinates = undefined;
+    }
+
+    onSearchPlaces(searchForm);
+  }
+
+  if (!expanded) {
+    return (
+      <section id="classic-search" className="w-full">
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="inline-flex items-center gap-1.5 px-0.5 text-sm font-bold text-white/55 transition hover:text-white/85"
+          aria-expanded={false}
+          aria-controls="advanced-search-panel"
+        >
+          Advanced Search
+          <span aria-hidden="true">▾</span>
+        </button>
+      </section>
+    );
   }
 
   return (
-    <section className="w-full rounded-[18px] border border-white/12 bg-white/[0.06] p-3 shadow-[0_14px_36px_rgba(0,0,0,0.12)] backdrop-blur sm:p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-koi">Classic Search</p>
-          <h2 className="mt-1 text-lg font-black tracking-tight text-white">Advanced controls</h2>
-          <p className="mt-1 text-xs font-medium leading-5 text-white/55">
-            Set location and how results are ranked. The chips above build your ask.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setExpanded((value) => !value)}
-          className="rounded-full border border-white/18 bg-white/10 px-3 py-2 text-sm font-bold text-white/85 transition hover:border-white/35 hover:bg-white/15"
-        >
-          {expanded ? "Hide controls" : "Show controls"}
-        </button>
-      </div>
+    <section id="classic-search" className="w-full">
+      <button
+        type="button"
+        onClick={() => setExpanded(false)}
+        className="mb-3 inline-flex items-center gap-1.5 px-0.5 text-sm font-bold text-white/55 transition hover:text-white/85"
+        aria-expanded={true}
+        aria-controls="advanced-search-panel"
+      >
+        Advanced Search
+        <span aria-hidden="true">▴</span>
+      </button>
 
-      {expanded ? (
-        <div className="mt-4 grid gap-4 rounded-[16px] border border-white/10 bg-ink/35 p-3 sm:p-4">
+      <div
+        id="advanced-search-panel"
+        className="rounded-[18px] border border-white/12 bg-white/[0.06] p-3 shadow-[0_14px_36px_rgba(0,0,0,0.12)] backdrop-blur sm:p-4"
+      >
+        <div className="grid gap-4 rounded-[16px] border border-white/10 bg-ink/35 p-3 sm:p-4">
           {isStreaming ? (
             <p className="text-sm font-medium leading-6 text-white/60">
-              Streaming picks come from your ask above. Tap search for tonight&apos;s picks.
+              Streaming picks come from your ask above. Use the chips to refine, then search.
             </p>
           ) : (
             <>
-              <div className="grid gap-3">
+              <fieldset className="grid gap-2">
+                <legend className="text-xs font-black uppercase tracking-[0.14em] text-white/55">Search mode</legend>
                 <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={onUseLocation}
-                    disabled={loading || locating}
-                    className="inline-flex h-10 items-center gap-2 rounded-full border border-koi/45 bg-koi/15 px-4 text-sm font-bold text-white transition hover:bg-koi/25 disabled:cursor-wait disabled:opacity-60"
-                  >
-                    <LocationPinIcon className="h-4 w-4 text-koi" />
-                    {locating ? "Checking location..." : "Use my location"}
-                  </button>
-                  {locationLabel ? (
-                    <span className="inline-flex h-10 max-w-full items-center rounded-full border border-white/12 bg-white/[0.06] px-4 text-sm font-semibold text-white/75">
-                      {locationLabel}
-                    </span>
-                  ) : null}
+                  {MODE_OPTIONS.map((option) => (
+                    <ModeChip
+                      key={option.id}
+                      label={option.label}
+                      hint={option.hint}
+                      selected={mode === option.id}
+                      onClick={() => selectMode(option.id)}
+                    />
+                  ))}
                 </div>
+              </fieldset>
 
-                <div className={`grid gap-3 ${needsSecondLocation ? "sm:grid-cols-2" : ""}`}>
-                  <label className="grid gap-1.5">
-                    <span className="text-xs font-black uppercase tracking-[0.14em] text-white/55">
-                      {needsSecondLocation ? "Location 1" : "Search near"}
-                    </span>
+              {mode === "near_me" ? (
+                <Field label="Location">
+                  <div className="flex h-11 items-center rounded-lg border border-white/12 bg-white/[0.08] px-3 text-sm font-semibold text-white/85">
+                    {savedLocationLabel.trim() || form.locationA.trim() || "Set your location above"}
+                  </div>
+                  <p className="text-xs font-medium text-white/45">Uses your saved location. Tap Change above to update.</p>
+                </Field>
+              ) : null}
+
+              {mode === "halfway" ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field label="Location A">
                     <input
                       value={form.locationA}
-                      onChange={(event) => setLocationA(event.target.value)}
-                      placeholder="City, ZIP, address, or use my location"
-                      className="h-11 rounded-lg border border-white/12 bg-white px-3 text-base text-ink outline-none transition focus:border-koi focus:ring-4 focus:ring-koi/15"
+                      onChange={(event) =>
+                        updateForm({
+                          locationA: event.target.value,
+                          locationAPlaceId: undefined,
+                          locationACoordinates: undefined
+                        })
+                      }
+                      placeholder="Blue Bell, PA"
+                      className={inputClass}
                     />
-                  </label>
-                  {needsSecondLocation ? (
-                    <label className="grid gap-1.5">
-                      <span className="text-xs font-black uppercase tracking-[0.14em] text-white/55">Location 2</span>
-                      <input
-                        value={form.locationB}
-                        onChange={(event) => setLocationB(event.target.value)}
-                        placeholder="Second city, ZIP, or address"
-                        className="h-11 rounded-lg border border-white/12 bg-white px-3 text-base text-ink outline-none transition focus:border-koi focus:ring-4 focus:ring-koi/15"
-                      />
-                    </label>
-                  ) : null}
+                  </Field>
+                  <Field label="Location B">
+                    <input
+                      value={form.locationB}
+                      onChange={(event) =>
+                        updateForm({
+                          locationB: event.target.value,
+                          locationBPlaceId: undefined,
+                          locationBCoordinates: undefined
+                        })
+                      }
+                      placeholder="Manayunk, PA"
+                      className={inputClass}
+                    />
+                  </Field>
                 </div>
-              </div>
+              ) : null}
+
+              {mode === "destination" ? (
+                <Field label="Near">
+                  <input
+                    value={destination}
+                    onChange={(event) => setDestination(event.target.value)}
+                    placeholder="Citizens Bank Park"
+                    className={inputClass}
+                  />
+                </Field>
+              ) : null}
+
+              <ControlGroup title="Category">
+                {BUILDER_CATEGORIES.map((option) => (
+                  <Chip
+                    key={option.group}
+                    selected={categoryGroup === option.group}
+                    onClick={() => selectCategory(option.group)}
+                  >
+                    {option.label}
+                  </Chip>
+                ))}
+              </ControlGroup>
+
+              {showCuisine ? (
+                <ControlGroup title={categoryGroup === "drinks" ? "Bar type" : "Cuisine"}>
+                  {cuisineOptions.map((option) => (
+                    <Chip
+                      key={option.id}
+                      selected={cuisineId === option.id}
+                      onClick={() => selectCuisine(option.id)}
+                    >
+                      {option.label}
+                    </Chip>
+                  ))}
+                </ControlGroup>
+              ) : null}
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <ControlGroup title="Radius">
@@ -153,37 +288,73 @@ export function ClassicSearchControls({
                   ))}
                 </ControlGroup>
 
-                <ControlGroup title="Result mode">
-                  <Chip selected={resultMode === "best"} onClick={() => setResultMode("best")}>
-                    Best pick
-                  </Chip>
-                  <Chip selected={resultMode === "more"} onClick={() => setResultMode("more")}>
-                    More options
-                  </Chip>
-                  <Chip selected={resultMode === "halfway"} onClick={() => setResultMode("halfway")}>
-                    Halfway
-                  </Chip>
-                </ControlGroup>
+                {mode === "halfway" ? (
+                  <ControlGroup title="Result mode">
+                    <Chip selected={resultMode === "best"} onClick={() => setResultMode("best")}>
+                      Best pick
+                    </Chip>
+                    <Chip selected={resultMode === "more"} onClick={() => setResultMode("more")}>
+                      More options
+                    </Chip>
+                  </ControlGroup>
+                ) : null}
               </div>
             </>
           )}
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs font-semibold leading-5 text-white/55">
-              Ask Koi is the magic. Classic Search is the seatbelt.
+              Ask Koi is the magic. This builder is the seatbelt.
             </p>
             <button
               type="button"
-              onClick={submitClassicSearch}
+              onClick={submitBuilderSearch}
               disabled={loading}
               className="h-11 rounded-full bg-koi px-5 text-sm font-black text-white shadow-[0_10px_24px_rgba(255,90,0,0.24)] transition hover:bg-koi-hover focus:outline-none focus:ring-4 focus:ring-koi/25 disabled:cursor-not-allowed disabled:bg-white/20"
             >
-              {isStreaming ? "Find streaming picks" : "Search"}
+              {isStreaming ? "Find streaming picks" : mode === "halfway" ? "Find places" : "Search"}
             </button>
           </div>
         </div>
-      ) : null}
+      </div>
     </section>
+  );
+}
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <label className="grid gap-1.5">
+      <span className="text-xs font-black uppercase tracking-[0.14em] text-white/55">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function ModeChip({
+  label,
+  hint,
+  selected,
+  onClick
+}: {
+  label: string;
+  hint: string;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={selected}
+      title={hint}
+      className={`rounded-full border px-3.5 py-2 text-sm font-bold transition ${
+        selected
+          ? "border-koi bg-koi text-white shadow-[0_8px_18px_rgba(255,90,0,0.24)]"
+          : "border-white/14 bg-white/[0.06] text-white/85 hover:border-white/30 hover:bg-white/10"
+      }`}
+    >
+      {label}
+    </button>
   );
 }
 
@@ -204,7 +375,7 @@ function Chip({ selected, onClick, children }: { selected: boolean; onClick: () 
       aria-pressed={selected}
       className={`rounded-full border px-3 py-2 text-sm font-bold transition ${
         selected
-          ? "border-white/55 bg-white/15 text-white"
+          ? "border-koi/70 bg-koi/15 text-white"
           : "border-white/14 bg-white/[0.06] text-white/85 hover:border-white/30 hover:bg-white/10"
       }`}
     >
@@ -213,34 +384,5 @@ function Chip({ selected, onClick, children }: { selected: boolean; onClick: () 
   );
 }
 
-function buildPlaceForm(
-  form: SearchHalfwayRequest,
-  searchMode: SearchHalfwayRequest["searchMode"],
-  radius: RadiusOption
-): SearchHalfwayRequest {
-  const needsCustomQuery = radius !== "Flexible";
-  const customQuery = needsCustomQuery ? buildPlaceQuery(form, radius) : form.customQuery;
-
-  return {
-    ...form,
-    searchMode,
-    locationB: searchMode === "single" ? "" : form.locationB,
-    category: needsCustomQuery ? "custom" : form.category,
-    customQuery
-  };
-}
-
-function buildPlaceQuery(form: SearchHalfwayRequest, radius: RadiusOption) {
-  const noun =
-    form.category === "coffee"
-      ? "coffee shop"
-      : form.category === "cocktail_bars"
-        ? "cocktail bar"
-        : isShoppingCategory(form.category)
-          ? "shops"
-          : "restaurant";
-
-  const parts = [noun];
-  if (radius !== "Flexible") parts.push(`within ${radius}`);
-  return parts.join(" ");
-}
+const inputClass =
+  "h-11 rounded-lg border border-white/12 bg-white px-3 text-base text-ink outline-none transition focus:border-koi focus:ring-4 focus:ring-koi/15";

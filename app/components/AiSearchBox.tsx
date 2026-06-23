@@ -8,13 +8,12 @@ import { KOI_EXAMPLE } from "@/lib/koiExamples";
 import { KOI_ROTATING_PLACEHOLDERS } from "@/lib/koiCapabilityExamples";
 import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
 import { BRAND } from "@/src/config/branding";
-import { LocationPinIcon, SavedLocationBadge } from "@/app/components/SavedLocationBadge";
+import { LocationPinIcon } from "@/app/components/SavedLocationBadge";
 import { FormEvent, forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 
 type Props = {
   loading: boolean;
   locationStatus?: string;
-  locationLabel?: string;
   locationUiState?: LocationUiState;
   showManualFallback?: boolean;
   manualLocationError?: string;
@@ -86,7 +85,6 @@ function SendIcon() {
 export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearchBox(
   {
     loading,
-    locationLabel = "",
     showManualFallback = false,
     manualLocationError,
     locationContext,
@@ -242,8 +240,6 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
 
   const busy = loading || parsing;
   const locationBusy = locating || resolvingManual;
-  const activeLocationLabel = locationLabel.trim();
-  const hasLocation = Boolean(activeLocationLabel);
   const submitLabel = parsing ? "Understanding" : loading ? "Finding options" : BRAND.askLabel;
   const onHero = surface === "hero";
   const heroFieldClass = "koi-hero-field h-11 w-full px-4 text-base outline-none transition disabled:cursor-not-allowed disabled:opacity-60";
@@ -302,9 +298,6 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
                   )}
                 </button>
               </div>
-              {hasLocation && !showLocationActions && !showManualFallback ? (
-                <SavedLocationBadge label={activeLocationLabel} />
-              ) : null}
             </div>
           </label>
         </form>

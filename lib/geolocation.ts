@@ -82,6 +82,14 @@ export async function geocodeManualLocation(input: string) {
 export function shortLocationLabel(address: string) {
   const trimmed = address.trim();
   if (!trimmed) return "you";
-  const first = trimmed.split(",")[0]?.trim();
-  return first || trimmed;
+  const parts = trimmed.split(",").map((part) => part.trim()).filter(Boolean);
+  if (parts.length >= 2) {
+    const statePart = parts.find((part) => /^[A-Z]{2}(?:\s+\d{5}(?:-\d{4})?)?$/.test(part));
+    if (statePart) {
+      const stateIndex = parts.indexOf(statePart);
+      if (stateIndex > 0) return `${parts[stateIndex - 1]}, ${statePart.slice(0, 2)}`;
+    }
+    return `${parts[0]}, ${parts[1]}`;
+  }
+  return parts[0] || trimmed;
 }

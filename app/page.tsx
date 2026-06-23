@@ -14,7 +14,12 @@ import { KoiExampleSearchCard } from "@/app/components/KoiExampleSearchCard";
 import { LocationForm } from "@/app/components/LocationForm";
 import { RoadDivider } from "@/app/components/BrandRoad";
 import { ResultsMap } from "@/app/components/ResultsMap";
-import { SearchPromptAssist, type PickQueryOptions } from "@/app/components/SearchPromptAssist";
+import {
+  SearchPromptAssistProvider,
+  SearchPromptChips,
+  SearchWhereChips,
+  type PickQueryOptions
+} from "@/app/components/SearchPromptAssist";
 import type { SearchBuilderMode } from "@/lib/searchBuilderOptions";
 import { formForSessionAfterSearch, type SearchSubmitOptions } from "@/lib/searchLocation";
 import { VenueCard } from "@/app/components/VenueCard";
@@ -840,51 +845,53 @@ export default function HomePage() {
             <div className="relative z-10 mx-auto grid w-full max-w-5xl gap-5 py-5 sm:gap-6 sm:py-7 lg:gap-7 lg:py-8">
               <MarketingHero />
               <FairMeetupPreview />
-              <SearchPromptAssist
-                form={form}
+              <SearchPromptAssistProvider
                 busy={loading || locating || resolvingManual}
                 onPickQuery={fillSuggestedQuery}
                 onExpandBuilder={(mode) => expandBuilder(mode ?? "halfway")}
-              />
-              <AiSearchBox
-                ref={searchBoxRef}
-                loading={loading}
-                locationStatus={locationStatus}
-                locationUiState={locationUiState}
-                showManualFallback={showManualFallback}
-                showLocationActions={showLocationActions}
-                manualLocationError={manualLocationError}
-                locationContext={locationContext}
-                defaultUserAddress={savedUserAddress}
-                locating={locating}
-                resolvingManual={resolvingManual}
-                onParsed={runParsedSearch}
-                onWatchSearch={runWatchSearch}
-                onEventsSearch={runEventsSearch}
-                onNeedsFullFallback={() => openFullFallback()}
-                onNeedsLocation={handleNeedsLocation}
-                onPersistUserAddress={persistUserAddress}
-                onUseLocation={() => void requestUserLocation()}
-                onShowZipFallback={showZipFallback}
-                onSubmitManualLocation={(input) => void resolveManualLocation(input)}
-              />
-              <PersistentLocationBar
-                label={activeLocationLabel}
-                busy={loading || locating || resolvingManual}
-                onChange={openLocationChange}
-              />
-              <ClassicSearchControls
-                form={form}
-                loading={loading}
-                savedLocationLabel={activeLocationLabel}
-                expanded={builderExpanded}
-                onExpandedChange={setBuilderExpanded}
-                mode={builderMode}
-                onModeChange={setBuilderMode}
-                onChange={handleFormChange}
-                onSearchPlaces={runParsedSearch}
-                onSearchWatch={runWatchSearch}
-              />
+              >
+                <SearchWhereChips />
+                <AiSearchBox
+                  ref={searchBoxRef}
+                  loading={loading}
+                  locationStatus={locationStatus}
+                  locationUiState={locationUiState}
+                  showManualFallback={showManualFallback}
+                  showLocationActions={showLocationActions}
+                  manualLocationError={manualLocationError}
+                  locationContext={locationContext}
+                  defaultUserAddress={savedUserAddress}
+                  locating={locating}
+                  resolvingManual={resolvingManual}
+                  onParsed={runParsedSearch}
+                  onWatchSearch={runWatchSearch}
+                  onEventsSearch={runEventsSearch}
+                  onNeedsFullFallback={() => openFullFallback()}
+                  onNeedsLocation={handleNeedsLocation}
+                  onPersistUserAddress={persistUserAddress}
+                  onUseLocation={() => void requestUserLocation()}
+                  onShowZipFallback={showZipFallback}
+                  onSubmitManualLocation={(input) => void resolveManualLocation(input)}
+                />
+                <PersistentLocationBar
+                  label={activeLocationLabel}
+                  busy={loading || locating || resolvingManual}
+                  onChange={openLocationChange}
+                />
+                <SearchPromptChips />
+                <ClassicSearchControls
+                  form={form}
+                  loading={loading}
+                  savedLocationLabel={activeLocationLabel}
+                  expanded={builderExpanded}
+                  onExpandedChange={setBuilderExpanded}
+                  mode={builderMode}
+                  onModeChange={setBuilderMode}
+                  onChange={handleFormChange}
+                  onSearchPlaces={runParsedSearch}
+                  onSearchWatch={runWatchSearch}
+                />
+              </SearchPromptAssistProvider>
               <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
               <LocationFallbackPanel
                 form={form}
@@ -952,52 +959,54 @@ export default function HomePage() {
 
           {error && !loading && !results && !watchEventsResult ? (
           <section id="search" className="mt-5 grid w-full max-w-5xl gap-5">
-              <SearchPromptAssist
-                form={form}
+              <SearchPromptAssistProvider
                 busy={loading || locating || resolvingManual}
                 onPickQuery={fillSuggestedQuery}
                 onExpandBuilder={(mode) => expandBuilder(mode ?? "halfway")}
-              />
-              <AiSearchBox
-                ref={searchBoxRef}
-                surface="page"
-                loading={loading}
-                locationStatus={locationStatus}
-                locationUiState={locationUiState}
-                showManualFallback={showManualFallback}
-                showLocationActions={showLocationActions}
-                manualLocationError={manualLocationError}
-                locationContext={locationContext}
-                defaultUserAddress={savedUserAddress}
-                locating={locating}
-                resolvingManual={resolvingManual}
-                onParsed={runParsedSearch}
-                onWatchSearch={runWatchSearch}
-                onEventsSearch={runEventsSearch}
-                onNeedsFullFallback={() => openFullFallback()}
-                onNeedsLocation={handleNeedsLocation}
-                onPersistUserAddress={persistUserAddress}
-                onUseLocation={() => void requestUserLocation()}
-                onShowZipFallback={showZipFallback}
-                onSubmitManualLocation={(input) => void resolveManualLocation(input)}
-              />
-              <PersistentLocationBar
-                label={activeLocationLabel}
-                busy={loading || locating || resolvingManual}
-                onChange={openLocationChange}
-              />
-              <ClassicSearchControls
-                form={form}
-                loading={loading}
-                savedLocationLabel={activeLocationLabel}
-                expanded={builderExpanded}
-                onExpandedChange={setBuilderExpanded}
-                mode={builderMode}
-                onModeChange={setBuilderMode}
-                onChange={handleFormChange}
-                onSearchPlaces={runParsedSearch}
-                onSearchWatch={runWatchSearch}
-              />
+              >
+                <SearchWhereChips />
+                <AiSearchBox
+                  ref={searchBoxRef}
+                  surface="page"
+                  loading={loading}
+                  locationStatus={locationStatus}
+                  locationUiState={locationUiState}
+                  showManualFallback={showManualFallback}
+                  showLocationActions={showLocationActions}
+                  manualLocationError={manualLocationError}
+                  locationContext={locationContext}
+                  defaultUserAddress={savedUserAddress}
+                  locating={locating}
+                  resolvingManual={resolvingManual}
+                  onParsed={runParsedSearch}
+                  onWatchSearch={runWatchSearch}
+                  onEventsSearch={runEventsSearch}
+                  onNeedsFullFallback={() => openFullFallback()}
+                  onNeedsLocation={handleNeedsLocation}
+                  onPersistUserAddress={persistUserAddress}
+                  onUseLocation={() => void requestUserLocation()}
+                  onShowZipFallback={showZipFallback}
+                  onSubmitManualLocation={(input) => void resolveManualLocation(input)}
+                />
+                <PersistentLocationBar
+                  label={activeLocationLabel}
+                  busy={loading || locating || resolvingManual}
+                  onChange={openLocationChange}
+                />
+                <SearchPromptChips />
+                <ClassicSearchControls
+                  form={form}
+                  loading={loading}
+                  savedLocationLabel={activeLocationLabel}
+                  expanded={builderExpanded}
+                  onExpandedChange={setBuilderExpanded}
+                  mode={builderMode}
+                  onModeChange={setBuilderMode}
+                  onChange={handleFormChange}
+                  onSearchPlaces={runParsedSearch}
+                  onSearchWatch={runWatchSearch}
+                />
+              </SearchPromptAssistProvider>
               <LocationFallbackPanel
                 form={form}
                 loading={loading}

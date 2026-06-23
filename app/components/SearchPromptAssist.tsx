@@ -3,8 +3,7 @@
 import { SHOPPING_SUBCATEGORIES } from "@/lib/shoppingBrowse";
 import type { SearchHalfwayRequest, VenueCategory, WatchSubcategory } from "@/lib/types";
 import type { SearchBuilderMode } from "@/lib/searchBuilderOptions";
-import type { ReactNode } from "react";
-import { useState } from "react";
+import { createContext, useContext, useState, type ReactNode } from "react";
 
 export type PickQueryOptions = {
   watchSubcategory?: WatchSubcategory;
@@ -12,11 +11,11 @@ export type PickQueryOptions = {
   searchMode?: SearchHalfwayRequest["searchMode"];
 };
 
-type Props = {
-  form: SearchHalfwayRequest;
+type ProviderProps = {
   busy?: boolean;
   onPickQuery: (query: string, options?: PickQueryOptions) => void;
   onExpandBuilder?: (mode?: SearchBuilderMode) => void;
+  children: ReactNode;
 };
 
 type PlaceWhatId = "restaurant" | "drinks" | "coffee" | "shopping";
@@ -115,7 +114,29 @@ type BuilderState = {
   genre: string | null;
 };
 
-export function SearchPromptAssist({ busy = false, onPickQuery, onExpandBuilder }: Props) {
+type AssistContextValue = {
+  busy: boolean;
+  state: BuilderState;
+  isStreaming: boolean;
+  placeRefinements: PlaceRefinement[];
+  pickWhat: (id: WhatId) => void;
+  toggleType: (id: string) => void;
+  toggleExtra: (id: string) => void;
+  toggleWhen: (id: WhenId) => void;
+  setWhere: (id: WhereId) => void;
+  pickWatchType: (id: WatchSubcategory) => void;
+  toggleGenre: (genre: string) => void;
+};
+
+const AssistContext = createContext<AssistContextValue | null>(null);
+
+function useAssistContext() {
+  const value = useContext(AssistContext);
+  if (!value) throw new Error("Search prompt assist components must render inside SearchPromptAssistProvider");
+  return value;
+}
+
+export function SearchPromptAssistProvider({ busy = false, onPickQuery, onExpandBuilder, children }: ProviderProps) {
   const [state, setState] = useState<BuilderState>(() => ({
     what: "restaurant",
     typeId: null,
@@ -177,6 +198,62 @@ export function SearchPromptAssist({ busy = false, onPickQuery, onExpandBuilder 
   const placeRefinements = isStreaming ? [] : PLACE_REFINEMENTS[state.what as PlaceWhatId];
 
   return (
+    <AssistContext.Provider
+      value={{
+        busy,
+        state,
+        isStreaming,
+        placeRefinements,
+        pickWhat,
+        toggleType,
+        toggleExtra,
+        toggleWhen,
+        setWhere,
+        pickWatchType,
+        toggleGenre
+      }}
+    >
+      {children}
+    </AssistContext.Provider>
+  );
+}
+
+/** Near Me · Choose Location · Halfway — sits directly above the ask input. */
+export function SearchWhereChips() {
+  const { busy, state, isStreaming, setWhere } = useAssistContext();
+  if (isStreaming) return null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 px-0.5" aria-label="Where to search">
+      <span className="text-[0.625rem] font-bold uppercase tracking-[0.18em] text-white/40">Where</span>
+      <AssistChip label="Near Me" busy={busy} selected={state.where === "near"} onPick={() => setWhere("near")} />
+      <AssistChip
+        label="Choose Location"
+        busy={busy}
+        selected={state.where === "choose"}
+        onPick={() => setWhere("choose")}
+      />
+      <AssistChip label="Halfway" busy={busy} selected={state.where === "halfway"} onPick={() => setWhere("halfway")} />
+    </div>
+  );
+}
+
+/** What · Vibe · When — sits below the ask input with Advanced Search. */
+export function SearchPromptChips() {
+  const {
+    busy,
+    state,
+    isStreaming,
+    placeRefinements,
+    pickWhat,
+    toggleType,
+    toggleExtra,
+    toggleWhen,
+    pickWatchType,
+    toggleGenre
+  } = useAssistContext();
+
+  return (
     <section className="grid gap-2.5" aria-label="Prompt builder">
       <p className="px-0.5 text-sm font-semibold text-white/70">{CONCIERGE_TAGLINE}</p>
 
@@ -232,33 +309,10 @@ export function SearchPromptAssist({ busy = false, onPickQuery, onExpandBuilder 
                     : state.extras.has(refinement.id)
                 }
                 onPick={() =>
-                  refinement.group === "type"
-                    ? toggleType(refinement.id)
-                    : toggleExtra(refinement.id)
+                  refinement.group === "type" ? toggleType(refinement.id) : toggleExtra(refinement.id)
                 }
               />
             ))}
-          </ChipGroup>
-
-          <ChipGroup label="Where">
-            <AssistChip
-              label="Near Me"
-              busy={busy}
-              selected={state.where === "near"}
-              onPick={() => setWhere("near")}
-            />
-            <AssistChip
-              label="Choose Location"
-              busy={busy}
-              selected={state.where === "choose"}
-              onPick={() => setWhere("choose")}
-            />
-            <AssistChip
-              label="Halfway"
-              busy={busy}
-              selected={state.where === "halfway"}
-              onPick={() => setWhere("halfway")}
-            />
           </ChipGroup>
 
           <ChipGroup label="When">
@@ -278,6 +332,16 @@ export function SearchPromptAssist({ busy = false, onPickQuery, onExpandBuilder 
         </>
       )}
     </section>
+  );
+}
+
+/** @deprecated Use SearchPromptAssistProvider + SearchWhereChips + SearchPromptChips */
+export function SearchPromptAssist(props: Omit<ProviderProps, "children">) {
+  return (
+    <SearchPromptAssistProvider {...props}>
+      <SearchWhereChips />
+      <SearchPromptChips />
+    </SearchPromptAssistProvider>
   );
 }
 

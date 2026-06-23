@@ -76,6 +76,17 @@ const WATCH_TYPE_CHIPS = WATCH_SUBCATEGORIES.filter(
   (option) => option.id === "movies" || option.id === "tv_shows"
 );
 
+function categoryShowsRefinements(category: VenueCategory) {
+  return (
+    category === "restaurant" ||
+    category === "coffee" ||
+    isShoppingCategory(category) ||
+    ["cocktail_bars", "breweries", "wine_bars", "lounges", "pubs", "rooftop_bars", "sports_bars", "bar"].includes(
+      category
+    )
+  );
+}
+
 export function SearchPromptAssist({ form, busy = false, onPickQuery }: Props) {
   const [mode, setMode] = useState<AssistMode>("browse");
   const [watchSubcategory, setWatchSubcategory] = useState<WatchSubcategory>(
@@ -139,6 +150,9 @@ export function SearchPromptAssist({ form, busy = false, onPickQuery }: Props) {
     mode === "streaming" ||
     (mode !== "places" && form.category === "custom" && Boolean(form.watchSubcategory));
 
+  const showPlaceRefinements =
+    !showStreamingUI && (mode === "places" || categoryShowsRefinements(form.category));
+
   if (showStreamingUI) {
     return (
       <section className="grid gap-3" aria-label="Search suggestions">
@@ -195,7 +209,7 @@ export function SearchPromptAssist({ form, busy = false, onPickQuery }: Props) {
         <AssistChip label={STREAMING_CHIP.label} busy={busy} onPick={pickStreaming} />
       </div>
 
-      {mode === "places" && placeRefinements.length ? (
+      {showPlaceRefinements && placeRefinements.length ? (
         <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Refine search">
           {placeRefinements.map((chip) => (
             <AssistChip

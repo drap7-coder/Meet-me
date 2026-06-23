@@ -1,6 +1,6 @@
 "use client";
 
-import type { Preference, SearchHalfwayRequest, VenueCategory, WatchSubcategory } from "@/lib/types";
+import type { SearchHalfwayRequest, VenueCategory, WatchSubcategory } from "@/lib/types";
 import {
   DEFAULT_SHOPPING_SUBCATEGORY,
   isShoppingCategory,
@@ -16,15 +16,6 @@ import { useState } from "react";
 type SearchLane = "restaurants" | "drinks" | "coffee" | "shopping" | "streaming";
 type RadiusOption = "10 min" | "20 min" | "30 min" | "Flexible";
 type ResultMode = "best" | "more" | "halfway";
-type DiningRefinement =
-  | "upscale"
-  | "casual"
-  | "italian"
-  | "thai"
-  | "sushi"
-  | "steakhouse"
-  | "outdoor_seating"
-  | "tonight";
 
 type Props = {
   form: SearchHalfwayRequest;
@@ -46,16 +37,6 @@ const LANES: Array<{ id: SearchLane; label: string; category: VenueCategory; que
 ];
 
 const RADIUS_OPTIONS: RadiusOption[] = ["10 min", "20 min", "30 min", "Flexible"];
-const DINING_REFINEMENTS: Array<{ id: DiningRefinement; label: string }> = [
-  { id: "upscale", label: "Upscale" },
-  { id: "casual", label: "Casual" },
-  { id: "italian", label: "Italian" },
-  { id: "thai", label: "Thai" },
-  { id: "sushi", label: "Sushi" },
-  { id: "steakhouse", label: "Steakhouse" },
-  { id: "outdoor_seating", label: "Outdoor seating" },
-  { id: "tonight", label: "Open now / tonight" }
-];
 
 export function ClassicSearchControls({
   form,
@@ -70,7 +51,6 @@ export function ClassicSearchControls({
   const [expanded, setExpanded] = useState(true);
   const [radius, setRadius] = useState<RadiusOption>("20 min");
   const [resultMode, setResultMode] = useState<ResultMode>("best");
-  const [diningRefinements, setDiningRefinements] = useState<DiningRefinement[]>([]);
   const [activeShoppingId, setActiveShoppingId] = useState(
     () =>
       SHOPPING_SUBCATEGORIES.find((item) => item.category === form.category)?.id ??
@@ -79,12 +59,9 @@ export function ClassicSearchControls({
   const activeLane = laneForForm(form);
   const isStreaming = activeLane === "streaming";
   const searchMode = resultMode === "halfway" ? "midpoint" : "single";
-  const showDining = activeLane === "restaurants";
-  const showShopping = activeLane === "shopping";
+  const showRefinementHint = !isStreaming && categoryShowsRefinements(form.category);
   const needsSecondLocation = searchMode === "midpoint";
   const watchSubcategory = form.watchSubcategory ?? DEFAULT_WATCH_SUBCATEGORY;
-  const shoppingSubcategory =
-    SHOPPING_SUBCATEGORIES.find((item) => item.id === activeShoppingId) ?? DEFAULT_SHOPPING_SUBCATEGORY;
 
   function selectLane(lane: SearchLane) {
     const config = LANES.find((item) => item.id === lane) ?? LANES[0];
@@ -98,24 +75,6 @@ export function ClassicSearchControls({
     if (lane === "shopping") {
       setActiveShoppingId(DEFAULT_SHOPPING_SUBCATEGORY.id);
     }
-  }
-
-  function selectShoppingSubcategory(subcategory: (typeof SHOPPING_SUBCATEGORIES)[number]) {
-    setActiveShoppingId(subcategory.id);
-    onChange({
-      ...form,
-      category: subcategory.category,
-      customQuery: "",
-      watchSubcategory: undefined
-    });
-  }
-
-  function toggleDiningRefinement(refinement: DiningRefinement) {
-    setDiningRefinements((current) =>
-      current.includes(refinement)
-        ? current.filter((item) => item !== refinement)
-        : [...current, refinement]
-    );
   }
 
   function setLocationA(locationA: string) {
@@ -145,7 +104,7 @@ export function ClassicSearchControls({
       return;
     }
 
-    onSearchPlaces(buildPlaceForm(form, searchMode, diningRefinements, radius, activeShoppingId));
+    onSearchPlaces(buildPlaceForm(form, searchMode, radius, activeShoppingId));
   }
 
   return (
@@ -215,7 +174,13 @@ export function ClassicSearchControls({
             <p className="text-sm font-medium leading-6 text-white/60">
               Pick movies or shows and a genre in the chips above, then search for streaming picks.
             </p>
-          ) : (
+          ) : showRefinementHint ? (
+            <p className="text-sm font-medium leading-6 text-white/60">
+              Pick refinements in the chips above, then set location and search.
+            </p>
+          ) : null}
+
+          {!isStreaming ? (
             <>
               <div className="grid gap-3">
                 <div className="flex flex-wrap gap-2">
@@ -282,36 +247,8 @@ export function ClassicSearchControls({
                   </Chip>
                 </ControlGroup>
               </div>
-
-              {showDining ? (
-                <ControlGroup title="Dining refinements">
-                  {DINING_REFINEMENTS.map((option) => (
-                    <Chip
-                      key={option.id}
-                      selected={diningRefinements.includes(option.id)}
-                      onClick={() => toggleDiningRefinement(option.id)}
-                    >
-                      {option.label}
-                    </Chip>
-                  ))}
-                </ControlGroup>
-              ) : null}
-
-              {showShopping ? (
-                <ControlGroup title="Shopping type">
-                  {SHOPPING_SUBCATEGORIES.map((subcategory) => (
-                    <Chip
-                      key={subcategory.id}
-                      selected={shoppingSubcategory.id === subcategory.id}
-                      onClick={() => selectShoppingSubcategory(subcategory)}
-                    >
-                      {subcategory.label}
-                    </Chip>
-                  ))}
-                </ControlGroup>
-              ) : null}
             </>
-          )}
+          ) : null}
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs font-semibold leading-5 text-white/55">
@@ -360,6 +297,17 @@ function Chip({ selected, onClick, children }: { selected: boolean; onClick: () 
   );
 }
 
+function categoryShowsRefinements(category: VenueCategory) {
+  return (
+    category === "restaurant" ||
+    category === "coffee" ||
+    isShoppingCategory(category) ||
+    ["cocktail_bars", "breweries", "wine_bars", "lounges", "pubs", "rooftop_bars", "sports_bars", "bar"].includes(
+      category
+    )
+  );
+}
+
 function laneForForm(form: SearchHalfwayRequest): SearchLane {
   if (form.category === "custom" && form.watchSubcategory) return "streaming";
   if (isShoppingCategory(form.category)) return "shopping";
@@ -373,66 +321,34 @@ function laneForForm(form: SearchHalfwayRequest): SearchLane {
 function buildPlaceForm(
   form: SearchHalfwayRequest,
   searchMode: SearchHalfwayRequest["searchMode"],
-  refinements: DiningRefinement[],
   radius: RadiusOption,
   activeShoppingId: string
 ): SearchHalfwayRequest {
-  const customQuery = buildPlaceQuery(form, refinements, radius, activeShoppingId);
-  const needsCustomQuery = refinements.length > 0 || radius !== "Flexible";
+  const customQuery = buildPlaceQuery(form, radius, activeShoppingId);
+  const needsCustomQuery = radius !== "Flexible";
 
   return {
     ...form,
     searchMode,
     locationB: searchMode === "single" ? "" : form.locationB,
     category: needsCustomQuery ? "custom" : form.category,
-    customQuery: needsCustomQuery ? customQuery : form.customQuery,
-    preferences: mergePreferences(form.preferences ?? [], preferencesForRefinements(refinements))
+    customQuery: needsCustomQuery ? customQuery : form.customQuery
   };
 }
 
-function buildPlaceQuery(
-  form: SearchHalfwayRequest,
-  refinements: DiningRefinement[],
-  radius: RadiusOption,
-  activeShoppingId: string
-) {
+function buildPlaceQuery(form: SearchHalfwayRequest, radius: RadiusOption, activeShoppingId: string) {
   const parts: string[] = [];
-  const cuisine = refinements.find((item) => ["italian", "thai", "sushi", "steakhouse"].includes(item));
   const shoppingMatch = SHOPPING_SUBCATEGORIES.find((item) => item.id === activeShoppingId);
   const categoryWord =
-    cuisine === "italian"
-      ? "Italian restaurant"
-      : cuisine === "thai"
-        ? "Thai restaurant"
-        : cuisine === "sushi"
-          ? "sushi restaurant"
-          : cuisine === "steakhouse"
-            ? "steakhouse"
-            : form.category === "coffee"
-              ? "coffee shop"
-              : form.category === "cocktail_bars"
-                ? "cocktail bar"
-                : isShoppingCategory(form.category)
-                  ? (shoppingMatch?.query.replace(" near me", "") ?? "shopping")
-                  : "restaurant";
+    form.category === "coffee"
+      ? "coffee shop"
+      : form.category === "cocktail_bars"
+        ? "cocktail bar"
+        : isShoppingCategory(form.category)
+          ? (shoppingMatch?.query.replace(" near me", "") ?? "shopping")
+          : "restaurant";
 
-  if (refinements.includes("upscale")) parts.push("upscale");
-  if (refinements.includes("casual")) parts.push("casual");
   parts.push(categoryWord);
-  if (refinements.includes("outdoor_seating")) parts.push("with outdoor seating");
-  if (refinements.includes("tonight")) parts.push("open tonight");
   if (radius !== "Flexible") parts.push(`within ${radius}`);
   return parts.join(" ");
-}
-
-function preferencesForRefinements(refinements: DiningRefinement[]): Preference[] {
-  const preferences: Preference[] = [];
-  if (refinements.includes("upscale")) preferences.push("upscale");
-  if (refinements.includes("casual")) preferences.push("family_friendly");
-  if (refinements.includes("outdoor_seating")) preferences.push("outdoor_seating");
-  return preferences;
-}
-
-function mergePreferences(current: Preference[], next: Preference[]) {
-  return Array.from(new Set([...current, ...next]));
 }

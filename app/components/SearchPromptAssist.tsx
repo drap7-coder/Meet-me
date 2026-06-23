@@ -3,18 +3,19 @@
 import { SHOPPING_SUBCATEGORIES } from "@/lib/shoppingBrowse";
 import type { SearchHalfwayRequest, VenueCategory, WatchSubcategory } from "@/lib/types";
 import type { SearchBuilderMode } from "@/lib/searchBuilderOptions";
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 export type PickQueryOptions = {
   watchSubcategory?: WatchSubcategory;
   category?: VenueCategory;
   searchMode?: SearchHalfwayRequest["searchMode"];
+  builderMode?: SearchBuilderMode;
 };
 
 type ProviderProps = {
   busy?: boolean;
+  builderMode?: SearchBuilderMode;
   onPickQuery: (query: string, options?: PickQueryOptions) => void;
-  onExpandBuilder?: (mode?: SearchBuilderMode) => void;
   children: ReactNode;
 };
 
@@ -45,32 +46,22 @@ const WHAT_DEFS: WhatDef[] = [
   { id: "streaming", label: "Streaming", noun: "something to watch", category: "custom" }
 ];
 
-const PLACE_REFINEMENTS: Record<PlaceWhatId, PlaceRefinement[]> = {
+const PLACE_TYPES: Record<PlaceWhatId, PlaceRefinement[]> = {
   restaurant: [
     { id: "italian", label: "Italian", group: "type", prefix: "Italian", category: "italian" },
     { id: "sushi", label: "Sushi", group: "type", noun: "sushi restaurants", category: "sushi" },
     { id: "steakhouse", label: "Steakhouse", group: "type", noun: "steakhouses", category: "steakhouse" },
     { id: "mexican", label: "Mexican", group: "type", prefix: "Mexican", category: "mexican" },
-    { id: "pizza", label: "Pizza", group: "type", noun: "pizza places", category: "pizza" },
-    { id: "upscale", label: "Upscale", group: "extra", prefix: "upscale" },
-    { id: "date_night", label: "Date Night", group: "extra", prefix: "date night" },
-    { id: "outdoor", label: "Outdoor Seating", group: "extra", suffix: "with outdoor seating" }
+    { id: "pizza", label: "Pizza", group: "type", noun: "pizza places", category: "pizza" }
   ],
   drinks: [
     { id: "cocktails", label: "Cocktails", group: "type", noun: "cocktail bars", category: "cocktail_bars" },
     { id: "wine", label: "Wine Bars", group: "type", noun: "wine bars", category: "wine_bars" },
     { id: "breweries", label: "Breweries", group: "type", noun: "breweries", category: "breweries" },
     { id: "rooftop", label: "Rooftop", group: "type", noun: "rooftop bars", category: "rooftop_bars" },
-    { id: "sports", label: "Sports Bar", group: "type", noun: "sports bars", category: "sports_bars" },
-    { id: "upscale", label: "Upscale", group: "extra", prefix: "upscale" },
-    { id: "outdoor", label: "Outdoor", group: "extra", suffix: "with outdoor seating" }
+    { id: "sports", label: "Sports Bar", group: "type", noun: "sports bars", category: "sports_bars" }
   ],
-  coffee: [
-    { id: "espresso", label: "Espresso Bar", group: "type", noun: "espresso bars" },
-    { id: "quiet", label: "Quiet", group: "extra", prefix: "quiet" },
-    { id: "work", label: "Good for Work", group: "extra", suffix: "good for working" },
-    { id: "outdoor", label: "Outdoor Seating", group: "extra", suffix: "with outdoor seating" }
-  ],
+  coffee: [{ id: "espresso", label: "Espresso Bar", group: "type", noun: "espresso bars" }],
   shopping: SHOPPING_SUBCATEGORIES.map((item) => ({
     id: item.id,
     label: item.label,
@@ -79,6 +70,35 @@ const PLACE_REFINEMENTS: Record<PlaceWhatId, PlaceRefinement[]> = {
     category: item.category
   }))
 };
+
+const PLACE_VIBES: Record<PlaceWhatId, PlaceRefinement[]> = {
+  restaurant: [
+    { id: "upscale", label: "Upscale", group: "extra", prefix: "upscale" },
+    { id: "date_night", label: "Date Night", group: "extra", prefix: "date night" },
+    { id: "outdoor", label: "Outdoor", group: "extra", suffix: "with outdoor seating" },
+    { id: "family_friendly", label: "Family Friendly", group: "extra", prefix: "family friendly" }
+  ],
+  drinks: [
+    { id: "upscale", label: "Upscale", group: "extra", prefix: "upscale" },
+    { id: "outdoor", label: "Outdoor", group: "extra", suffix: "with outdoor seating" },
+    { id: "family_friendly", label: "Family Friendly", group: "extra", prefix: "family friendly" }
+  ],
+  coffee: [
+    { id: "quiet", label: "Quiet", group: "extra", prefix: "quiet" },
+    { id: "work", label: "Good for Work", group: "extra", suffix: "good for working" },
+    { id: "outdoor", label: "Outdoor", group: "extra", suffix: "with outdoor seating" },
+    { id: "family_friendly", label: "Family Friendly", group: "extra", prefix: "family friendly" }
+  ],
+  shopping: [
+    { id: "family_friendly", label: "Family Friendly", group: "extra", prefix: "family friendly" },
+    { id: "upscale", label: "Upscale", group: "extra", prefix: "upscale" },
+    { id: "walkable", label: "Walkable", group: "extra", prefix: "walkable" }
+  ]
+};
+
+function placeRefinementsFor(what: PlaceWhatId): PlaceRefinement[] {
+  return [...PLACE_TYPES[what], ...PLACE_VIBES[what]];
+}
 
 const STREAM_TYPES: Array<{ id: WatchSubcategory; label: string }> = [
   { id: "movies", label: "Movies" },
@@ -97,14 +117,14 @@ const STREAM_GENRES = [
   "Family"
 ];
 
-const VIBE_LABELS: Record<PlaceWhatId, string> = {
-  restaurant: "Cuisine / vibe",
-  drinks: "Type / vibe",
-  coffee: "Vibe",
+const TYPE_LABELS: Record<PlaceWhatId, string> = {
+  restaurant: "Cuisine",
+  drinks: "Type",
+  coffee: "Style",
   shopping: "Shop type"
 };
 
-type BuilderState = {
+export type BuilderState = {
   what: WhatId;
   typeId: string | null;
   extras: Set<string>;
@@ -117,8 +137,10 @@ type BuilderState = {
 type AssistContextValue = {
   busy: boolean;
   state: BuilderState;
+  promptQuery: string;
   isStreaming: boolean;
-  placeRefinements: PlaceRefinement[];
+  typeRefinements: PlaceRefinement[];
+  vibeRefinements: PlaceRefinement[];
   pickWhat: (id: WhatId) => void;
   toggleType: (id: string) => void;
   toggleExtra: (id: string) => void;
@@ -136,7 +158,12 @@ function useAssistContext() {
   return value;
 }
 
-export function SearchPromptAssistProvider({ busy = false, onPickQuery, onExpandBuilder, children }: ProviderProps) {
+export function SearchPromptAssistProvider({
+  busy = false,
+  builderMode,
+  onPickQuery,
+  children
+}: ProviderProps) {
   const [state, setState] = useState<BuilderState>(() => ({
     what: "restaurant",
     typeId: null,
@@ -146,64 +173,101 @@ export function SearchPromptAssistProvider({ busy = false, onPickQuery, onExpand
     watchType: "movies",
     genre: null
   }));
+  const [promptQuery, setPromptQuery] = useState("");
 
-  function commit(next: BuilderState) {
-    setState(next);
+  function syncQuery(next: BuilderState) {
     const isStreaming = next.what === "streaming";
     const query = isStreaming ? buildStreamQuery(next) : buildPlaceQuery(next);
     if (!query) return;
+    setPromptQuery(query);
     onPickQuery(query, {
       category: categoryFor(next),
       watchSubcategory: isStreaming ? next.watchType : undefined,
-      searchMode: !isStreaming && next.where === "halfway" ? "midpoint" : "single"
+      searchMode: !isStreaming && next.where === "halfway" ? "midpoint" : "single",
+      builderMode: builderModeForWhere(next.where)
     });
   }
 
+  function commit(updater: (prev: BuilderState) => BuilderState) {
+    setState((prev) => {
+      const next = updater(prev);
+      syncQuery(next);
+      return next;
+    });
+  }
+
+  useEffect(() => {
+    syncQuery(state);
+    // Seed the ask input once on mount; chip state drives all later updates.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!builderMode) return;
+    const where: WhereId =
+      builderMode === "halfway" ? "halfway" : builderMode === "destination" ? "choose" : "near";
+    setState((prev) => {
+      if (prev.where === where) return prev;
+      const next = { ...prev, where };
+      syncQuery(next);
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [builderMode]);
+
   function pickWhat(id: WhatId) {
-    if (id === state.what) return;
-    commit({ ...state, what: id, typeId: null, extras: new Set<string>() });
+    commit((prev) => {
+      if (prev.what === id) return prev;
+      return { ...prev, what: id, typeId: null, extras: new Set<string>() };
+    });
   }
 
   function toggleType(id: string) {
-    commit({ ...state, typeId: state.typeId === id ? null : id });
+    commit((prev) => ({ ...prev, typeId: prev.typeId === id ? null : id }));
   }
 
   function toggleExtra(id: string) {
-    const extras = new Set(state.extras);
-    if (extras.has(id)) extras.delete(id);
-    else extras.add(id);
-    commit({ ...state, extras });
+    commit((prev) => {
+      const extras = new Set(prev.extras);
+      if (extras.has(id)) extras.delete(id);
+      else extras.add(id);
+      return { ...prev, extras };
+    });
   }
 
   function toggleWhen(id: WhenId) {
-    commit({ ...state, when: state.when === id ? null : id });
+    commit((prev) => ({ ...prev, when: prev.when === id ? null : id }));
   }
 
   function setWhere(id: WhereId) {
-    if (id === "halfway") onExpandBuilder?.("halfway");
-    if (id === "choose") onExpandBuilder?.("destination");
-    const what = state.what && state.what !== "streaming" ? state.what : "restaurant";
-    commit({ ...state, what, where: id });
+    commit((prev) => {
+      const what = prev.what !== "streaming" ? prev.what : "restaurant";
+      return { ...prev, what, where: id };
+    });
   }
 
   function pickWatchType(id: WatchSubcategory) {
-    commit({ ...state, watchType: id });
+    commit((prev) => ({ ...prev, watchType: id }));
   }
 
   function toggleGenre(genre: string) {
-    commit({ ...state, genre: state.genre === genre ? null : genre });
+    commit((prev) => ({ ...prev, genre: prev.genre === genre ? null : genre }));
   }
 
   const isStreaming = state.what === "streaming";
-  const placeRefinements = isStreaming ? [] : PLACE_REFINEMENTS[state.what as PlaceWhatId];
+  const placeWhat = state.what as PlaceWhatId;
+  const typeRefinements = isStreaming ? [] : PLACE_TYPES[placeWhat];
+  const vibeRefinements = isStreaming ? [] : PLACE_VIBES[placeWhat];
 
   return (
     <AssistContext.Provider
       value={{
         busy,
         state,
+        promptQuery,
         isStreaming,
-        placeRefinements,
+        typeRefinements,
+        vibeRefinements,
         pickWhat,
         toggleType,
         toggleExtra,
@@ -218,18 +282,17 @@ export function SearchPromptAssistProvider({ busy = false, onPickQuery, onExpand
   );
 }
 
-/** What · Vibe · Where · When — sits below the ask input with Advanced Search. */
+/** What · Cuisine/Type · Vibe — sits below the ask input. Where and When live in Advanced Search. */
 export function SearchPromptChips() {
   const {
     busy,
     state,
     isStreaming,
-    placeRefinements,
+    typeRefinements,
+    vibeRefinements,
     pickWhat,
     toggleType,
     toggleExtra,
-    toggleWhen,
-    setWhere,
     pickWatchType,
     toggleGenre
   } = useAssistContext();
@@ -278,58 +341,77 @@ export function SearchPromptChips() {
         </>
       ) : (
         <>
-          <ChipGroup label={VIBE_LABELS[state.what as PlaceWhatId]}>
-            {placeRefinements.map((refinement) => (
+          <ChipGroup label={TYPE_LABELS[state.what as PlaceWhatId]}>
+            {typeRefinements.map((refinement) => (
               <AssistChip
                 key={refinement.id}
                 label={refinement.label}
                 busy={busy}
-                selected={
-                  refinement.group === "type"
-                    ? state.typeId === refinement.id
-                    : state.extras.has(refinement.id)
-                }
-                onPick={() =>
-                  refinement.group === "type" ? toggleType(refinement.id) : toggleExtra(refinement.id)
-                }
+                selected={state.typeId === refinement.id}
+                onPick={() => toggleType(refinement.id)}
               />
             ))}
           </ChipGroup>
 
-          <ChipGroup label="Where">
-            <AssistChip label="Near Me" busy={busy} selected={state.where === "near"} onPick={() => setWhere("near")} />
-            <AssistChip
-              label="Choose Location"
-              busy={busy}
-              selected={state.where === "choose"}
-              onPick={() => setWhere("choose")}
-            />
-            <AssistChip
-              label="Halfway"
-              busy={busy}
-              selected={state.where === "halfway"}
-              onPick={() => setWhere("halfway")}
-            />
-          </ChipGroup>
-
-          <ChipGroup label="When">
-            <AssistChip
-              label="Open Now"
-              busy={busy}
-              selected={state.when === "open_now"}
-              onPick={() => toggleWhen("open_now")}
-            />
-            <AssistChip
-              label="Tonight"
-              busy={busy}
-              selected={state.when === "tonight"}
-              onPick={() => toggleWhen("tonight")}
-            />
+          <ChipGroup label="Vibe">
+            {vibeRefinements.map((refinement) => (
+              <AssistChip
+                key={refinement.id}
+                label={refinement.label}
+                busy={busy}
+                selected={state.extras.has(refinement.id)}
+                onPick={() => toggleExtra(refinement.id)}
+              />
+            ))}
           </ChipGroup>
         </>
       )}
     </section>
   );
+}
+
+/** Where · When — rendered inside Advanced Search only. */
+export function SearchPromptWhereWhen() {
+  const { busy, state, toggleWhen, setWhere } = useAssistContext();
+
+  return (
+    <div className="grid gap-2.5">
+      <ChipGroup label="Where">
+        <AssistChip label="Near Me" busy={busy} selected={state.where === "near"} onPick={() => setWhere("near")} />
+        <AssistChip
+          label="Choose Location"
+          busy={busy}
+          selected={state.where === "choose"}
+          onPick={() => setWhere("choose")}
+        />
+        <AssistChip
+          label="Halfway"
+          busy={busy}
+          selected={state.where === "halfway"}
+          onPick={() => setWhere("halfway")}
+        />
+      </ChipGroup>
+
+      <ChipGroup label="When">
+        <AssistChip
+          label="Open Now"
+          busy={busy}
+          selected={state.when === "open_now"}
+          onPick={() => toggleWhen("open_now")}
+        />
+        <AssistChip
+          label="Tonight"
+          busy={busy}
+          selected={state.when === "tonight"}
+          onPick={() => toggleWhen("tonight")}
+        />
+      </ChipGroup>
+    </div>
+  );
+}
+
+export function useSearchPromptAssist() {
+  return useAssistContext();
 }
 
 /** @deprecated Use SearchPromptAssistProvider + SearchPromptChips */
@@ -385,43 +467,45 @@ function AssistChip({
   );
 }
 
+function builderModeForWhere(where: WhereId): SearchBuilderMode {
+  if (where === "halfway") return "halfway";
+  if (where === "choose") return "destination";
+  return "near_me";
+}
+
 function categoryFor(state: BuilderState): VenueCategory {
   if (state.what === "streaming") return "custom";
-  const refs = PLACE_REFINEMENTS[state.what as PlaceWhatId];
+  const refs = placeRefinementsFor(state.what as PlaceWhatId);
   const type = refs.find((item) => item.group === "type" && item.id === state.typeId);
   if (type?.category) return type.category;
   return WHAT_DEFS.find((item) => item.id === state.what)?.category ?? "restaurant";
 }
 
-function buildPlaceQuery(state: BuilderState): string {
+export function buildPlaceQuery(state: BuilderState): string {
   const def = WHAT_DEFS.find((item) => item.id === state.what) ?? WHAT_DEFS[0];
-  const refs = PLACE_REFINEMENTS[state.what as PlaceWhatId] ?? [];
+  const refs = placeRefinementsFor(state.what as PlaceWhatId);
   const type = refs.find((item) => item.group === "type" && item.id === state.typeId);
 
-  let noun = type?.noun ?? def.noun;
+  const noun = type?.noun ?? def.noun;
 
   const prefixes: string[] = [];
-  if (state.extras.has("upscale")) prefixes.push("upscale");
-  if (type?.prefix) prefixes.push(type.prefix);
-  if (state.extras.has("date_night")) prefixes.push("date night");
-  if (state.extras.has("quiet")) prefixes.push("quiet");
-
   const suffixes: string[] = [];
-  if (type?.suffix) suffixes.push(type.suffix);
-  if (state.extras.has("outdoor")) suffixes.push("with outdoor seating");
-  if (state.extras.has("work")) suffixes.push("good for working");
+
+  for (const ref of refs) {
+    const selected = ref.group === "type" ? ref.id === state.typeId : state.extras.has(ref.id);
+    if (!selected) continue;
+    if (ref.prefix) prefixes.push(ref.prefix);
+    if (ref.suffix) suffixes.push(ref.suffix);
+  }
 
   if (state.where === "halfway") suffixes.push("halfway between us");
   else if (state.where === "choose") suffixes.push("near a specific location");
   else suffixes.push("near me");
 
   if (state.when === "open_now") suffixes.push("open now");
-  else if (state.when === "tonight") suffixes.push("tonight");
-  else if (!state.extras.has("date_night") && (def.id === "restaurant" || def.id === "drinks")) {
-    suffixes.push("tonight");
-  }
+  if (state.when === "tonight") suffixes.push("tonight");
 
-  const phrase = [...prefixes, noun, ...suffixes].join(" ");
+  const phrase = [...prefixes, noun, ...suffixes].filter(Boolean).join(" ");
   return phrase.charAt(0).toUpperCase() + phrase.slice(1);
 }
 

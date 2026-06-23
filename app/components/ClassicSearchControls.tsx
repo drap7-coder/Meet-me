@@ -1,20 +1,10 @@
 "use client";
 
-import {
-  BUILDER_CATEGORIES,
-  buildStructuredQuery,
-  cuisineOptionsForGroup,
-  groupHasCuisineOptions,
-  RADIUS_OPTIONS,
-  resolveBuilderCategory,
-  venueCategoryForBuilder,
-  type RadiusOption,
-  type ResultMode,
-  type SearchBuilderMode
-} from "@/lib/searchBuilderOptions";
+import { SearchPromptWhereWhen, useSearchPromptAssist } from "@/app/components/SearchPromptAssist";
 import type { SearchSubmitOptions } from "@/lib/searchLocation";
 import type { SearchHalfwayRequest, WatchSubcategory } from "@/lib/types";
 import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
+import type { SearchBuilderMode } from "@/lib/searchBuilderOptions";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 
@@ -25,17 +15,9 @@ type Props = {
   expanded?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
   mode: SearchBuilderMode;
-  onModeChange: (mode: SearchBuilderMode) => void;
-  onChange: (form: SearchHalfwayRequest) => void;
   onSearchPlaces: (form: SearchHalfwayRequest, options?: SearchSubmitOptions) => void;
   onSearchWatch: (query: string, subcategory: WatchSubcategory) => void;
 };
-
-const MODE_OPTIONS: Array<{ id: SearchBuilderMode; label: string; hint: string }> = [
-  { id: "near_me", label: "Near Me", hint: "Search from your saved location" },
-  { id: "halfway", label: "Halfway", hint: "Meet in the middle between two places" },
-  { id: "destination", label: "Destination", hint: "Search near a venue or landmark" }
-];
 
 export function ClassicSearchControls({
   form,
@@ -44,8 +26,6 @@ export function ClassicSearchControls({
   expanded: expandedProp,
   onExpandedChange,
   mode,
-  onModeChange,
-  onChange,
   onSearchPlaces,
   onSearchWatch
 }: Props) {
@@ -53,14 +33,9 @@ export function ClassicSearchControls({
   const expanded = expandedProp ?? expandedInternal;
   const setExpanded = onExpandedChange ?? setExpandedInternal;
 
+  const { promptQuery } = useSearchPromptAssist();
   const isStreaming = form.category === "custom" && Boolean(form.watchSubcategory);
-  const initialCategory = resolveBuilderCategory(form.category);
-  const [categoryGroup, setCategoryGroup] = useState(initialCategory.group);
-  const [cuisineId, setCuisineId] = useState<string>("any");
-  const [radius, setRadius] = useState<RadiusOption>("20 min");
-  const [resultMode, setResultMode] = useState<ResultMode>("best");
   const [destination, setDestination] = useState("");
-  // Halfway endpoints are independent from saved home — empty until the user fills them.
   const [halfwayLocationA, setHalfwayLocationA] = useState("");
   const [halfwayLocationB, setHalfwayLocationB] = useState("");
   const watchSubcategory = form.watchSubcategory ?? DEFAULT_WATCH_SUBCATEGORY;
@@ -74,60 +49,20 @@ export function ClassicSearchControls({
     previousMode.current = mode;
   }, [mode]);
 
-  const categoryDef = BUILDER_CATEGORIES.find((item) => item.group === categoryGroup) ?? BUILDER_CATEGORIES[0];
-  const cuisineOptions = cuisineOptionsForGroup(categoryGroup);
-  const showCuisine = groupHasCuisineOptions(categoryGroup);
-
-  function selectMode(nextMode: SearchBuilderMode) {
-    onModeChange(nextMode);
-    onChange({
-      ...form,
-      searchMode: nextMode === "halfway" ? "midpoint" : "single",
-      locationB: nextMode === "halfway" ? form.locationB : ""
-    });
-    if (nextMode === "halfway") {
-      setHalfwayLocationA("");
-      setHalfwayLocationB("");
-    }
-  }
-
   function useSavedLocationForHalfwayA() {
     const saved = savedLocationLabel.trim() || form.locationA.trim();
     if (saved) setHalfwayLocationA(saved);
   }
 
-  function selectCategory(group: typeof categoryGroup) {
-    setCategoryGroup(group);
-    setCuisineId("any");
-    const next = BUILDER_CATEGORIES.find((item) => item.group === group);
-    if (next) onChange({ ...form, category: next.id, watchSubcategory: undefined });
-  }
-
-  function selectCuisine(id: string) {
-    setCuisineId(id);
-    const venueCategory = venueCategoryForBuilder(categoryDef.id, id);
-    onChange({ ...form, category: venueCategory, watchSubcategory: undefined });
-  }
-
   function submitBuilderSearch() {
     if (isStreaming) {
-      onSearchWatch(form.customQuery?.trim() || "what should I watch tonight", watchSubcategory);
+      onSearchWatch(promptQuery.trim() || "what should I watch tonight", watchSubcategory);
       return;
     }
 
-    const venueCategory = venueCategoryForBuilder(categoryDef.id, cuisineId);
-    const query = buildStructuredQuery({
-      mode,
-      category: venueCategory,
-      cuisineId,
-      radius,
-      locationA: mode === "destination" ? destination : mode === "halfway" ? halfwayLocationA : form.locationA,
-      locationB: mode === "halfway" ? halfwayLocationB : form.locationB
-    });
-
+    const query = promptQuery.trim() || "restaurants near me";
     const searchForm: SearchHalfwayRequest = {
       ...form,
-      category: venueCategory,
       customQuery: query,
       searchMode: mode === "halfway" ? "midpoint" : "single",
       watchSubcategory: undefined
@@ -141,7 +76,6 @@ export function ClassicSearchControls({
       searchForm.locationBPlaceId = undefined;
       searchForm.locationBCoordinates = undefined;
     } else if (mode === "destination" && destination.trim()) {
-      // Destination is ephemeral: sent on the search payload only, not saved as home location.
       searchForm.locationA = destination.trim();
       searchForm.locationB = "";
       searchForm.locationAPlaceId = undefined;
@@ -194,20 +128,7 @@ export function ClassicSearchControls({
             </p>
           ) : (
             <>
-              <fieldset className="grid gap-2">
-                <legend className="text-xs font-black uppercase tracking-[0.14em] text-white/55">Search mode</legend>
-                <div className="flex flex-wrap gap-2">
-                  {MODE_OPTIONS.map((option) => (
-                    <ModeChip
-                      key={option.id}
-                      label={option.label}
-                      hint={option.hint}
-                      selected={mode === option.id}
-                      onClick={() => selectMode(option.id)}
-                    />
-                  ))}
-                </div>
-              </fieldset>
+              <SearchPromptWhereWhen />
 
               {mode === "near_me" ? (
                 <Field label="Location">
@@ -260,53 +181,6 @@ export function ClassicSearchControls({
                   />
                 </Field>
               ) : null}
-
-              <ControlGroup title="Category">
-                {BUILDER_CATEGORIES.map((option) => (
-                  <Chip
-                    key={option.group}
-                    selected={categoryGroup === option.group}
-                    onClick={() => selectCategory(option.group)}
-                  >
-                    {option.label}
-                  </Chip>
-                ))}
-              </ControlGroup>
-
-              {showCuisine ? (
-                <ControlGroup title={categoryGroup === "drinks" ? "Bar type" : "Cuisine"}>
-                  {cuisineOptions.map((option) => (
-                    <Chip
-                      key={option.id}
-                      selected={cuisineId === option.id}
-                      onClick={() => selectCuisine(option.id)}
-                    >
-                      {option.label}
-                    </Chip>
-                  ))}
-                </ControlGroup>
-              ) : null}
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <ControlGroup title="Radius">
-                  {RADIUS_OPTIONS.map((option) => (
-                    <Chip key={option} selected={radius === option} onClick={() => setRadius(option)}>
-                      {option}
-                    </Chip>
-                  ))}
-                </ControlGroup>
-
-                {mode === "halfway" ? (
-                  <ControlGroup title="Result mode">
-                    <Chip selected={resultMode === "best"} onClick={() => setResultMode("best")}>
-                      Best pick
-                    </Chip>
-                    <Chip selected={resultMode === "more"} onClick={() => setResultMode("more")}>
-                      More options
-                    </Chip>
-                  </ControlGroup>
-                ) : null}
-              </div>
             </>
           )}
 
@@ -335,60 +209,6 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
       <span className="text-xs font-black uppercase tracking-[0.14em] text-white/55">{label}</span>
       {children}
     </label>
-  );
-}
-
-function ModeChip({
-  label,
-  hint,
-  selected,
-  onClick
-}: {
-  label: string;
-  hint: string;
-  selected: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={selected}
-      title={hint}
-      className={`rounded-full border px-3.5 py-2 text-sm font-bold transition ${
-        selected
-          ? "border-koi bg-koi text-white shadow-[0_8px_18px_rgba(255,90,0,0.24)]"
-          : "border-white/14 bg-white/[0.06] text-white/85 hover:border-white/30 hover:bg-white/10"
-      }`}
-    >
-      {label}
-    </button>
-  );
-}
-
-function ControlGroup({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div className="grid gap-2 rounded-[14px] border border-white/10 bg-white/[0.05] p-3">
-      <p className="text-xs font-black uppercase tracking-[0.14em] text-white/55">{title}</p>
-      <div className="flex flex-wrap gap-2">{children}</div>
-    </div>
-  );
-}
-
-function Chip({ selected, onClick, children }: { selected: boolean; onClick: () => void; children: ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={selected}
-      className={`rounded-full border px-3 py-2 text-sm font-bold transition ${
-        selected
-          ? "border-koi/70 bg-koi/15 text-white"
-          : "border-white/14 bg-white/[0.06] text-white/85 hover:border-white/30 hover:bg-white/10"
-      }`}
-    >
-      {children}
-    </button>
   );
 }
 

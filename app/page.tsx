@@ -648,11 +648,6 @@ export default function HomePage() {
     void submitEventsSearch(query);
   }
 
-  function expandBuilder(mode?: SearchBuilderMode) {
-    setBuilderExpanded(true);
-    if (mode) setBuilderMode(mode);
-  }
-
   function openLocationChange() {
     if (activeLocationLabel.trim()) {
       setShowManualFallback(true);
@@ -670,7 +665,8 @@ export default function HomePage() {
   function fillSuggestedQuery(query: string, options?: PickQueryOptions) {
     searchBoxRef.current?.fillQuery(query, options?.watchSubcategory);
     const stored = getActiveLocationContext();
-    if (options?.searchMode === "midpoint") expandBuilder("halfway");
+    if (options?.builderMode) setBuilderMode(options.builderMode);
+    else if (options?.searchMode === "midpoint") setBuilderMode("halfway");
     setForm((current) => {
       const next = { ...current };
       if (!next.locationA.trim() && stored.locationA?.trim()) {
@@ -846,8 +842,8 @@ export default function HomePage() {
               <FairMeetupPreview />
               <SearchPromptAssistProvider
                 busy={loading || locating || resolvingManual}
+                builderMode={builderMode}
                 onPickQuery={fillSuggestedQuery}
-                onExpandBuilder={(mode) => expandBuilder(mode ?? "halfway")}
               >
                 <AiSearchBox
                   ref={searchBoxRef}
@@ -884,8 +880,6 @@ export default function HomePage() {
                   expanded={builderExpanded}
                   onExpandedChange={setBuilderExpanded}
                   mode={builderMode}
-                  onModeChange={setBuilderMode}
-                  onChange={handleFormChange}
                   onSearchPlaces={runParsedSearch}
                   onSearchWatch={runWatchSearch}
                 />
@@ -959,8 +953,8 @@ export default function HomePage() {
           <section id="search" className="mt-5 grid w-full max-w-5xl gap-5">
               <SearchPromptAssistProvider
                 busy={loading || locating || resolvingManual}
+                builderMode={builderMode}
                 onPickQuery={fillSuggestedQuery}
-                onExpandBuilder={(mode) => expandBuilder(mode ?? "halfway")}
               >
                 <AiSearchBox
                   ref={searchBoxRef}
@@ -998,8 +992,6 @@ export default function HomePage() {
                   expanded={builderExpanded}
                   onExpandedChange={setBuilderExpanded}
                   mode={builderMode}
-                  onModeChange={setBuilderMode}
-                  onChange={handleFormChange}
                   onSearchPlaces={runParsedSearch}
                   onSearchWatch={runWatchSearch}
                 />

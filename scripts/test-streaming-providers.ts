@@ -5,8 +5,11 @@ import {
   filterRecommendationsByStreamingServices,
   mergeStreamingServiceIds,
   recommendationMatchesStreamingServices,
-  streamingServiceQueryPhrase
+  streamingServiceByProviderName,
+  streamingServiceQueryPhrase,
+  STREAMING_SERVICES
 } from "../lib/streamingServices";
+import { tmdbLogoUrl } from "../lib/tmdb";
 
 function assert(condition: boolean, message: string) {
   if (!condition) throw new Error(message);
@@ -102,5 +105,15 @@ assert(
   streamQuery === "What comedy movie should I watch on Netflix or Max tonight?",
   `stream query includes providers: ${streamQuery}`
 );
+
+for (const service of STREAMING_SERVICES) {
+  assert(Boolean(service.brandColor), `${service.id} has brand color`);
+  assert(Boolean(service.logoPath), `${service.id} has logo path`);
+  assert(tmdbLogoUrl(service.logoPath).includes("image.tmdb.org"), `${service.id} builds logo url`);
+}
+
+assert(streamingServiceByProviderName("Netflix")?.id === "netflix", "looks up Netflix branding");
+assert(streamingServiceByProviderName("HBO Max")?.id === "max", "looks up Max branding");
+assert(streamingServiceByProviderName("Amazon Prime Video")?.id === "prime", "looks up Prime branding");
 
 console.log("PASS streaming provider refinement");

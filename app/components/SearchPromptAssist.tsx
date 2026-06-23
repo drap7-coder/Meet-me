@@ -11,6 +11,7 @@ import {
   type LocalChipCategoryId
 } from "@/lib/searchBuilderOptions";
 import { STREAMING_SERVICES, streamingServiceQueryPhrase } from "@/lib/streamingServices";
+import { StreamingServiceChip } from "@/app/components/StreamingServiceChip";
 import type { SearchHalfwayRequest, VenueCategory, WatchSubcategory } from "@/lib/types";
 import type { SearchBuilderMode } from "@/lib/searchBuilderOptions";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
@@ -294,7 +295,6 @@ export function SearchPromptChips() {
     toggleExtra,
     toggleGenre,
     toggleStreamingService,
-    toggleWhen,
     surface
   } = useAssistContext();
 
@@ -329,9 +329,9 @@ export function SearchPromptChips() {
           <>
             <ChipGroup label="Streaming Services" onPage={onPage}>
               {STREAMING_SERVICES.map((service) => (
-                <AssistChip
+                <StreamingServiceChip
                   key={service.id}
-                  label={service.label}
+                  service={service}
                   busy={busy}
                   selected={state.streamingServices.has(service.id)}
                   onPick={() => toggleStreamingService(service.id)}
@@ -351,16 +351,6 @@ export function SearchPromptChips() {
                   onPage={onPage}
                 />
               ))}
-            </ChipGroup>
-
-            <ChipGroup label="When" onPage={onPage}>
-              <AssistChip
-                label="Tonight"
-                busy={busy}
-                selected={state.when === "tonight" || state.when === null}
-                onPick={() => toggleWhen("tonight")}
-                onPage={onPage}
-              />
             </ChipGroup>
           </>
         ) : null}

@@ -10,8 +10,7 @@ export type StreamingServiceId =
   | "disney"
   | "peacock"
   | "paramount"
-  | "tubi"
-  | "crunchyroll";
+  | "tubi";
 
 export type StreamingServiceOption = {
   id: StreamingServiceId;
@@ -19,6 +18,14 @@ export type StreamingServiceOption = {
   queryLabel: string;
   tmdbNames: string[];
   aliases: RegExp[];
+  /** TMDB watch provider id (US catalog). */
+  tmdbProviderId: number;
+  /** TMDB logo_path for provider artwork. */
+  logoPath: string;
+  /** Brand accent for selected chips and badges. */
+  brandColor: string;
+  /** Text color on brandColor background. */
+  brandTextColor: string;
 };
 
 export const STREAMING_SERVICES: StreamingServiceOption[] = [
@@ -27,70 +34,99 @@ export const STREAMING_SERVICES: StreamingServiceOption[] = [
     label: "Netflix",
     queryLabel: "Netflix",
     tmdbNames: ["Netflix"],
-    aliases: [/\bnetflix\b/i]
+    aliases: [/\bnetflix\b/i],
+    tmdbProviderId: 8,
+    logoPath: "/t2yyOv40HZeVlLjYsCsPHnWLk4W.jpg",
+    brandColor: "#E50914",
+    brandTextColor: "#FFFFFF"
   },
   {
     id: "max",
     label: "Max",
     queryLabel: "Max",
     tmdbNames: ["Max", "HBO Max"],
-    aliases: [/\bmax\b/i, /\bhbo max\b/i]
+    aliases: [/\bmax\b/i, /\bhbo max\b/i],
+    tmdbProviderId: 384,
+    logoPath: "/Ajqyt5aNxNGjmF9uOfxArGrdf3X.jpg",
+    brandColor: "#002BE7",
+    brandTextColor: "#FFFFFF"
   },
   {
     id: "hulu",
     label: "Hulu",
     queryLabel: "Hulu",
     tmdbNames: ["Hulu"],
-    aliases: [/\bhulu\b/i]
+    aliases: [/\bhulu\b/i],
+    tmdbProviderId: 15,
+    logoPath: "/zxrVdFjIjLqkfnwyghnfywTn3Lh.jpg",
+    brandColor: "#1CE783",
+    brandTextColor: "#0F0F0F"
   },
   {
     id: "prime",
     label: "Prime Video",
     queryLabel: "Prime Video",
     tmdbNames: ["Prime Video", "Amazon Prime Video"],
-    aliases: [/\bprime video\b/i, /\bamazon prime\b/i, /\bprime\b/i]
+    aliases: [/\bprime video\b/i, /\bamazon prime\b/i, /\bprime\b/i],
+    tmdbProviderId: 9,
+    logoPath: "/emthp39XA2YScoYL1p0sdbAH2WA.jpg",
+    brandColor: "#0578FF",
+    brandTextColor: "#FFFFFF"
   },
   {
     id: "apple",
     label: "Apple TV+",
     queryLabel: "Apple TV+",
     tmdbNames: ["Apple TV Plus", "Apple TV"],
-    aliases: [/\bapple tv\+\b/i, /\bapple tv plus\b/i, /\bapple tv\b/i]
+    aliases: [/\bapple tv\+\b/i, /\bapple tv plus\b/i, /\bapple tv\b/i],
+    tmdbProviderId: 350,
+    logoPath: "/6uhKBfmtzFqOcLousHwZuzcrScK.jpg",
+    brandColor: "#1D1D1F",
+    brandTextColor: "#FFFFFF"
   },
   {
     id: "disney",
     label: "Disney+",
     queryLabel: "Disney+",
     tmdbNames: ["Disney Plus", "Disney+"],
-    aliases: [/\bdisney\+\b/i, /\bdisney plus\b/i, /\bdisney\b/i]
+    aliases: [/\bdisney\+\b/i, /\bdisney plus\b/i, /\bdisney\b/i],
+    tmdbProviderId: 337,
+    logoPath: "/7rwgEs15tFwyR9NPQ5vpzxTj19Q.jpg",
+    brandColor: "#113CCF",
+    brandTextColor: "#FFFFFF"
   },
   {
     id: "peacock",
     label: "Peacock",
     queryLabel: "Peacock",
     tmdbNames: ["Peacock", "Peacock Premium"],
-    aliases: [/\bpeacock\b/i]
+    aliases: [/\bpeacock\b/i],
+    tmdbProviderId: 386,
+    logoPath: "/8VCV78prwd9QzZnEm0ReO6bERDa.jpg",
+    brandColor: "#000000",
+    brandTextColor: "#FFFFFF"
   },
   {
     id: "paramount",
     label: "Paramount+",
     queryLabel: "Paramount+",
     tmdbNames: ["Paramount Plus", "Paramount+"],
-    aliases: [/\bparamount\+\b/i, /\bparamount plus\b/i, /\bparamount\b/i]
+    aliases: [/\bparamount\+\b/i, /\bparamount plus\b/i, /\bparamount\b/i],
+    tmdbProviderId: 531,
+    logoPath: "/xbhHHa1YgtpwhC8lb1NQ3ACVcLd.jpg",
+    brandColor: "#0064FF",
+    brandTextColor: "#FFFFFF"
   },
   {
     id: "tubi",
     label: "Tubi",
     queryLabel: "Tubi",
     tmdbNames: ["Tubi", "Tubi TV"],
-    aliases: [/\btubi\b/i]
-  },
-  {
-    id: "crunchyroll",
-    label: "Crunchyroll",
-    queryLabel: "Crunchyroll",
-    tmdbNames: ["Crunchyroll"],
-    aliases: [/\bcrunchyroll\b/i]
+    aliases: [/\btubi\b/i],
+    tmdbProviderId: 73,
+    logoPath: "/w2TDH9TRI7pltf5LjN3vXzs7QbN.jpg",
+    brandColor: "#7400FF",
+    brandTextColor: "#FFFFFF"
   }
 ];
 
@@ -102,6 +138,15 @@ export function isStreamingServiceId(value: string): value is StreamingServiceId
 
 export function streamingServiceById(id: string) {
   return STREAMING_SERVICES.find((service) => service.id === id);
+}
+
+export function streamingServiceByProviderName(providerName: string) {
+  const normalized = providerName.trim().toLowerCase();
+  if (!normalized) return undefined;
+
+  return STREAMING_SERVICES.find((service) =>
+    service.tmdbNames.some((name) => name.trim().toLowerCase() === normalized)
+  );
 }
 
 export function extractStreamingProviders(query: string): StreamingServiceId[] {

@@ -2,6 +2,11 @@ import { withTmdbCache } from "@/lib/tmdbCache";
 
 const TMDB_API_BASE = "https://api.themoviedb.org/3";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w342";
+const TMDB_LOGO_BASE = "https://image.tmdb.org/t/p/w92";
+
+export function tmdbLogoUrl(logoPath: string) {
+  return `${TMDB_LOGO_BASE}${logoPath}`;
+}
 const TMDB_MAX_DISCOVER_PAGE = 2;
 
 export type TmdbMediaKind = "movie" | "tv";

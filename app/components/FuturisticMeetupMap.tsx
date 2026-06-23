@@ -3,7 +3,6 @@
 type PersonPinProps = {
   name: string;
   initial: string;
-  minutes: number;
   side: "left" | "right";
 };
 
@@ -83,7 +82,7 @@ function VeinLabel({
   );
 }
 
-function PersonPin({ name, initial, minutes, side }: PersonPinProps) {
+function PersonPin({ name, initial, side }: PersonPinProps) {
   const align = side === "left" ? "items-start text-left" : "items-end text-right";
 
   return (
@@ -106,9 +105,6 @@ function PersonPin({ name, initial, minutes, side }: PersonPinProps) {
         </span>
       </div>
       <p className="mt-1.5 text-[13px] font-semibold tracking-tight text-white/95">{name}</p>
-      <p className="mt-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-cyan-300/80">
-        {minutes} min
-      </p>
     </div>
   );
 }
@@ -212,8 +208,8 @@ export function FuturisticMeetupMap() {
       </svg>
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between px-4 pb-3 sm:px-5 sm:pb-3.5">
-        <PersonPin name="Beatrix" initial="B" minutes={18} side="left" />
-        <PersonPin name="Charlotte" initial="C" minutes={19} side="right" />
+        <PersonPin name="Beatrix" initial="B" side="left" />
+        <PersonPin name="Charlotte" initial="C" side="right" />
       </div>
 
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/25 to-transparent" />

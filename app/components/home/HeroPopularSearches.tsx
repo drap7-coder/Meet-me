@@ -57,21 +57,23 @@ type Props = {
 
 export function HeroPopularSearches({ busy = false, onSelect }: Props) {
   return (
-    <section className="grid gap-2.5" aria-label="Popular searches">
-      <HeroSectionLabel>Popular searches</HeroSectionLabel>
-      <div className="grid grid-cols-2 gap-2.5">
+    <section className="grid gap-2" aria-label="Popular searches">
+      <HeroSectionLabel subtle>Popular searches</HeroSectionLabel>
+      <div className="grid grid-cols-2 gap-2">
         {HERO_POPULAR_SEARCHES.map((item) => (
           <button
             key={item.id}
             type="button"
             disabled={busy}
             onClick={() => onSelect(item.query, item.options)}
-            className="koi-discovery-chip flex w-full min-w-0 items-start gap-2.5 rounded-2xl px-3.5 py-3 text-left transition hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-40"
+            className="koi-popular-chip group flex w-full min-w-0 items-center gap-2 rounded-xl px-3 py-2.5 text-left disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/10 text-base leading-none">
+            <span aria-hidden="true" className="shrink-0 text-[0.9375rem] leading-none opacity-80">
               {item.icon}
             </span>
-            <span className="min-w-0 pt-0.5 text-sm font-semibold leading-snug text-white">{item.label}</span>
+            <span className="min-w-0 flex-1 text-[0.8125rem] font-medium leading-snug text-white/72 transition-colors group-hover:text-white/92">
+              {item.label}
+            </span>
           </button>
         ))}
       </div>

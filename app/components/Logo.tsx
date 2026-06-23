@@ -34,7 +34,7 @@ const MARK_SIZE: Record<LogoSize, { image: string; tagline: string }> = {
     tagline: "text-lg sm:text-xl"
   },
   hero: {
-    image: "h-24 w-24 sm:h-40 sm:w-40",
+    image: "h-36 w-36 sm:h-60 sm:w-60",
     tagline: "text-base sm:text-lg"
   }
 };
@@ -56,7 +56,7 @@ const LOCKUP_TITLE: Record<LogoSize, string> = {
 };
 
 function getMarkImageSizes(size: LogoSize) {
-  if (size === "hero") return "(min-width: 640px) 320px, 192px";
+  if (size === "hero") return "(min-width: 640px) 480px, 288px";
   if (size === "xl") return "(min-width: 640px) 288px, 240px";
   if (size === "lg") return "(min-width: 640px) 192px, 160px";
   return "96px";

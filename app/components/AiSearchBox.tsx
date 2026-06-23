@@ -310,6 +310,12 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
         </form>
       </section>
 
+      {!showLocationActions && !showManualFallback && !showStandaloneError ? (
+        <p className={`mt-2 px-1 text-xs font-semibold ${onHero ? "text-white/55" : "text-slate/70"}`}>
+          Press Enter to ask, or tap the arrow to send.
+        </p>
+      ) : null}
+
       {showLocationActions ? (
         <div className={`mt-3 ${promptPanelClass}`} aria-live="polite">
           <div className="flex items-start gap-2">

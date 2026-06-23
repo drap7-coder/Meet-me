@@ -64,44 +64,6 @@ export const KOI_ROTATING_PLACEHOLDERS = [
   "Live music nearby tonight"
 ];
 
-export const KOI_ROTATING_EXAMPLES: KoiCapabilityExample[] = [
-  {
-    id: "rotating-upscale-italian",
-    icon: "🍝",
-    label: "Find an upscale Italian restaurant near me tonight",
-    query: "Find an upscale Italian restaurant near me tonight",
-    accent: "places"
-  },
-  {
-    id: "rotating-sushi-halfway",
-    icon: "🍣",
-    label: "Best sushi halfway between Blue Bell and Manayunk",
-    query: "Best sushi halfway between Blue Bell and Manayunk",
-    accent: "places"
-  },
-  {
-    id: "rotating-date-night",
-    icon: "✨",
-    label: "Fun date night this Friday",
-    query: "Fun date night this Friday",
-    accent: "places"
-  },
-  {
-    id: "rotating-farmers-market",
-    icon: "🥕",
-    label: "Farmers market near me this weekend",
-    query: "Farmers market near me this weekend",
-    accent: "events"
-  },
-  {
-    id: "rotating-live-music",
-    icon: "🎵",
-    label: "Live music nearby tonight",
-    query: "Live music nearby tonight",
-    accent: "events"
-  }
-];
-
 export const THINKING_PROGRESS_LABELS = {
   places: [
     "Finding locations…",

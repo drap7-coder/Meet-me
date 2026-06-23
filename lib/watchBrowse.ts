@@ -63,6 +63,17 @@ export const WATCH_GENRES_BY_SUBCATEGORY: Partial<Record<WatchSubcategory, Watch
     { id: "sci-fi", label: "Sci-Fi & Fantasy", query: "Best sci-fi TV shows tonight" },
     { id: "documentary", label: "Documentary", query: "Best documentary series tonight" },
     { id: "family", label: "Family", query: "Best family TV shows tonight" }
+  ],
+  trending: [
+    { id: "action", label: "Action", query: "Trending action movies and shows tonight" },
+    { id: "comedy", label: "Comedy", query: "Trending comedy movies and shows tonight" },
+    { id: "drama", label: "Drama", query: "Trending drama movies and shows tonight" },
+    { id: "horror", label: "Horror", query: "Trending horror movies and shows tonight" },
+    { id: "romance", label: "Romance", query: "Trending romance movies and shows tonight" },
+    { id: "sci-fi", label: "Sci-Fi", query: "Trending sci-fi movies and shows tonight" },
+    { id: "thriller", label: "Thriller", query: "Trending thriller movies and shows tonight" },
+    { id: "documentary", label: "Documentary", query: "Trending documentary movies and shows tonight" },
+    { id: "family", label: "Family", query: "Trending family movies and shows tonight" }
   ]
 };
 

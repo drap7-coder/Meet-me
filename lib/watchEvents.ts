@@ -71,6 +71,8 @@ export function hasStreamingWatchContext(query: string) {
 
   if (STREAMING_SERVICE_PATTERN.test(trimmed)) return true;
   if (/\bwhat (?:should|can|do) (?:i|we) watch\b/i.test(trimmed)) return true;
+  if (/\bwhat(?:'s| is)\s+trending\b/i.test(trimmed) && /\bwatch\b/i.test(trimmed)) return true;
+  if (/\btrending\b/i.test(trimmed) && /\b(?:watch|stream|movie|movies|show|shows|tv)\b/i.test(trimmed)) return true;
   if (/\bwhere (?:can|to|should) (?:i|we) (?:watch|stream)\b/i.test(trimmed)) return true;
   if (/\bwhat(?:'s| is) on (?:tv|television)\b/i.test(trimmed)) return true;
   if (/\b(?:binge[\s-]?watch|stream(?:ing)?)\b/i.test(trimmed) && !/\b(?:concert|festival|game)\b/i.test(trimmed)) {
@@ -102,6 +104,8 @@ export function detectWatchIntent(query: string) {
 
   const watchPatterns = [
     /\bwhat (?:should|can|do) (?:i|we) watch\b/i,
+    /\bwhat(?:'s| is)\s+trending\b/i,
+    /\btrending\b.*\b(?:watch|stream|movie|movies|show|shows|tv)\b/i,
     /\bwhere (?:can|to|should) (?:i|we) (?:watch|stream)\b/i,
     /\bwhat(?:'s| is) on (?:tv|television)\b/i,
     /\b(?:stream(?:ing)?|watch(?:ing)?) (?:on|via)\b/i,
@@ -320,6 +324,10 @@ function classifyWatchEventsIntent(query: string): WatchEventsIntent {
   }
 
   if (/\bwhat (?:should|can|do) (?:i|we) watch\b/i.test(value) || /\bwhat(?:'s| is) on (?:tv|television)\b/i.test(value)) {
+    return "general";
+  }
+
+  if (/\btrending\b/i.test(value) && /\b(?:watch|stream|movie|movies|show|shows|tv|tonight)\b/i.test(value)) {
     return "general";
   }
 

@@ -104,7 +104,10 @@ export function detectMediaKind(query: string): TmdbMediaKind {
   if (/\b(?:movie|movies|film|films)\b/i.test(normalized)) return "movie";
   if (/\b(?:tv show|tv shows|television show|television series)\b/i.test(normalized)) return "tv";
   if (/\bwhat(?:'s| is) on (?:tv|television)\b/i.test(normalized)) return "tv";
-  if (/\b(?:trending shows?|binge|series|tv|television)\b/i.test(normalized)) return "tv";
+  if (/\b(?:trending shows?|what(?:'s| is) trending|trending to watch)\b/i.test(normalized)) {
+    return "tv";
+  }
+  if (/\btrending\b/i.test(normalized) && /\b(?:movie|movies|film|films)\b/i.test(normalized)) return "movie";
   if (
     /\b(?:show|shows)\b/i.test(normalized) &&
     !/\b(?:comedy show|live show|game show|talk show|talent show|concert)\b/i.test(normalized)

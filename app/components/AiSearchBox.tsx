@@ -19,7 +19,7 @@ type Props = {
   manualLocationError?: string;
   locationContext?: CurrentLocationContext;
   defaultUserAddress?: string;
-  onParsed: (form: SearchHalfwayRequest) => void;
+  onParsed: (form: SearchHalfwayRequest, query: string) => void;
   onWatchSearch: (query: string, subcategory: WatchSubcategory) => void;
   onEventsSearch: (query: string) => void;
   onNeedsFullFallback: () => void;
@@ -32,6 +32,7 @@ type Props = {
   locating?: boolean;
   resolvingManual?: boolean;
   surface?: "hero" | "page";
+  streamingSearch?: boolean;
 };
 
 type ParseSearchResult = {
@@ -99,7 +100,8 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     showLocationActions = false,
     locating = false,
     resolvingManual = false,
-    surface = "hero"
+    surface = "hero",
+    streamingSearch = false
   },
   ref
 ) {
@@ -168,7 +170,11 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
         const response = await fetch("/api/parse-search", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query: trimmed, context: locationContext })
+          body: JSON.stringify({
+            query: trimmed,
+            context: locationContext,
+            botMode: streamingSearch ? "watch" : undefined
+          })
         });
         const data = (await response.json()) as ParseSearchResult;
         if (!response.ok) {
@@ -194,7 +200,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
         if (data.form.searchMode === "midpoint") {
           trackEvent("halfway_search_submitted", { source: "freeform" });
         }
-        onParsed(data.form);
+        onParsed(data.form, trimmed);
       } catch (parseError) {
         setError(parseError instanceof Error ? parseError.message : "I could not understand that search.");
         onNeedsFullFallback();
@@ -211,7 +217,8 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
       onNeedsLocation,
       onParsed,
       onWatchSearch,
-      watchActiveSubcategory
+      watchActiveSubcategory,
+      streamingSearch
     ]
   );
 

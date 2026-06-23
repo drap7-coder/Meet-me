@@ -243,11 +243,7 @@ export function SearchPromptAssistProvider({
   }
 
   function pickWatchType(id: WatchSubcategory) {
-    commit((prev) => ({
-      ...prev,
-      watchType: id,
-      genre: id === "trending" ? null : prev.genre
-    }));
+    commit((prev) => ({ ...prev, watchType: id }));
   }
 
   function toggleGenre(genre: string) {
@@ -327,19 +323,17 @@ export function SearchPromptChips() {
               />
             ))}
           </ChipGroup>
-          {state.watchType !== "trending" ? (
-            <ChipGroup label="Genre">
-              {STREAM_GENRES.map((genre) => (
-                <AssistChip
-                  key={genre}
-                  label={genre}
-                  busy={busy}
-                  selected={state.genre === genre}
-                  onPick={() => toggleGenre(genre)}
-                />
-              ))}
-            </ChipGroup>
-          ) : null}
+          <ChipGroup label="Genre">
+            {STREAM_GENRES.map((genre) => (
+              <AssistChip
+                key={genre}
+                label={genre}
+                busy={busy}
+                selected={state.genre === genre}
+                onPick={() => toggleGenre(genre)}
+              />
+            ))}
+          </ChipGroup>
         </>
       ) : (
         <>
@@ -513,6 +507,7 @@ export function buildPlaceQuery(state: BuilderState): string {
 
 function buildStreamQuery(state: BuilderState): string {
   if (state.watchType === "trending") {
+    if (state.genre) return `Trending ${state.genre.toLowerCase()} movies and shows tonight`;
     return "What's trending to watch tonight?";
   }
   const noun = state.watchType === "tv_shows" ? "TV shows" : "movies";

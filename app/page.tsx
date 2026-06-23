@@ -114,7 +114,9 @@ export default function HomePage() {
   const [builderExpanded, setBuilderExpanded] = useState(false);
   const [builderMode, setBuilderMode] = useState<SearchBuilderMode>("near_me");
   const [loadingPhase, setLoadingPhase] = useState(0);
+  const [lastAskQuery, setLastAskQuery] = useState("");
   const searchBoxRef = useRef<AiSearchBoxHandle>(null);
+  const showResultsSearch = Boolean((results || watchEventsResult) && !loading);
   const loadingPhaseLabel =
     THINKING_PROGRESS_LABELS[searchKind ?? "places"][loadingPhase] ??
     THINKING_PROGRESS_LABELS.places[loadingPhase] ??
@@ -184,6 +186,14 @@ export default function HomePage() {
   const activeAccent = useMemo(() => getSearchAccent(searchKind), [searchKind]);
 
   useEffect(() => {
+    if (!showResultsSearch || !lastAskQuery.trim()) return;
+    searchBoxRef.current?.fillQuery(
+      lastAskQuery,
+      searchKind === "watch" ? activeWatchSubcategory : form.watchSubcategory
+    );
+  }, [showResultsSearch, lastAskQuery, searchKind, activeWatchSubcategory, form.watchSubcategory]);
+
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const locationA = params.get("a") ?? "";
     const locationAPlaceId = params.get("aPlaceId") ?? undefined;
@@ -202,6 +212,7 @@ export default function HomePage() {
     if (locationA || locationB || customQuery) {
       const nextForm = { locationA, locationAPlaceId, locationACoordinates, locationB, locationBPlaceId, locationBCoordinates, category, searchMode, meetupMode, customQuery, preferences };
       setForm(nextForm);
+      if (customQuery.trim()) setLastAskQuery(customQuery.trim());
       if (shareId && locationACoordinates && locationA.trim()) {
         persistSavedLocation({ locationA, locationAPlaceId, locationACoordinates });
       }
@@ -294,13 +305,16 @@ export default function HomePage() {
       setShowClassicFallback(false);
       setFallbackKind("none");
       setPendingRetry(null);
-      runParsedSearch({
-        ...activeRetry.form,
-        locationA: nextForm.locationA,
-        locationAPlaceId: nextForm.locationAPlaceId,
-        locationACoordinates: nextForm.locationACoordinates,
-        searchMode: "single"
-      });
+      runParsedSearch(
+        {
+          ...activeRetry.form,
+          locationA: nextForm.locationA,
+          locationAPlaceId: nextForm.locationAPlaceId,
+          locationACoordinates: nextForm.locationACoordinates,
+          searchMode: "single"
+        },
+        activeRetry.form.customQuery?.trim() || lastAskQuery.trim() || "restaurants near me"
+      );
     }
   }
 
@@ -480,6 +494,7 @@ export default function HomePage() {
     setCurrentShareUrl("");
     setOpenedFromSharedHalfway(false);
     setHasSearched(false);
+    setLastAskQuery("");
     setShowClassicFallback(false);
     setFallbackKind("none");
     setPendingRetry(null);
@@ -497,7 +512,8 @@ export default function HomePage() {
     submitSearch(nextForm);
   }
 
-  function runParsedSearch(nextForm: SearchHalfwayRequest, options?: SearchSubmitOptions) {
+  function runParsedSearch(nextForm: SearchHalfwayRequest, askQuery: string, options?: SearchSubmitOptions) {
+    if (askQuery.trim()) setLastAskQuery(askQuery.trim());
     setWatchEventsResult(null);
     const resolvedForm = resolveCurrentLocationInForm(nextForm, getActiveLocationContext());
     if (needsCurrentLocationResolution(resolvedForm)) {
@@ -524,6 +540,7 @@ export default function HomePage() {
   async function submitWatchSearch(query: string, subcategory: WatchSubcategory = activeWatchSubcategory) {
     const startedAt = Date.now();
     const shouldPlayMotion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (query.trim()) setLastAskQuery(query.trim());
     setSearchKind("watch");
     setActiveWatchSubcategory(subcategory);
     setHasSearched(true);
@@ -565,6 +582,7 @@ export default function HomePage() {
   async function submitEventsSearch(query: string, locationContext?: SearchHalfwayRequest) {
     const startedAt = Date.now();
     const shouldPlayMotion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (query.trim()) setLastAskQuery(query.trim());
     let redirectedToPlaces = false;
     let eventLocationContext = resolveCurrentLocationInForm(locationContext ?? form, getActiveLocationContext());
     if (looksLikeCurrentLocationQuery(query) && needsCurrentLocationResolution({ ...eventLocationContext, locationA: "me", searchMode: "single" })) {
@@ -643,11 +661,21 @@ export default function HomePage() {
   }
 
   function runWatchSearch(query: string, subcategory: WatchSubcategory) {
+    if (query.trim()) setLastAskQuery(query.trim());
     void submitWatchSearch(query, subcategory);
   }
 
   function runEventsSearch(query: string) {
+    if (query.trim()) setLastAskQuery(query.trim());
     void submitEventsSearch(query);
+  }
+
+  function runPlacesSearchFromBuilder(nextForm: SearchHalfwayRequest, options?: SearchSubmitOptions) {
+    runParsedSearch(
+      nextForm,
+      nextForm.customQuery?.trim() || lastAskQuery.trim() || "restaurants near me",
+      options
+    );
   }
 
   function openLocationChange() {
@@ -665,6 +693,7 @@ export default function HomePage() {
   }
 
   function fillSuggestedQuery(query: string, options?: PickQueryOptions) {
+    if (query.trim()) setLastAskQuery(query.trim());
     searchBoxRef.current?.fillQuery(query, options?.watchSubcategory);
     const stored = getActiveLocationContext();
     if (options?.builderMode) setBuilderMode(options.builderMode);
@@ -715,16 +744,19 @@ export default function HomePage() {
       return;
     }
 
-    runParsedSearch({
-      ...retry.form,
-      locationA: form.locationA,
-      locationAPlaceId: form.locationAPlaceId,
-      locationACoordinates: form.locationACoordinates,
-      locationB: form.locationB,
-      locationBPlaceId: form.locationBPlaceId,
-      locationBCoordinates: form.locationBCoordinates,
-      searchMode: form.searchMode ?? retry.form.searchMode
-    });
+    runParsedSearch(
+      {
+        ...retry.form,
+        locationA: form.locationA,
+        locationAPlaceId: form.locationAPlaceId,
+        locationACoordinates: form.locationACoordinates,
+        locationB: form.locationB,
+        locationBPlaceId: form.locationBPlaceId,
+        locationBCoordinates: form.locationBCoordinates,
+        searchMode: form.searchMode ?? retry.form.searchMode
+      },
+      retry.form.customQuery?.trim() || lastAskQuery.trim() || "restaurants near me"
+    );
   }
 
   function submitClassicSearch() {
@@ -868,6 +900,7 @@ export default function HomePage() {
                   onUseLocation={() => void requestUserLocation()}
                   onShowZipFallback={showZipFallback}
                   onSubmitManualLocation={(input) => void resolveManualLocation(input)}
+                  streamingSearch={form.category === "custom" && Boolean(form.watchSubcategory)}
                 />
                 <PersistentLocationBar
                   label={activeLocationLabel}
@@ -882,7 +915,7 @@ export default function HomePage() {
                   expanded={builderExpanded}
                   onExpandedChange={setBuilderExpanded}
                   mode={builderMode}
-                  onSearchPlaces={runParsedSearch}
+                  onSearchPlaces={runPlacesSearchFromBuilder}
                   onSearchWatch={runWatchSearch}
                 />
               </SearchPromptAssistProvider>
@@ -932,6 +965,49 @@ export default function HomePage() {
             />
           ) : null}
 
+          {showResultsSearch ? (
+            <section id="search" className="scroll-mt-24 pt-4">
+              <SearchPromptAssistProvider
+                busy={loading || locating || resolvingManual}
+                builderMode={builderMode}
+                onPickQuery={fillSuggestedQuery}
+              >
+                <AiSearchBox
+                  ref={searchBoxRef}
+                  surface="page"
+                  loading={loading}
+                  locationStatus={locationStatus}
+                  locationUiState={locationUiState}
+                  showManualFallback={showManualFallback}
+                  showLocationActions={showLocationActions}
+                  manualLocationError={manualLocationError}
+                  locationContext={locationContext}
+                  defaultUserAddress={savedUserAddress}
+                  locating={locating}
+                  resolvingManual={resolvingManual}
+                  onParsed={runParsedSearch}
+                  onWatchSearch={runWatchSearch}
+                  onEventsSearch={runEventsSearch}
+                  onNeedsFullFallback={() => openFullFallback()}
+                  onNeedsLocation={handleNeedsLocation}
+                  onPersistUserAddress={persistUserAddress}
+                  onUseLocation={() => void requestUserLocation()}
+                  onShowZipFallback={showZipFallback}
+                  onSubmitManualLocation={(input) => void resolveManualLocation(input)}
+                  streamingSearch={form.category === "custom" && Boolean(form.watchSubcategory)}
+                />
+                {searchKind !== "watch" ? (
+                  <PersistentLocationBar
+                    label={activeLocationLabel}
+                    busy={loading || locating || resolvingManual}
+                    onChange={openLocationChange}
+                  />
+                ) : null}
+                <SearchPromptChips />
+              </SearchPromptAssistProvider>
+            </section>
+          ) : null}
+
           {hasSearched || results || watchEventsResult || loading || showRoadDividerPreview ? (
             <RoadDivider className="mt-5 w-full" />
           ) : null}
@@ -973,6 +1049,7 @@ export default function HomePage() {
                   onUseLocation={() => void requestUserLocation()}
                   onShowZipFallback={showZipFallback}
                   onSubmitManualLocation={(input) => void resolveManualLocation(input)}
+                  streamingSearch={form.category === "custom" && Boolean(form.watchSubcategory)}
                 />
                 <PersistentLocationBar
                   label={activeLocationLabel}
@@ -987,7 +1064,7 @@ export default function HomePage() {
                   expanded={builderExpanded}
                   onExpandedChange={setBuilderExpanded}
                   mode={builderMode}
-                  onSearchPlaces={runParsedSearch}
+                  onSearchPlaces={runPlacesSearchFromBuilder}
                   onSearchWatch={runWatchSearch}
                 />
               </SearchPromptAssistProvider>

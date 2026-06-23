@@ -49,6 +49,42 @@ const CAPILLARIES = [
   "M 264 72 L 288 82"
 ];
 
+function GardenStateParkwaySign({ x, y }: { x: number; y: number }) {
+  return (
+    <g transform={`translate(${x} ${y})`} aria-hidden="true">
+      <path d="M 0 8 L -2.5 13 L 2.5 13 Z" fill="#1B4332" stroke="#86EFAC" strokeWidth="0.35" />
+      <rect x="-11" y="-7" width="22" height="13" rx="2.2" fill="#1B4332" stroke="#DCFCE7" strokeWidth="0.45" />
+      <rect x="-10" y="-6" width="20" height="11" rx="1.6" fill="#14532D" />
+      <text
+        x="0"
+        y="-2.2"
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fill="#F0FDF4"
+        fontSize="4.2"
+        fontWeight="700"
+        letterSpacing="0.06em"
+        fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
+      >
+        GSP
+      </text>
+      <text
+        x="0"
+        y="2.8"
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fill="#BBF7D0"
+        fontSize="2.6"
+        fontWeight="600"
+        letterSpacing="0.04em"
+        fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
+      >
+        PKWY
+      </text>
+    </g>
+  );
+}
+
 function VeinLabel({
   x,
   y,
@@ -197,7 +233,7 @@ export function FuturisticMeetupMap() {
         <VeinLabel x={180} y={30} label="MID" tone="koi" />
         <VeinLabel x={108} y={122} label="30" tone="cyan" />
         <VeinLabel x={298} y={46} label="76" tone="violet" />
-        <VeinLabel x={48} y={68} label="FAIR" tone="koi" />
+        <GardenStateParkwaySign x={48} y={62} />
 
         {/* Midpoint node */}
         <g transform="translate(180 76)">

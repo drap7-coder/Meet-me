@@ -1,6 +1,7 @@
 "use client";
 
 import { SHOPPING_SUBCATEGORIES } from "@/lib/shoppingBrowse";
+import { WATCH_SUBCATEGORIES } from "@/lib/watchBrowse";
 import type { SearchHalfwayRequest, VenueCategory, WatchSubcategory } from "@/lib/types";
 import type { SearchBuilderMode } from "@/lib/searchBuilderOptions";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
@@ -99,11 +100,6 @@ const PLACE_VIBES: Record<PlaceWhatId, PlaceRefinement[]> = {
 function placeRefinementsFor(what: PlaceWhatId): PlaceRefinement[] {
   return [...PLACE_TYPES[what], ...PLACE_VIBES[what]];
 }
-
-const STREAM_TYPES: Array<{ id: WatchSubcategory; label: string }> = [
-  { id: "movies", label: "Movies" },
-  { id: "tv_shows", label: "TV Shows" }
-];
 
 const STREAM_GENRES = [
   "Action",
@@ -247,7 +243,11 @@ export function SearchPromptAssistProvider({
   }
 
   function pickWatchType(id: WatchSubcategory) {
-    commit((prev) => ({ ...prev, watchType: id }));
+    commit((prev) => ({
+      ...prev,
+      watchType: id,
+      genre: id === "trending" ? null : prev.genre
+    }));
   }
 
   function toggleGenre(genre: string) {
@@ -317,7 +317,7 @@ export function SearchPromptChips() {
       {isStreaming ? (
         <>
           <ChipGroup label="Watch">
-            {STREAM_TYPES.map((option) => (
+            {WATCH_SUBCATEGORIES.map((option) => (
               <AssistChip
                 key={option.id}
                 label={option.label}
@@ -327,17 +327,19 @@ export function SearchPromptChips() {
               />
             ))}
           </ChipGroup>
-          <ChipGroup label="Genre">
-            {STREAM_GENRES.map((genre) => (
-              <AssistChip
-                key={genre}
-                label={genre}
-                busy={busy}
-                selected={state.genre === genre}
-                onPick={() => toggleGenre(genre)}
-              />
-            ))}
-          </ChipGroup>
+          {state.watchType !== "trending" ? (
+            <ChipGroup label="Genre">
+              {STREAM_GENRES.map((genre) => (
+                <AssistChip
+                  key={genre}
+                  label={genre}
+                  busy={busy}
+                  selected={state.genre === genre}
+                  onPick={() => toggleGenre(genre)}
+                />
+              ))}
+            </ChipGroup>
+          ) : null}
         </>
       ) : (
         <>
@@ -510,6 +512,9 @@ export function buildPlaceQuery(state: BuilderState): string {
 }
 
 function buildStreamQuery(state: BuilderState): string {
+  if (state.watchType === "trending") {
+    return "What's trending to watch tonight?";
+  }
   const noun = state.watchType === "tv_shows" ? "TV shows" : "movies";
   if (state.genre) return `Best ${state.genre.toLowerCase()} ${noun} tonight`;
   return state.watchType === "tv_shows"

@@ -72,7 +72,7 @@ assert(
   "movies base query"
 );
 
-const moviesComedy = { ...moviesBase, genre: "Comedy" };
+const moviesComedy = { ...moviesBase, genre: "comedy" };
 assert(
   buildStreamQuery(moviesComedy) === "What comedy movie should I watch tonight?",
   "movies + comedy refines query"
@@ -81,7 +81,7 @@ assert(
 const trendingComedy = {
   ...moviesBase,
   streamingType: "trending" as const,
-  genre: "Comedy"
+  genre: "comedy"
 };
 assert(
   buildStreamQuery(trendingComedy) === "Trending comedy movies and shows tonight",

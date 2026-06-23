@@ -8,9 +8,9 @@ export type WatchSubcategoryOption = {
 };
 
 export const WATCH_SUBCATEGORIES: WatchSubcategoryOption[] = [
-  { id: "movies", label: "Movies", description: "Films, date nights, and movie picks." },
-  { id: "tv_shows", label: "TV Shows", description: "Series, binge picks, and what's on TV." },
-  { id: "trending", label: "Trending", description: "Popular movies and shows right now." }
+  { id: "movies", label: "🎬 Movies", description: "Films, date nights, and movie picks." },
+  { id: "tv_shows", label: "📺 TV Shows", description: "Series, binge picks, and what's on TV." },
+  { id: "trending", label: "🔥 Trending", description: "Popular movies and shows right now." }
 ];
 
 export const DEFAULT_WATCH_SUBCATEGORY: WatchSubcategory = "movies";
@@ -39,41 +39,42 @@ export function getWatchSubcategoryDescription(subcategory: WatchSubcategory) {
 export type WatchGenreOption = {
   id: string;
   label: string;
+  queryWord: string;
   query: string;
 };
 
 export const WATCH_GENRES_BY_SUBCATEGORY: Partial<Record<WatchSubcategory, WatchGenreOption[]>> = {
   movies: [
-    { id: "action", label: "Action", query: "Best action movies tonight" },
-    { id: "comedy", label: "Comedy", query: "Best comedy movies tonight" },
-    { id: "drama", label: "Drama", query: "Best drama movies tonight" },
-    { id: "horror", label: "Horror", query: "Best horror movies tonight" },
-    { id: "romance", label: "Romance", query: "Best romance movies tonight" },
-    { id: "sci-fi", label: "Sci-Fi", query: "Best sci-fi movies tonight" },
-    { id: "thriller", label: "Thriller", query: "Best thriller movies tonight" },
-    { id: "documentary", label: "Documentary", query: "Best documentary movies tonight" },
-    { id: "family", label: "Family", query: "Best family movies tonight" }
+    { id: "action", label: "💥 Action", queryWord: "action", query: "Best action movies tonight" },
+    { id: "comedy", label: "😂 Comedy", queryWord: "comedy", query: "Best comedy movies tonight" },
+    { id: "drama", label: "🎭 Drama", queryWord: "drama", query: "Best drama movies tonight" },
+    { id: "horror", label: "👻 Horror", queryWord: "horror", query: "Best horror movies tonight" },
+    { id: "romance", label: "💕 Romance", queryWord: "romance", query: "Best romance movies tonight" },
+    { id: "sci-fi", label: "🚀 Sci-Fi", queryWord: "sci-fi", query: "Best sci-fi movies tonight" },
+    { id: "thriller", label: "🔪 Thriller", queryWord: "thriller", query: "Best thriller movies tonight" },
+    { id: "documentary", label: "🎥 Documentary", queryWord: "documentary", query: "Best documentary movies tonight" },
+    { id: "family", label: "👨‍👩‍👧 Family", queryWord: "family", query: "Best family movies tonight" }
   ],
   tv_shows: [
-    { id: "action", label: "Action & Adventure", query: "Best action TV shows tonight" },
-    { id: "comedy", label: "Comedy", query: "Best comedy TV shows tonight" },
-    { id: "drama", label: "Drama", query: "Best drama TV shows tonight" },
-    { id: "horror", label: "Mystery & Thriller", query: "Best mystery TV shows tonight" },
-    { id: "romance", label: "Romance", query: "Best romance TV shows tonight" },
-    { id: "sci-fi", label: "Sci-Fi & Fantasy", query: "Best sci-fi TV shows tonight" },
-    { id: "documentary", label: "Documentary", query: "Best documentary series tonight" },
-    { id: "family", label: "Family", query: "Best family TV shows tonight" }
+    { id: "action", label: "💥 Action & Adventure", queryWord: "action", query: "Best action TV shows tonight" },
+    { id: "comedy", label: "😂 Comedy", queryWord: "comedy", query: "Best comedy TV shows tonight" },
+    { id: "drama", label: "🎭 Drama", queryWord: "drama", query: "Best drama TV shows tonight" },
+    { id: "horror", label: "🕵️ Mystery & Thriller", queryWord: "mystery", query: "Best mystery TV shows tonight" },
+    { id: "romance", label: "💕 Romance", queryWord: "romance", query: "Best romance TV shows tonight" },
+    { id: "sci-fi", label: "🚀 Sci-Fi & Fantasy", queryWord: "sci-fi", query: "Best sci-fi TV shows tonight" },
+    { id: "documentary", label: "🎥 Documentary", queryWord: "documentary", query: "Best documentary series tonight" },
+    { id: "family", label: "👨‍👩‍👧 Family", queryWord: "family", query: "Best family TV shows tonight" }
   ],
   trending: [
-    { id: "action", label: "Action", query: "Trending action movies and shows tonight" },
-    { id: "comedy", label: "Comedy", query: "Trending comedy movies and shows tonight" },
-    { id: "drama", label: "Drama", query: "Trending drama movies and shows tonight" },
-    { id: "horror", label: "Horror", query: "Trending horror movies and shows tonight" },
-    { id: "romance", label: "Romance", query: "Trending romance movies and shows tonight" },
-    { id: "sci-fi", label: "Sci-Fi", query: "Trending sci-fi movies and shows tonight" },
-    { id: "thriller", label: "Thriller", query: "Trending thriller movies and shows tonight" },
-    { id: "documentary", label: "Documentary", query: "Trending documentary movies and shows tonight" },
-    { id: "family", label: "Family", query: "Trending family movies and shows tonight" }
+    { id: "action", label: "💥 Action", queryWord: "action", query: "Trending action movies and shows tonight" },
+    { id: "comedy", label: "😂 Comedy", queryWord: "comedy", query: "Trending comedy movies and shows tonight" },
+    { id: "drama", label: "🎭 Drama", queryWord: "drama", query: "Trending drama movies and shows tonight" },
+    { id: "horror", label: "👻 Horror", queryWord: "horror", query: "Trending horror movies and shows tonight" },
+    { id: "romance", label: "💕 Romance", queryWord: "romance", query: "Trending romance movies and shows tonight" },
+    { id: "sci-fi", label: "🚀 Sci-Fi", queryWord: "sci-fi", query: "Trending sci-fi movies and shows tonight" },
+    { id: "thriller", label: "🔪 Thriller", queryWord: "thriller", query: "Trending thriller movies and shows tonight" },
+    { id: "documentary", label: "🎥 Documentary", queryWord: "documentary", query: "Trending documentary movies and shows tonight" },
+    { id: "family", label: "👨‍👩‍👧 Family", queryWord: "family", query: "Trending family movies and shows tonight" }
   ]
 };
 
@@ -83,6 +84,17 @@ export function watchSubcategoryHasGenres(subcategory: WatchSubcategory) {
 
 export function getWatchGenresForSubcategory(subcategory: WatchSubcategory) {
   return WATCH_GENRES_BY_SUBCATEGORY[subcategory] ?? [];
+}
+
+export function resolveWatchGenreQueryWord(subcategory: WatchSubcategory | null, genreId: string | null) {
+  if (!subcategory || !genreId) return null;
+  return getWatchGenresForSubcategory(subcategory).find((option) => option.id === genreId)?.queryWord ?? null;
+}
+
+export function getWatchGenreGroupLabel(subcategory: WatchSubcategory): string {
+  if (subcategory === "movies") return "🎭 Genre";
+  if (subcategory === "tv_shows") return "📺 Genre";
+  return "🔥 Genre";
 }
 
 export const WATCH_PLACEHOLDER = "Ask Koi what you want to watch…";

@@ -1,6 +1,6 @@
 "use client";
 
-import { WATCH_SUBCATEGORIES } from "@/lib/watchBrowse";
+import { getWatchGenresForSubcategory, getWatchGenreGroupLabel, resolveWatchGenreQueryWord, WATCH_SUBCATEGORIES } from "@/lib/watchBrowse";
 import {
   LOCAL_CHIP_CATEGORIES,
   groupHasVibeOptions,
@@ -35,18 +35,6 @@ type WhereId = "near" | "choose" | "halfway";
 type SelectedMode = "streaming" | "local";
 
 const CONCIERGE_TAGLINE = "Tap chips to build your ask, or just type it.";
-
-const STREAM_GENRES = [
-  "Action",
-  "Comedy",
-  "Drama",
-  "Horror",
-  "Romance",
-  "Sci-Fi",
-  "Thriller",
-  "Documentary",
-  "Family"
-];
 
 export type BuilderState = {
   selectedMode: SelectedMode;
@@ -193,11 +181,13 @@ export function SearchPromptAssistProvider({
       if (prev.selectedMode === "streaming" && prev.streamingType === id) {
         return { ...prev, streamingType: null, genre: null };
       }
+      const nextGenre =
+        prev.genre && getWatchGenresForSubcategory(id).some((option) => option.id === prev.genre) ? prev.genre : null;
       return {
         ...prev,
         selectedMode: "streaming",
         streamingType: id,
-        genre: null,
+        genre: nextGenre,
         typeId: null,
         extras: new Set<string>()
       };
@@ -232,10 +222,10 @@ export function SearchPromptAssistProvider({
     }));
   }
 
-  function toggleGenre(genre: string) {
+  function toggleGenre(genreId: string) {
     commit((prev) => {
       if (prev.selectedMode !== "streaming" || !prev.streamingType) return prev;
-      return { ...prev, genre: prev.genre === genre ? null : genre };
+      return { ...prev, genre: prev.genre === genreId ? null : genreId };
     });
   }
 
@@ -285,6 +275,7 @@ export function SearchPromptChips() {
 
   const onPage = surface === "page";
   const showGenres = state.selectedMode === "streaming" && Boolean(state.streamingType);
+  const streamGenres = state.streamingType ? getWatchGenresForSubcategory(state.streamingType) : [];
 
   return (
     <section className="grid gap-3" aria-label="Prompt builder">
@@ -295,7 +286,7 @@ export function SearchPromptChips() {
           onPage ? "border-line/80 bg-paper shadow-soft" : "border-white/12 bg-white/[0.04]"
         }`}
       >
-        <ChipGroup label="Streaming" onPage={onPage}>
+        <ChipGroup label="📺 Streaming" onPage={onPage}>
           {WATCH_SUBCATEGORIES.map((option) => (
             <AssistChip
               key={option.id}
@@ -309,15 +300,15 @@ export function SearchPromptChips() {
           ))}
         </ChipGroup>
 
-        {showGenres ? (
-          <ChipGroup label="Genre" onPage={onPage}>
-            {STREAM_GENRES.map((genre) => (
+        {showGenres && state.streamingType ? (
+          <ChipGroup label={getWatchGenreGroupLabel(state.streamingType)} onPage={onPage}>
+            {streamGenres.map((genre) => (
               <AssistChip
-                key={genre}
-                label={genre}
+                key={genre.id}
+                label={genre.label}
                 busy={busy}
-                selected={state.genre === genre}
-                onPick={() => toggleGenre(genre)}
+                selected={state.genre === genre.id}
+                onPick={() => toggleGenre(genre.id)}
                 onPage={onPage}
               />
             ))}
@@ -328,7 +319,7 @@ export function SearchPromptChips() {
       <div className={`h-px ${onPage ? "bg-line/70" : "bg-white/10"}`} aria-hidden="true" />
 
       <div className="grid gap-2.5">
-        <ChipGroup label="Local" onPage={onPage}>
+        <ChipGroup label="📍 Local" onPage={onPage}>
           {LOCAL_CHIP_CATEGORIES.map((def) => (
             <AssistChip
               key={def.id}
@@ -358,7 +349,7 @@ export function SearchPromptChips() {
             </ChipGroup>
 
             {vibeRefinements.length ? (
-              <ChipGroup label="Vibe" onPage={onPage}>
+              <ChipGroup label="✨ Vibe" onPage={onPage}>
                 {vibeRefinements.map((refinement) => (
                   <AssistChip
                     key={refinement.id}
@@ -526,7 +517,7 @@ export function buildPlaceQuery(state: BuilderState): string {
 }
 
 export function buildStreamQuery(state: BuilderState): string {
-  const genre = state.genre?.toLowerCase();
+  const genre = resolveWatchGenreQueryWord(state.streamingType, state.genre);
   const type = state.streamingType;
 
   if (type === "trending") {

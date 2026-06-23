@@ -13,9 +13,9 @@ export type ActionableFilter = KoiChip & {
 };
 
 const TIMEFRAME_FILTERS: ActionableFilter[] = [
-  { id: "tonight", label: "Tonight", query: "tonight" },
-  { id: "weekend", label: "This weekend", query: "this weekend" },
-  { id: "open-now", label: "Open now", query: "open now" }
+  { id: "tonight", label: "🌙 Tonight", query: "tonight" },
+  { id: "weekend", label: "📅 This weekend", query: "this weekend" },
+  { id: "open-now", label: "🟢 Open now", query: "open now" }
 ];
 
 function dedupeChips(chips: KoiChip[]): KoiChip[] {

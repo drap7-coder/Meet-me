@@ -1,4 +1,5 @@
 import type { WatchEventsResult, WatchSubcategory } from "@/lib/types";
+import { getWatchSubcategoryLabel } from "@/lib/watchBrowse";
 import { tryBuildLiveMovieRecommendations, detectMediaKind } from "@/lib/watchMovies";
 import {
   WATCH_DESCRIPTION,
@@ -13,9 +14,9 @@ import {
 } from "@/lib/watchEvents";
 
 const SUBCATEGORY_INTENT_LABELS: Record<WatchSubcategory, string> = {
-  movies: "Movies",
-  tv_shows: "TV Shows",
-  trending: "Trending"
+  movies: getWatchSubcategoryLabel("movies"),
+  tv_shows: getWatchSubcategoryLabel("tv_shows"),
+  trending: getWatchSubcategoryLabel("trending")
 };
 
 export async function buildWatchSearchResult(

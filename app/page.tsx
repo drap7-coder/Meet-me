@@ -184,6 +184,10 @@ export default function HomePage() {
   ]);
 
   const activeAccent = useMemo(() => getSearchAccent(searchKind), [searchKind]);
+  const isStreamingForm = form.category === "custom" && Boolean(form.watchSubcategory);
+  const promptAssistSeed = isStreamingForm
+    ? { category: form.category, watchSubcategory: form.watchSubcategory }
+    : undefined;
 
   useEffect(() => {
     if (!showResultsSearch || !lastAskQuery.trim()) return;
@@ -274,6 +278,10 @@ export default function HomePage() {
   }
 
   function openFullFallback(message?: string) {
+    if (isStreamingForm || searchKind === "watch") {
+      if (message) setError(message);
+      return;
+    }
     setPendingRetry(null);
     setFallbackKind("full");
     setShowClassicFallback(true);
@@ -878,6 +886,7 @@ export default function HomePage() {
                 busy={loading || locating || resolvingManual}
                 builderMode={builderMode}
                 onPickQuery={fillSuggestedQuery}
+                seed={promptAssistSeed}
               >
                 <AiSearchBox
                   ref={searchBoxRef}
@@ -908,16 +917,18 @@ export default function HomePage() {
                   onChange={openLocationChange}
                 />
                 <SearchPromptChips />
-                <ClassicSearchControls
-                  form={form}
-                  loading={loading}
-                  savedLocationLabel={activeLocationLabel}
-                  expanded={builderExpanded}
-                  onExpandedChange={setBuilderExpanded}
-                  mode={builderMode}
-                  onSearchPlaces={runPlacesSearchFromBuilder}
-                  onSearchWatch={runWatchSearch}
-                />
+                {!isStreamingForm ? (
+                  <ClassicSearchControls
+                    form={form}
+                    loading={loading}
+                    savedLocationLabel={activeLocationLabel}
+                    expanded={builderExpanded}
+                    onExpandedChange={setBuilderExpanded}
+                    mode={builderMode}
+                    onSearchPlaces={runPlacesSearchFromBuilder}
+                    onSearchWatch={runWatchSearch}
+                  />
+                ) : null}
               </SearchPromptAssistProvider>
               <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
               <LocationFallbackPanel
@@ -934,7 +945,7 @@ export default function HomePage() {
                 discoveryMode="places"
                 onChange={handleFormChange}
                 onSubmit={submitClassicSearch}
-                hidden={!showClassicFallback || fallbackKind !== "full"}
+                hidden={!showClassicFallback || fallbackKind !== "full" || isStreamingForm}
               />
             </div>
           </section>
@@ -971,6 +982,8 @@ export default function HomePage() {
                 busy={loading || locating || resolvingManual}
                 builderMode={builderMode}
                 onPickQuery={fillSuggestedQuery}
+                seed={promptAssistSeed}
+                surface="page"
               >
                 <AiSearchBox
                   ref={searchBoxRef}
@@ -1026,6 +1039,7 @@ export default function HomePage() {
                 busy={loading || locating || resolvingManual}
                 builderMode={builderMode}
                 onPickQuery={fillSuggestedQuery}
+                seed={promptAssistSeed}
               >
                 <AiSearchBox
                   ref={searchBoxRef}
@@ -1057,16 +1071,18 @@ export default function HomePage() {
                   onChange={openLocationChange}
                 />
                 <SearchPromptChips />
-                <ClassicSearchControls
-                  form={form}
-                  loading={loading}
-                  savedLocationLabel={activeLocationLabel}
-                  expanded={builderExpanded}
-                  onExpandedChange={setBuilderExpanded}
-                  mode={builderMode}
-                  onSearchPlaces={runPlacesSearchFromBuilder}
-                  onSearchWatch={runWatchSearch}
-                />
+                {!isStreamingForm ? (
+                  <ClassicSearchControls
+                    form={form}
+                    loading={loading}
+                    savedLocationLabel={activeLocationLabel}
+                    expanded={builderExpanded}
+                    onExpandedChange={setBuilderExpanded}
+                    mode={builderMode}
+                    onSearchPlaces={runPlacesSearchFromBuilder}
+                    onSearchWatch={runWatchSearch}
+                  />
+                ) : null}
               </SearchPromptAssistProvider>
               <LocationFallbackPanel
                 form={form}
@@ -1082,7 +1098,7 @@ export default function HomePage() {
                 discoveryMode="places"
                 onChange={handleFormChange}
                 onSubmit={submitClassicSearch}
-                hidden={!showClassicFallback || fallbackKind !== "full"}
+                hidden={!showClassicFallback || fallbackKind !== "full" || isStreamingForm}
               />
               <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
             </section>

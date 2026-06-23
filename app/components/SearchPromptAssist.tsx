@@ -17,6 +17,8 @@ type ProviderProps = {
   busy?: boolean;
   builderMode?: SearchBuilderMode;
   onPickQuery: (query: string, options?: PickQueryOptions) => void;
+  seed?: Pick<PickQueryOptions, "category" | "watchSubcategory">;
+  surface?: "hero" | "page";
   children: ReactNode;
 };
 
@@ -137,6 +139,7 @@ type AssistContextValue = {
   isStreaming: boolean;
   typeRefinements: PlaceRefinement[];
   vibeRefinements: PlaceRefinement[];
+  surface: "hero" | "page";
   pickWhat: (id: WhatId) => void;
   toggleType: (id: string) => void;
   toggleExtra: (id: string) => void;
@@ -154,13 +157,20 @@ function useAssistContext() {
   return value;
 }
 
-export function SearchPromptAssistProvider({
-  busy = false,
-  builderMode,
-  onPickQuery,
-  children
-}: ProviderProps) {
-  const [state, setState] = useState<BuilderState>(() => ({
+function initialBuilderState(seed?: Pick<PickQueryOptions, "category" | "watchSubcategory">): BuilderState {
+  if (seed?.category === "custom" && seed.watchSubcategory) {
+    return {
+      what: "streaming",
+      typeId: null,
+      extras: new Set<string>(),
+      when: null,
+      where: "near",
+      watchType: seed.watchSubcategory,
+      genre: null
+    };
+  }
+
+  return {
     what: "restaurant",
     typeId: null,
     extras: new Set<string>(),
@@ -168,7 +178,18 @@ export function SearchPromptAssistProvider({
     where: "near",
     watchType: "movies",
     genre: null
-  }));
+  };
+}
+
+export function SearchPromptAssistProvider({
+  busy = false,
+  builderMode,
+  onPickQuery,
+  seed,
+  surface = "hero",
+  children
+}: ProviderProps) {
+  const [state, setState] = useState<BuilderState>(() => initialBuilderState(seed));
   const [promptQuery, setPromptQuery] = useState("");
 
   function syncQuery(next: BuilderState) {
@@ -191,6 +212,18 @@ export function SearchPromptAssistProvider({
       return next;
     });
   }
+
+  useEffect(() => {
+    if (!seed?.watchSubcategory || seed.category !== "custom") return;
+    setState((prev) => {
+      if (prev.what === "streaming" && prev.watchType === seed.watchSubcategory) return prev;
+      const next = initialBuilderState(seed);
+      syncQuery(next);
+      return next;
+    });
+    // Keep chip state aligned when the page form switches streaming subcategory.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seed?.category, seed?.watchSubcategory]);
 
   useEffect(() => {
     syncQuery(state);
@@ -264,6 +297,7 @@ export function SearchPromptAssistProvider({
         isStreaming,
         typeRefinements,
         vibeRefinements,
+        surface,
         pickWhat,
         toggleType,
         toggleExtra,
@@ -290,14 +324,17 @@ export function SearchPromptChips() {
     toggleType,
     toggleExtra,
     pickWatchType,
-    toggleGenre
+    toggleGenre,
+    surface
   } = useAssistContext();
+
+  const onPage = surface === "page";
 
   return (
     <section className="grid gap-2.5" aria-label="Prompt builder">
-      <p className="px-0.5 text-sm font-semibold text-white/70">{CONCIERGE_TAGLINE}</p>
+      <p className={`px-0.5 text-sm font-semibold ${onPage ? "text-slate" : "text-white/70"}`}>{CONCIERGE_TAGLINE}</p>
 
-      <ChipGroup label="What">
+      <ChipGroup label="What" onPage={onPage}>
         {WHAT_DEFS.map((def) => (
           <AssistChip
             key={def.id}
@@ -306,13 +343,14 @@ export function SearchPromptChips() {
             variant="primary"
             selected={state.what === def.id}
             onPick={() => pickWhat(def.id)}
+            onPage={onPage}
           />
         ))}
       </ChipGroup>
 
       {isStreaming ? (
         <>
-          <ChipGroup label="Watch">
+          <ChipGroup label="Watch" onPage={onPage}>
             {WATCH_SUBCATEGORIES.map((option) => (
               <AssistChip
                 key={option.id}
@@ -320,10 +358,11 @@ export function SearchPromptChips() {
                 busy={busy}
                 selected={state.watchType === option.id}
                 onPick={() => pickWatchType(option.id)}
+                onPage={onPage}
               />
             ))}
           </ChipGroup>
-          <ChipGroup label="Genre">
+          <ChipGroup label="Genre" onPage={onPage}>
             {STREAM_GENRES.map((genre) => (
               <AssistChip
                 key={genre}
@@ -331,13 +370,14 @@ export function SearchPromptChips() {
                 busy={busy}
                 selected={state.genre === genre}
                 onPick={() => toggleGenre(genre)}
+                onPage={onPage}
               />
             ))}
           </ChipGroup>
         </>
       ) : (
         <>
-          <ChipGroup label={TYPE_LABELS[state.what as PlaceWhatId]}>
+          <ChipGroup label={TYPE_LABELS[state.what as PlaceWhatId]} onPage={onPage}>
             {typeRefinements.map((refinement) => (
               <AssistChip
                 key={refinement.id}
@@ -345,11 +385,12 @@ export function SearchPromptChips() {
                 busy={busy}
                 selected={state.typeId === refinement.id}
                 onPick={() => toggleType(refinement.id)}
+                onPage={onPage}
               />
             ))}
           </ChipGroup>
 
-          <ChipGroup label="Vibe">
+          <ChipGroup label="Vibe" onPage={onPage}>
             {vibeRefinements.map((refinement) => (
               <AssistChip
                 key={refinement.id}
@@ -357,6 +398,7 @@ export function SearchPromptChips() {
                 busy={busy}
                 selected={state.extras.has(refinement.id)}
                 onPick={() => toggleExtra(refinement.id)}
+                onPage={onPage}
               />
             ))}
           </ChipGroup>
@@ -419,10 +461,14 @@ export function SearchPromptAssist(props: Omit<ProviderProps, "children">) {
   );
 }
 
-function ChipGroup({ label, children }: { label: string; children: ReactNode }) {
+function ChipGroup({ label, onPage = false, children }: { label: string; onPage?: boolean; children: ReactNode }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="w-full text-[0.625rem] font-bold uppercase tracking-[0.18em] text-white/40 sm:w-[5.25rem] sm:shrink-0">
+      <span
+        className={`w-full text-[0.625rem] font-bold uppercase tracking-[0.18em] sm:w-[5.25rem] sm:shrink-0 ${
+          onPage ? "text-slate/60" : "text-white/40"
+        }`}
+      >
         {label}
       </span>
       {children}
@@ -435,16 +481,23 @@ function AssistChip({
   busy,
   variant = "accent",
   selected = false,
+  onPage = false,
   onPick
 }: {
   label: string;
   busy: boolean;
   variant?: "primary" | "accent";
   selected?: boolean;
+  onPage?: boolean;
   onPick: () => void;
 }) {
-  const tone =
-    selected && variant === "primary"
+  const tone = onPage
+    ? selected && variant === "primary"
+      ? "border-koi bg-koi text-white shadow-[0_8px_18px_rgba(255,90,0,0.24)]"
+      : selected
+        ? "border-koi/70 bg-koi/10 text-ink"
+        : "border-line bg-paper text-ink hover:border-koi/40 hover:bg-koi/5"
+    : selected && variant === "primary"
       ? "border-koi bg-koi text-white shadow-[0_8px_18px_rgba(255,90,0,0.24)]"
       : selected
         ? "border-koi/70 bg-koi/15 text-white"

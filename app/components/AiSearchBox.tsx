@@ -7,6 +7,7 @@ import { trackEvent } from "@/lib/analytics";
 import { KOI_EXAMPLE } from "@/lib/koiExamples";
 import { KOI_ROTATING_PLACEHOLDERS } from "@/lib/koiCapabilityExamples";
 import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
+import { hasStreamingWatchContext } from "@/lib/watchEvents";
 import { BRAND } from "@/src/config/branding";
 import { LocationPinIcon } from "@/app/components/SavedLocationBadge";
 import { FormEvent, forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
@@ -165,6 +166,12 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
       setQuery(trimmed);
       setParsing(true);
       setError("");
+
+      if (streamingSearch || hasStreamingWatchContext(trimmed)) {
+        onWatchSearch(trimmed, watchSubcategory);
+        setParsing(false);
+        return;
+      }
 
       try {
         const response = await fetch("/api/parse-search", {

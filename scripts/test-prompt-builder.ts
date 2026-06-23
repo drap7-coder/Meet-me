@@ -16,7 +16,8 @@ const stacked = {
   when: "tonight" as const,
   where: "halfway" as const,
   streamingType: null,
-  genre: null
+  genre: null,
+  streamingServices: new Set<string>()
 };
 
 const query = buildPlaceQuery(stacked);
@@ -35,7 +36,8 @@ const minimal = {
   when: null,
   where: "near" as const,
   streamingType: null,
-  genre: null
+  genre: null,
+  streamingServices: new Set<string>()
 };
 
 assert(buildPlaceQuery(minimal) === "Restaurants near me", "minimal query has no implicit tonight");
@@ -48,7 +50,8 @@ const drinksStacked = {
   when: "open_now" as const,
   where: "near" as const,
   streamingType: null,
-  genre: null
+  genre: null,
+  streamingServices: new Set<string>()
 };
 
 const drinksQuery = buildPlaceQuery(drinksStacked);
@@ -64,7 +67,8 @@ const moviesBase = {
   when: null,
   where: "near" as const,
   streamingType: "movies" as const,
-  genre: null
+  genre: null,
+  streamingServices: new Set<string>()
 };
 
 assert(

@@ -1,5 +1,6 @@
 import type { WatchEventsResult, WatchSubcategory } from "@/lib/types";
 import { getWatchSubcategoryLabel } from "@/lib/watchBrowse";
+import { mergeStreamingServiceIds, extractStreamingProviders } from "@/lib/streamingServices";
 import { tryBuildLiveMovieRecommendations, detectMediaKind } from "@/lib/watchMovies";
 import {
   WATCH_DESCRIPTION,
@@ -21,9 +22,10 @@ const SUBCATEGORY_INTENT_LABELS: Record<WatchSubcategory, string> = {
 
 export async function buildWatchSearchResult(
   query: string,
-  subcategory?: WatchSubcategory
+  subcategory?: WatchSubcategory,
+  selectedStreamingServiceIds: string[] = []
 ): Promise<WatchEventsResult> {
-  const context = buildWatchSearchContext(query, subcategory);
+  const context = buildWatchSearchContext(query, subcategory, selectedStreamingServiceIds);
   const liveBatch = await tryBuildLiveMovieRecommendations(context);
   const recommendations =
     liveBatch?.recommendations ??
@@ -61,9 +63,10 @@ export async function buildWatchSearchResult(
 export async function buildWatchSearchMore(
   query: string,
   excludeKeys: string[],
-  subcategory?: WatchSubcategory
+  subcategory?: WatchSubcategory,
+  selectedStreamingServiceIds: string[] = []
 ) {
-  const context = buildWatchSearchContext(query, subcategory);
+  const context = buildWatchSearchContext(query, subcategory, selectedStreamingServiceIds);
   const liveBatch = await tryBuildLiveMovieRecommendations(context, {
     excludeKeys,
     startRank: excludeKeys.length + 1
@@ -77,20 +80,29 @@ export async function buildWatchSearchMore(
   };
 }
 
-function buildWatchSearchContext(query: string, subcategory?: WatchSubcategory) {
+function buildWatchSearchContext(
+  query: string,
+  subcategory?: WatchSubcategory,
+  selectedStreamingServiceIds: string[] = []
+) {
   const trimmed = query.trim();
   const augmentedQuery = augmentQueryForSubcategory(trimmed, subcategory);
   const intent = steerIntentForSubcategory(classifyWatchIntent(augmentedQuery), subcategory);
   const timeframe = extractWatchEventsTimeframe(augmentedQuery);
   const topic = extractWatchEventsTopic(augmentedQuery, intent);
   const genre = extractMovieGenre(augmentedQuery);
+  const streamingServiceIds = mergeStreamingServiceIds(
+    extractStreamingProviders(augmentedQuery),
+    selectedStreamingServiceIds
+  );
 
   return {
     query: augmentedQuery,
     intent,
     timeframe,
     topic,
-    genre
+    genre,
+    streamingServiceIds
   };
 }
 

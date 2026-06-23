@@ -12,6 +12,7 @@ import {
   type TmdbPick
 } from "@/lib/tmdb";
 import { fetchWatchProviders } from "@/lib/tmdbWatchProviders";
+import { filterRecommendationsByStreamingServices, type StreamingServiceId } from "@/lib/streamingServices";
 
 type MovieRecommendationContext = {
   query: string;
@@ -19,6 +20,7 @@ type MovieRecommendationContext = {
   timeframe: string;
   topic: string;
   genre: string;
+  streamingServiceIds: StreamingServiceId[];
 };
 
 type LiveRecommendationOptions = {
@@ -43,6 +45,7 @@ export async function tryBuildLiveMovieRecommendations(
   }
 
   const limit = options.limit ?? WATCH_PICK_PAGE_SIZE;
+  const fetchLimit = context.streamingServiceIds.length ? limit * 4 : limit;
   const excludeKeys = options.excludeKeys ?? [];
   const startRank = options.startRank ?? 1;
   const mediaKind = detectMediaKind(context.query);
@@ -57,31 +60,44 @@ export async function tryBuildLiveMovieRecommendations(
         startRank
       );
       if (recommendations?.length) {
-        return finalizeBatch({ recommendations, hasMore: false });
+        return finalizeBatch({ recommendations, hasMore: false }, context.streamingServiceIds, limit);
       }
     }
 
     if (context.intent === "stream" && context.topic && context.topic !== "movies") {
       const recommendations = await buildTitleSearchRecommendations(context.topic, context.timeframe, mediaKind, startRank);
-      return recommendations ? finalizeBatch({ recommendations, hasMore: false }) : null;
+      return recommendations
+        ? finalizeBatch({ recommendations, hasMore: false }, context.streamingServiceIds, limit)
+        : null;
     }
 
     if (context.genre) {
       return finalizeBatch(
-        await buildGenreRecommendations(context.genre, context.timeframe, mediaKind, limit, excludeKeys, startRank)
+        await buildGenreRecommendations(
+          context.genre,
+          context.timeframe,
+          mediaKind,
+          fetchLimit,
+          excludeKeys,
+          startRank
+        ),
+        context.streamingServiceIds,
+        limit
       );
     }
 
     if (/\bnew releases?\b/i.test(context.query)) {
       return finalizeBatch(
         await buildSimpleRecommendations(
-          await fetchNewReleaseMedia(mediaKind, limit, excludeKeys),
+          await fetchNewReleaseMedia(mediaKind, fetchLimit, excludeKeys),
           context.timeframe,
           mediaKind === "tv" ? "New series" : "New releases",
           mediaKind,
-          limit,
+          fetchLimit,
           startRank
-        )
+        ),
+        context.streamingServiceIds,
+        limit
       );
     }
 
@@ -89,13 +105,15 @@ export async function tryBuildLiveMovieRecommendations(
       const lane = mediaKind === "tv" ? "Trending TV" : "Trending";
       return finalizeBatch(
         await buildSimpleRecommendations(
-          await fetchTrendingMedia(mediaKind, limit, excludeKeys),
+          await fetchTrendingMedia(mediaKind, fetchLimit, excludeKeys),
           context.timeframe,
           lane,
           mediaKind,
-          limit,
+          fetchLimit,
           startRank
-        )
+        ),
+        context.streamingServiceIds,
+        limit
       );
     }
 
@@ -335,11 +353,25 @@ function capitalizeWords(value: string) {
     .join(" ");
 }
 
-async function finalizeBatch(batch: LiveWatchRecommendationBatch | null): Promise<LiveWatchRecommendationBatch | null> {
+async function finalizeBatch(
+  batch: LiveWatchRecommendationBatch | null,
+  streamingServiceIds: StreamingServiceId[] = [],
+  resultLimit?: number
+): Promise<LiveWatchRecommendationBatch | null> {
   if (!batch) return null;
+
+  let recommendations = await enrichRecommendationsWithWatchProviders(batch.recommendations);
+  if (streamingServiceIds.length) {
+    recommendations = filterRecommendationsByStreamingServices(recommendations, streamingServiceIds);
+    if (resultLimit && recommendations.length > resultLimit) {
+      recommendations = recommendations.slice(0, resultLimit);
+    }
+  }
+
   return {
     ...batch,
-    recommendations: await enrichRecommendationsWithWatchProviders(batch.recommendations)
+    recommendations,
+    hasMore: batch.hasMore && recommendations.length >= (resultLimit ?? recommendations.length)
   };
 }
 

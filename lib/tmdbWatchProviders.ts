@@ -69,6 +69,47 @@ export function hasWatchProviders(providers: NormalizedWatchProviders) {
   );
 }
 
+export function allProviderNames(providers: NormalizedWatchProviders) {
+  const seen = new Set<string>();
+  const names: string[] = [];
+
+  for (const name of [
+    ...providers.streaming,
+    ...providers.free,
+    ...providers.ads,
+    ...providers.rent,
+    ...providers.buy
+  ]) {
+    const trimmed = name.trim();
+    if (!trimmed || seen.has(trimmed)) continue;
+    seen.add(trimmed);
+    names.push(trimmed);
+  }
+
+  return names;
+}
+
+export function groupProvidersForDisplay(providers: NormalizedWatchProviders) {
+  const dedupe = (values: string[]) => {
+    const seen = new Set<string>();
+    return values.filter((value) => {
+      const trimmed = value.trim();
+      if (!trimmed || seen.has(trimmed)) return false;
+      seen.add(trimmed);
+      return true;
+    });
+  };
+
+  return {
+    availableOn: dedupe([...providers.streaming, ...providers.free, ...providers.ads]),
+    rentOrBuy: dedupe([...providers.rent, ...providers.buy])
+  };
+}
+
+export function hasGroupedWatchProviders(grouped: ReturnType<typeof groupProvidersForDisplay>) {
+  return grouped.availableOn.length > 0 || grouped.rentOrBuy.length > 0;
+}
+
 export async function fetchWatchProviders(
   mediaType: TmdbMediaKind,
   tmdbId: number,

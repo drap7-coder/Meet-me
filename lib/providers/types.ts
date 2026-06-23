@@ -46,11 +46,16 @@ export interface GooglePlacesProvider {
 }
 
 export interface WatchProvider {
-  search(query: string, subcategory?: WatchSubcategory): Promise<WatchEventsResult>;
+  search(
+    query: string,
+    subcategory?: WatchSubcategory,
+    streamingServiceIds?: string[]
+  ): Promise<WatchEventsResult>;
   more(
     query: string,
     excludeKeys: string[],
-    subcategory?: WatchSubcategory
+    subcategory?: WatchSubcategory,
+    streamingServiceIds?: string[]
   ): Promise<Pick<WatchEventsApiResponse, "botMode"> & { append: true; recommendations: unknown[]; hasMore: boolean }>;
 }
 

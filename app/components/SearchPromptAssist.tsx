@@ -10,6 +10,7 @@ import {
   vibeRefinementsFor,
   type LocalChipCategoryId
 } from "@/lib/searchBuilderOptions";
+import { STREAMING_SERVICES, streamingServiceQueryPhrase } from "@/lib/streamingServices";
 import type { SearchHalfwayRequest, VenueCategory, WatchSubcategory } from "@/lib/types";
 import type { SearchBuilderMode } from "@/lib/searchBuilderOptions";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
@@ -19,6 +20,7 @@ export type PickQueryOptions = {
   category?: VenueCategory;
   searchMode?: SearchHalfwayRequest["searchMode"];
   builderMode?: SearchBuilderMode;
+  streamingServiceIds?: string[];
 };
 
 type ProviderProps = {
@@ -45,6 +47,7 @@ export type BuilderState = {
   where: WhereId;
   streamingType: WatchSubcategory | null;
   genre: string | null;
+  streamingServices: Set<string>;
 };
 
 type AssistContextValue = {
@@ -62,6 +65,7 @@ type AssistContextValue = {
   toggleWhen: (id: WhenId) => void;
   setWhere: (id: WhereId) => void;
   toggleGenre: (genre: string) => void;
+  toggleStreamingService: (id: string) => void;
 };
 
 const AssistContext = createContext<AssistContextValue | null>(null);
@@ -76,13 +80,14 @@ function initialBuilderState(seed?: Pick<PickQueryOptions, "category" | "watchSu
   if (seed?.category === "custom" && seed.watchSubcategory) {
     return {
       selectedMode: "streaming",
-      localWhat: "food",
+      localWhat: null,
       typeId: null,
       extras: new Set<string>(),
       when: null,
       where: "near",
       streamingType: seed.watchSubcategory,
-      genre: null
+      genre: null,
+      streamingServices: new Set<string>()
     };
   }
 
@@ -94,7 +99,8 @@ function initialBuilderState(seed?: Pick<PickQueryOptions, "category" | "watchSu
     when: null,
     where: "near",
     streamingType: null,
-    genre: null
+    genre: null,
+    streamingServices: new Set<string>()
   };
 }
 
@@ -117,6 +123,7 @@ export function SearchPromptAssistProvider({
     onPickQuery(query, {
       category: categoryFor(next),
       watchSubcategory: isStreaming ? next.streamingType ?? undefined : undefined,
+      streamingServiceIds: isStreaming ? [...next.streamingServices] : undefined,
       searchMode: !isStreaming && next.where === "halfway" ? "midpoint" : "single",
       builderMode: builderModeForWhere(next.where)
     });
@@ -173,7 +180,8 @@ export function SearchPromptAssistProvider({
         typeId: null,
         extras: new Set<string>(),
         streamingType: null,
-        genre: null
+        genre: null,
+        streamingServices: new Set<string>()
       };
     });
   }
@@ -220,7 +228,8 @@ export function SearchPromptAssistProvider({
       localWhat: prev.selectedMode === "local" ? prev.localWhat : null,
       where: id,
       streamingType: null,
-      genre: null
+      genre: null,
+      streamingServices: new Set<string>()
     }));
   }
 
@@ -228,6 +237,16 @@ export function SearchPromptAssistProvider({
     commit((prev) => {
       if (prev.selectedMode !== "streaming" || !prev.streamingType) return prev;
       return { ...prev, genre: prev.genre === genreId ? null : genreId };
+    });
+  }
+
+  function toggleStreamingService(id: string) {
+    commit((prev) => {
+      if (prev.selectedMode !== "streaming" || !prev.streamingType) return prev;
+      const streamingServices = new Set(prev.streamingServices);
+      if (streamingServices.has(id)) streamingServices.delete(id);
+      else streamingServices.add(id);
+      return { ...prev, streamingServices };
     });
   }
 
@@ -253,7 +272,8 @@ export function SearchPromptAssistProvider({
         toggleExtra,
         toggleWhen,
         setWhere,
-        toggleGenre
+        toggleGenre,
+        toggleStreamingService
       }}
     >
       {children}
@@ -273,6 +293,8 @@ export function SearchPromptChips() {
     toggleType,
     toggleExtra,
     toggleGenre,
+    toggleStreamingService,
+    toggleWhen,
     surface
   } = useAssistContext();
 
@@ -280,7 +302,7 @@ export function SearchPromptChips() {
   const moduleBoxClass = `grid gap-2.5 rounded-[16px] border p-3 sm:p-3.5 ${
     onPage ? "border-line/80 bg-paper shadow-soft" : "border-white/12 bg-white/[0.04]"
   }`;
-  const showGenres = state.selectedMode === "streaming" && Boolean(state.streamingType);
+  const showStreamingDetails = state.selectedMode === "streaming" && Boolean(state.streamingType);
   const showExploreDetails = state.selectedMode === "local" && Boolean(state.localWhat);
   const streamGenres = state.streamingType ? getWatchGenresForSubcategory(state.streamingType) : [];
 
@@ -303,19 +325,44 @@ export function SearchPromptChips() {
           ))}
         </ChipGroup>
 
-        {showGenres && state.streamingType ? (
-          <ChipGroup label={getWatchGenreGroupLabel(state.streamingType)} onPage={onPage}>
-            {streamGenres.map((genre) => (
+        {showStreamingDetails ? (
+          <>
+            <ChipGroup label="Streaming Services" onPage={onPage}>
+              {STREAMING_SERVICES.map((service) => (
+                <AssistChip
+                  key={service.id}
+                  label={service.label}
+                  busy={busy}
+                  selected={state.streamingServices.has(service.id)}
+                  onPick={() => toggleStreamingService(service.id)}
+                  onPage={onPage}
+                />
+              ))}
+            </ChipGroup>
+
+            <ChipGroup label={getWatchGenreGroupLabel(state.streamingType!)} onPage={onPage}>
+              {streamGenres.map((genre) => (
+                <AssistChip
+                  key={genre.id}
+                  label={genre.label}
+                  busy={busy}
+                  selected={state.genre === genre.id}
+                  onPick={() => toggleGenre(genre.id)}
+                  onPage={onPage}
+                />
+              ))}
+            </ChipGroup>
+
+            <ChipGroup label="When" onPage={onPage}>
               <AssistChip
-                key={genre.id}
-                label={genre.label}
+                label="Tonight"
                 busy={busy}
-                selected={state.genre === genre.id}
-                onPick={() => toggleGenre(genre.id)}
+                selected={state.when === "tonight" || state.when === null}
+                onPick={() => toggleWhen("tonight")}
                 onPage={onPage}
               />
-            ))}
-          </ChipGroup>
+            </ChipGroup>
+          </>
         ) : null}
       </div>
 
@@ -525,21 +572,23 @@ export function buildPlaceQuery(state: BuilderState): string {
 export function buildStreamQuery(state: BuilderState): string {
   const genre = resolveWatchGenreQueryWord(state.streamingType, state.genre);
   const type = state.streamingType;
+  const providerPhrase = streamingServiceQueryPhrase([...state.streamingServices]);
+  const timing = state.when === "open_now" ? "" : " tonight";
 
   if (type === "trending") {
-    if (genre) return `Trending ${genre} movies and shows tonight`;
-    return "What's trending to watch tonight?";
+    if (genre) return `Trending ${genre} movies and shows${providerPhrase}${timing}`;
+    return `What's trending to watch${providerPhrase}${timing}?`;
   }
 
   if (type === "tv_shows") {
-    if (genre) return `What ${genre} TV show should I watch tonight?`;
-    return "What TV show should I watch tonight?";
+    if (genre) return `What ${genre} TV show should I watch${providerPhrase}${timing}?`;
+    return `What TV show should I watch${providerPhrase}${timing}?`;
   }
 
   if (type === "movies") {
-    if (genre) return `What ${genre} movie should I watch tonight?`;
-    return "What movie should I watch tonight?";
+    if (genre) return `What ${genre} movie should I watch${providerPhrase}${timing}?`;
+    return `What movie should I watch${providerPhrase}${timing}?`;
   }
 
-  return "What should I watch tonight?";
+  return `What should I watch${providerPhrase}${timing}?`;
 }

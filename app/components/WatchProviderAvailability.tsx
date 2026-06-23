@@ -1,13 +1,5 @@
 import type { NormalizedWatchProviders } from "@/lib/types";
-import { hasWatchProviders } from "@/lib/tmdbWatchProviders";
-
-const PROVIDER_ROWS: Array<{ key: keyof NormalizedWatchProviders; label: string }> = [
-  { key: "streaming", label: "Streaming" },
-  { key: "free", label: "Free" },
-  { key: "ads", label: "Free with ads" },
-  { key: "rent", label: "Rent" },
-  { key: "buy", label: "Buy" }
-];
+import { groupProvidersForDisplay, hasGroupedWatchProviders } from "@/lib/tmdbWatchProviders";
 
 type Props = {
   providers?: NormalizedWatchProviders;
@@ -42,17 +34,16 @@ function ProviderRow({ label, providers }: { label: string; providers: string[] 
 export function WatchProviderAvailability({ providers }: Props) {
   if (!providers) return null;
 
-  if (!hasWatchProviders(providers)) {
-    return (
-      <p className="mt-2 text-xs font-semibold text-slate/80">Streaming availability not found</p>
-    );
+  const grouped = groupProvidersForDisplay(providers);
+
+  if (!hasGroupedWatchProviders(grouped)) {
+    return <p className="mt-2 text-xs font-semibold text-slate/80">Streaming availability not found</p>;
   }
 
   return (
     <div className="mt-3 grid gap-2">
-      {PROVIDER_ROWS.map(({ key, label }) => (
-        <ProviderRow key={key} label={label} providers={providers[key]} />
-      ))}
+      <ProviderRow label="Available On" providers={grouped.availableOn} />
+      <ProviderRow label="Rent or Buy" providers={grouped.rentOrBuy} />
     </div>
   );
 }

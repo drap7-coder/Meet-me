@@ -90,6 +90,7 @@ export default function HomePage() {
   const [watchEventsResult, setWatchEventsResult] = useState<WatchEventsResult | null>(null);
   const [searchKind, setSearchKind] = useState<"places" | "watch" | "events" | null>(null);
   const [activeWatchSubcategory, setActiveWatchSubcategory] = useState<WatchSubcategory>(DEFAULT_WATCH_SUBCATEGORY);
+  const [activeStreamingServiceIds, setActiveStreamingServiceIds] = useState<string[]>([]);
   const [showClassicFallback, setShowClassicFallback] = useState(false);
   const [fallbackKind, setFallbackKind] = useState<FallbackKind>("none");
   const [pendingRetry, setPendingRetry] = useState<PendingRetry | null>(null);
@@ -536,7 +537,11 @@ export default function HomePage() {
     setShowManualFallback(false);
   }
 
-  async function submitWatchSearch(query: string, subcategory: WatchSubcategory = activeWatchSubcategory) {
+  async function submitWatchSearch(
+    query: string,
+    subcategory: WatchSubcategory = activeWatchSubcategory,
+    streamingServiceIds: string[] = activeStreamingServiceIds
+  ) {
     const startedAt = Date.now();
     const shouldPlayMotion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (query.trim()) setLastAskQuery(query.trim());
@@ -557,7 +562,7 @@ export default function HomePage() {
       const response = await fetch("/api/watch-search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, subcategory })
+        body: JSON.stringify({ query, subcategory, streamingServiceIds })
       });
       const data = (await response.json()) as WatchEventsResult & { error?: string };
       if (!response.ok) throw new Error(data.error ?? "Watch search failed.");
@@ -702,6 +707,7 @@ export default function HomePage() {
     const stored = getActiveLocationContext();
     if (options?.builderMode) setBuilderMode(options.builderMode);
     else if (options?.searchMode === "midpoint") setBuilderMode("halfway");
+    if (options?.streamingServiceIds !== undefined) setActiveStreamingServiceIds(options.streamingServiceIds);
     setForm((current) => {
       const next = { ...current };
       if (!next.locationA.trim() && stored.locationA?.trim()) {

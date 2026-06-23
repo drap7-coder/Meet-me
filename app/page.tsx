@@ -5,7 +5,6 @@ import { KoiThinkingLoader } from "@/app/components/KoiThinkingLoader";
 import { AiSearchBox, type AiSearchBoxHandle } from "@/app/components/AiSearchBox";
 import { CompactResultsHeader } from "@/app/components/home/CompactResultsHeader";
 import { MarketingHero } from "@/app/components/home/MarketingHero";
-import { HeroBrowseCategories } from "@/app/components/home/HeroBrowseCategories";
 import { HeroPopularSearches } from "@/app/components/home/HeroPopularSearches";
 import { ShareDialog, type ShareDialogState } from "@/app/components/home/ShareDialog";
 import { Footer, SiteHeader } from "@/app/components/home/SiteChrome";
@@ -919,7 +918,6 @@ export default function HomePage() {
                   streamingSearch={form.category === "custom" && Boolean(form.watchSubcategory)}
                 />
                 <HeroPopularSearches busy={loading || locating || resolvingManual} onSelect={fillSuggestedQuery} />
-                <HeroBrowseCategories busy={loading || locating || resolvingManual} onSelect={fillSuggestedQuery} />
                 <div className="h-px bg-white/10" aria-hidden="true" />
                 <SearchPromptModePicker />
                 <PersistentLocationBar

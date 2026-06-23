@@ -367,11 +367,13 @@ export function SearchPromptModePicker() {
   }`;
 
   return (
-    <section className="grid gap-3" aria-label="Choose a path">
+    <section className="grid gap-2.5" aria-label="Choose a path">
       <p
-        className={`px-0.5 text-sm font-semibold tracking-wide sm:text-[0.9375rem] ${
-          onPage ? "text-slate" : "text-white/75"
-        }`}
+        className={
+          onPage
+            ? "px-0.5 text-sm font-semibold tracking-wide text-slate sm:text-[0.9375rem]"
+            : "px-0.5 text-[0.625rem] font-bold uppercase tracking-[0.18em] text-white/45"
+        }
       >
         {CONCIERGE_TAGLINE}
       </p>

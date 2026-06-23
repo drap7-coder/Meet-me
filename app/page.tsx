@@ -389,11 +389,13 @@ export default function HomePage() {
     }
   }
 
-  const resultCountLabel = useMemo(() => {
-    if (watchEventsResult?.recommendations.length) return "Koi Pick ready";
-    if (results?.venues.length) return "Koi Pick ready";
-    return "";
-  }, [results, watchEventsResult]);
+  const topVenue = results?.venues[0] ?? null;
+  const topWatchRecommendation = watchEventsResult?.recommendations[0] ?? null;
+  const weatherPoint = results
+    ? results.searchMode === "single"
+      ? results.originA.location
+      : results.midpoint
+    : null;
 
   const resultContext = useMemo(() => {
     if (!results) return null;
@@ -912,7 +914,11 @@ export default function HomePage() {
             <CompactResultsHeader
               loading={loading}
               searchKind={searchKind}
-              locationLabel={activeLocationLabel}
+              topVenue={topVenue}
+              searchMode={results?.searchMode}
+              searchCategory={results?.category}
+              weatherPoint={weatherPoint}
+              topRecommendation={topWatchRecommendation}
               loadingLabel={
                 searchKind === "watch"
                   ? "Finding streaming picks"
@@ -920,19 +926,8 @@ export default function HomePage() {
                     ? "Finding local events"
                     : loadingPhaseLabel
               }
-              resultCountLabel={resultCountLabel}
-              title={watchEventsResult ? watchEventsResult.title : "Koi's pick"}
-              originSummary={
-                watchEventsResult
-                  ? watchEventsResult.contextSummary
-                  : results
-                  ? results.searchMode === "single"
-                    ? `Near ${results.originA.formattedAddress}`
-                    : `${results.originA.formattedAddress} → ${results.originB.formattedAddress}`
-                  : ""
-              }
-              canShareOptions={Boolean(results?.venues.length)}
-              onShareOptions={shareMeetup}
+              canShare={Boolean(results?.venues.length || currentShareUrl)}
+              onShare={shareMeetup}
               onNewSearch={startNewSearch}
             />
           ) : null}

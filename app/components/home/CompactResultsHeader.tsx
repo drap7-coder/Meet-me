@@ -1,70 +1,236 @@
-import { SavedLocationBadge } from "@/app/components/SavedLocationBadge";
+"use client";
+
+import { trackEvent } from "@/lib/analytics";
+import { buildKoiPickDecisionChips, getKoiPickReasonLine } from "@/lib/koiPickDecision";
 import { getSearchAccent } from "@/lib/searchAccent";
-import { BRAND } from "@/src/config/branding";
+import { openMeteoWeatherProvider } from "@/lib/providers/weatherProvider";
+import { getWeatherPlan } from "@/lib/weatherPlan";
+import type { LatLng, ScoredVenue, SearchMode, VenueCategory, WatchEventsRecommendation } from "@/lib/types";
+import { useEffect, useState } from "react";
+
+type Props = {
+  loading: boolean;
+  loadingLabel?: string;
+  searchKind?: "places" | "watch" | "events" | null;
+  topVenue?: ScoredVenue | null;
+  searchMode?: SearchMode;
+  searchCategory?: VenueCategory;
+  weatherPoint?: LatLng | null;
+  topRecommendation?: WatchEventsRecommendation | null;
+  canShare: boolean;
+  onShare: () => void;
+  onNewSearch: () => void;
+};
 
 export function CompactResultsHeader({
   loading,
   loadingLabel = "Finding places",
-  resultCountLabel,
-  title,
-  originSummary,
-  locationLabel = "",
   searchKind = null,
-  canShareOptions,
-  onShareOptions,
+  topVenue = null,
+  searchMode = "single",
+  searchCategory = "restaurant",
+  weatherPoint = null,
+  topRecommendation = null,
+  canShare,
+  onShare,
+  onNewSearch
+}: Props) {
+  const accent = getSearchAccent(searchKind);
+
+  if (loading) {
+    return (
+      <section className="pt-4">
+        <div className="rounded-lg border border-line bg-paper px-4 py-4 shadow-soft sm:px-5">
+          <p className={`text-sm font-bold ${accent.text}`}>{loadingLabel}</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (searchKind === "places" && topVenue) {
+    return (
+      <PlacesDecisionHero
+        venue={topVenue}
+        searchMode={searchMode}
+        searchCategory={searchCategory}
+        weatherPoint={weatherPoint}
+        accent={accent}
+        canShare={canShare}
+        onShare={onShare}
+        onNewSearch={onNewSearch}
+      />
+    );
+  }
+
+  if ((searchKind === "watch" || searchKind === "events") && topRecommendation) {
+    return (
+      <WatchDecisionHero
+        item={topRecommendation}
+        accent={accent}
+        canShare={canShare}
+        onShare={onShare}
+        onNewSearch={onNewSearch}
+      />
+    );
+  }
+
+  return null;
+}
+
+function PlacesDecisionHero({
+  venue,
+  searchMode,
+  searchCategory,
+  weatherPoint,
+  accent,
+  canShare,
+  onShare,
   onNewSearch
 }: {
-  loading: boolean;
-  loadingLabel?: string;
-  resultCountLabel: string;
-  title: string;
-  originSummary: string;
-  locationLabel?: string;
-  searchKind?: "places" | "watch" | "events" | null;
-  canShareOptions: boolean;
-  onShareOptions: () => void;
+  venue: ScoredVenue;
+  searchMode: SearchMode;
+  searchCategory: VenueCategory;
+  weatherPoint: LatLng | null;
+  accent: ReturnType<typeof getSearchAccent>;
+  canShare: boolean;
+  onShare: () => void;
   onNewSearch: () => void;
 }) {
-  const accent = getSearchAccent(searchKind);
-  const accentClass = accent.text;
-  const newSearchHoverClass = accent.hoverBorder;
-  const primaryButtonClass = accent.btnPrimary;
+  const [weatherPlan, setWeatherPlan] = useState<ReturnType<typeof getWeatherPlan> | null>(null);
+
+  useEffect(() => {
+    if (!weatherPoint) return;
+    const controller = new AbortController();
+    void openMeteoWeatherProvider
+      .getCurrentWeather(weatherPoint, controller.signal)
+      .then((weather) => {
+        setWeatherPlan(
+          getWeatherPlan({
+            feelsLike: weather.feelsLike,
+            rainChance: weather.rainChance,
+            windSpeed: weather.windSpeed,
+            weatherCode: weather.weatherCode
+          })
+        );
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [weatherPoint?.lat, weatherPoint?.lng]);
+
+  const reason = getKoiPickReasonLine(searchMode, searchCategory);
+  const chips = buildKoiPickDecisionChips({ venue, searchMode, weatherPlan });
+
+  function handleDirectionsClick() {
+    trackEvent("directions_clicked", {
+      category: venue.category,
+      placeType: venue.types?.[0] ?? venue.category
+    });
+    trackEvent("place_selected", {
+      category: venue.category,
+      placeType: venue.types?.[0] ?? venue.category
+    });
+  }
 
   return (
-    <section className="pt-[max(72px,calc(env(safe-area-inset-top)+64px))]">
-      <div className="rounded-lg border border-line bg-paper p-5 shadow-soft sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="min-w-0 flex-1">
-            <p className={`text-sm font-bold uppercase tracking-wide ${accentClass}`}>{BRAND.name}</p>
-            <p className={`mt-2 text-sm font-bold uppercase tracking-wide ${accentClass}`}>
-              {loading ? loadingLabel : resultCountLabel || "Results"}
-            </p>
-            <h1 className="mt-1 text-3xl font-black tracking-tight text-ink sm:text-4xl">{title}</h1>
-            {originSummary ? <p className="mt-2 text-sm leading-6 text-slate">{originSummary}</p> : null}
-            {locationLabel ? (
-              <div className="mt-3 min-w-0 max-w-full">
-                <SavedLocationBadge label={locationLabel} compact />
-              </div>
-            ) : null}
-          </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            {canShareOptions ? (
-              <button
-                type="button"
-                onClick={onShareOptions}
-                className={`inline-flex h-10 items-center justify-center rounded-full px-4 text-sm font-bold text-white transition focus:outline-none focus:ring-4 ${primaryButtonClass}`}
-              >
-                Share this meetup
-              </button>
-            ) : null}
+    <section className="pt-4">
+      <div className="rounded-lg border border-line bg-paper px-4 py-4 shadow-soft sm:px-5 sm:py-5">
+        <p className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.16em] text-koi">
+          <span aria-hidden="true">🏆</span>
+          Koi Pick
+        </p>
+        <h1 className="mt-2 text-2xl font-black leading-tight tracking-tight text-ink sm:text-3xl">{venue.name}</h1>
+        <p className="mt-1.5 text-sm font-medium leading-6 text-slate">{reason}</p>
+
+        {chips.length ? (
+          <p className="mt-3 text-sm font-semibold leading-6 text-ink">{chips.join(" · ")}</p>
+        ) : null}
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <a
+            href={venue.googleMapsUri}
+            target="_blank"
+            rel="noreferrer"
+            onClick={handleDirectionsClick}
+            className={`inline-flex h-10 items-center justify-center rounded-full px-4 text-sm font-black text-white transition focus:outline-none focus:ring-4 ${accent.btnPrimary}`}
+          >
+            Get directions
+          </a>
+          {canShare ? (
             <button
               type="button"
-              onClick={onNewSearch}
-              className={`inline-flex h-10 items-center justify-center rounded-full border border-line bg-paper px-4 text-sm font-bold text-ink transition focus:outline-none focus:ring-4 focus:ring-ink/10 ${newSearchHoverClass}`}
+              onClick={onShare}
+              className={`inline-flex h-10 items-center justify-center rounded-full border bg-paper px-4 text-sm font-bold transition focus:outline-none focus:ring-4 ${accent.borderOutline} ${accent.text} hover:bg-mint`}
             >
-              New search
+              Share meetup
             </button>
-          </div>
+          ) : null}
+          <button
+            type="button"
+            onClick={onNewSearch}
+            className="inline-flex h-10 items-center justify-center rounded-full px-3 text-sm font-semibold text-slate transition hover:text-ink"
+          >
+            New search
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function WatchDecisionHero({
+  item,
+  accent,
+  canShare,
+  onShare,
+  onNewSearch
+}: {
+  item: WatchEventsRecommendation;
+  accent: ReturnType<typeof getSearchAccent>;
+  canShare: boolean;
+  onShare: () => void;
+  onNewSearch: () => void;
+}) {
+  const chips = item.tags.slice(0, 4);
+
+  return (
+    <section className="pt-4">
+      <div className="rounded-lg border border-line bg-paper px-4 py-4 shadow-soft sm:px-5 sm:py-5">
+        <p className={`inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.16em] ${accent.text}`}>
+          <span aria-hidden="true">🏆</span>
+          Koi Pick
+        </p>
+        <h1 className="mt-2 text-2xl font-black leading-tight tracking-tight text-ink sm:text-3xl">{item.title}</h1>
+        <p className="mt-1.5 text-sm font-medium leading-6 text-slate">{item.explanation}</p>
+        {chips.length ? (
+          <p className="mt-3 text-sm font-semibold leading-6 text-ink">{chips.join(" · ")}</p>
+        ) : null}
+        <div className="mt-4 flex flex-wrap gap-2">
+          {item.actionUrl ? (
+            <a
+              href={item.actionUrl}
+              target="_blank"
+              rel="noreferrer"
+              className={`inline-flex h-10 items-center justify-center rounded-full px-4 text-sm font-black text-white transition focus:outline-none focus:ring-4 ${accent.btnPrimary}`}
+            >
+              {item.actionLabel}
+            </a>
+          ) : null}
+          {canShare ? (
+            <button
+              type="button"
+              onClick={onShare}
+              className={`inline-flex h-10 items-center justify-center rounded-full border bg-paper px-4 text-sm font-bold transition focus:outline-none focus:ring-4 ${accent.borderOutline} ${accent.text} hover:bg-mint`}
+            >
+              Share meetup
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={onNewSearch}
+            className="inline-flex h-10 items-center justify-center rounded-full px-3 text-sm font-semibold text-slate transition hover:text-ink"
+          >
+            New search
+          </button>
         </div>
       </div>
     </section>

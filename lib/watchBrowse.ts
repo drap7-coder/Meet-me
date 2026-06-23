@@ -7,10 +7,22 @@ export type WatchSubcategoryOption = {
   description: string;
 };
 
+export type WatchStreamVibe = "trending" | "classic";
+
 export const WATCH_SUBCATEGORIES: WatchSubcategoryOption[] = [
   { id: "movies", label: "🎬 Movies", description: "Films, date nights, and movie picks." },
   { id: "tv_shows", label: "📺 TV Shows", description: "Series, binge picks, and what's on TV." },
   { id: "trending", label: "🔥 Trending", description: "Popular movies and shows right now." }
+];
+
+export const WATCH_TYPE_OPTIONS = WATCH_SUBCATEGORIES.filter(
+  (option): option is WatchSubcategoryOption & { id: "movies" | "tv_shows" } =>
+    option.id === "movies" || option.id === "tv_shows"
+);
+
+export const WATCH_VIBE_OPTIONS: Array<{ id: WatchStreamVibe; label: string }> = [
+  { id: "trending", label: "🔥 Trending" },
+  { id: "classic", label: "⭐ Classic" }
 ];
 
 export const DEFAULT_WATCH_SUBCATEGORY: WatchSubcategory = "movies";
@@ -95,11 +107,15 @@ export function watchSubcategoryHasGenres(subcategory: WatchSubcategory) {
   return (WATCH_GENRES_BY_SUBCATEGORY[subcategory]?.length ?? 0) > 0;
 }
 
-export function getWatchGenresForSubcategory(subcategory: WatchSubcategory) {
+export function getWatchGenresForSubcategory(subcategory: WatchSubcategory | "movies" | "tv_shows" | null) {
+  if (!subcategory || subcategory === "trending") return WATCH_GENRES_BY_SUBCATEGORY.movies ?? [];
   return WATCH_GENRES_BY_SUBCATEGORY[subcategory] ?? [];
 }
 
-export function resolveWatchGenreQueryWord(subcategory: WatchSubcategory | null, genreId: string | null) {
+export function resolveWatchGenreQueryWord(
+  subcategory: WatchSubcategory | "movies" | "tv_shows" | null,
+  genreId: string | null
+) {
   if (!subcategory || !genreId) return null;
   const option = getWatchGenresForSubcategory(subcategory).find((item) => item.id === genreId);
   if (option) return option.queryWord;
@@ -107,10 +123,9 @@ export function resolveWatchGenreQueryWord(subcategory: WatchSubcategory | null,
   return null;
 }
 
-export function getWatchGenreGroupLabel(subcategory: WatchSubcategory): string {
-  if (subcategory === "movies") return "🎭 Genre";
+export function getWatchGenreGroupLabel(subcategory: WatchSubcategory | "movies" | "tv_shows" | null): string {
   if (subcategory === "tv_shows") return "📺 Genre";
-  return "🔥 Genre";
+  return "🎭 Genre";
 }
 
 export const WATCH_PLACEHOLDER = "Ask Koi what you want to watch…";

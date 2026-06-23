@@ -1,6 +1,6 @@
 "use client";
 
-import { getWatchGenresForSubcategory, getWatchGenreGroupLabel, resolveWatchGenreQueryWord, WATCH_SUBCATEGORIES } from "@/lib/watchBrowse";
+import { getWatchGenresForSubcategory, getWatchGenreGroupLabel, resolveWatchGenreQueryWord, WATCH_TYPE_OPTIONS, WATCH_VIBE_OPTIONS, type WatchStreamVibe } from "@/lib/watchBrowse";
 import {
   LOCAL_CHIP_CATEGORIES,
   groupHasVibeOptions,
@@ -48,6 +48,7 @@ export type BuilderState = {
   when: WhenId | null;
   where: WhereId;
   streamingType: WatchSubcategory | null;
+  streamingVibe: WatchStreamVibe | null;
   genre: string | null;
   streamingServices: Set<string>;
 };
@@ -62,12 +63,13 @@ type AssistContextValue = {
   surface: "hero" | "page";
   pickMode: (mode: Exclude<SelectedMode, null>) => void;
   pickLocalWhat: (id: LocalChipCategoryId) => void;
-  pickStreamingType: (id: WatchSubcategory) => void;
+  pickStreamingType: (id: "movies" | "tv_shows") => void;
   toggleType: (id: string) => void;
   toggleExtra: (id: string) => void;
   toggleWhen: (id: WhenId) => void;
   setWhere: (id: WhereId) => void;
   toggleGenre: (genre: string) => void;
+  toggleStreamingVibe: (vibe: WatchStreamVibe) => void;
   toggleStreamingService: (id: string) => void;
 };
 
@@ -79,8 +81,14 @@ function useAssistContext() {
   return value;
 }
 
+function normalizeStreamType(subcategory?: WatchSubcategory | null): "movies" | "tv_shows" | null {
+  if (subcategory === "movies" || subcategory === "tv_shows") return subcategory;
+  return null;
+}
+
 function initialBuilderState(seed?: Pick<PickQueryOptions, "category" | "watchSubcategory">): BuilderState {
   if (seed?.category === "custom" && seed.watchSubcategory) {
+    const seededTrending = seed.watchSubcategory === "trending";
     return {
       selectedMode: "streaming",
       localWhat: null,
@@ -88,7 +96,8 @@ function initialBuilderState(seed?: Pick<PickQueryOptions, "category" | "watchSu
       extras: new Set<string>(),
       when: null,
       where: "near",
-      streamingType: seed.watchSubcategory,
+      streamingType: seededTrending ? "movies" : normalizeStreamType(seed.watchSubcategory),
+      streamingVibe: seededTrending ? "trending" : null,
       genre: null,
       streamingServices: new Set<string>()
     };
@@ -102,6 +111,7 @@ function initialBuilderState(seed?: Pick<PickQueryOptions, "category" | "watchSu
     when: null,
     where: "near",
     streamingType: null,
+    streamingVibe: null,
     genre: null,
     streamingServices: new Set<string>()
   };
@@ -119,7 +129,10 @@ export function SearchPromptAssistProvider({
   const [promptQuery, setPromptQuery] = useState("");
 
   function syncQuery(next: BuilderState) {
-    const isStreaming = next.selectedMode === "streaming" && Boolean(next.streamingType);
+    const streamType = normalizeStreamType(next.streamingType);
+    const isStreaming =
+      next.selectedMode === "streaming" &&
+      (Boolean(streamType) || next.streamingServices.size > 0 || Boolean(next.streamingVibe));
     const isExplore = next.selectedMode === "local" && Boolean(next.localWhat);
 
     if (!isStreaming && !isExplore) {
@@ -132,7 +145,7 @@ export function SearchPromptAssistProvider({
     setPromptQuery(query);
     onPickQuery(query, {
       category: categoryFor(next),
-      watchSubcategory: isStreaming ? next.streamingType ?? undefined : undefined,
+      watchSubcategory: isStreaming ? streamType ?? "movies" : undefined,
       streamingServiceIds: isStreaming ? [...next.streamingServices] : undefined,
       searchMode: !isStreaming && next.where === "halfway" ? "midpoint" : "single",
       builderMode: builderModeForWhere(next.where)
@@ -174,6 +187,7 @@ export function SearchPromptAssistProvider({
           typeId: null,
           extras: new Set<string>(),
           streamingType: null,
+          streamingVibe: null,
           genre: null,
           streamingServices: new Set<string>()
         };
@@ -187,6 +201,7 @@ export function SearchPromptAssistProvider({
           typeId: null,
           extras: new Set<string>(),
           streamingType: null,
+          streamingVibe: null,
           genre: null,
           streamingServices: new Set<string>()
         };
@@ -199,6 +214,7 @@ export function SearchPromptAssistProvider({
         typeId: null,
         extras: new Set<string>(),
         streamingType: null,
+        streamingVibe: null,
         genre: null,
         streamingServices: new Set<string>()
       };
@@ -230,16 +246,17 @@ export function SearchPromptAssistProvider({
         typeId: null,
         extras: new Set<string>(),
         streamingType: null,
+        streamingVibe: null,
         genre: null,
         streamingServices: new Set<string>()
       };
     });
   }
 
-  function pickStreamingType(id: WatchSubcategory) {
+  function pickStreamingType(id: "movies" | "tv_shows") {
     commit((prev) => {
       if (prev.selectedMode === "streaming" && prev.streamingType === id) {
-        return { ...prev, streamingType: null, genre: null };
+        return { ...prev, streamingType: null, streamingVibe: null, genre: null };
       }
       const nextGenre =
         prev.genre && getWatchGenresForSubcategory(id).some((option) => option.id === prev.genre) ? prev.genre : null;
@@ -278,6 +295,7 @@ export function SearchPromptAssistProvider({
       localWhat: prev.selectedMode === "local" ? prev.localWhat : null,
       where: id,
       streamingType: null,
+      streamingVibe: null,
       genre: null,
       streamingServices: new Set<string>()
     }));
@@ -285,14 +303,21 @@ export function SearchPromptAssistProvider({
 
   function toggleGenre(genreId: string) {
     commit((prev) => {
-      if (prev.selectedMode !== "streaming" || !prev.streamingType) return prev;
+      if (prev.selectedMode !== "streaming" || !normalizeStreamType(prev.streamingType)) return prev;
       return { ...prev, genre: prev.genre === genreId ? null : genreId };
+    });
+  }
+
+  function toggleStreamingVibe(vibe: WatchStreamVibe) {
+    commit((prev) => {
+      if (prev.selectedMode !== "streaming" || !normalizeStreamType(prev.streamingType)) return prev;
+      return { ...prev, streamingVibe: prev.streamingVibe === vibe ? null : vibe };
     });
   }
 
   function toggleStreamingService(id: string) {
     commit((prev) => {
-      if (prev.selectedMode !== "streaming" || !prev.streamingType) return prev;
+      if (prev.selectedMode !== "streaming") return prev;
       const streamingServices = new Set(prev.streamingServices);
       if (streamingServices.has(id)) streamingServices.delete(id);
       else streamingServices.add(id);
@@ -300,7 +325,7 @@ export function SearchPromptAssistProvider({
     });
   }
 
-  const isStreaming = state.selectedMode === "streaming" && Boolean(state.streamingType);
+  const isStreaming = state.selectedMode === "streaming" && Boolean(normalizeStreamType(state.streamingType));
   const exploreCategory = state.selectedMode === "local" ? state.localWhat : null;
   const typeRefinements = exploreCategory ? typeRefinementsFor(exploreCategory) : [];
   const vibeRefinements =
@@ -324,6 +349,7 @@ export function SearchPromptAssistProvider({
         toggleWhen,
         setWhere,
         toggleGenre,
+        toggleStreamingVibe,
         toggleStreamingService
       }}
     >
@@ -355,7 +381,7 @@ export function SearchPromptModePicker() {
           <ModePickChip
             emoji="🍿"
             title="Streaming"
-            subtitle="Movies, shows & trending"
+            subtitle="Movies & TV picks"
             busy={busy}
             selected={state.selectedMode === "streaming"}
             onPick={() => pickMode("streaming")}
@@ -390,6 +416,7 @@ export function SearchPromptDetailChips() {
     toggleType,
     toggleExtra,
     toggleGenre,
+    toggleStreamingVibe,
     toggleStreamingService,
     surface
   } = useAssistContext();
@@ -399,10 +426,11 @@ export function SearchPromptDetailChips() {
     onPage ? "border-line/80 bg-paper shadow-soft" : "border-white/12 bg-white/[0.04] backdrop-blur-sm"
   }`;
   const showStreamingType = state.selectedMode === "streaming";
-  const showStreamingDetails = showStreamingType && Boolean(state.streamingType);
+  const streamType = state.streamingType === "movies" || state.streamingType === "tv_shows" ? state.streamingType : null;
+  const showStreamingRefinements = showStreamingType && Boolean(streamType);
   const showExploreCategories = state.selectedMode === "local";
   const showExploreDetails = showExploreCategories && Boolean(state.localWhat);
-  const streamGenres = state.streamingType ? getWatchGenresForSubcategory(state.streamingType) : [];
+  const streamGenres = streamType ? getWatchGenresForSubcategory(streamType) : [];
 
   if (!showStreamingType && !showExploreCategories) return null;
 
@@ -411,37 +439,53 @@ export function SearchPromptDetailChips() {
       <div className={moduleBoxClass}>
         {showStreamingType ? (
           <>
+            <ChipGroup label="Streaming Services" onPage={onPage}>
+              {STREAMING_SERVICES.map((service) => (
+                <StreamingServiceChip
+                  key={service.id}
+                  service={service}
+                  busy={busy}
+                  selected={state.streamingServices.has(service.id)}
+                  onPick={() => toggleStreamingService(service.id)}
+                  onPage={onPage}
+                />
+              ))}
+            </ChipGroup>
+
+            <div className={`h-px ${onPage ? "bg-line/60" : "bg-white/10"}`} aria-hidden="true" />
+
             <ChipGroup label="Type" onPage={onPage}>
-              {WATCH_SUBCATEGORIES.map((option) => (
+              {WATCH_TYPE_OPTIONS.map((option) => (
                 <AssistChip
                   key={option.id}
                   label={option.label}
                   busy={busy}
                   variant="primary"
-                  selected={state.streamingType === option.id}
+                  selected={streamType === option.id}
                   onPick={() => pickStreamingType(option.id)}
                   onPage={onPage}
                 />
               ))}
             </ChipGroup>
 
-            {showStreamingDetails ? (
+            {showStreamingRefinements ? (
               <>
                 <div className={`h-px ${onPage ? "bg-line/60" : "bg-white/10"}`} aria-hidden="true" />
-                <ChipGroup label="Streaming Services" onPage={onPage}>
-                  {STREAMING_SERVICES.map((service) => (
-                    <StreamingServiceChip
-                      key={service.id}
-                      service={service}
+
+                <ChipGroup label="✨ Vibe" onPage={onPage}>
+                  {WATCH_VIBE_OPTIONS.map((option) => (
+                    <AssistChip
+                      key={option.id}
+                      label={option.label}
                       busy={busy}
-                      selected={state.streamingServices.has(service.id)}
-                      onPick={() => toggleStreamingService(service.id)}
+                      selected={state.streamingVibe === option.id}
+                      onPick={() => toggleStreamingVibe(option.id)}
                       onPage={onPage}
                     />
                   ))}
                 </ChipGroup>
 
-                <ChipGroup label={getWatchGenreGroupLabel(state.streamingType!)} onPage={onPage}>
+                <ChipGroup label={getWatchGenreGroupLabel(streamType)} onPage={onPage}>
                   {streamGenres.map((genre) => (
                     <AssistChip
                       key={genre.id}
@@ -677,12 +721,21 @@ export function buildPlaceQuery(state: BuilderState): string {
 }
 
 export function buildStreamQuery(state: BuilderState): string {
-  const genre = resolveWatchGenreQueryWord(state.streamingType, state.genre);
-  const type = state.streamingType;
+  const type = state.streamingType === "movies" || state.streamingType === "tv_shows" ? state.streamingType : null;
+  const genre = resolveWatchGenreQueryWord(type, state.genre);
   const providerPhrase = streamingServiceQueryPhrase([...state.streamingServices]);
   const timing = state.when === "open_now" ? "" : " tonight";
+  const trending = state.streamingVibe === "trending";
 
-  if (type === "trending") {
+  if (trending) {
+    if (type === "tv_shows") {
+      if (genre) return `Trending ${genre} TV shows${providerPhrase}${timing}`;
+      return `Trending TV shows${providerPhrase}${timing}`;
+    }
+    if (type === "movies") {
+      if (genre) return `Trending ${genre} movies${providerPhrase}${timing}`;
+      return `Trending movies${providerPhrase}${timing}`;
+    }
     if (genre) return `Trending ${genre} movies and shows${providerPhrase}${timing}`;
     return `What's trending to watch${providerPhrase}${timing}?`;
   }

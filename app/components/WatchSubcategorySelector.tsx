@@ -1,7 +1,7 @@
 "use client";
 
 import type { WatchSubcategory } from "@/lib/types";
-import { DEFAULT_WATCH_SUBCATEGORY, WATCH_SUBCATEGORIES } from "@/lib/watchBrowse";
+import { DEFAULT_WATCH_SUBCATEGORY, WATCH_TYPE_OPTIONS } from "@/lib/watchBrowse";
 
 type Props = {
   value: WatchSubcategory;
@@ -9,6 +9,11 @@ type Props = {
 };
 
 export function WatchSubcategorySelector({ value, onChange }: Props) {
+  const options = [
+    ...WATCH_TYPE_OPTIONS,
+    { id: "trending" as const, label: "🔥 Trending", description: "Popular movies and shows right now." }
+  ];
+
   return (
     <div className="grid gap-2">
       <div>
@@ -16,7 +21,7 @@ export function WatchSubcategorySelector({ value, onChange }: Props) {
         <p className="mt-1 text-xs font-semibold leading-5 text-slate">No location needed — just tell Koi what you want to watch.</p>
       </div>
       <div className="flex flex-wrap gap-2">
-        {WATCH_SUBCATEGORIES.map((option) => {
+        {options.map((option) => {
           const selected = value === option.id;
           return (
             <button

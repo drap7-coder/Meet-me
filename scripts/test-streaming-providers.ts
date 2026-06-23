@@ -97,6 +97,7 @@ const streamQuery = buildStreamQuery({
   when: null,
   where: "near",
   streamingType: "movies",
+  streamingVibe: null,
   genre: "comedy",
   streamingServices: new Set(["netflix", "max"])
 });

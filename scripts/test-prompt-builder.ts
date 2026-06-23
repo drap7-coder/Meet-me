@@ -16,6 +16,7 @@ const stacked = {
   when: "tonight" as const,
   where: "halfway" as const,
   streamingType: null,
+  streamingVibe: null,
   genre: null,
   streamingServices: new Set<string>()
 };
@@ -36,6 +37,7 @@ const minimal = {
   when: null,
   where: "near" as const,
   streamingType: null,
+  streamingVibe: null,
   genre: null,
   streamingServices: new Set<string>()
 };
@@ -50,6 +52,7 @@ const drinksStacked = {
   when: "open_now" as const,
   where: "near" as const,
   streamingType: null,
+  streamingVibe: null,
   genre: null,
   streamingServices: new Set<string>()
 };
@@ -67,6 +70,7 @@ const moviesBase = {
   when: null,
   where: "near" as const,
   streamingType: "movies" as const,
+  streamingVibe: null,
   genre: null,
   streamingServices: new Set<string>()
 };
@@ -84,11 +88,11 @@ assert(
 
 const trendingComedy = {
   ...moviesBase,
-  streamingType: "trending" as const,
+  streamingVibe: "trending" as const,
   genre: "comedy"
 };
 assert(
-  buildStreamQuery(trendingComedy) === "Trending comedy movies and shows tonight",
+  buildStreamQuery(trendingComedy) === "Trending comedy movies tonight",
   "trending + comedy refines query"
 );
 

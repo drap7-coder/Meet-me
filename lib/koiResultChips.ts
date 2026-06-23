@@ -1,4 +1,5 @@
 import { LOCAL_HAPPENINGS_OPTIONS } from "@/lib/localHappenings";
+import { streamingServiceLabels } from "@/lib/streamingServices";
 import type { WatchEventsResult, WatchSubcategory } from "@/lib/types";
 import { WATCH_GENRES_BY_SUBCATEGORY, WATCH_SUBCATEGORIES } from "@/lib/watchBrowse";
 
@@ -34,6 +35,9 @@ export function buildKoiUnderstoodChips(result: WatchEventsResult): KoiChip[] {
 
   if (result.intentLabel.trim()) {
     chips.push({ id: "intent", label: result.intentLabel });
+  }
+  for (const label of streamingServiceLabels(result.streamingServiceIds ?? [])) {
+    chips.push({ id: `service-${label}`, label });
   }
   if (result.topic.trim()) {
     chips.push({ id: "topic", label: result.topic });

@@ -4,8 +4,7 @@ import { BRAND } from "@/src/config/branding";
 export function MarketingHero() {
   return (
     <div className="w-full min-w-0">
-      <div className="flex w-full min-w-0 items-center gap-3 sm:gap-5">
-        <Logo size="hero" onDark className="shrink-0" />
+      <div className="flex w-full min-w-0 items-center justify-between gap-4 sm:gap-6">
         <div className="min-w-0 flex-1">
           <h1 className="font-semibold tracking-[-0.04em]">
             <span className="block text-[clamp(2rem,9vw,3.25rem)] leading-[0.95] text-white">{BRAND.heroHeadlineLead}</span>
@@ -18,6 +17,7 @@ export function MarketingHero() {
             {BRAND.heroSubheadline}
           </p>
         </div>
+        <Logo size="hero" onDark className="shrink-0" />
       </div>
     </div>
   );

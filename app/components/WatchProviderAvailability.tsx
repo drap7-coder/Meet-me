@@ -1,10 +1,11 @@
 import { ProviderBrandBadge } from "@/app/components/StreamingServiceChip";
 import type { NormalizedWatchProviders } from "@/lib/types";
 import { groupProvidersForDisplay, hasGroupedWatchProviders } from "@/lib/tmdbWatchProviders";
-import { streamingServiceByProviderName } from "@/lib/streamingServices";
+import { streamingServiceById, streamingServiceByProviderName, recommendationMatchesStreamingServices } from "@/lib/streamingServices";
 
 type Props = {
   providers?: NormalizedWatchProviders;
+  preferredServiceIds?: string[];
 };
 
 function ProviderChip({ name }: { name: string }) {
@@ -42,19 +43,77 @@ function ProviderRow({ label, providers }: { label: string; providers: string[] 
   );
 }
 
-export function WatchProviderAvailability({ providers }: Props) {
-  if (!providers) return null;
+function PreferredServicesRow({ serviceIds }: { serviceIds: string[] }) {
+  const services = serviceIds
+    .map((id) => streamingServiceById(id))
+    .filter((service): service is NonNullable<typeof service> => Boolean(service));
 
-  const grouped = groupProvidersForDisplay(providers);
+  if (!services.length) return null;
 
-  if (!hasGroupedWatchProviders(grouped)) {
-    return <p className="mt-2 text-xs font-semibold text-slate/80">Streaming availability not found</p>;
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className="shrink-0 text-[0.625rem] font-bold uppercase tracking-[0.12em] text-slate/70">Your search</span>
+      <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+        {services.map((service) => (
+          <ProviderBrandBadge key={service.id} service={service} label={service.label} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function orderProvidersForPreferred(providers: string[], preferredServiceIds: string[]) {
+  if (!preferredServiceIds.length) return providers;
+
+  const preferredNames = new Set<string>();
+  for (const id of preferredServiceIds) {
+    const service = streamingServiceById(id);
+    if (!service) continue;
+    for (const name of service.tmdbNames) {
+      preferredNames.add(name.trim().toLowerCase());
+    }
   }
+
+  const score = (name: string) => {
+    const matched = streamingServiceByProviderName(name);
+    if (matched && preferredServiceIds.includes(matched.id)) return 0;
+    const normalized = name.trim().toLowerCase();
+    if ([...preferredNames].some((preferred) => normalized.includes(preferred) || preferred.includes(normalized))) {
+      return 1;
+    }
+    return 2;
+  };
+
+  return [...providers].sort((left, right) => score(left) - score(right));
+}
+
+export function WatchProviderAvailability({ providers, preferredServiceIds = [] }: Props) {
+  const grouped = providers ? groupProvidersForDisplay(providers) : { availableOn: [], rentOrBuy: [] };
+  const hasProviders = hasGroupedWatchProviders(grouped);
+  const availableOn = orderProvidersForPreferred(grouped.availableOn, preferredServiceIds);
+  const rentOrBuy = orderProvidersForPreferred(grouped.rentOrBuy, preferredServiceIds);
+
+  if (!hasProviders && !preferredServiceIds.length) {
+    return null;
+  }
+
+  if (!hasProviders && preferredServiceIds.length) {
+    return (
+      <div className="mt-3 grid gap-2">
+        <PreferredServicesRow serviceIds={preferredServiceIds} />
+        <p className="text-xs font-semibold text-slate/80">Streaming availability not found for this title yet.</p>
+      </div>
+    );
+  }
+
+  const showPreferredRow =
+    preferredServiceIds.length > 0 && !recommendationMatchesStreamingServices(providers, preferredServiceIds);
 
   return (
     <div className="mt-3 grid gap-2">
-      <ProviderRow label="Available On" providers={grouped.availableOn} />
-      <ProviderRow label="Rent or Buy" providers={grouped.rentOrBuy} />
+      {showPreferredRow ? <PreferredServicesRow serviceIds={preferredServiceIds} /> : null}
+      <ProviderRow label="Available On" providers={availableOn} />
+      <ProviderRow label="Rent or Buy" providers={rentOrBuy} />
     </div>
   );
 }

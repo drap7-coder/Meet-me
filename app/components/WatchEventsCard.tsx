@@ -11,6 +11,7 @@ type Props = {
   item: WatchEventsRecommendation;
   botMode?: "watch" | "events";
   isKoiPick?: boolean;
+  preferredServiceIds?: string[];
 };
 
 function isSearchSuggestion(item: WatchEventsRecommendation) {
@@ -24,7 +25,7 @@ function badgeClass(item: WatchEventsRecommendation, botMode: "watch" | "events"
   return `${accent.bg} text-white`;
 }
 
-export function WatchEventsCard({ item, botMode = "watch", isKoiPick = false }: Props) {
+export function WatchEventsCard({ item, botMode = "watch", isKoiPick = false, preferredServiceIds = [] }: Props) {
   const accent = getSearchAccent(botModeToSearchKind(botMode));
   const [expanded, setExpanded] = useState(false);
   const cardRef = useRef<HTMLElement | null>(null);
@@ -99,7 +100,9 @@ export function WatchEventsCard({ item, botMode = "watch", isKoiPick = false }: 
               {[item.rating, item.year, item.genre, item.runtime].filter(Boolean).join(" · ")}
             </p>
           ) : null}
-          {isLivePick ? <WatchProviderAvailability providers={item.watchProviders} /> : null}
+          {isLivePick ? (
+            <WatchProviderAvailability providers={item.watchProviders} preferredServiceIds={preferredServiceIds} />
+          ) : null}
         </div>
       </div>
 

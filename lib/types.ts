@@ -140,6 +140,7 @@ export type WatchEventsResult = {
   futureProviders: string[];
   preview: boolean;
   hasMore?: boolean;
+  streamingServiceIds?: string[];
 };
 
 export type WatchEventsMoreResult = {

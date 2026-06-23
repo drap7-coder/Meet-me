@@ -430,7 +430,7 @@ export function SearchPromptModePicker() {
           onPick={() => pickMode("streaming")}
           onPage={onPage}
           tone="streaming"
-          className="snap-start min-w-[11.75rem] flex-1 sm:min-w-0"
+          className="snap-start min-w-[9.5rem] flex-1 sm:min-w-0"
         />
         <ModePickChip
           emoji="🧭"
@@ -441,7 +441,7 @@ export function SearchPromptModePicker() {
           onPick={pickExplore}
           onPage={onPage}
           tone="explore"
-          className="snap-start min-w-[11.75rem] flex-1 sm:min-w-0"
+          className="snap-start min-w-[9.5rem] flex-1 sm:min-w-0"
         />
         <ModePickChip
           emoji="📍"
@@ -452,7 +452,7 @@ export function SearchPromptModePicker() {
           onPick={pickMeetHalfway}
           onPage={onPage}
           tone="halfway"
-          className="snap-start min-w-[11.75rem] flex-1 sm:min-w-0"
+          className="snap-start min-w-[9.5rem] flex-1 sm:min-w-0"
         />
       </div>
     </section>

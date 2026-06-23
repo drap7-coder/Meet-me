@@ -53,6 +53,7 @@ import {
 import { readStoredLocationSnapshot, resolveLocationChipLabel, restoreStoredLocation } from "@/lib/homeLocation";
 import { mergeSavedUserLocation, getSavedUserLocation } from "@/lib/savedUserLocation";
 import { getSearchAccent } from "@/lib/searchAccent";
+import { extractStreamingProviders, mergeStreamingServiceIds } from "@/lib/streamingServices";
 import { KOI_PICK_DISPLAY_LIMIT, THINKING_PROGRESS_LABELS } from "@/lib/koiCapabilityExamples";
 import type { KoiBotMode, LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory, WatchEventsApiResponse, WatchEventsResult, WatchSubcategory } from "@/lib/types";
 import { BRAND } from "@/src/config/branding";
@@ -544,6 +545,11 @@ export default function HomePage() {
     subcategory: WatchSubcategory = activeWatchSubcategory,
     streamingServiceIds: string[] = activeStreamingServiceIds
   ) {
+    const mergedStreamingServiceIds = mergeStreamingServiceIds(
+      streamingServiceIds,
+      extractStreamingProviders(query)
+    );
+    setActiveStreamingServiceIds(mergedStreamingServiceIds);
     const startedAt = Date.now();
     const shouldPlayMotion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (query.trim()) setLastAskQuery(query.trim());
@@ -564,12 +570,15 @@ export default function HomePage() {
       const response = await fetch("/api/watch-search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, subcategory, streamingServiceIds })
+        body: JSON.stringify({ query, subcategory, streamingServiceIds: mergedStreamingServiceIds })
       });
       const data = (await response.json()) as WatchEventsResult & { error?: string };
       if (!response.ok) throw new Error(data.error ?? "Watch search failed.");
 
       setWatchEventsResult(data);
+      if (data.streamingServiceIds?.length) {
+        setActiveStreamingServiceIds(data.streamingServiceIds);
+      }
       syncUserLocationFromStorage();
       trackEvent("watch_events_completed", {
         intent: data.intent,
@@ -668,7 +677,11 @@ export default function HomePage() {
 
   function runWatchSearch(query: string, subcategory: WatchSubcategory) {
     if (query.trim()) setLastAskQuery(query.trim());
-    void submitWatchSearch(query, subcategory);
+    const mergedStreamingServiceIds = mergeStreamingServiceIds(
+      activeStreamingServiceIds,
+      extractStreamingProviders(query)
+    );
+    void submitWatchSearch(query, subcategory, mergedStreamingServiceIds);
   }
 
   function runEventsSearch(query: string) {

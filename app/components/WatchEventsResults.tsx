@@ -34,12 +34,25 @@ export function WatchEventsResults({ result, onRefineWatch, onRefineEvents }: Pr
   return (
     <section className="search-results-enter mt-5 grid gap-5 pb-16 lg:grid-cols-[1fr_320px] lg:items-start">
       <div className="results-list-enter order-2 grid gap-4 lg:order-1">
-        {koiPick ? <WatchEventsCard key={koiPick.id} item={koiPick} botMode={result.botMode} isKoiPick /> : null}
+        {koiPick ? (
+          <WatchEventsCard
+            key={koiPick.id}
+            item={koiPick}
+            botMode={result.botMode}
+            isKoiPick
+            preferredServiceIds={result.streamingServiceIds}
+          />
+        ) : null}
         {otherOptions.length ? (
           <div className="grid gap-4">
             <h2 className="text-sm font-black uppercase tracking-[0.14em] text-slate">Other Good Options</h2>
             {otherOptions.map((item) => (
-              <WatchEventsCard key={item.id} item={item} botMode={result.botMode} />
+              <WatchEventsCard
+                key={item.id}
+                item={item}
+                botMode={result.botMode}
+                preferredServiceIds={result.streamingServiceIds}
+              />
             ))}
           </div>
         ) : null}

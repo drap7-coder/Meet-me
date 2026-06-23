@@ -1,6 +1,6 @@
 import type { WatchEventsResult, WatchSubcategory } from "@/lib/types";
 import { getWatchSubcategoryLabel } from "@/lib/watchBrowse";
-import { mergeStreamingServiceIds, extractStreamingProviders } from "@/lib/streamingServices";
+import { mergeStreamingServiceIds, extractStreamingProviders, streamingServiceLabels } from "@/lib/streamingServices";
 import { tryBuildLiveMovieRecommendations, detectMediaKind } from "@/lib/watchMovies";
 import {
   WATCH_DESCRIPTION,
@@ -49,14 +49,15 @@ export async function buildWatchSearchResult(
     location: "",
     timeframe: context.timeframe,
     topic: context.topic,
-    contextSummary: buildWatchContextSummary(subcategory, context.timeframe, context.topic),
+    contextSummary: buildWatchContextSummary(subcategory, context.timeframe, context.topic, context.streamingServiceIds),
     resultCount: recommendations.length,
     recommendations,
     futureProviders: hasLivePicks
       ? ["Watchmode", "Streaming Availability API"]
       : ["TMDB", "Watchmode", "Streaming Availability API"],
     preview: !hasLivePicks,
-    hasMore: liveBatch?.hasMore ?? false
+    hasMore: liveBatch?.hasMore ?? false,
+    streamingServiceIds: context.streamingServiceIds
   };
 }
 
@@ -133,9 +134,12 @@ function steerIntentForSubcategory(intent: ReturnType<typeof classifyWatchIntent
 function buildWatchContextSummary(
   subcategory: WatchSubcategory | undefined,
   timeframe: string,
-  topic: string
+  topic: string,
+  streamingServiceIds: string[] = []
 ) {
   const parts = [subcategory ? SUBCATEGORY_INTENT_LABELS[subcategory] : "Streaming"];
+  const serviceLabels = streamingServiceLabels(streamingServiceIds);
+  if (serviceLabels.length) parts.push(serviceLabels.join(" · "));
   if (topic) parts.push(topic);
   if (timeframe) parts.push(timeframe);
   return parts.join(" · ");

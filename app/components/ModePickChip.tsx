@@ -24,7 +24,7 @@ export function ModePickChip({
   className = ""
 }: ModePickChipProps) {
   const heroClass = [
-    "koi-mode-chip group flex w-full min-w-0 items-center gap-3.5 rounded-2xl px-4 py-4 text-left min-h-[5.5rem] focus:outline-none focus:ring-4 focus:ring-koi/15 disabled:cursor-not-allowed disabled:opacity-40",
+    "koi-mode-chip group flex w-full min-w-0 flex-col items-center justify-center gap-2.5 rounded-[1.35rem] px-3 py-5 text-center text-white min-h-[8.25rem] focus:outline-none focus:ring-4 focus:ring-koi/15 disabled:cursor-not-allowed disabled:opacity-40",
     `koi-mode-chip--${tone}`,
     selected && "koi-mode-chip--selected",
     className
@@ -33,7 +33,7 @@ export function ModePickChip({
     .join(" ");
 
   const pageClass = [
-    "koi-mode-chip-page group flex w-full min-w-0 items-center gap-3.5 rounded-2xl px-4 py-4 text-left min-h-[5.5rem] focus:outline-none focus:ring-4 focus:ring-koi/15 disabled:cursor-not-allowed disabled:opacity-40",
+    "koi-mode-chip-page group flex w-full min-w-0 flex-col items-center justify-center gap-2.5 rounded-[1.35rem] px-3 py-5 text-center min-h-[8.25rem] focus:outline-none focus:ring-4 focus:ring-koi/15 disabled:cursor-not-allowed disabled:opacity-40",
     `koi-mode-chip-page--${tone}`,
     selected && "koi-mode-chip-page--selected",
     className
@@ -41,12 +41,14 @@ export function ModePickChip({
     .filter(Boolean)
     .join(" ");
 
-  const iconClass = onPage
-    ? `koi-mode-chip-page__icon koi-mode-chip-page__icon--${tone} flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-[1.35rem] leading-none`
-    : `koi-mode-chip__icon koi-mode-chip__icon--${tone} flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] text-[1.35rem] leading-none`;
+  const emojiClass = onPage
+    ? `koi-mode-chip-page__emoji koi-mode-chip-page__emoji--${tone} flex h-[4.25rem] w-[4.25rem] shrink-0 items-center justify-center rounded-[1.15rem] text-[2.65rem] leading-none`
+    : `koi-mode-chip__emoji koi-mode-chip__emoji--${tone} flex h-[4.25rem] w-[4.25rem] shrink-0 items-center justify-center rounded-[1.15rem] text-[2.65rem] leading-none`;
 
   const titleClass = onPage ? "text-sm font-bold leading-tight text-ink" : "text-sm font-bold leading-tight text-white";
-  const subtitleClass = onPage ? "text-xs font-medium leading-snug text-slate/75" : "text-xs font-medium leading-snug text-white/62";
+  const subtitleClass = onPage
+    ? "text-[0.6875rem] font-medium leading-snug text-slate/75"
+    : "text-[0.6875rem] font-medium leading-snug text-white/90";
 
   return (
     <button
@@ -57,10 +59,10 @@ export function ModePickChip({
       aria-label={`${title}: ${subtitle}`}
       className={onPage ? pageClass : heroClass}
     >
-      <span className={iconClass} aria-hidden="true">
+      <span className={emojiClass} aria-hidden="true">
         {emoji}
       </span>
-      <span className="grid min-w-0 flex-1 gap-1">
+      <span className="grid min-w-0 gap-0.5 px-1">
         <span className={titleClass}>{title}</span>
         <span className={subtitleClass}>{subtitle}</span>
       </span>

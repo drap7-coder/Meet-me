@@ -11,7 +11,7 @@ import {
   type TmdbMediaKind,
   type TmdbPick
 } from "@/lib/tmdb";
-import { fetchWatchProviders } from "@/lib/tmdbWatchProviders";
+import { fetchWatchProviders, hasWatchProviders } from "@/lib/tmdbWatchProviders";
 import { filterRecommendationsByStreamingServices, type StreamingServiceId } from "@/lib/streamingServices";
 
 type MovieRecommendationContext = {
@@ -384,8 +384,20 @@ async function enrichRecommendationsWithWatchProviders(
         return recommendation;
       }
 
-      const watchProviders = await fetchWatchProviders(recommendation.mediaType, recommendation.tmdbId);
+      const watchProviders = await fetchWatchProvidersWithRetry(recommendation.mediaType, recommendation.tmdbId);
       return { ...recommendation, watchProviders };
     })
   );
+}
+
+async function fetchWatchProvidersWithRetry(
+  mediaType: Parameters<typeof fetchWatchProviders>[0],
+  tmdbId: number
+) {
+  let providers = await fetchWatchProviders(mediaType, tmdbId);
+  if (hasWatchProviders(providers)) return providers;
+
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  providers = await fetchWatchProviders(mediaType, tmdbId);
+  return providers;
 }

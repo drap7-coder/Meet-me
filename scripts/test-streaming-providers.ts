@@ -116,5 +116,20 @@ for (const service of STREAMING_SERVICES) {
 assert(streamingServiceByProviderName("Netflix")?.id === "netflix", "looks up Netflix branding");
 assert(streamingServiceByProviderName("HBO Max")?.id === "max", "looks up Max branding");
 assert(streamingServiceByProviderName("Amazon Prime Video")?.id === "prime", "looks up Prime branding");
+assert(streamingServiceByProviderName("Netflix Standard with Ads")?.id === "netflix", "matches Netflix variants");
+assert(streamingServiceByProviderName("Peacock Premium Plus")?.id === "peacock", "matches Peacock variants");
+assert(
+  recommendationMatchesStreamingServices(
+    {
+      streaming: ["Netflix Standard with Ads"],
+      free: [],
+      ads: [],
+      rent: [],
+      buy: []
+    },
+    ["netflix"]
+  ),
+  "matches fuzzy Netflix provider names"
+);
 
 console.log("PASS streaming provider refinement");

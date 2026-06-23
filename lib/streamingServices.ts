@@ -99,7 +99,7 @@ export const STREAMING_SERVICES: StreamingServiceOption[] = [
     id: "peacock",
     label: "Peacock",
     queryLabel: "Peacock",
-    tmdbNames: ["Peacock", "Peacock Premium"],
+    tmdbNames: ["Peacock", "Peacock Premium", "Peacock Premium Plus"],
     aliases: [/\bpeacock\b/i],
     tmdbProviderId: 386,
     logoPath: "/8VCV78prwd9QzZnEm0ReO6bERDa.jpg",
@@ -141,12 +141,15 @@ export function streamingServiceById(id: string) {
 }
 
 export function streamingServiceByProviderName(providerName: string) {
-  const normalized = providerName.trim().toLowerCase();
-  if (!normalized) return undefined;
+  if (!providerName.trim()) return undefined;
 
-  return STREAMING_SERVICES.find((service) =>
-    service.tmdbNames.some((name) => name.trim().toLowerCase() === normalized)
-  );
+  return STREAMING_SERVICES.find((service) => providerMatchesService(providerName, service));
+}
+
+export function streamingServiceLabels(serviceIds: string[]): string[] {
+  return serviceIds
+    .map((id) => streamingServiceById(id)?.label)
+    .filter((label): label is string => Boolean(label));
 }
 
 export function extractStreamingProviders(query: string): StreamingServiceId[] {
@@ -184,12 +187,27 @@ export function streamingServiceQueryPhrase(serviceIds: string[]): string {
 }
 
 function normalizeProviderName(value: string) {
-  return value.trim().toLowerCase();
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/\+/g, " plus")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function providerMatchesService(providerName: string, service: StreamingServiceOption) {
-  const normalized = normalizeProviderName(providerName);
-  return service.tmdbNames.some((name) => normalizeProviderName(name) === normalized);
+  const normalizedProvider = normalizeProviderName(providerName);
+  if (!normalizedProvider) return false;
+
+  return service.tmdbNames.some((name) => {
+    const normalizedService = normalizeProviderName(name);
+    if (!normalizedService) return false;
+    if (normalizedProvider === normalizedService) return true;
+    if (normalizedProvider.includes(normalizedService)) return true;
+    if (normalizedService.includes(normalizedProvider)) return true;
+    return false;
+  });
 }
 
 export function recommendationMatchesStreamingServices(

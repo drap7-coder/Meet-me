@@ -415,106 +415,134 @@ select {
 }
 
 .koi-mode-chip {
-  border: none;
-  transition: background 0.18s ease, transform 0.15s ease, box-shadow 0.18s ease;
+  border: 1px solid transparent;
+  color: #fff;
+  transition: background 0.18s ease, transform 0.15s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
 .koi-mode-chip:hover:not(:disabled) {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 .koi-mode-chip--streaming {
-  background: linear-gradient(145deg, rgba(99, 102, 241, 0.22) 0%, rgba(139, 92, 246, 0.1) 100%);
+  background: linear-gradient(165deg, rgba(251, 191, 36, 0.42) 0%, rgba(245, 158, 11, 0.28) 48%, rgba(180, 83, 9, 0.18) 100%);
+  border-color: rgba(252, 211, 77, 0.32);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 8px 24px rgba(245, 158, 11, 0.12);
 }
 
 .koi-mode-chip--explore {
-  background: linear-gradient(145deg, rgba(255, 90, 0, 0.2) 0%, rgba(255, 120, 40, 0.09) 100%);
+  background: linear-gradient(165deg, rgba(255, 90, 0, 0.4) 0%, rgba(255, 138, 60, 0.26) 48%, rgba(234, 88, 12, 0.16) 100%);
+  border-color: rgba(255, 138, 60, 0.34);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 8px 24px rgba(255, 90, 0, 0.12);
 }
 
 .koi-mode-chip--halfway {
-  background: linear-gradient(145deg, rgba(20, 184, 166, 0.2) 0%, rgba(56, 189, 248, 0.1) 100%);
+  background: linear-gradient(165deg, rgba(239, 68, 68, 0.38) 0%, rgba(248, 113, 113, 0.24) 48%, rgba(185, 28, 28, 0.14) 100%);
+  border-color: rgba(252, 165, 165, 0.32);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 8px 24px rgba(239, 68, 68, 0.12);
 }
 
 .koi-mode-chip--selected.koi-mode-chip--streaming {
-  background: linear-gradient(145deg, rgba(99, 102, 241, 0.34) 0%, rgba(139, 92, 246, 0.18) 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 10px 24px rgba(99, 102, 241, 0.16);
+  background: linear-gradient(165deg, rgba(251, 191, 36, 0.54) 0%, rgba(245, 158, 11, 0.36) 48%, rgba(180, 83, 9, 0.22) 100%);
+  border-color: rgba(253, 224, 71, 0.48);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 12px 32px rgba(245, 158, 11, 0.22);
 }
 
 .koi-mode-chip--selected.koi-mode-chip--explore {
-  background: linear-gradient(145deg, rgba(255, 90, 0, 0.32) 0%, rgba(255, 120, 40, 0.14) 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 10px 24px rgba(255, 90, 0, 0.14);
+  background: linear-gradient(165deg, rgba(255, 90, 0, 0.52) 0%, rgba(255, 138, 60, 0.34) 48%, rgba(234, 88, 12, 0.2) 100%);
+  border-color: rgba(255, 160, 90, 0.5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 12px 32px rgba(255, 90, 0, 0.2);
 }
 
 .koi-mode-chip--selected.koi-mode-chip--halfway {
-  background: linear-gradient(145deg, rgba(20, 184, 166, 0.32) 0%, rgba(56, 189, 248, 0.16) 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 10px 24px rgba(20, 184, 166, 0.14);
+  background: linear-gradient(165deg, rgba(239, 68, 68, 0.5) 0%, rgba(248, 113, 113, 0.32) 48%, rgba(185, 28, 28, 0.2) 100%);
+  border-color: rgba(252, 165, 165, 0.46);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 12px 32px rgba(239, 68, 68, 0.18);
 }
 
-.koi-mode-chip__icon {
-  background: rgba(255, 255, 255, 0.12);
-  transition: background 0.18s ease;
+.koi-mode-chip__emoji {
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 6px 16px rgba(0, 0, 0, 0.12);
+  transition: transform 0.18s ease, background 0.18s ease;
 }
 
-.koi-mode-chip__icon--streaming {
-  background: rgba(99, 102, 241, 0.28);
+.koi-mode-chip:hover:not(:disabled) .koi-mode-chip__emoji {
+  transform: scale(1.04);
 }
 
-.koi-mode-chip__icon--explore {
-  background: rgba(255, 90, 0, 0.24);
+.koi-mode-chip__emoji--streaming {
+  background: rgba(251, 191, 36, 0.28);
 }
 
-.koi-mode-chip__icon--halfway {
-  background: rgba(20, 184, 166, 0.26);
+.koi-mode-chip__emoji--explore {
+  background: rgba(255, 120, 40, 0.26);
+}
+
+.koi-mode-chip__emoji--halfway {
+  background: rgba(248, 113, 113, 0.26);
 }
 
 .koi-mode-chip-page {
-  border: none;
-  transition: background 0.18s ease, transform 0.15s ease;
+  border: 1px solid transparent;
+  transition: background 0.18s ease, transform 0.15s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
 .koi-mode-chip-page:hover:not(:disabled) {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 .koi-mode-chip-page--streaming {
-  background: linear-gradient(145deg, rgba(99, 102, 241, 0.14) 0%, rgba(139, 92, 246, 0.06) 100%);
+  background: linear-gradient(165deg, rgba(251, 191, 36, 0.18) 0%, rgba(245, 158, 11, 0.1) 100%);
+  border-color: rgba(245, 158, 11, 0.22);
 }
 
 .koi-mode-chip-page--explore {
-  background: linear-gradient(145deg, rgba(255, 90, 0, 0.12) 0%, rgba(255, 120, 40, 0.05) 100%);
+  background: linear-gradient(165deg, rgba(255, 90, 0, 0.16) 0%, rgba(255, 138, 60, 0.08) 100%);
+  border-color: rgba(255, 120, 40, 0.2);
 }
 
 .koi-mode-chip-page--halfway {
-  background: linear-gradient(145deg, rgba(20, 184, 166, 0.12) 0%, rgba(56, 189, 248, 0.05) 100%);
+  background: linear-gradient(165deg, rgba(239, 68, 68, 0.16) 0%, rgba(248, 113, 113, 0.08) 100%);
+  border-color: rgba(239, 68, 68, 0.2);
 }
 
 .koi-mode-chip-page--selected.koi-mode-chip-page--streaming {
-  background: linear-gradient(145deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.1) 100%);
+  background: linear-gradient(165deg, rgba(251, 191, 36, 0.26) 0%, rgba(245, 158, 11, 0.14) 100%);
+  border-color: rgba(245, 158, 11, 0.34);
+  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.12);
 }
 
 .koi-mode-chip-page--selected.koi-mode-chip-page--explore {
-  background: linear-gradient(145deg, rgba(255, 90, 0, 0.18) 0%, rgba(255, 120, 40, 0.08) 100%);
+  background: linear-gradient(165deg, rgba(255, 90, 0, 0.24) 0%, rgba(255, 138, 60, 0.12) 100%);
+  border-color: rgba(255, 120, 40, 0.32);
+  box-shadow: 0 8px 20px rgba(255, 90, 0, 0.1);
 }
 
 .koi-mode-chip-page--selected.koi-mode-chip-page--halfway {
-  background: linear-gradient(145deg, rgba(20, 184, 166, 0.18) 0%, rgba(56, 189, 248, 0.08) 100%);
+  background: linear-gradient(165deg, rgba(239, 68, 68, 0.22) 0%, rgba(248, 113, 113, 0.1) 100%);
+  border-color: rgba(239, 68, 68, 0.3);
+  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.1);
 }
 
-.koi-mode-chip-page__icon {
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 1px 0 rgba(10, 19, 35, 0.06);
+.koi-mode-chip-page__emoji {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 4px 12px rgba(10, 19, 35, 0.08);
+  transition: transform 0.18s ease;
 }
 
-.koi-mode-chip-page__icon--streaming {
-  background: rgba(99, 102, 241, 0.12);
+.koi-mode-chip-page:hover:not(:disabled) .koi-mode-chip-page__emoji {
+  transform: scale(1.04);
 }
 
-.koi-mode-chip-page__icon--explore {
-  background: rgba(255, 90, 0, 0.1);
+.koi-mode-chip-page__emoji--streaming {
+  background: rgba(251, 191, 36, 0.2);
 }
 
-.koi-mode-chip-page__icon--halfway {
-  background: rgba(20, 184, 166, 0.12);
+.koi-mode-chip-page__emoji--explore {
+  background: rgba(255, 120, 40, 0.16);
+}
+
+.koi-mode-chip-page__emoji--halfway {
+  background: rgba(248, 113, 113, 0.16);
 }
 
 .koi-featured-outline {

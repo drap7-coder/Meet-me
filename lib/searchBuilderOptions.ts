@@ -83,7 +83,9 @@ const FOOD_CUISINES: BuilderRefinement[] = [
   { id: "sushi", label: "🍣 Sushi", group: "type", noun: "sushi restaurants", category: "sushi" },
   { id: "steakhouse", label: "🥩 Steakhouse", group: "type", noun: "steakhouses", category: "steakhouse" },
   { id: "mexican", label: "🌮 Mexican", group: "type", prefix: "Mexican", category: "mexican" },
-  { id: "pizza", label: "🍕 Pizza", group: "type", noun: "pizza places", category: "pizza" }
+  { id: "pizza", label: "🍕 Pizza", group: "type", noun: "pizza places", category: "pizza" },
+  { id: "bbq", label: "🍖 BBQ", group: "type", noun: "BBQ restaurants", category: "bbq" },
+  { id: "chinese", label: "🥡 Chinese", group: "type", prefix: "Chinese", category: "asian" }
 ];
 
 const DRINKS_CUISINES: BuilderRefinement[] = [

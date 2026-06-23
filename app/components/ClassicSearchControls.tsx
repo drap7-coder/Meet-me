@@ -162,7 +162,7 @@ export function ClassicSearchControls({
               className={`min-h-10 rounded-full border px-3 py-2 text-sm font-black transition ${
                 selected
                   ? "border-koi bg-koi text-white shadow-[0_8px_18px_rgba(255,90,0,0.24)]"
-                  : "border-white/16 bg-white/[0.06] text-white/82 hover:border-koi/50 hover:bg-koi/10"
+                  : "border-white/16 bg-white/[0.06] text-white/85 hover:border-koi/50 hover:bg-koi/10"
               }`}
             >
               {lane.label}
@@ -174,7 +174,7 @@ export function ClassicSearchControls({
       {expanded ? (
         <div className="mt-4 grid gap-4 rounded-[16px] border border-white/10 bg-ink/35 p-3 sm:p-4">
           {activeLane === "watch" ? (
-            <div className="rounded-[14px] border border-white/10 bg-white/[0.06] p-3 text-sm font-semibold leading-6 text-white/78">
+            <div className="rounded-[14px] border border-white/10 bg-white/[0.06] p-3 text-sm font-semibold leading-6 text-white/75">
               Watch searches do not need a location. Pick Watch / Streaming, then search for movies, shows, or streaming ideas.
             </div>
           ) : (
@@ -190,7 +190,7 @@ export function ClassicSearchControls({
                   {locating ? "Checking location..." : "Use my location"}
                 </button>
                 {locationLabel ? (
-                  <span className="inline-flex h-10 max-w-full items-center rounded-full border border-white/12 bg-white/[0.06] px-4 text-sm font-semibold text-white/78">
+                  <span className="inline-flex h-10 max-w-full items-center rounded-full border border-white/12 bg-white/[0.06] px-4 text-sm font-semibold text-white/75">
                     {locationLabel}
                   </span>
                 ) : null}
@@ -296,7 +296,7 @@ function Chip({ selected, onClick, children }: { selected: boolean; onClick: () 
       className={`rounded-full border px-3 py-2 text-sm font-bold transition ${
         selected
           ? "border-koi bg-koi text-white"
-          : "border-white/14 bg-white/[0.06] text-white/82 hover:border-koi/50 hover:bg-koi/10"
+          : "border-white/14 bg-white/[0.06] text-white/85 hover:border-koi/50 hover:bg-koi/10"
       }`}
     >
       {children}

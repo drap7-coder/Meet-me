@@ -100,7 +100,7 @@ function AssistChip({
       onClick={onPick}
       className={`shrink-0 rounded-full border px-3.5 py-2 text-sm font-bold transition focus:outline-none focus:ring-4 focus:ring-koi/15 disabled:cursor-not-allowed disabled:opacity-60 ${
         subtle
-          ? "border-white/12 bg-white/[0.055] text-white/78 hover:border-koi/45 hover:bg-koi/10"
+          ? "border-white/12 bg-white/[0.055] text-white/75 hover:border-koi/45 hover:bg-koi/10"
           : "border-white/16 bg-white/[0.08] text-white hover:border-koi/55 hover:bg-koi/14"
       }`}
     >

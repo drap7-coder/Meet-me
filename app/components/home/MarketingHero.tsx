@@ -12,7 +12,7 @@ export function MarketingHero() {
               {BRAND.heroHeadlineLead}
             </span>
             <span className="mt-1.5 block text-[clamp(2.125rem,8vw,3.5rem)] leading-[0.9]">
-              <span className="text-white/95">where to </span>
+              <span className="text-white/90">where to </span>
               <span className="text-koi">meet.</span>
             </span>
           </h1>

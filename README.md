@@ -2,7 +2,7 @@
 
 Find the best place to meet.
 
-Koi is a mobile-first Next.js MVP for an intelligent local meeting assistant. Ask Koi where everyone is coming from, what kind of spot you want, and what matters most; the app still handles geocoding, midpoint calculation, Google Places search, and venue ranking itself.
+Koi is a mobile-first Next.js MVP for an intelligent local meeting assistant. Ask Koi where everyone is coming from, what kind of spot you want, and what matters most; the app handles geocoding, midpoint calculation, Google Places search, route comparison, venue ranking, weather context, and watch/events previews.
 
 ## Stack
 
@@ -10,7 +10,19 @@ Koi is a mobile-first Next.js MVP for an intelligent local meeting assistant. As
 - TypeScript
 - Tailwind CSS
 - Google Maps Platform
-- Vercel KV or Upstash Redis for share links and API rate limiting (required in production)
+- TMDB for live watch picks when configured
+- Vercel KV or Upstash Redis REST for production share links and API rate limiting
+
+## Documentation
+
+- `ARCHITECTURE.md`: current app structure, route map, server/client boundaries, and known risks.
+- `PROVIDERS.md`: current provider responsibilities, preview/live behavior, and Batch 2 provider-interface targets.
+- `ENVIRONMENT.md`: env var reference, local setup, Vercel safety rules, and `.env.example` completeness.
+- `DEPLOY.md`: Vercel setup, required Google APIs, validation commands, and deploy risks.
+- `TESTING.md`: current validation commands and Batch 5 test gaps.
+- `DECISIONS.md`: architecture decisions and proposed provider-boundary ADR.
+- `ROADMAP.md`: Batch 1-5 hardening roadmap.
+- `CONTRIBUTING.md`: setup, validation, safety, and documentation expectations.
 
 ## Google APIs To Enable
 
@@ -20,7 +32,7 @@ Enable these APIs in the Google Cloud project that owns your API key:
 - Places API
 - Routes API
 
-The app uses the Routes API Compute Route Matrix endpoint to compare travel times from both people to each candidate venue. Places API handles venue search. Geocoding API turns user-entered locations into coordinates.
+The app uses the Routes API Compute Route Matrix endpoint to compare travel times from both people to each candidate venue. Places API handles venue search and autocomplete. Geocoding API turns user-entered locations into coordinates.
 
 ## Setup
 
@@ -29,27 +41,23 @@ npm install
 cp .env.example .env.local
 ```
 
-Set:
+Fill `.env.local` using `ENVIRONMENT.md`.
+
+Minimum local live place search:
 
 ```bash
 GOOGLE_MAPS_API_KEY=your_google_maps_key
-TMDB_API_KEY=your_tmdb_api_key
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+Optional local parser with Ollama:
+
+```bash
 NLP_PROVIDER=ollama
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=qwen3:8b
 OLLAMA_TIMEOUT_MS=30000
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-KV_REST_API_URL=
-KV_REST_API_TOKEN=
 ```
-
-`GOOGLE_MAPS_API_KEY` is used only by the server-side Google Maps, Places, Geocoding, and Routes calls. `TMDB_API_KEY` powers live watch picks. `NLP_PROVIDER`, `OLLAMA_BASE_URL`, and `OLLAMA_MODEL` are used only by the server-side natural-language parser. The browser never receives the model endpoint.
-
-In production, set `KV_REST_API_URL` and `KV_REST_API_TOKEN` (Vercel KV or Upstash Redis REST) for durable share links and per-IP API rate limiting.
-
-For production hosting, `OLLAMA_BASE_URL` must point to an Ollama endpoint reachable from the server. `http://localhost:11434` works for local development only.
-
-For production on Vercel, set `NLP_PROVIDER=gemini` only when `GEMINI_API_KEY` or `GOOGLE_API_KEY` is configured for the Generative Language API. Without a dedicated Gemini key, Koi uses the rule-based parser in `/api/parse-search`.
 
 Then run:
 
@@ -63,70 +71,42 @@ Open `http://localhost:3000`.
 
 - `POST /api/geocode`
 - `POST /api/parse-search`
+- `POST /api/place-autocomplete`
 - `POST /api/search-halfway`
 - `POST /api/watch-search`
 - `POST /api/watch-events`
 - `POST /api/share`
+- `GET /api/share/[id]`
+- `GET /api/calendar/ics`
 
-All `/api/*` routes are rate-limited per IP (Redis-backed in production).
+All `/api/*` routes are rate-limited per IP. Redis-backed rate limiting is required for production reliability.
 
-The browser calls `/api/search-halfway`; the server handles Google API calls so the Google Maps API key is not exposed to client code.
+## Key Safety Rule
 
-The browser can also call `/api/parse-search` with `{ "query": "Find a coffee shop between Hoboken and Edison with easy parking" }`. That route calls Ollama/Qwen server-side to parse user intent into structured JSON only:
+Paid provider keys are server-only. Do not add `NEXT_PUBLIC_*` paid keys. Browser code calls Koi API routes for Google, TMDB, parser, share storage, and rate-limited work. The current weather card calls Open-Meteo directly because it is a no-key API.
 
-```json
-{
-  "location_a": "Hoboken, NJ",
-  "location_b": "Edison, NJ",
-  "category": "coffee"
-}
-```
+## Preview vs Live Results
 
-Qwen does not geocode, calculate midpoints, search Places, or rank venues. After parsing, the app fills the existing `SearchHalfwayRequest` form and sends it through `/api/search-halfway`, so Koi's own Google Maps and scoring logic remains the source of truth.
+Live results currently come from:
 
-## Local Test Checklist
+- Google Places and Routes for place/venue search.
+- TMDB for movie/TV picks when configured.
+- Open-Meteo for weather context.
 
-Run type checking:
+Preview results are local Koi suggestions for future integrations. Ticketmaster, SeatGeek, Watchmode, Streaming Availability API, ESPN, and SportsDataIO are not active paid integrations yet.
+
+## Local Validation
+
+Run:
 
 ```bash
 npm run typecheck
+npm run lint
+npm run build
+npm run test:routing
 ```
 
-Run the app:
-
-```bash
-npm run dev
-```
-
-Test the parser route:
-
-```bash
-curl -s http://localhost:3000/api/parse-search \
-  -H 'Content-Type: application/json' \
-  -d '{"query":"Find a coffee shop between Hoboken and Edison with easy parking"}'
-```
-
-Expected response shape:
-
-```json
-{
-  "parsed": {
-    "location_a": "Hoboken, NJ",
-    "location_b": "Edison, NJ",
-    "category": "coffee"
-  },
-  "form": {
-    "locationA": "Hoboken, NJ",
-    "locationB": "Edison, NJ",
-    "category": "coffee",
-    "searchMode": "midpoint",
-    "meetupMode": "single",
-    "customQuery": ""
-  }
-}
-```
-
-In the UI, enter the same sentence in the Ask Koi box. It should populate the classic form underneath and then run the existing search.
+`npm run test` does not exist yet. Batch 5 should add the real test harness.
 
 ## Scoring
 

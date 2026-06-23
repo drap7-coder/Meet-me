@@ -108,7 +108,7 @@ export default function HomePage() {
   const [recentMeetups, setRecentMeetups] = useState<RecentMeetup[]>([]);
   const [showRoadDividerPreview, setShowRoadDividerPreview] = useState(false);
   const [builderExpanded, setBuilderExpanded] = useState(false);
-  const [builderPreferredMode, setBuilderPreferredMode] = useState<SearchBuilderMode | undefined>();
+  const [builderMode, setBuilderMode] = useState<SearchBuilderMode>("near_me");
   const [loadingPhase, setLoadingPhase] = useState(0);
   const searchBoxRef = useRef<AiSearchBoxHandle>(null);
   const loadingPhaseLabel =
@@ -646,7 +646,7 @@ export default function HomePage() {
 
   function expandBuilder(mode?: SearchBuilderMode) {
     setBuilderExpanded(true);
-    if (mode) setBuilderPreferredMode(mode);
+    if (mode) setBuilderMode(mode);
   }
 
   function openLocationChange() {
@@ -879,8 +879,8 @@ export default function HomePage() {
                 savedLocationLabel={activeLocationLabel}
                 expanded={builderExpanded}
                 onExpandedChange={setBuilderExpanded}
-                preferredMode={builderPreferredMode}
-                onPreferredModeApplied={() => setBuilderPreferredMode(undefined)}
+                mode={builderMode}
+                onModeChange={setBuilderMode}
                 onChange={handleFormChange}
                 onSearchPlaces={runParsedSearch}
                 onSearchWatch={runWatchSearch}
@@ -992,8 +992,8 @@ export default function HomePage() {
                 savedLocationLabel={activeLocationLabel}
                 expanded={builderExpanded}
                 onExpandedChange={setBuilderExpanded}
-                preferredMode={builderPreferredMode}
-                onPreferredModeApplied={() => setBuilderPreferredMode(undefined)}
+                mode={builderMode}
+                onModeChange={setBuilderMode}
                 onChange={handleFormChange}
                 onSearchPlaces={runParsedSearch}
                 onSearchWatch={runWatchSearch}

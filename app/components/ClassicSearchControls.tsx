@@ -16,7 +16,7 @@ import type { SearchSubmitOptions } from "@/lib/searchLocation";
 import type { SearchHalfwayRequest, WatchSubcategory } from "@/lib/types";
 import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Props = {
   form: SearchHalfwayRequest;
@@ -24,8 +24,8 @@ type Props = {
   savedLocationLabel?: string;
   expanded?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
-  preferredMode?: SearchBuilderMode;
-  onPreferredModeApplied?: () => void;
+  mode: SearchBuilderMode;
+  onModeChange: (mode: SearchBuilderMode) => void;
   onChange: (form: SearchHalfwayRequest) => void;
   onSearchPlaces: (form: SearchHalfwayRequest, options?: SearchSubmitOptions) => void;
   onSearchWatch: (query: string, subcategory: WatchSubcategory) => void;
@@ -43,8 +43,8 @@ export function ClassicSearchControls({
   savedLocationLabel = "",
   expanded: expandedProp,
   onExpandedChange,
-  preferredMode,
-  onPreferredModeApplied,
+  mode,
+  onModeChange,
   onChange,
   onSearchPlaces,
   onSearchWatch
@@ -55,60 +55,58 @@ export function ClassicSearchControls({
 
   const isStreaming = form.category === "custom" && Boolean(form.watchSubcategory);
   const initialCategory = resolveBuilderCategory(form.category);
-  const [mode, setMode] = useState<SearchBuilderMode>(() =>
-    form.searchMode === "midpoint" ? "halfway" : "near_me"
-  );
   const [categoryGroup, setCategoryGroup] = useState(initialCategory.group);
   const [cuisineId, setCuisineId] = useState<string>("any");
   const [radius, setRadius] = useState<RadiusOption>("20 min");
   const [resultMode, setResultMode] = useState<ResultMode>("best");
   const [destination, setDestination] = useState("");
+  // Halfway endpoints are independent from saved home — empty until the user fills them.
+  const [halfwayLocationA, setHalfwayLocationA] = useState("");
+  const [halfwayLocationB, setHalfwayLocationB] = useState("");
   const watchSubcategory = form.watchSubcategory ?? DEFAULT_WATCH_SUBCATEGORY;
+  const previousMode = useRef(mode);
 
   useEffect(() => {
-    if (form.searchMode === "midpoint") {
-      setMode("halfway");
+    if (mode === "halfway" && previousMode.current !== "halfway") {
+      setHalfwayLocationA("");
+      setHalfwayLocationB("");
     }
-  }, [form.searchMode]);
-
-  useEffect(() => {
-    if (!preferredMode) return;
-    setMode(preferredMode);
-    if (preferredMode === "halfway") {
-      onChange({ ...form, searchMode: "midpoint" });
-    } else {
-      onChange({ ...form, searchMode: "single", locationB: "" });
-    }
-    onPreferredModeApplied?.();
-  }, [preferredMode]); // eslint-disable-line react-hooks/exhaustive-deps -- apply once when parent requests a mode
+    previousMode.current = mode;
+  }, [mode]);
 
   const categoryDef = BUILDER_CATEGORIES.find((item) => item.group === categoryGroup) ?? BUILDER_CATEGORIES[0];
   const cuisineOptions = cuisineOptionsForGroup(categoryGroup);
   const showCuisine = groupHasCuisineOptions(categoryGroup);
 
-  function updateForm(patch: Partial<SearchHalfwayRequest>) {
-    onChange({ ...form, ...patch });
-  }
-
   function selectMode(nextMode: SearchBuilderMode) {
-    setMode(nextMode);
-    updateForm({
+    onModeChange(nextMode);
+    onChange({
+      ...form,
       searchMode: nextMode === "halfway" ? "midpoint" : "single",
       locationB: nextMode === "halfway" ? form.locationB : ""
     });
+    if (nextMode === "halfway") {
+      setHalfwayLocationA("");
+      setHalfwayLocationB("");
+    }
+  }
+
+  function useSavedLocationForHalfwayA() {
+    const saved = savedLocationLabel.trim() || form.locationA.trim();
+    if (saved) setHalfwayLocationA(saved);
   }
 
   function selectCategory(group: typeof categoryGroup) {
     setCategoryGroup(group);
     setCuisineId("any");
     const next = BUILDER_CATEGORIES.find((item) => item.group === group);
-    if (next) updateForm({ category: next.id, watchSubcategory: undefined });
+    if (next) onChange({ ...form, category: next.id, watchSubcategory: undefined });
   }
 
   function selectCuisine(id: string) {
     setCuisineId(id);
     const venueCategory = venueCategoryForBuilder(categoryDef.id, id);
-    updateForm({ category: venueCategory, watchSubcategory: undefined });
+    onChange({ ...form, category: venueCategory, watchSubcategory: undefined });
   }
 
   function submitBuilderSearch() {
@@ -123,8 +121,8 @@ export function ClassicSearchControls({
       category: venueCategory,
       cuisineId,
       radius,
-      locationA: mode === "destination" ? destination : form.locationA,
-      locationB: form.locationB
+      locationA: mode === "destination" ? destination : mode === "halfway" ? halfwayLocationA : form.locationA,
+      locationB: mode === "halfway" ? halfwayLocationB : form.locationB
     });
 
     const searchForm: SearchHalfwayRequest = {
@@ -132,15 +130,24 @@ export function ClassicSearchControls({
       category: venueCategory,
       customQuery: query,
       searchMode: mode === "halfway" ? "midpoint" : "single",
-      locationB: mode === "halfway" ? form.locationB : "",
       watchSubcategory: undefined
     };
 
-    if (mode === "destination" && destination.trim()) {
-      // Destination is ephemeral: sent on the search payload only, not saved as home location.
-      searchForm.locationA = destination.trim();
+    if (mode === "halfway") {
+      searchForm.locationA = halfwayLocationA.trim();
+      searchForm.locationB = halfwayLocationB.trim();
       searchForm.locationAPlaceId = undefined;
       searchForm.locationACoordinates = undefined;
+      searchForm.locationBPlaceId = undefined;
+      searchForm.locationBCoordinates = undefined;
+    } else if (mode === "destination" && destination.trim()) {
+      // Destination is ephemeral: sent on the search payload only, not saved as home location.
+      searchForm.locationA = destination.trim();
+      searchForm.locationB = "";
+      searchForm.locationAPlaceId = undefined;
+      searchForm.locationACoordinates = undefined;
+    } else {
+      searchForm.locationB = "";
     }
 
     onSearchPlaces(searchForm, mode === "destination" ? { preserveSavedHomeLocation: true } : undefined);
@@ -205,42 +212,41 @@ export function ClassicSearchControls({
               {mode === "near_me" ? (
                 <Field label="Location">
                   <div className="flex h-11 items-center rounded-lg border border-white/12 bg-white/[0.08] px-3 text-sm font-semibold text-white/85">
-                    {savedLocationLabel.trim() || form.locationA.trim() || "Set your location above"}
+                    {savedLocationLabel.trim() || "Set your location above"}
                   </div>
                   <p className="text-xs font-medium text-white/45">Uses your saved location. Tap Change above to update.</p>
                 </Field>
               ) : null}
 
               {mode === "halfway" ? (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label="Location A">
-                    <input
-                      value={form.locationA}
-                      onChange={(event) =>
-                        updateForm({
-                          locationA: event.target.value,
-                          locationAPlaceId: undefined,
-                          locationACoordinates: undefined
-                        })
-                      }
-                      placeholder="Blue Bell, PA"
-                      className={inputClass}
-                    />
-                  </Field>
-                  <Field label="Location B">
-                    <input
-                      value={form.locationB}
-                      onChange={(event) =>
-                        updateForm({
-                          locationB: event.target.value,
-                          locationBPlaceId: undefined,
-                          locationBCoordinates: undefined
-                        })
-                      }
-                      placeholder="Manayunk, PA"
-                      className={inputClass}
-                    />
-                  </Field>
+                <div className="grid gap-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Field label="Location A">
+                      <input
+                        value={halfwayLocationA}
+                        onChange={(event) => setHalfwayLocationA(event.target.value)}
+                        placeholder="Starting address or city"
+                        className={inputClass}
+                      />
+                    </Field>
+                    <Field label="Location B">
+                      <input
+                        value={halfwayLocationB}
+                        onChange={(event) => setHalfwayLocationB(event.target.value)}
+                        placeholder="Other address or city"
+                        className={inputClass}
+                      />
+                    </Field>
+                  </div>
+                  {savedLocationLabel.trim() ? (
+                    <button
+                      type="button"
+                      onClick={useSavedLocationForHalfwayA}
+                      className="justify-self-start text-xs font-bold text-white/55 underline decoration-white/25 underline-offset-2 transition hover:text-white/85"
+                    >
+                      Use saved location for Location A
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
 
@@ -387,4 +393,4 @@ function Chip({ selected, onClick, children }: { selected: boolean; onClick: () 
 }
 
 const inputClass =
-  "h-11 rounded-lg border border-white/12 bg-white px-3 text-base text-ink outline-none transition focus:border-koi focus:ring-4 focus:ring-koi/15";
+  "h-11 w-full rounded-lg border border-white/12 bg-white px-3 text-base text-ink outline-none transition focus:border-koi focus:ring-4 focus:ring-koi/15";

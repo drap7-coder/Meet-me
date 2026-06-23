@@ -2,6 +2,7 @@
 
 import { trackEvent } from "@/lib/analytics";
 import { KoiPickBadge } from "@/app/components/KoiPickBadge";
+import { WatchProviderAvailability } from "@/app/components/WatchProviderAvailability";
 import { botModeToSearchKind, getSearchAccent } from "@/lib/searchAccent";
 import type { WatchEventsRecommendation } from "@/lib/types";
 import { useEffect, useRef, useState } from "react";
@@ -98,6 +99,7 @@ export function WatchEventsCard({ item, botMode = "watch", isKoiPick = false }: 
               {[item.rating, item.year, item.genre, item.runtime].filter(Boolean).join(" · ")}
             </p>
           ) : null}
+          {isLivePick ? <WatchProviderAvailability providers={item.watchProviders} /> : null}
         </div>
       </div>
 

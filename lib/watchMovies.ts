@@ -11,6 +11,7 @@ import {
   type TmdbMediaKind,
   type TmdbPick
 } from "@/lib/tmdb";
+import { fetchWatchProviders } from "@/lib/tmdbWatchProviders";
 
 type MovieRecommendationContext = {
   query: string;
@@ -56,39 +57,45 @@ export async function tryBuildLiveMovieRecommendations(
         startRank
       );
       if (recommendations?.length) {
-        return { recommendations, hasMore: false };
+        return finalizeBatch({ recommendations, hasMore: false });
       }
     }
 
     if (context.intent === "stream" && context.topic && context.topic !== "movies") {
       const recommendations = await buildTitleSearchRecommendations(context.topic, context.timeframe, mediaKind, startRank);
-      return recommendations ? { recommendations, hasMore: false } : null;
+      return recommendations ? finalizeBatch({ recommendations, hasMore: false }) : null;
     }
 
     if (context.genre) {
-      return buildGenreRecommendations(context.genre, context.timeframe, mediaKind, limit, excludeKeys, startRank);
+      return finalizeBatch(
+        await buildGenreRecommendations(context.genre, context.timeframe, mediaKind, limit, excludeKeys, startRank)
+      );
     }
 
     if (/\bnew releases?\b/i.test(context.query)) {
-      return buildSimpleRecommendations(
-        await fetchNewReleaseMedia(mediaKind, limit, excludeKeys),
-        context.timeframe,
-        mediaKind === "tv" ? "New series" : "New releases",
-        mediaKind,
-        limit,
-        startRank
+      return finalizeBatch(
+        await buildSimpleRecommendations(
+          await fetchNewReleaseMedia(mediaKind, limit, excludeKeys),
+          context.timeframe,
+          mediaKind === "tv" ? "New series" : "New releases",
+          mediaKind,
+          limit,
+          startRank
+        )
       );
     }
 
     if (context.intent === "general" || context.intent === "stream") {
       const lane = mediaKind === "tv" ? "Trending TV" : "Trending";
-      return buildSimpleRecommendations(
-        await fetchTrendingMedia(mediaKind, limit, excludeKeys),
-        context.timeframe,
-        lane,
-        mediaKind,
-        limit,
-        startRank
+      return finalizeBatch(
+        await buildSimpleRecommendations(
+          await fetchTrendingMedia(mediaKind, limit, excludeKeys),
+          context.timeframe,
+          lane,
+          mediaKind,
+          limit,
+          startRank
+        )
       );
     }
 
@@ -193,7 +200,7 @@ async function buildTitleResults(
       subtitle: index === 0 ? `${timeframe} · Matches your title ask` : `${timeframe} · If you want something like it`,
       explanation:
         index === 0
-          ? `Koi found the ${formatLabel} you named and pulled real details from TMDB. Streaming availability is coming later.`
+          ? `Koi found the ${formatLabel} you named and pulled real details from TMDB, including where to stream it in the US when available.`
           : `A related ${formatLabel} if ${primary.title} is not the mood or already watched.`,
       tags:
         index === 0
@@ -326,4 +333,27 @@ function capitalizeWords(value: string) {
     .filter(Boolean)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
+}
+
+async function finalizeBatch(batch: LiveWatchRecommendationBatch | null): Promise<LiveWatchRecommendationBatch | null> {
+  if (!batch) return null;
+  return {
+    ...batch,
+    recommendations: await enrichRecommendationsWithWatchProviders(batch.recommendations)
+  };
+}
+
+async function enrichRecommendationsWithWatchProviders(
+  recommendations: WatchEventsRecommendation[]
+): Promise<WatchEventsRecommendation[]> {
+  return Promise.all(
+    recommendations.map(async (recommendation) => {
+      if (recommendation.preview || !recommendation.tmdbId || !recommendation.mediaType) {
+        return recommendation;
+      }
+
+      const watchProviders = await fetchWatchProviders(recommendation.mediaType, recommendation.tmdbId);
+      return { ...recommendation, watchProviders };
+    })
+  );
 }

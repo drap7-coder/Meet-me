@@ -90,6 +90,14 @@ export type WatchSubcategory = "movies" | "tv_shows" | "trending";
 
 export type WatchEventsIntent = "stream" | "live_event" | "sports" | "things_to_do" | "general";
 
+export type NormalizedWatchProviders = {
+  streaming: string[];
+  free: string[];
+  ads: string[];
+  rent: string[];
+  buy: string[];
+};
+
 export type WatchEventsRecommendation = {
   id: string;
   rank: number;
@@ -112,6 +120,7 @@ export type WatchEventsRecommendation = {
   genre?: string;
   mediaType?: "movie" | "tv";
   tmdbId?: number;
+  watchProviders?: NormalizedWatchProviders;
 };
 
 export type WatchEventsResult = {

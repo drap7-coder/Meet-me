@@ -738,6 +738,11 @@ export default function HomePage() {
     });
   }
 
+  function applyPopularSearch(query: string, options?: PickQueryOptions) {
+    searchBoxRef.current?.fillQuery(query, options?.watchSubcategory);
+    if (options) handleFiltersChange(options);
+  }
+
   function runFilterSearch(query: string, options: PickQueryOptions, isStreaming: boolean) {
     if (query.trim()) setLastAskQuery(query.trim());
     handleFiltersChange(options);
@@ -961,7 +966,7 @@ export default function HomePage() {
                   onSubmitManualLocation={(input) => void resolveManualLocation(input)}
                   streamingSearch={form.category === "custom" && Boolean(form.watchSubcategory)}
                 />
-                <HeroPopularSearches busy={loading || locating || resolvingManual} />
+                <HeroPopularSearches busy={loading || locating || resolvingManual} onSelect={applyPopularSearch} />
                 <div className="h-px bg-white/10" aria-hidden="true" />
                 <SearchPromptModePicker />
                 <SearchPromptDetailChips />
@@ -1076,7 +1081,7 @@ export default function HomePage() {
                   onSubmitManualLocation={(input) => void resolveManualLocation(input)}
                   streamingSearch={form.category === "custom" && Boolean(form.watchSubcategory)}
                 />
-                <HeroPopularSearches busy={loading || locating || resolvingManual} />
+                <HeroPopularSearches busy={loading || locating || resolvingManual} onSelect={applyPopularSearch} />
                 <SearchPromptModePicker />
                 <SearchPromptDetailChips />
                 <SelectedFiltersPanel

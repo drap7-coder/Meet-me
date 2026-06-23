@@ -81,8 +81,12 @@ export function SearchPromptAssist({ form, busy = false, onPickQuery }: Props) {
   const [watchSubcategory, setWatchSubcategory] = useState<WatchSubcategory>(
     form.watchSubcategory === "tv_shows" ? "tv_shows" : "movies"
   );
+  const activeWatchSubcategory =
+    form.watchSubcategory === "tv_shows" || form.watchSubcategory === "movies"
+      ? form.watchSubcategory
+      : watchSubcategory;
   const placeRefinements = contextualRefinements(form);
-  const genreChips = streamingGenreChips(watchSubcategory);
+  const genreChips = streamingGenreChips(activeWatchSubcategory);
 
   function pickPlaceCategory(chip: QuickChip) {
     setMode("places");
@@ -120,14 +124,22 @@ export function SearchPromptAssist({ form, busy = false, onPickQuery }: Props) {
   }
 
   function pickGenre(query: string) {
-    onPickQuery(query, { category: "custom", watchSubcategory });
+    onPickQuery(query, { category: "custom", watchSubcategory: activeWatchSubcategory });
   }
 
   function backToBrowse() {
     setMode("browse");
+    onPickQuery("Restaurants near me tonight", {
+      category: "restaurant",
+      watchSubcategory: undefined
+    });
   }
 
-  if (mode === "streaming") {
+  const showStreamingUI =
+    mode === "streaming" ||
+    (mode !== "places" && form.category === "custom" && Boolean(form.watchSubcategory));
+
+  if (showStreamingUI) {
     return (
       <section className="grid gap-3" aria-label="Search suggestions">
         <div className="flex items-center justify-between gap-2">
@@ -148,7 +160,7 @@ export function SearchPromptAssist({ form, busy = false, onPickQuery }: Props) {
               key={option.id}
               label={option.label}
               busy={busy}
-              selected={watchSubcategory === option.id}
+              selected={activeWatchSubcategory === option.id}
               onPick={() => pickWatchType(option.id)}
             />
           ))}

@@ -7,9 +7,7 @@ import {
   SHOPPING_SUBCATEGORIES
 } from "@/lib/shoppingBrowse";
 import {
-  DEFAULT_WATCH_SUBCATEGORY,
-  getWatchGenresForSubcategory,
-  WATCH_SUBCATEGORIES
+  DEFAULT_WATCH_SUBCATEGORY
 } from "@/lib/watchBrowse";
 import { LocationPinIcon } from "@/app/components/SavedLocationBadge";
 import type { ReactNode } from "react";
@@ -46,10 +44,6 @@ const LANES: Array<{ id: SearchLane; label: string; category: VenueCategory; que
   { id: "shopping", label: "Shopping", category: DEFAULT_SHOPPING_SUBCATEGORY.category, query: "shopping" },
   { id: "streaming", label: "Streaming", category: "custom", query: "what should I watch" }
 ];
-
-const WATCH_TYPE_OPTIONS = WATCH_SUBCATEGORIES.filter(
-  (option) => option.id === "movies" || option.id === "tv_shows"
-);
 
 const RADIUS_OPTIONS: RadiusOption[] = ["10 min", "20 min", "30 min", "Flexible"];
 const DINING_REFINEMENTS: Array<{ id: DiningRefinement; label: string }> = [
@@ -89,7 +83,6 @@ export function ClassicSearchControls({
   const showShopping = activeLane === "shopping";
   const needsSecondLocation = searchMode === "midpoint";
   const watchSubcategory = form.watchSubcategory ?? DEFAULT_WATCH_SUBCATEGORY;
-  const genreOptions = getWatchGenresForSubcategory(watchSubcategory);
   const shoppingSubcategory =
     SHOPPING_SUBCATEGORIES.find((item) => item.id === activeShoppingId) ?? DEFAULT_SHOPPING_SUBCATEGORY;
 
@@ -114,23 +107,6 @@ export function ClassicSearchControls({
       category: subcategory.category,
       customQuery: "",
       watchSubcategory: undefined
-    });
-  }
-
-  function selectWatchType(subcategory: WatchSubcategory) {
-    onChange({
-      ...form,
-      category: "custom",
-      watchSubcategory: subcategory,
-      customQuery: subcategory === "tv_shows" ? "what TV show should I watch" : "what should I watch tonight"
-    });
-  }
-
-  function selectGenre(query: string) {
-    onChange({
-      ...form,
-      category: "custom",
-      customQuery: query
     });
   }
 
@@ -236,33 +212,9 @@ export function ClassicSearchControls({
       {expanded ? (
         <div className="mt-4 grid gap-4 rounded-[16px] border border-white/10 bg-ink/35 p-3 sm:p-4">
           {isStreaming ? (
-            <>
-              <ControlGroup title="Movies or shows">
-                {WATCH_TYPE_OPTIONS.map((option) => (
-                  <Chip
-                    key={option.id}
-                    selected={watchSubcategory === option.id}
-                    onClick={() => selectWatchType(option.id)}
-                  >
-                    {option.label}
-                  </Chip>
-                ))}
-              </ControlGroup>
-
-              {genreOptions.length ? (
-                <ControlGroup title="Genres">
-                  {genreOptions.map((genre) => (
-                    <Chip
-                      key={genre.id}
-                      selected={form.customQuery?.trim() === genre.query}
-                      onClick={() => selectGenre(genre.query)}
-                    >
-                      {genre.label}
-                    </Chip>
-                  ))}
-                </ControlGroup>
-              ) : null}
-            </>
+            <p className="text-sm font-medium leading-6 text-white/60">
+              Pick movies or shows and a genre in the chips above, then search for streaming picks.
+            </p>
           ) : (
             <>
               <div className="grid gap-3">
@@ -364,7 +316,7 @@ export function ClassicSearchControls({
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs font-semibold leading-5 text-white/55">
               {isStreaming
-                ? "Pick a type and genre, then search for streaming picks."
+                ? "Use the streaming chips above to refine your pick."
                 : "Ask Koi is the magic. Classic Search is the seatbelt."}
             </p>
             <button

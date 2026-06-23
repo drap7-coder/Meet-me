@@ -116,7 +116,6 @@ export default function HomePage() {
   const [loadingPhase, setLoadingPhase] = useState(0);
   const [lastAskQuery, setLastAskQuery] = useState("");
   const searchBoxRef = useRef<AiSearchBoxHandle>(null);
-  const showResultsSearch = Boolean((results || watchEventsResult) && !loading);
   const loadingPhaseLabel =
     THINKING_PROGRESS_LABELS[searchKind ?? "places"][loadingPhase] ??
     THINKING_PROGRESS_LABELS.places[loadingPhase] ??
@@ -188,14 +187,6 @@ export default function HomePage() {
   const promptAssistSeed = isStreamingForm
     ? { category: form.category, watchSubcategory: form.watchSubcategory }
     : undefined;
-
-  useEffect(() => {
-    if (!showResultsSearch || !lastAskQuery.trim()) return;
-    searchBoxRef.current?.fillQuery(
-      lastAskQuery,
-      searchKind === "watch" ? activeWatchSubcategory : form.watchSubcategory
-    );
-  }, [showResultsSearch, lastAskQuery, searchKind, activeWatchSubcategory, form.watchSubcategory]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -686,6 +677,11 @@ export default function HomePage() {
     );
   }
 
+  function handleBuilderExpanded(expanded: boolean) {
+    setBuilderExpanded(expanded);
+    if (expanded) setBuilderMode("halfway");
+  }
+
   function openLocationChange() {
     if (activeLocationLabel.trim()) {
       setShowManualFallback(true);
@@ -923,7 +919,7 @@ export default function HomePage() {
                     loading={loading}
                     savedLocationLabel={activeLocationLabel}
                     expanded={builderExpanded}
-                    onExpandedChange={setBuilderExpanded}
+                    onExpandedChange={handleBuilderExpanded}
                     mode={builderMode}
                     onSearchPlaces={runPlacesSearchFromBuilder}
                     onSearchWatch={runWatchSearch}
@@ -974,51 +970,6 @@ export default function HomePage() {
               onShare={shareMeetup}
               onNewSearch={startNewSearch}
             />
-          ) : null}
-
-          {showResultsSearch ? (
-            <section id="search" className="scroll-mt-24 pt-4">
-              <SearchPromptAssistProvider
-                busy={loading || locating || resolvingManual}
-                builderMode={builderMode}
-                onPickQuery={fillSuggestedQuery}
-                seed={promptAssistSeed}
-                surface="page"
-              >
-                <AiSearchBox
-                  ref={searchBoxRef}
-                  surface="page"
-                  loading={loading}
-                  locationStatus={locationStatus}
-                  locationUiState={locationUiState}
-                  showManualFallback={showManualFallback}
-                  showLocationActions={showLocationActions}
-                  manualLocationError={manualLocationError}
-                  locationContext={locationContext}
-                  defaultUserAddress={savedUserAddress}
-                  locating={locating}
-                  resolvingManual={resolvingManual}
-                  onParsed={runParsedSearch}
-                  onWatchSearch={runWatchSearch}
-                  onEventsSearch={runEventsSearch}
-                  onNeedsFullFallback={() => openFullFallback()}
-                  onNeedsLocation={handleNeedsLocation}
-                  onPersistUserAddress={persistUserAddress}
-                  onUseLocation={() => void requestUserLocation()}
-                  onShowZipFallback={showZipFallback}
-                  onSubmitManualLocation={(input) => void resolveManualLocation(input)}
-                  streamingSearch={form.category === "custom" && Boolean(form.watchSubcategory)}
-                />
-                {searchKind !== "watch" ? (
-                  <PersistentLocationBar
-                    label={activeLocationLabel}
-                    busy={loading || locating || resolvingManual}
-                    onChange={openLocationChange}
-                  />
-                ) : null}
-                <SearchPromptChips />
-              </SearchPromptAssistProvider>
-            </section>
           ) : null}
 
           {hasSearched || results || watchEventsResult || loading || showRoadDividerPreview ? (
@@ -1077,7 +1028,7 @@ export default function HomePage() {
                     loading={loading}
                     savedLocationLabel={activeLocationLabel}
                     expanded={builderExpanded}
-                    onExpandedChange={setBuilderExpanded}
+                    onExpandedChange={handleBuilderExpanded}
                     mode={builderMode}
                     onSearchPlaces={runPlacesSearchFromBuilder}
                     onSearchWatch={runWatchSearch}

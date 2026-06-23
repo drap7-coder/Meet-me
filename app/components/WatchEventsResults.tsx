@@ -85,11 +85,6 @@ export function WatchEventsResults({ result, onRefineWatch, onRefineEvents }: Pr
             </div>
           ) : null}
 
-          <div className="mt-4 rounded-lg border border-line bg-mint p-4">
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-slate">Ask</p>
-            <p className="mt-2 text-sm font-semibold leading-6 text-ink">“{result.query}”</p>
-          </div>
-
           {process.env.NEXT_PUBLIC_ENABLE_DEV_PANEL !== "true" ? (
             <button
               type="button"

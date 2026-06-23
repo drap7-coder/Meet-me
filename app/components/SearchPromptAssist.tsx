@@ -23,11 +23,11 @@ type ProviderProps = {
 };
 
 type PlaceWhatId = "restaurant" | "drinks" | "coffee" | "shopping";
-type WhatId = PlaceWhatId | "streaming";
 type WhenId = "open_now" | "tonight";
 type WhereId = "near" | "choose" | "halfway";
+type SelectedMode = "streaming" | "local";
 
-type WhatDef = { id: WhatId; label: string; noun: string; category: VenueCategory };
+type LocalDef = { id: PlaceWhatId; label: string; noun: string; category: VenueCategory };
 
 type PlaceRefinement = {
   id: string;
@@ -41,12 +41,11 @@ type PlaceRefinement = {
 
 const CONCIERGE_TAGLINE = "Tap chips to build your ask, or just type it.";
 
-const WHAT_DEFS: WhatDef[] = [
+const LOCAL_DEFS: LocalDef[] = [
   { id: "restaurant", label: "Restaurants", noun: "restaurants", category: "restaurant" },
   { id: "drinks", label: "Drinks", noun: "cocktail bars", category: "cocktail_bars" },
   { id: "coffee", label: "Coffee", noun: "coffee shops", category: "coffee" },
-  { id: "shopping", label: "Shopping", noun: "shops", category: "shopping" },
-  { id: "streaming", label: "Streaming", noun: "something to watch", category: "custom" }
+  { id: "shopping", label: "Shopping", noun: "shops", category: "shopping" }
 ];
 
 const PLACE_TYPES: Record<PlaceWhatId, PlaceRefinement[]> = {
@@ -123,12 +122,13 @@ const TYPE_LABELS: Record<PlaceWhatId, string> = {
 };
 
 export type BuilderState = {
-  what: WhatId;
+  selectedMode: SelectedMode;
+  localWhat: PlaceWhatId;
   typeId: string | null;
   extras: Set<string>;
   when: WhenId | null;
   where: WhereId;
-  watchType: WatchSubcategory;
+  streamingType: WatchSubcategory | null;
   genre: string | null;
 };
 
@@ -140,12 +140,12 @@ type AssistContextValue = {
   typeRefinements: PlaceRefinement[];
   vibeRefinements: PlaceRefinement[];
   surface: "hero" | "page";
-  pickWhat: (id: WhatId) => void;
+  pickLocalWhat: (id: PlaceWhatId) => void;
+  pickStreamingType: (id: WatchSubcategory) => void;
   toggleType: (id: string) => void;
   toggleExtra: (id: string) => void;
   toggleWhen: (id: WhenId) => void;
   setWhere: (id: WhereId) => void;
-  pickWatchType: (id: WatchSubcategory) => void;
   toggleGenre: (genre: string) => void;
 };
 
@@ -160,23 +160,25 @@ function useAssistContext() {
 function initialBuilderState(seed?: Pick<PickQueryOptions, "category" | "watchSubcategory">): BuilderState {
   if (seed?.category === "custom" && seed.watchSubcategory) {
     return {
-      what: "streaming",
+      selectedMode: "streaming",
+      localWhat: "restaurant",
       typeId: null,
       extras: new Set<string>(),
       when: null,
       where: "near",
-      watchType: seed.watchSubcategory,
+      streamingType: seed.watchSubcategory,
       genre: null
     };
   }
 
   return {
-    what: "restaurant",
+    selectedMode: "local",
+    localWhat: "restaurant",
     typeId: null,
     extras: new Set<string>(),
     when: null,
     where: "near",
-    watchType: "movies",
+    streamingType: null,
     genre: null
   };
 }
@@ -193,13 +195,13 @@ export function SearchPromptAssistProvider({
   const [promptQuery, setPromptQuery] = useState("");
 
   function syncQuery(next: BuilderState) {
-    const isStreaming = next.what === "streaming";
+    const isStreaming = next.selectedMode === "streaming" && Boolean(next.streamingType);
     const query = isStreaming ? buildStreamQuery(next) : buildPlaceQuery(next);
     if (!query) return;
     setPromptQuery(query);
     onPickQuery(query, {
       category: categoryFor(next),
-      watchSubcategory: isStreaming ? next.watchType : undefined,
+      watchSubcategory: isStreaming ? next.streamingType ?? undefined : undefined,
       searchMode: !isStreaming && next.where === "halfway" ? "midpoint" : "single",
       builderMode: builderModeForWhere(next.where)
     });
@@ -216,7 +218,7 @@ export function SearchPromptAssistProvider({
   useEffect(() => {
     if (!seed?.watchSubcategory || seed.category !== "custom") return;
     setState((prev) => {
-      if (prev.what === "streaming" && prev.watchType === seed.watchSubcategory) return prev;
+      if (prev.selectedMode === "streaming" && prev.streamingType === seed.watchSubcategory) return prev;
       const next = initialBuilderState(seed);
       syncQuery(next);
       return next;
@@ -244,10 +246,34 @@ export function SearchPromptAssistProvider({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [builderMode]);
 
-  function pickWhat(id: WhatId) {
+  function pickLocalWhat(id: PlaceWhatId) {
     commit((prev) => {
-      if (prev.what === id) return prev;
-      return { ...prev, what: id, typeId: null, extras: new Set<string>() };
+      if (prev.selectedMode === "local" && prev.localWhat === id) return prev;
+      return {
+        ...prev,
+        selectedMode: "local",
+        localWhat: id,
+        typeId: null,
+        extras: new Set<string>(),
+        streamingType: null,
+        genre: null
+      };
+    });
+  }
+
+  function pickStreamingType(id: WatchSubcategory) {
+    commit((prev) => {
+      if (prev.selectedMode === "streaming" && prev.streamingType === id) {
+        return { ...prev, streamingType: null, genre: null };
+      }
+      return {
+        ...prev,
+        selectedMode: "streaming",
+        streamingType: id,
+        genre: null,
+        typeId: null,
+        extras: new Set<string>()
+      };
     });
   }
 
@@ -269,24 +295,26 @@ export function SearchPromptAssistProvider({
   }
 
   function setWhere(id: WhereId) {
-    commit((prev) => {
-      const what = prev.what !== "streaming" ? prev.what : "restaurant";
-      return { ...prev, what, where: id };
-    });
-  }
-
-  function pickWatchType(id: WatchSubcategory) {
-    commit((prev) => ({ ...prev, watchType: id }));
+    commit((prev) => ({
+      ...prev,
+      selectedMode: "local",
+      localWhat: prev.selectedMode === "local" ? prev.localWhat : "restaurant",
+      where: id,
+      streamingType: null,
+      genre: null
+    }));
   }
 
   function toggleGenre(genre: string) {
-    commit((prev) => ({ ...prev, genre: prev.genre === genre ? null : genre }));
+    commit((prev) => {
+      if (prev.selectedMode !== "streaming" || !prev.streamingType) return prev;
+      return { ...prev, genre: prev.genre === genre ? null : genre };
+    });
   }
 
-  const isStreaming = state.what === "streaming";
-  const placeWhat = state.what as PlaceWhatId;
-  const typeRefinements = isStreaming ? [] : PLACE_TYPES[placeWhat];
-  const vibeRefinements = isStreaming ? [] : PLACE_VIBES[placeWhat];
+  const isStreaming = state.selectedMode === "streaming";
+  const typeRefinements = isStreaming ? [] : PLACE_TYPES[state.localWhat];
+  const vibeRefinements = isStreaming ? [] : PLACE_VIBES[state.localWhat];
 
   return (
     <AssistContext.Provider
@@ -298,12 +326,12 @@ export function SearchPromptAssistProvider({
         typeRefinements,
         vibeRefinements,
         surface,
-        pickWhat,
+        pickLocalWhat,
+        pickStreamingType,
         toggleType,
         toggleExtra,
         toggleWhen,
         setWhere,
-        pickWatchType,
         toggleGenre
       }}
     >
@@ -312,7 +340,7 @@ export function SearchPromptAssistProvider({
   );
 }
 
-/** What · Cuisine/Type · Vibe — sits below the ask input. Where and When live in Advanced Search. */
+/** Streaming + Local chip modules below the ask input. Where/When live in Advanced Search. */
 export function SearchPromptChips() {
   const {
     busy,
@@ -320,48 +348,41 @@ export function SearchPromptChips() {
     isStreaming,
     typeRefinements,
     vibeRefinements,
-    pickWhat,
+    pickLocalWhat,
+    pickStreamingType,
     toggleType,
     toggleExtra,
-    pickWatchType,
     toggleGenre,
     surface
   } = useAssistContext();
 
   const onPage = surface === "page";
+  const showGenres = state.selectedMode === "streaming" && Boolean(state.streamingType);
 
   return (
-    <section className="grid gap-2.5" aria-label="Prompt builder">
+    <section className="grid gap-3" aria-label="Prompt builder">
       <p className={`px-0.5 text-sm font-semibold ${onPage ? "text-slate" : "text-white/70"}`}>{CONCIERGE_TAGLINE}</p>
 
-      <ChipGroup label="What" onPage={onPage}>
-        {WHAT_DEFS.map((def) => (
-          <AssistChip
-            key={def.id}
-            label={def.label}
-            busy={busy}
-            variant="primary"
-            selected={state.what === def.id}
-            onPick={() => pickWhat(def.id)}
-            onPage={onPage}
-          />
-        ))}
-      </ChipGroup>
+      <div
+        className={`grid gap-2.5 rounded-[16px] border p-3 sm:p-3.5 ${
+          onPage ? "border-line/80 bg-paper shadow-soft" : "border-white/12 bg-white/[0.04]"
+        }`}
+      >
+        <ChipGroup label="Streaming" onPage={onPage}>
+          {WATCH_SUBCATEGORIES.map((option) => (
+            <AssistChip
+              key={option.id}
+              label={option.label}
+              busy={busy}
+              variant="primary"
+              selected={state.selectedMode === "streaming" && state.streamingType === option.id}
+              onPick={() => pickStreamingType(option.id)}
+              onPage={onPage}
+            />
+          ))}
+        </ChipGroup>
 
-      {isStreaming ? (
-        <>
-          <ChipGroup label="Watch" onPage={onPage}>
-            {WATCH_SUBCATEGORIES.map((option) => (
-              <AssistChip
-                key={option.id}
-                label={option.label}
-                busy={busy}
-                selected={state.watchType === option.id}
-                onPick={() => pickWatchType(option.id)}
-                onPage={onPage}
-              />
-            ))}
-          </ChipGroup>
+        {showGenres ? (
           <ChipGroup label="Genre" onPage={onPage}>
             {STREAM_GENRES.map((genre) => (
               <AssistChip
@@ -374,36 +395,56 @@ export function SearchPromptChips() {
               />
             ))}
           </ChipGroup>
-        </>
-      ) : (
-        <>
-          <ChipGroup label={TYPE_LABELS[state.what as PlaceWhatId]} onPage={onPage}>
-            {typeRefinements.map((refinement) => (
-              <AssistChip
-                key={refinement.id}
-                label={refinement.label}
-                busy={busy}
-                selected={state.typeId === refinement.id}
-                onPick={() => toggleType(refinement.id)}
-                onPage={onPage}
-              />
-            ))}
-          </ChipGroup>
+        ) : null}
+      </div>
 
-          <ChipGroup label="Vibe" onPage={onPage}>
-            {vibeRefinements.map((refinement) => (
-              <AssistChip
-                key={refinement.id}
-                label={refinement.label}
-                busy={busy}
-                selected={state.extras.has(refinement.id)}
-                onPick={() => toggleExtra(refinement.id)}
-                onPage={onPage}
-              />
-            ))}
-          </ChipGroup>
-        </>
-      )}
+      <div className={`h-px ${onPage ? "bg-line/70" : "bg-white/10"}`} aria-hidden="true" />
+
+      <div className="grid gap-2.5">
+        <ChipGroup label="Local" onPage={onPage}>
+          {LOCAL_DEFS.map((def) => (
+            <AssistChip
+              key={def.id}
+              label={def.label}
+              busy={busy}
+              variant="primary"
+              selected={state.selectedMode === "local" && state.localWhat === def.id}
+              onPick={() => pickLocalWhat(def.id)}
+              onPage={onPage}
+            />
+          ))}
+        </ChipGroup>
+
+        {!isStreaming ? (
+          <>
+            <ChipGroup label={TYPE_LABELS[state.localWhat]} onPage={onPage}>
+              {typeRefinements.map((refinement) => (
+                <AssistChip
+                  key={refinement.id}
+                  label={refinement.label}
+                  busy={busy}
+                  selected={state.typeId === refinement.id}
+                  onPick={() => toggleType(refinement.id)}
+                  onPage={onPage}
+                />
+              ))}
+            </ChipGroup>
+
+            <ChipGroup label="Vibe" onPage={onPage}>
+              {vibeRefinements.map((refinement) => (
+                <AssistChip
+                  key={refinement.id}
+                  label={refinement.label}
+                  busy={busy}
+                  selected={state.extras.has(refinement.id)}
+                  onPick={() => toggleExtra(refinement.id)}
+                  onPage={onPage}
+                />
+              ))}
+            </ChipGroup>
+          </>
+        ) : null}
+      </div>
     </section>
   );
 }
@@ -523,16 +564,16 @@ function builderModeForWhere(where: WhereId): SearchBuilderMode {
 }
 
 function categoryFor(state: BuilderState): VenueCategory {
-  if (state.what === "streaming") return "custom";
-  const refs = placeRefinementsFor(state.what as PlaceWhatId);
+  if (state.selectedMode === "streaming") return "custom";
+  const refs = placeRefinementsFor(state.localWhat);
   const type = refs.find((item) => item.group === "type" && item.id === state.typeId);
   if (type?.category) return type.category;
-  return WHAT_DEFS.find((item) => item.id === state.what)?.category ?? "restaurant";
+  return LOCAL_DEFS.find((item) => item.id === state.localWhat)?.category ?? "restaurant";
 }
 
 export function buildPlaceQuery(state: BuilderState): string {
-  const def = WHAT_DEFS.find((item) => item.id === state.what) ?? WHAT_DEFS[0];
-  const refs = placeRefinementsFor(state.what as PlaceWhatId);
+  const def = LOCAL_DEFS.find((item) => item.id === state.localWhat) ?? LOCAL_DEFS[0];
+  const refs = placeRefinementsFor(state.localWhat);
   const type = refs.find((item) => item.group === "type" && item.id === state.typeId);
 
   const noun = type?.noun ?? def.noun;
@@ -558,16 +599,26 @@ export function buildPlaceQuery(state: BuilderState): string {
   return phrase.charAt(0).toUpperCase() + phrase.slice(1);
 }
 
-function buildStreamQuery(state: BuilderState): string {
-  if (state.watchType === "trending") {
-    if (state.genre) return `Trending ${state.genre.toLowerCase()} movies and shows tonight`;
+export function buildStreamQuery(state: BuilderState): string {
+  const genre = state.genre?.toLowerCase();
+  const type = state.streamingType;
+
+  if (type === "trending") {
+    if (genre) return `Trending ${genre} movies and shows tonight`;
     return "What's trending to watch tonight?";
   }
-  const noun = state.watchType === "tv_shows" ? "TV shows" : "movies";
-  if (state.genre) return `Best ${state.genre.toLowerCase()} ${noun} tonight`;
-  return state.watchType === "tv_shows"
-    ? "What TV show should I watch tonight?"
-    : "What movie should I watch tonight?";
+
+  if (type === "tv_shows") {
+    if (genre) return `What ${genre} TV show should I watch tonight?`;
+    return "What TV show should I watch tonight?";
+  }
+
+  if (type === "movies") {
+    if (genre) return `What ${genre} movie should I watch tonight?`;
+    return "What movie should I watch tonight?";
+  }
+
+  return "What should I watch tonight?";
 }
 
 function shoppingNoun(query: string): string {

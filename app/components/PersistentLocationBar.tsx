@@ -8,6 +8,9 @@ type Props = {
   busy?: boolean;
 };
 
+const selectedLocationClass =
+  "font-black text-koi drop-shadow-[0_0_10px_rgba(255,90,0,0.55)]";
+
 export function PersistentLocationBar({ label, onChange, busy = false }: Props) {
   const trimmed = label.trim();
 
@@ -29,12 +32,12 @@ export function PersistentLocationBar({ label, onChange, busy = false }: Props) 
 
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-0.5 text-sm">
-      <LocationPinIcon className="h-3.5 w-3.5 text-white/45" />
+      <LocationPinIcon className={`h-3.5 w-3.5 ${selectedLocationClass}`} />
       <span className="font-medium text-white/55">Location:</span>
-      <span className="font-semibold text-white/85" title={trimmed}>
+      <span className={selectedLocationClass} title={trimmed}>
         {trimmed}
       </span>
-      <span className="text-koi" aria-hidden="true">
+      <span className="font-black text-koi" aria-hidden="true">
         ✓
       </span>
       <button

@@ -92,7 +92,9 @@ export function ClassicSearchControls({
       <section id="classic-search" className="w-full">
         <button
           type="button"
-          onClick={() => setExpanded(true)}
+          onClick={() => {
+            setExpanded(true);
+          }}
           className="inline-flex items-center gap-1.5 px-0.5 text-sm font-bold text-white/55 transition hover:text-white/85"
           aria-expanded={false}
           aria-controls="advanced-search-panel"
@@ -132,7 +134,13 @@ export function ClassicSearchControls({
 
               {mode === "near_me" ? (
                 <Field label="Location">
-                  <div className="flex h-11 items-center rounded-lg border border-white/12 bg-white/[0.08] px-3 text-sm font-semibold text-white/85">
+                  <div
+                    className={`flex h-11 items-center rounded-lg border px-3 text-sm ${
+                      savedLocationLabel.trim()
+                        ? "border-koi/40 bg-koi/10 font-black text-koi drop-shadow-[0_0_10px_rgba(255,90,0,0.35)]"
+                        : "border-white/12 bg-white/[0.08] font-semibold text-white/85"
+                    }`}
+                  >
                     {savedLocationLabel.trim() || "Set your location above"}
                   </div>
                   <p className="text-xs font-medium text-white/45">Uses your saved location. Tap Change above to update.</p>
@@ -147,7 +155,7 @@ export function ClassicSearchControls({
                         value={halfwayLocationA}
                         onChange={(event) => setHalfwayLocationA(event.target.value)}
                         placeholder="Starting address or city"
-                        className={inputClass}
+                        className={locationInputClass(halfwayLocationA)}
                       />
                     </Field>
                     <Field label="Location B">
@@ -155,7 +163,7 @@ export function ClassicSearchControls({
                         value={halfwayLocationB}
                         onChange={(event) => setHalfwayLocationB(event.target.value)}
                         placeholder="Other address or city"
-                        className={inputClass}
+                        className={locationInputClass(halfwayLocationB)}
                       />
                     </Field>
                   </div>
@@ -177,7 +185,7 @@ export function ClassicSearchControls({
                     value={destination}
                     onChange={(event) => setDestination(event.target.value)}
                     placeholder="Citizens Bank Park"
-                    className={inputClass}
+                    className={locationInputClass(destination)}
                   />
                 </Field>
               ) : null}
@@ -214,3 +222,8 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 
 const inputClass =
   "h-11 w-full rounded-lg border border-white/12 bg-white px-3 text-base text-ink outline-none transition focus:border-koi focus:ring-4 focus:ring-koi/15";
+
+function locationInputClass(value: string) {
+  if (!value.trim()) return inputClass;
+  return `${inputClass} border-koi/40 font-black text-koi shadow-[0_0_12px_rgba(255,90,0,0.22)]`;
+}

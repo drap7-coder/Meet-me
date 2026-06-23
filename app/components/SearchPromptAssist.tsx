@@ -11,6 +11,7 @@ import {
   type LocalChipCategoryId
 } from "@/lib/searchBuilderOptions";
 import { STREAMING_SERVICES, streamingServiceQueryPhrase } from "@/lib/streamingServices";
+import { HeroSectionLabel } from "@/app/components/home/HeroSectionLabel";
 import { ModePickChip } from "@/app/components/ModePickChip";
 import { StreamingServiceChip } from "@/app/components/StreamingServiceChip";
 import type { SearchHalfwayRequest, VenueCategory, WatchSubcategory } from "@/lib/types";
@@ -365,17 +366,9 @@ export function SearchPromptModePicker() {
 
   return (
     <section className="grid gap-2.5" aria-label="Choose a path">
-      <p
-        className={
-          onPage
-            ? "px-0.5 text-sm font-semibold tracking-wide text-slate sm:text-[0.9375rem]"
-            : "px-0.5 text-[0.625rem] font-bold uppercase tracking-[0.18em] text-white/45"
-        }
-      >
-        {CONCIERGE_TAGLINE}
-      </p>
+      <HeroSectionLabel onPage={onPage}>{CONCIERGE_TAGLINE}</HeroSectionLabel>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2.5">
         <ModePickChip
           emoji="🍿"
           title="Streaming"

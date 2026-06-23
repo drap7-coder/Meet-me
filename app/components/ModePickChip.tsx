@@ -22,24 +22,28 @@ export function ModePickChip({
   const streamingSelected = tone === "streaming" && selected;
   const exploreSelected = tone === "explore" && selected;
 
-  const heroSurface = [
-    "koi-discovery-chip flex w-full min-w-0 flex-col items-start gap-1.5 rounded-[14px] px-3 py-2.5 text-left transition focus:outline-none focus:ring-4 focus:ring-koi/15 disabled:cursor-not-allowed disabled:opacity-40",
-    streamingSelected && "bg-indigo-500/15",
-    exploreSelected && "bg-koi/15"
+  const heroClass = [
+    "koi-mode-chip group flex w-full min-w-0 items-start gap-3 rounded-2xl px-3.5 py-3 text-left focus:outline-none focus:ring-4 focus:ring-koi/15 disabled:cursor-not-allowed disabled:opacity-40",
+    streamingSelected && "koi-mode-chip--streaming",
+    exploreSelected && "koi-mode-chip--explore"
   ]
     .filter(Boolean)
     .join(" ");
 
-  const pageSurface = [
-    "flex w-full min-w-0 flex-col items-start gap-1.5 rounded-[14px] bg-mint px-3 py-2.5 text-left transition hover:bg-mint/80 focus:outline-none focus:ring-4 focus:ring-koi/15 disabled:cursor-not-allowed disabled:opacity-40",
-    streamingSelected && "bg-indigo-50",
-    exploreSelected && "bg-koi/10"
+  const pageClass = [
+    "koi-mode-chip-page group flex w-full min-w-0 items-start gap-3 rounded-2xl px-3.5 py-3 text-left focus:outline-none focus:ring-4 focus:ring-koi/15 disabled:cursor-not-allowed disabled:opacity-40",
+    streamingSelected && "koi-mode-chip-page--streaming",
+    exploreSelected && "koi-mode-chip-page--explore"
   ]
     .filter(Boolean)
     .join(" ");
 
-  const titleClass = onPage ? "text-sm font-semibold text-ink" : "text-sm font-medium text-white";
-  const subtitleClass = onPage ? "text-xs font-medium leading-snug text-slate/75" : "text-xs font-medium leading-snug text-white/60";
+  const iconClass = onPage
+    ? "flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-white text-xl leading-none shadow-soft ring-1 ring-line/50"
+    : "koi-mode-chip__icon flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] text-xl leading-none";
+
+  const titleClass = onPage ? "text-sm font-bold leading-tight text-ink" : "text-sm font-bold leading-tight text-white";
+  const subtitleClass = onPage ? "text-xs font-medium leading-snug text-slate/70" : "text-xs font-medium leading-snug text-white/58";
 
   return (
     <button
@@ -48,12 +52,12 @@ export function ModePickChip({
       onClick={onPick}
       aria-pressed={selected}
       aria-label={`${title}: ${subtitle}`}
-      className={onPage ? pageSurface : heroSurface}
+      className={onPage ? pageClass : heroClass}
     >
-      <span className="text-base leading-none" aria-hidden="true">
+      <span className={iconClass} aria-hidden="true">
         {emoji}
       </span>
-      <span className="grid min-w-0 gap-0.5">
+      <span className="grid min-w-0 gap-1 pt-0.5">
         <span className={titleClass}>{title}</span>
         <span className={subtitleClass}>{subtitle}</span>
       </span>

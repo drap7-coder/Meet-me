@@ -1023,7 +1023,11 @@ export default function HomePage() {
         ) : null}
 
         {watchEventsResult && !loading ? (
-          <WatchEventsResults result={watchEventsResult} />
+          <WatchEventsResults
+            result={watchEventsResult}
+            onRefineWatch={(query, subcategory) => runWatchSearch(query, subcategory ?? activeWatchSubcategory)}
+            onRefineEvents={runEventsSearch}
+          />
         ) : null}
 
         {results && !loading ? (

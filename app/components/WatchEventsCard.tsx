@@ -23,11 +23,6 @@ function badgeClass(item: WatchEventsRecommendation, botMode: "watch" | "events"
   return `${accent.bg} text-white`;
 }
 
-function previewBadge(item: WatchEventsRecommendation) {
-  if (isSearchSuggestion(item)) return "Search suggestion";
-  return "Preview";
-}
-
 export function WatchEventsCard({ item, botMode = "watch", isKoiPick = false }: Props) {
   const accent = getSearchAccent(botModeToSearchKind(botMode));
   const [expanded, setExpanded] = useState(false);
@@ -93,19 +88,6 @@ export function WatchEventsCard({ item, botMode = "watch", isKoiPick = false }: 
             <span className={`inline-flex rounded-lg px-3 py-1 text-xs font-bold ${badgeClass(item, botMode)}`}>
               {item.badge}
             </span>
-            {item.preview ? (
-              <span
-                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${
-                  searchSuggestion ? "bg-events/10 text-events" : "bg-sky text-slate"
-                }`}
-              >
-                {previewBadge(item)}
-              </span>
-            ) : (
-              <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${accent.liveBadge}`}>
-                {botMode === "events" ? "Live venue" : item.mediaType === "tv" ? "Live TV pick" : "Live pick"}
-              </span>
-            )}
           </div>
           <h3 className={`font-black leading-tight text-ink ${isKoiPick ? "text-2xl sm:text-3xl" : "text-xl"}`}>
             {item.title}
@@ -168,31 +150,6 @@ export function WatchEventsCard({ item, botMode = "watch", isKoiPick = false }: 
         </>
       )}
 
-      <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
-        <span className="rounded-lg bg-line px-2.5 py-1 font-semibold text-slate">Source: {item.provider}</span>
-      </div>
-
-      {isLivePick && expanded && item.actionUrl && botMode === "watch" ? (
-        <p className="mt-4 text-sm leading-6 text-slate">
-          Need cast, trailers, or photos?{" "}
-          <a
-            href={item.actionUrl}
-            target="_blank"
-            rel="noreferrer"
-            onClick={() =>
-              trackEvent("watch_events_action_clicked", {
-                kind: item.kind,
-                action: "More on TMDB",
-                provider: item.provider
-              })
-            }
-            className={`font-semibold ${accent.link}`}
-          >
-            Open full details on TMDB
-          </a>
-        </p>
-      ) : null}
-
       {!isLivePick ? (
         <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto]">
           <a
@@ -211,6 +168,25 @@ export function WatchEventsCard({ item, botMode = "watch", isKoiPick = false }: 
             {item.actionLabel}
           </a>
         </div>
+      ) : isLivePick && expanded && item.actionUrl && botMode === "watch" ? (
+        <p className="mt-4 text-sm leading-6 text-slate">
+          Need cast, trailers, or photos?{" "}
+          <a
+            href={item.actionUrl}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() =>
+              trackEvent("watch_events_action_clicked", {
+                kind: item.kind,
+                action: "More on TMDB",
+                provider: item.provider
+              })
+            }
+            className={`font-semibold ${accent.link}`}
+          >
+            Open full details on TMDB
+          </a>
+        </p>
       ) : null}
     </article>
   );

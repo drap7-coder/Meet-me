@@ -362,9 +362,6 @@ export function SearchPromptAssistProvider({
 export function SearchPromptModePicker() {
   const { busy, state, pickMode, surface } = useAssistContext();
   const onPage = surface === "page";
-  const moduleBoxClass = `grid gap-3 rounded-[18px] border p-3.5 sm:gap-3.5 sm:p-4 ${
-    onPage ? "border-line/80 bg-paper shadow-soft" : "border-white/12 bg-white/[0.04] backdrop-blur-sm"
-  }`;
 
   return (
     <section className="grid gap-2.5" aria-label="Choose a path">
@@ -378,29 +375,27 @@ export function SearchPromptModePicker() {
         {CONCIERGE_TAGLINE}
       </p>
 
-      <div className={moduleBoxClass}>
-        <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
-          <ModePickChip
-            emoji="🍿"
-            title="Streaming"
-            subtitle="Movies & TV picks"
-            busy={busy}
-            selected={state.selectedMode === "streaming"}
-            onPick={() => pickMode("streaming")}
-            onPage={onPage}
-            tone="streaming"
-          />
-          <ModePickChip
-            emoji="🧭"
-            title="Explore"
-            subtitle="Food, drinks & local spots"
-            busy={busy}
-            selected={state.selectedMode === "local"}
-            onPick={() => pickMode("local")}
-            onPage={onPage}
-            tone="explore"
-          />
-        </div>
+      <div className="grid grid-cols-2 gap-2">
+        <ModePickChip
+          emoji="🍿"
+          title="Streaming"
+          subtitle="Movies & TV picks"
+          busy={busy}
+          selected={state.selectedMode === "streaming"}
+          onPick={() => pickMode("streaming")}
+          onPage={onPage}
+          tone="streaming"
+        />
+        <ModePickChip
+          emoji="🧭"
+          title="Explore"
+          subtitle="Food, drinks & local spots"
+          busy={busy}
+          selected={state.selectedMode === "local"}
+          onPick={() => pickMode("local")}
+          onPage={onPage}
+          tone="explore"
+        />
       </div>
     </section>
   );

@@ -6,6 +6,8 @@ import { KoiThinkingLoader } from "@/app/components/KoiThinkingLoader";
 import { AiSearchBox, type AiSearchBoxHandle } from "@/app/components/AiSearchBox";
 import { CompactResultsHeader } from "@/app/components/home/CompactResultsHeader";
 import { MarketingHero } from "@/app/components/home/MarketingHero";
+import { HeroBrowseCategories } from "@/app/components/home/HeroBrowseCategories";
+import { HeroPopularSearches } from "@/app/components/home/HeroPopularSearches";
 import { ShareDialog, type ShareDialogState } from "@/app/components/home/ShareDialog";
 import { Footer, SiteHeader } from "@/app/components/home/SiteChrome";
 import { ClassicSearchControls } from "@/app/components/ClassicSearchControls";
@@ -873,43 +875,28 @@ export default function HomePage() {
     }
   }
 
+  const showLandingHero = !hasSearched && !results && !watchEventsResult && !loading;
+
   return (
     <main className="min-h-screen overflow-x-hidden bg-mint text-ink">
-      <SiteHeader />
+      <SiteHeader variant={showLandingHero ? "dark" : "light"} />
 
-      {!hasSearched && !results && !watchEventsResult && !loading ? (
+      {showLandingHero ? (
         <>
-          <section id="search" className="relative isolate overflow-x-clip bg-ink px-4 pb-10 pt-4 sm:px-6 sm:pb-12 sm:pt-5 lg:px-8 lg:pb-14">
+          <section id="search" className="relative isolate overflow-x-clip bg-ink px-4 pb-8 pt-2 sm:px-6 sm:pb-10 lg:px-8">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_50%_-15%,rgba(255,90,0,0.14),transparent_58%),radial-gradient(circle_at_88%_8%,rgba(10,132,255,0.08),transparent_32%),linear-gradient(180deg,#0A1323_0%,#0c1729_50%,#0A1323_100%)]" />
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0A1323] via-[#0A1323]/70 to-transparent sm:h-28" />
-            <div className="relative z-10 mx-auto grid w-full max-w-5xl gap-5 py-5 sm:gap-6 sm:py-7 lg:gap-7 lg:py-8">
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#0A1323] via-[#0A1323]/70 to-transparent sm:h-24" />
+            <div className="relative z-10 mx-auto grid w-full max-w-5xl gap-4 py-2 sm:gap-5 sm:py-4">
               <MarketingHero />
-              <FairMeetupPreview />
               <SearchPromptAssistProvider
                 busy={loading || locating || resolvingManual}
                 builderMode={builderMode}
                 onPickQuery={fillSuggestedQuery}
                 seed={promptAssistSeed}
               >
-                <SearchPromptModePicker />
-                <PersistentLocationBar
-                  label={activeLocationLabel}
-                  busy={loading || locating || resolvingManual}
-                  onChange={openLocationChange}
-                />
-                <ClassicSearchControls
-                  form={form}
-                  loading={loading}
-                  savedLocationLabel={activeLocationLabel}
-                  expanded={builderExpanded}
-                  onExpandedChange={handleBuilderExpanded}
-                  mode={builderMode}
-                  onSearchPlaces={runPlacesSearchFromBuilder}
-                  onSearchWatch={runWatchSearch}
-                />
-                <SearchPromptDetailChips />
                 <AiSearchBox
                   ref={searchBoxRef}
+                  surface="hero"
                   loading={loading}
                   locationStatus={locationStatus}
                   locationUiState={locationUiState}
@@ -931,7 +918,28 @@ export default function HomePage() {
                   onSubmitManualLocation={(input) => void resolveManualLocation(input)}
                   streamingSearch={form.category === "custom" && Boolean(form.watchSubcategory)}
                 />
+                <HeroPopularSearches busy={loading || locating || resolvingManual} onSelect={fillSuggestedQuery} />
+                <HeroBrowseCategories busy={loading || locating || resolvingManual} onSelect={fillSuggestedQuery} />
+                <div className="h-px bg-white/10" aria-hidden="true" />
+                <SearchPromptModePicker />
+                <PersistentLocationBar
+                  label={activeLocationLabel}
+                  busy={loading || locating || resolvingManual}
+                  onChange={openLocationChange}
+                />
+                <ClassicSearchControls
+                  form={form}
+                  loading={loading}
+                  savedLocationLabel={activeLocationLabel}
+                  expanded={builderExpanded}
+                  onExpandedChange={handleBuilderExpanded}
+                  mode={builderMode}
+                  onSearchPlaces={runPlacesSearchFromBuilder}
+                  onSearchWatch={runWatchSearch}
+                />
+                <SearchPromptDetailChips />
               </SearchPromptAssistProvider>
+              <FairMeetupPreview />
               <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
               <LocationFallbackPanel
                 form={form}

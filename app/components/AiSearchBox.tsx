@@ -49,6 +49,24 @@ export type AiSearchBoxHandle = {
   fillHalfwayIntent: (lookingFor: string, exampleQuery?: string) => void;
 };
 
+function SearchIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-5 w-5 shrink-0 text-white/45"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+  );
+}
+
 function AiSparkleIcon() {
   return (
     <svg
@@ -277,10 +295,16 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
         <form onSubmit={handleSubmit} className="w-full min-w-0">
           <label className="block w-full min-w-0">
             <span className="sr-only">{BRAND.askLabel}</span>
-            <div className="group/search w-full min-w-0 overflow-x-clip rounded-[18px] bg-white shadow-[0_2px_16px_rgba(10,19,35,0.05)] transition focus-within:shadow-[0_4px_28px_rgba(10,19,35,0.08)]">
-              <div className="flex w-full min-w-0 items-center gap-2 px-2.5 py-2.5 sm:px-3 sm:py-3">
+            <div
+              className={
+                onHero
+                  ? "koi-premium-card group/search flex w-full min-w-0 items-center gap-2 px-3 py-2.5 transition focus-within:border-koi/35"
+                  : "group/search w-full min-w-0 overflow-x-clip rounded-[18px] bg-white shadow-[0_2px_16px_rgba(10,19,35,0.05)] transition focus-within:shadow-[0_4px_28px_rgba(10,19,35,0.08)]"
+              }
+            >
+              <div className={`flex w-full min-w-0 items-center gap-2 ${onHero ? "" : "px-2.5 py-2.5 sm:px-3 sm:py-3"}`}>
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center sm:h-10 sm:w-10">
-                  <AiSparkleIcon />
+                  {onHero ? <SearchIcon /> : <AiSparkleIcon />}
                 </div>
                 <textarea
                   ref={inputRef}
@@ -295,15 +319,23 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
                       void runSearch(query);
                     }
                   }}
-                  placeholder={rotatingPlaceholder}
-                  rows={2}
-                  className="m-0 min-h-[2.75rem] w-0 min-w-0 flex-1 resize-none appearance-none border-0 bg-transparent py-1.5 text-base leading-6 text-ink outline-none placeholder:text-slate/55 [field-sizing:content] sm:min-h-[3rem] sm:py-2 sm:text-[1.0625rem]"
+                  placeholder={onHero ? BRAND.searchPlaceholder : rotatingPlaceholder}
+                  rows={onHero ? 1 : 2}
+                  className={
+                    onHero
+                      ? "m-0 min-h-[2.5rem] w-0 min-w-0 flex-1 resize-none appearance-none border-0 bg-transparent py-1.5 text-base leading-6 text-white outline-none placeholder:text-white/42 [field-sizing:content]"
+                      : "m-0 min-h-[2.75rem] w-0 min-w-0 flex-1 resize-none appearance-none border-0 bg-transparent py-1.5 text-base leading-6 text-ink outline-none placeholder:text-slate/55 [field-sizing:content] sm:min-h-[3rem] sm:py-2 sm:text-[1.0625rem]"
+                  }
                 />
                 <button
                   type="submit"
                   disabled={busy}
                   aria-label={submitLabel}
-                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-white transition hover:bg-ink/88 focus:outline-none focus:ring-4 focus:ring-ink/15 disabled:cursor-not-allowed disabled:bg-ink/30 sm:h-10 sm:w-10"
+                  className={
+                    onHero
+                      ? "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-koi text-white shadow-[0_8px_18px_rgba(255,90,0,0.28)] transition hover:bg-koi-hover focus:outline-none focus:ring-4 focus:ring-koi/25 disabled:cursor-not-allowed disabled:bg-koi/40 sm:h-10 sm:w-10"
+                      : "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-white transition hover:bg-ink/88 focus:outline-none focus:ring-4 focus:ring-ink/15 disabled:cursor-not-allowed disabled:bg-ink/30 sm:h-10 sm:w-10"
+                  }
                 >
                   {busy ? (
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
@@ -318,8 +350,8 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
       </section>
 
       {!showLocationActions && !showManualFallback && !showStandaloneError ? (
-        <p className={`mt-2 px-1 text-xs font-semibold ${onHero ? "text-white/55" : "text-slate/70"}`}>
-          Press Enter to ask, or tap the arrow to send.
+        <p className={`mt-2 px-1 text-xs font-semibold ${onHero ? "text-white/45" : "text-slate/70"}`}>
+          {onHero ? "Tap a popular search or category, or type your ask." : "Press Enter to ask, or tap the arrow to send."}
         </p>
       ) : null}
 

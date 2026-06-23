@@ -1,7 +1,7 @@
 import { BRAND } from "@/src/config/branding";
 import Image from "next/image";
 
-const MARK_SRC = "/branding/koi-mark-transparent.png";
+const MARK_SRC = "/branding/koi-mark.svg";
 
 type LogoSize = "sm" | "md" | "lg" | "xl" | "hero";
 type LogoVariant = "mark" | "lockup";
@@ -84,8 +84,8 @@ export function Logo({
           className={`${LOCKUP_MARK_SIZE[size]} shrink-0 object-contain`}
         />
         <span className="grid min-w-0 leading-none">
-          <span className={`truncate font-serif font-semibold tracking-wide text-ink ${LOCKUP_TITLE[size]}`}>
-            {BRAND.displayName}
+          <span className={`truncate font-serif font-semibold tracking-wide ${LOCKUP_TITLE[size]} ${onDark ? "text-white" : "text-ink"}`}>
+            {onDark ? BRAND.askLabel : BRAND.displayName}
           </span>
           {showEyebrow ? (
             <span className="mt-1 hidden text-[0.62rem] font-black uppercase tracking-[0.26em] text-clay sm:block">

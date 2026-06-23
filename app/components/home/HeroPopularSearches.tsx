@@ -12,29 +12,40 @@ export type HeroPopularSearch = {
 
 export const HERO_POPULAR_SEARCHES: HeroPopularSearch[] = [
   {
-    id: "sushi",
-    icon: "🍣",
-    label: "Best sushi near me",
-    query: "Best sushi near me"
+    id: "eat",
+    icon: "🍽️",
+    label: "What's worth eating tonight?",
+    query: "What's worth eating near me tonight",
+    options: { category: "restaurant", builderMode: "near_me" }
   },
   {
-    id: "watch-tonight",
+    id: "shop",
+    icon: "🛍️",
+    label: "Where should we shop?",
+    query: "Where should we go shopping near me",
+    options: { category: "shopping", builderMode: "near_me" }
+  },
+  {
+    id: "netflix-movie",
+    icon: "🎬",
+    label: "Pick my Netflix movie",
+    query: "What movie should I watch on Netflix tonight?",
+    options: {
+      category: "custom",
+      watchSubcategory: "movies",
+      streamingServiceIds: ["netflix"]
+    }
+  },
+  {
+    id: "peacock-show",
     icon: "📺",
-    label: "What should we watch tonight?",
-    query: "What should we watch tonight?",
-    options: { category: "custom", watchSubcategory: "movies" }
-  },
-  {
-    id: "farmers-market",
-    icon: "🏪",
-    label: "Farmers markets this weekend",
-    query: "Farmers markets this weekend"
-  },
-  {
-    id: "date-night",
-    icon: "✨",
-    label: "Fun date night ideas",
-    query: "Fun date night ideas near me"
+    label: "What's good on Peacock?",
+    query: "What TV show should I watch on Peacock tonight?",
+    options: {
+      category: "custom",
+      watchSubcategory: "tv_shows",
+      streamingServiceIds: ["peacock"]
+    }
   }
 ];
 

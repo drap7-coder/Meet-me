@@ -66,7 +66,7 @@ export function HeroPopularSearches({ busy = false, onSelect }: Props) {
             type="button"
             disabled={busy}
             onClick={() => onSelect(item.query, item.options)}
-            className="koi-popular-chip group flex w-full min-w-0 items-center gap-2 rounded-xl px-3 py-2.5 text-left disabled:cursor-not-allowed disabled:opacity-40"
+            className="koi-popular-chip group flex w-full min-w-0 items-center gap-2 rounded-xl px-3 py-2.5 text-left text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
             <span aria-hidden="true" className="shrink-0 text-[0.9375rem] leading-none opacity-80">
               {item.icon}

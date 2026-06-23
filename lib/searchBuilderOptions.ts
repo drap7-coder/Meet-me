@@ -4,104 +4,277 @@ export type SearchBuilderMode = "near_me" | "halfway" | "destination";
 export type RadiusOption = "10 min" | "20 min" | "30 min" | "Flexible";
 export type ResultMode = "best" | "more";
 
-export type BuilderCategoryGroup =
-  | "restaurant"
+export type LocalChipCategoryId =
+  | "food"
   | "drinks"
   | "coffee"
   | "activities"
-  | "events"
-  | "anything";
+  | "thrift_vintage"
+  | "shopping";
 
-export type BuilderCategory = {
-  id: VenueCategory;
+/** @deprecated Use LocalChipCategoryId */
+export type BuilderCategoryGroup = LocalChipCategoryId;
+
+export type LocalChipCategory = {
+  id: LocalChipCategoryId;
   label: string;
   noun: string;
-  group: BuilderCategoryGroup;
+  defaultVenueCategory: VenueCategory;
+  subtypeLabel: string;
 };
 
-export type BuilderCuisine = {
+export type BuilderRefinement = {
   id: string;
   label: string;
+  group: "type" | "extra";
   prefix?: string;
   noun?: string;
+  suffix?: string;
   category?: VenueCategory;
 };
 
-export const BUILDER_CATEGORIES: BuilderCategory[] = [
-  { id: "restaurant", label: "Restaurants", noun: "restaurants", group: "restaurant" },
-  { id: "cocktail_bars", label: "Bars", noun: "bars", group: "drinks" },
-  { id: "coffee", label: "Coffee", noun: "coffee shops", group: "coffee" },
-  { id: "activities", label: "Activities", noun: "things to do", group: "activities" },
-  { id: "events", label: "Events", noun: "events", group: "events" },
-  { id: "custom", label: "Anything", noun: "places", group: "anything" }
+export const LOCAL_CHIP_CATEGORIES: LocalChipCategory[] = [
+  {
+    id: "food",
+    label: "🍔 Food",
+    noun: "restaurants",
+    defaultVenueCategory: "restaurant",
+    subtypeLabel: "Cuisine"
+  },
+  {
+    id: "drinks",
+    label: "🍺 Drinks",
+    noun: "cocktail bars",
+    defaultVenueCategory: "cocktail_bars",
+    subtypeLabel: "Type"
+  },
+  {
+    id: "coffee",
+    label: "☕ Coffee",
+    noun: "coffee shops",
+    defaultVenueCategory: "coffee",
+    subtypeLabel: "Style"
+  },
+  {
+    id: "activities",
+    label: "🎯 Activities",
+    noun: "things to do",
+    defaultVenueCategory: "activities",
+    subtypeLabel: "Type"
+  },
+  {
+    id: "thrift_vintage",
+    label: "♻️ Thrift & Vintage",
+    noun: "thrift and vintage shops",
+    defaultVenueCategory: "thrifting",
+    subtypeLabel: "Type"
+  },
+  {
+    id: "shopping",
+    label: "🛍️ Shopping",
+    noun: "shopping",
+    defaultVenueCategory: "shopping",
+    subtypeLabel: "Type"
+  }
 ];
 
-export const BUILDER_CUISINES: Partial<Record<BuilderCategoryGroup, BuilderCuisine[]>> = {
-  restaurant: [
-    { id: "any", label: "Any cuisine" },
-    { id: "italian", label: "Italian", prefix: "Italian", category: "italian" },
-    { id: "sushi", label: "Sushi", noun: "sushi restaurants", category: "sushi" },
-    { id: "steakhouse", label: "Steakhouse", noun: "steakhouses", category: "steakhouse" },
-    { id: "mexican", label: "Mexican", prefix: "Mexican", category: "mexican" },
-    { id: "pizza", label: "Pizza", noun: "pizza places", category: "pizza" }
+const FOOD_CUISINES: BuilderRefinement[] = [
+  { id: "italian", label: "Italian", group: "type", prefix: "Italian", category: "italian" },
+  { id: "sushi", label: "Sushi", group: "type", noun: "sushi restaurants", category: "sushi" },
+  { id: "steakhouse", label: "Steakhouse", group: "type", noun: "steakhouses", category: "steakhouse" },
+  { id: "mexican", label: "Mexican", group: "type", prefix: "Mexican", category: "mexican" },
+  { id: "pizza", label: "Pizza", group: "type", noun: "pizza places", category: "pizza" }
+];
+
+const DRINKS_CUISINES: BuilderRefinement[] = [
+  { id: "cocktails", label: "Cocktails", group: "type", noun: "cocktail bars", category: "cocktail_bars" },
+  { id: "wine", label: "Wine Bars", group: "type", noun: "wine bars", category: "wine_bars" },
+  { id: "breweries", label: "Breweries", group: "type", noun: "breweries", category: "breweries" },
+  { id: "rooftop", label: "Rooftop", group: "type", noun: "rooftop bars", category: "rooftop_bars" },
+  { id: "sports", label: "Sports Bar", group: "type", noun: "sports bars", category: "sports_bars" }
+];
+
+const COFFEE_CUISINES: BuilderRefinement[] = [
+  { id: "espresso", label: "Espresso Bar", group: "type", noun: "espresso bars" }
+];
+
+const ACTIVITY_SUBTYPES: BuilderRefinement[] = [
+  { id: "parks", label: "Parks", group: "type", noun: "parks", category: "park" },
+  { id: "museums", label: "Museums", group: "type", noun: "museums", category: "museums" },
+  { id: "zoos_aquariums", label: "Zoos & Aquariums", group: "type", noun: "zoos and aquariums", category: "zoos" },
+  {
+    id: "family_friendly",
+    label: "Family Friendly",
+    group: "type",
+    noun: "family friendly activities",
+    category: "family"
+  },
+  { id: "hiking", label: "Hiking", group: "type", noun: "hiking trails", category: "hiking" },
+  { id: "mini_golf", label: "Mini Golf", group: "type", noun: "mini golf", category: "activities" },
+  { id: "arcades", label: "Arcades", group: "type", noun: "arcades", category: "arcades" },
+  { id: "bowling", label: "Bowling", group: "type", noun: "bowling alleys", category: "bowling" },
+  { id: "gardens", label: "Gardens", group: "type", noun: "gardens", category: "gardens" },
+  { id: "driving_ranges", label: "Driving Ranges", group: "type", noun: "driving ranges", category: "driving_range" }
+];
+
+const THRIFT_SUBTYPES: BuilderRefinement[] = [
+  { id: "thrift_stores", label: "Thrift Stores", group: "type", noun: "thrift stores", category: "thrifting" },
+  { id: "restores", label: "ReStores", group: "type", noun: "Habitat ReStore shops", category: "thrifting" },
+  { id: "vintage_clothing", label: "Vintage Clothing", group: "type", noun: "vintage clothing shops", category: "vintage" },
+  { id: "antiques", label: "Antiques", group: "type", noun: "antique shops", category: "antiques" },
+  {
+    id: "architectural_salvage",
+    label: "Architectural Salvage",
+    group: "type",
+    noun: "architectural salvage stores",
+    category: "antiques"
+  },
+  { id: "record_stores", label: "Record Stores", group: "type", noun: "record stores", category: "bookstore" },
+  { id: "used_books", label: "Used Books", group: "type", noun: "used bookstores", category: "bookstore" }
+];
+
+const SHOPPING_SUBTYPES: BuilderRefinement[] = [
+  {
+    id: "main_streets",
+    label: "Main Streets",
+    group: "type",
+    noun: "main street shopping",
+    category: "walkable_main_streets"
+  },
+  {
+    id: "shopping_districts",
+    label: "Shopping Districts",
+    group: "type",
+    noun: "shopping districts",
+    category: "downtowns"
+  },
+  { id: "malls", label: "Malls", group: "type", noun: "shopping malls", category: "malls" },
+  { id: "boutiques", label: "Boutiques", group: "type", noun: "boutiques", category: "shopping" },
+  { id: "farmers_markets", label: "Farmers Markets", group: "type", noun: "farmers markets", category: "farmers_markets" }
+];
+
+export const BUILDER_TYPE_REFINEMENTS: Partial<Record<LocalChipCategoryId, BuilderRefinement[]>> = {
+  food: FOOD_CUISINES,
+  drinks: DRINKS_CUISINES,
+  coffee: COFFEE_CUISINES,
+  activities: ACTIVITY_SUBTYPES,
+  thrift_vintage: THRIFT_SUBTYPES,
+  shopping: SHOPPING_SUBTYPES
+};
+
+export const BUILDER_VIBES: Partial<Record<LocalChipCategoryId, BuilderRefinement[]>> = {
+  food: [
+    { id: "upscale", label: "Upscale", group: "extra", prefix: "upscale" },
+    { id: "date_night", label: "Date Night", group: "extra", prefix: "date night" },
+    { id: "outdoor", label: "Outdoor", group: "extra", suffix: "with outdoor seating" }
   ],
   drinks: [
-    { id: "any", label: "Any type" },
-    { id: "cocktails", label: "Cocktails", noun: "cocktail bars", category: "cocktail_bars" },
-    { id: "wine", label: "Wine Bars", noun: "wine bars", category: "wine_bars" },
-    { id: "breweries", label: "Breweries", noun: "breweries", category: "breweries" },
-    { id: "rooftop", label: "Rooftop", noun: "rooftop bars", category: "rooftop_bars" },
-    { id: "sports", label: "Sports Bar", noun: "sports bars", category: "sports_bars" }
+    { id: "upscale", label: "Upscale", group: "extra", prefix: "upscale" },
+    { id: "outdoor", label: "Outdoor", group: "extra", suffix: "with outdoor seating" }
   ],
   coffee: [
-    { id: "any", label: "Any style" },
-    { id: "espresso", label: "Espresso Bar", noun: "espresso bars" }
+    { id: "quiet", label: "Quiet", group: "extra", prefix: "quiet" },
+    { id: "work", label: "Good for Work", group: "extra", suffix: "good for working" },
+    { id: "outdoor", label: "Outdoor", group: "extra", suffix: "with outdoor seating" }
   ]
 };
 
 export const RADIUS_OPTIONS: RadiusOption[] = ["10 min", "20 min", "30 min", "Flexible"];
 
-export function categoryGroupFor(category: VenueCategory): BuilderCategoryGroup {
+const DRINKS_VENUE_CATEGORIES = new Set<VenueCategory>([
+  "cocktail_bars",
+  "breweries",
+  "wine_bars",
+  "lounges",
+  "pubs",
+  "rooftop_bars",
+  "sports_bars",
+  "bar",
+  "distilleries"
+]);
+
+const ACTIVITY_VENUE_CATEGORIES = new Set<VenueCategory>([
+  "activities",
+  "park",
+  "museums",
+  "childrens_museums",
+  "zoos",
+  "aquariums",
+  "family",
+  "hiking",
+  "trails",
+  "arcades",
+  "bowling",
+  "gardens",
+  "driving_range",
+  "escape_rooms",
+  "pickleball",
+  "playgrounds",
+  "dog_parks",
+  "nature_preserves",
+  "scenic_spots",
+  "sports"
+]);
+
+const THRIFT_VENUE_CATEGORIES = new Set<VenueCategory>(["thrifting", "vintage", "antiques"]);
+
+const SHOPPING_VENUE_CATEGORIES = new Set<VenueCategory>([
+  "shopping",
+  "malls",
+  "outlets",
+  "walkable_main_streets",
+  "downtowns",
+  "farmers_markets",
+  "small_towns",
+  "waterfronts"
+]);
+
+export function localChipCategoryById(id: LocalChipCategoryId): LocalChipCategory {
+  return LOCAL_CHIP_CATEGORIES.find((item) => item.id === id) ?? LOCAL_CHIP_CATEGORIES[0];
+}
+
+export function typeRefinementsFor(group: LocalChipCategoryId): BuilderRefinement[] {
+  return BUILDER_TYPE_REFINEMENTS[group] ?? [];
+}
+
+export function vibeRefinementsFor(group: LocalChipCategoryId): BuilderRefinement[] {
+  return BUILDER_VIBES[group] ?? [];
+}
+
+export function groupHasCuisineOptions(group: LocalChipCategoryId): boolean {
+  return group === "food" || group === "drinks" || group === "coffee";
+}
+
+export function groupHasVibeOptions(group: LocalChipCategoryId): boolean {
+  return groupHasCuisineOptions(group);
+}
+
+export function categoryGroupFor(category: VenueCategory): LocalChipCategoryId {
   if (category === "coffee") return "coffee";
-  if (category === "activities") return "activities";
-  if (category === "events") return "events";
-  if (category === "custom") return "anything";
-  if (
-    ["cocktail_bars", "breweries", "wine_bars", "lounges", "pubs", "rooftop_bars", "sports_bars", "bar"].includes(
-      category
-    )
-  ) {
-    return "drinks";
-  }
-  return "restaurant";
+  if (ACTIVITY_VENUE_CATEGORIES.has(category) || category === "events") return "activities";
+  if (THRIFT_VENUE_CATEGORIES.has(category)) return "thrift_vintage";
+  if (SHOPPING_VENUE_CATEGORIES.has(category)) return "shopping";
+  if (category === "custom") return "food";
+  if (DRINKS_VENUE_CATEGORIES.has(category)) return "drinks";
+  return "food";
 }
 
-export function resolveBuilderCategory(category: VenueCategory): BuilderCategory {
-  const group = categoryGroupFor(category);
-  return BUILDER_CATEGORIES.find((item) => item.group === group) ?? BUILDER_CATEGORIES[0];
+export function resolveBuilderCategory(category: VenueCategory): LocalChipCategory {
+  return localChipCategoryById(categoryGroupFor(category));
 }
 
-export function cuisineOptionsForGroup(group: BuilderCategoryGroup): BuilderCuisine[] {
-  return BUILDER_CUISINES[group] ?? [];
+export function resolveTypeRefinement(
+  group: LocalChipCategoryId,
+  typeId: string | null
+): BuilderRefinement | null {
+  if (!typeId) return null;
+  return typeRefinementsFor(group).find((item) => item.id === typeId) ?? null;
 }
 
-export function groupHasCuisineOptions(group: BuilderCategoryGroup): boolean {
-  return cuisineOptionsForGroup(group).length > 0;
-}
-
-export function resolveBuilderCuisine(category: VenueCategory, cuisineId: string | null): BuilderCuisine | null {
-  const group = categoryGroupFor(category);
-  const options = cuisineOptionsForGroup(group);
-  if (!cuisineId || cuisineId === "any") return null;
-  return options.find((item) => item.id === cuisineId) ?? null;
-}
-
-export function venueCategoryForBuilder(categoryId: VenueCategory, cuisineId: string | null): VenueCategory {
-  const group = categoryGroupFor(categoryId);
-  const cuisine = resolveBuilderCuisine(categoryId, cuisineId);
-  if (cuisine?.category) return cuisine.category;
-  const base = BUILDER_CATEGORIES.find((item) => item.group === group);
-  return base?.id ?? "restaurant";
+export function venueCategoryForChip(group: LocalChipCategoryId, typeId: string | null): VenueCategory {
+  const type = resolveTypeRefinement(group, typeId);
+  if (type?.category) return type.category;
+  return localChipCategoryById(group).defaultVenueCategory;
 }
 
 export function buildStructuredQuery(input: {
@@ -112,14 +285,13 @@ export function buildStructuredQuery(input: {
   locationA?: string;
   locationB?: string;
 }): string {
-  const baseCategory = resolveBuilderCategory(input.category);
-  const cuisine = resolveBuilderCuisine(input.category, input.cuisineId);
-  const noun =
-    cuisine?.noun ??
-    (cuisine?.prefix ? `${cuisine.prefix.toLowerCase()} ${baseCategory.noun}` : baseCategory.noun);
+  const group = categoryGroupFor(input.category);
+  const baseCategory = localChipCategoryById(group);
+  const type = resolveTypeRefinement(group, input.cuisineId);
+  const noun = type?.noun ?? (type?.prefix ? `${type.prefix.toLowerCase()} ${baseCategory.noun}` : baseCategory.noun);
 
   const parts: string[] = [];
-  if (cuisine?.prefix && !cuisine.noun) parts.push(cuisine.prefix.toLowerCase());
+  if (type?.prefix && !type.noun) parts.push(type.prefix.toLowerCase());
   parts.push(noun);
 
   if (input.mode === "halfway") {

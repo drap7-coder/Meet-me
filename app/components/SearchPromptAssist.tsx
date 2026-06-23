@@ -1,7 +1,15 @@
 "use client";
 
-import { SHOPPING_SUBCATEGORIES } from "@/lib/shoppingBrowse";
 import { WATCH_SUBCATEGORIES } from "@/lib/watchBrowse";
+import {
+  LOCAL_CHIP_CATEGORIES,
+  groupHasVibeOptions,
+  localChipCategoryById,
+  typeRefinementsFor,
+  venueCategoryForChip,
+  vibeRefinementsFor,
+  type LocalChipCategoryId
+} from "@/lib/searchBuilderOptions";
 import type { SearchHalfwayRequest, VenueCategory, WatchSubcategory } from "@/lib/types";
 import type { SearchBuilderMode } from "@/lib/searchBuilderOptions";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
@@ -22,85 +30,11 @@ type ProviderProps = {
   children: ReactNode;
 };
 
-type PlaceWhatId = "restaurant" | "drinks" | "coffee" | "shopping";
 type WhenId = "open_now" | "tonight";
 type WhereId = "near" | "choose" | "halfway";
 type SelectedMode = "streaming" | "local";
 
-type LocalDef = { id: PlaceWhatId; label: string; noun: string; category: VenueCategory };
-
-type PlaceRefinement = {
-  id: string;
-  label: string;
-  group: "type" | "extra";
-  prefix?: string;
-  noun?: string;
-  suffix?: string;
-  category?: VenueCategory;
-};
-
 const CONCIERGE_TAGLINE = "Tap chips to build your ask, or just type it.";
-
-const LOCAL_DEFS: LocalDef[] = [
-  { id: "restaurant", label: "Restaurants", noun: "restaurants", category: "restaurant" },
-  { id: "drinks", label: "Drinks", noun: "cocktail bars", category: "cocktail_bars" },
-  { id: "coffee", label: "Coffee", noun: "coffee shops", category: "coffee" },
-  { id: "shopping", label: "Shopping", noun: "shops", category: "shopping" }
-];
-
-const PLACE_TYPES: Record<PlaceWhatId, PlaceRefinement[]> = {
-  restaurant: [
-    { id: "italian", label: "Italian", group: "type", prefix: "Italian", category: "italian" },
-    { id: "sushi", label: "Sushi", group: "type", noun: "sushi restaurants", category: "sushi" },
-    { id: "steakhouse", label: "Steakhouse", group: "type", noun: "steakhouses", category: "steakhouse" },
-    { id: "mexican", label: "Mexican", group: "type", prefix: "Mexican", category: "mexican" },
-    { id: "pizza", label: "Pizza", group: "type", noun: "pizza places", category: "pizza" }
-  ],
-  drinks: [
-    { id: "cocktails", label: "Cocktails", group: "type", noun: "cocktail bars", category: "cocktail_bars" },
-    { id: "wine", label: "Wine Bars", group: "type", noun: "wine bars", category: "wine_bars" },
-    { id: "breweries", label: "Breweries", group: "type", noun: "breweries", category: "breweries" },
-    { id: "rooftop", label: "Rooftop", group: "type", noun: "rooftop bars", category: "rooftop_bars" },
-    { id: "sports", label: "Sports Bar", group: "type", noun: "sports bars", category: "sports_bars" }
-  ],
-  coffee: [{ id: "espresso", label: "Espresso Bar", group: "type", noun: "espresso bars" }],
-  shopping: SHOPPING_SUBCATEGORIES.map((item) => ({
-    id: item.id,
-    label: item.label,
-    group: "type" as const,
-    noun: shoppingNoun(item.query),
-    category: item.category
-  }))
-};
-
-const PLACE_VIBES: Record<PlaceWhatId, PlaceRefinement[]> = {
-  restaurant: [
-    { id: "upscale", label: "Upscale", group: "extra", prefix: "upscale" },
-    { id: "date_night", label: "Date Night", group: "extra", prefix: "date night" },
-    { id: "outdoor", label: "Outdoor", group: "extra", suffix: "with outdoor seating" },
-    { id: "family_friendly", label: "Family Friendly", group: "extra", prefix: "family friendly" }
-  ],
-  drinks: [
-    { id: "upscale", label: "Upscale", group: "extra", prefix: "upscale" },
-    { id: "outdoor", label: "Outdoor", group: "extra", suffix: "with outdoor seating" },
-    { id: "family_friendly", label: "Family Friendly", group: "extra", prefix: "family friendly" }
-  ],
-  coffee: [
-    { id: "quiet", label: "Quiet", group: "extra", prefix: "quiet" },
-    { id: "work", label: "Good for Work", group: "extra", suffix: "good for working" },
-    { id: "outdoor", label: "Outdoor", group: "extra", suffix: "with outdoor seating" },
-    { id: "family_friendly", label: "Family Friendly", group: "extra", prefix: "family friendly" }
-  ],
-  shopping: [
-    { id: "family_friendly", label: "Family Friendly", group: "extra", prefix: "family friendly" },
-    { id: "upscale", label: "Upscale", group: "extra", prefix: "upscale" },
-    { id: "walkable", label: "Walkable", group: "extra", prefix: "walkable" }
-  ]
-};
-
-function placeRefinementsFor(what: PlaceWhatId): PlaceRefinement[] {
-  return [...PLACE_TYPES[what], ...PLACE_VIBES[what]];
-}
 
 const STREAM_GENRES = [
   "Action",
@@ -114,16 +48,9 @@ const STREAM_GENRES = [
   "Family"
 ];
 
-const TYPE_LABELS: Record<PlaceWhatId, string> = {
-  restaurant: "Cuisine",
-  drinks: "Type",
-  coffee: "Style",
-  shopping: "Shop type"
-};
-
 export type BuilderState = {
   selectedMode: SelectedMode;
-  localWhat: PlaceWhatId;
+  localWhat: LocalChipCategoryId;
   typeId: string | null;
   extras: Set<string>;
   when: WhenId | null;
@@ -137,10 +64,10 @@ type AssistContextValue = {
   state: BuilderState;
   promptQuery: string;
   isStreaming: boolean;
-  typeRefinements: PlaceRefinement[];
-  vibeRefinements: PlaceRefinement[];
+  typeRefinements: ReturnType<typeof typeRefinementsFor>;
+  vibeRefinements: ReturnType<typeof vibeRefinementsFor>;
   surface: "hero" | "page";
-  pickLocalWhat: (id: PlaceWhatId) => void;
+  pickLocalWhat: (id: LocalChipCategoryId) => void;
   pickStreamingType: (id: WatchSubcategory) => void;
   toggleType: (id: string) => void;
   toggleExtra: (id: string) => void;
@@ -161,7 +88,7 @@ function initialBuilderState(seed?: Pick<PickQueryOptions, "category" | "watchSu
   if (seed?.category === "custom" && seed.watchSubcategory) {
     return {
       selectedMode: "streaming",
-      localWhat: "restaurant",
+      localWhat: "food",
       typeId: null,
       extras: new Set<string>(),
       when: null,
@@ -173,7 +100,7 @@ function initialBuilderState(seed?: Pick<PickQueryOptions, "category" | "watchSu
 
   return {
     selectedMode: "local",
-    localWhat: "restaurant",
+    localWhat: "food",
     typeId: null,
     extras: new Set<string>(),
     when: null,
@@ -246,7 +173,7 @@ export function SearchPromptAssistProvider({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [builderMode]);
 
-  function pickLocalWhat(id: PlaceWhatId) {
+  function pickLocalWhat(id: LocalChipCategoryId) {
     commit((prev) => {
       if (prev.selectedMode === "local" && prev.localWhat === id) return prev;
       return {
@@ -298,7 +225,7 @@ export function SearchPromptAssistProvider({
     commit((prev) => ({
       ...prev,
       selectedMode: "local",
-      localWhat: prev.selectedMode === "local" ? prev.localWhat : "restaurant",
+      localWhat: prev.selectedMode === "local" ? prev.localWhat : "food",
       where: id,
       streamingType: null,
       genre: null
@@ -313,8 +240,8 @@ export function SearchPromptAssistProvider({
   }
 
   const isStreaming = state.selectedMode === "streaming";
-  const typeRefinements = isStreaming ? [] : PLACE_TYPES[state.localWhat];
-  const vibeRefinements = isStreaming ? [] : PLACE_VIBES[state.localWhat];
+  const typeRefinements = isStreaming ? [] : typeRefinementsFor(state.localWhat);
+  const vibeRefinements = isStreaming || !groupHasVibeOptions(state.localWhat) ? [] : vibeRefinementsFor(state.localWhat);
 
   return (
     <AssistContext.Provider
@@ -402,7 +329,7 @@ export function SearchPromptChips() {
 
       <div className="grid gap-2.5">
         <ChipGroup label="Local" onPage={onPage}>
-          {LOCAL_DEFS.map((def) => (
+          {LOCAL_CHIP_CATEGORIES.map((def) => (
             <AssistChip
               key={def.id}
               label={def.label}
@@ -417,7 +344,7 @@ export function SearchPromptChips() {
 
         {!isStreaming ? (
           <>
-            <ChipGroup label={TYPE_LABELS[state.localWhat]} onPage={onPage}>
+            <ChipGroup label={localChipCategoryById(state.localWhat).subtypeLabel} onPage={onPage}>
               {typeRefinements.map((refinement) => (
                 <AssistChip
                   key={refinement.id}
@@ -430,18 +357,20 @@ export function SearchPromptChips() {
               ))}
             </ChipGroup>
 
-            <ChipGroup label="Vibe" onPage={onPage}>
-              {vibeRefinements.map((refinement) => (
-                <AssistChip
-                  key={refinement.id}
-                  label={refinement.label}
-                  busy={busy}
-                  selected={state.extras.has(refinement.id)}
-                  onPick={() => toggleExtra(refinement.id)}
-                  onPage={onPage}
-                />
-              ))}
-            </ChipGroup>
+            {vibeRefinements.length ? (
+              <ChipGroup label="Vibe" onPage={onPage}>
+                {vibeRefinements.map((refinement) => (
+                  <AssistChip
+                    key={refinement.id}
+                    label={refinement.label}
+                    busy={busy}
+                    selected={state.extras.has(refinement.id)}
+                    onPick={() => toggleExtra(refinement.id)}
+                    onPage={onPage}
+                  />
+                ))}
+              </ChipGroup>
+            ) : null}
           </>
         ) : null}
       </div>
@@ -565,15 +494,12 @@ function builderModeForWhere(where: WhereId): SearchBuilderMode {
 
 function categoryFor(state: BuilderState): VenueCategory {
   if (state.selectedMode === "streaming") return "custom";
-  const refs = placeRefinementsFor(state.localWhat);
-  const type = refs.find((item) => item.group === "type" && item.id === state.typeId);
-  if (type?.category) return type.category;
-  return LOCAL_DEFS.find((item) => item.id === state.localWhat)?.category ?? "restaurant";
+  return venueCategoryForChip(state.localWhat, state.typeId);
 }
 
 export function buildPlaceQuery(state: BuilderState): string {
-  const def = LOCAL_DEFS.find((item) => item.id === state.localWhat) ?? LOCAL_DEFS[0];
-  const refs = placeRefinementsFor(state.localWhat);
+  const def = localChipCategoryById(state.localWhat);
+  const refs = [...typeRefinementsFor(state.localWhat), ...vibeRefinementsFor(state.localWhat)];
   const type = refs.find((item) => item.group === "type" && item.id === state.typeId);
 
   const noun = type?.noun ?? def.noun;
@@ -619,8 +545,4 @@ export function buildStreamQuery(state: BuilderState): string {
   }
 
   return "What should I watch tonight?";
-}
-
-function shoppingNoun(query: string): string {
-  return query.replace(/ near me$/i, "").toLowerCase();
 }

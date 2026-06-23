@@ -10,7 +10,7 @@ function includesPhrase(query: string, phrase: string) {
 
 const stacked = {
   selectedMode: "local" as const,
-  localWhat: "restaurant" as const,
+  localWhat: "food" as const,
   typeId: "sushi",
   extras: new Set(["date_night", "outdoor"]),
   when: "tonight" as const,
@@ -29,7 +29,7 @@ assert(!includesPhrase(query, "open now"), "excludes unselected when");
 
 const minimal = {
   selectedMode: "local" as const,
-  localWhat: "restaurant" as const,
+  localWhat: "food" as const,
   typeId: null,
   extras: new Set<string>(),
   when: null,
@@ -58,7 +58,7 @@ assert(includesPhrase(drinksQuery, "open now"), `includes open now: ${drinksQuer
 
 const moviesBase = {
   selectedMode: "streaming" as const,
-  localWhat: "restaurant" as const,
+  localWhat: "food" as const,
   typeId: null,
   extras: new Set<string>(),
   when: null,

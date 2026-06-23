@@ -15,6 +15,7 @@ type Props = {
   expanded?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
   mode: SearchBuilderMode;
+  surface?: "hero" | "page";
   onSearchPlaces: (form: SearchHalfwayRequest, options?: SearchSubmitOptions) => void;
   onSearchWatch: (query: string, subcategory: WatchSubcategory) => void;
 };
@@ -26,6 +27,7 @@ export function ClassicSearchControls({
   expanded: expandedProp,
   onExpandedChange,
   mode,
+  surface = "hero",
   onSearchPlaces,
   onSearchWatch
 }: Props) {
@@ -35,6 +37,18 @@ export function ClassicSearchControls({
 
   const { promptQuery } = useSearchPromptAssist();
   const isStreaming = form.category === "custom" && Boolean(form.watchSubcategory);
+  const onPage = surface === "page";
+  const toggleClass = onPage
+    ? "inline-flex items-center gap-1.5 px-0.5 text-sm font-bold text-slate/70 transition hover:text-ink"
+    : "inline-flex items-center gap-1.5 px-0.5 text-sm font-bold text-white/55 transition hover:text-white/85";
+  const panelClass = onPage
+    ? "rounded-[18px] border border-line/80 bg-paper p-3 shadow-soft sm:p-4"
+    : "rounded-[18px] border border-white/12 bg-white/[0.06] p-3 shadow-[0_14px_36px_rgba(0,0,0,0.12)] backdrop-blur sm:p-4";
+  const innerPanelClass = onPage
+    ? "grid gap-4 rounded-[16px] border border-line/70 bg-mint/40 p-3 sm:p-4"
+    : "grid gap-4 rounded-[16px] border border-white/10 bg-ink/35 p-3 sm:p-4";
+  const helperTextClass = onPage ? "text-sm font-medium leading-6 text-slate/75" : "text-sm font-medium leading-6 text-white/60";
+  const footerTextClass = onPage ? "text-xs font-semibold leading-5 text-slate/70" : "text-xs font-semibold leading-5 text-white/55";
   const [destination, setDestination] = useState("");
   const [halfwayLocationA, setHalfwayLocationA] = useState("");
   const [halfwayLocationB, setHalfwayLocationB] = useState("");
@@ -95,7 +109,7 @@ export function ClassicSearchControls({
           onClick={() => {
             setExpanded(true);
           }}
-          className="inline-flex items-center gap-1.5 px-0.5 text-sm font-bold text-white/55 transition hover:text-white/85"
+          className={toggleClass}
           aria-expanded={false}
           aria-controls="advanced-search-panel"
         >
@@ -111,7 +125,7 @@ export function ClassicSearchControls({
       <button
         type="button"
         onClick={() => setExpanded(false)}
-        className="mb-3 inline-flex items-center gap-1.5 px-0.5 text-sm font-bold text-white/55 transition hover:text-white/85"
+        className={`mb-3 ${toggleClass}`}
         aria-expanded={true}
         aria-controls="advanced-search-panel"
       >
@@ -119,13 +133,10 @@ export function ClassicSearchControls({
         <span aria-hidden="true">▴</span>
       </button>
 
-      <div
-        id="advanced-search-panel"
-        className="rounded-[18px] border border-white/12 bg-white/[0.06] p-3 shadow-[0_14px_36px_rgba(0,0,0,0.12)] backdrop-blur sm:p-4"
-      >
-        <div className="grid gap-4 rounded-[16px] border border-white/10 bg-ink/35 p-3 sm:p-4">
+      <div id="advanced-search-panel" className={panelClass}>
+        <div className={innerPanelClass}>
           {isStreaming ? (
-            <p className="text-sm font-medium leading-6 text-white/60">
+            <p className={helperTextClass}>
               Streaming picks come from your ask above. Use the chips to refine, then search.
             </p>
           ) : (
@@ -193,7 +204,7 @@ export function ClassicSearchControls({
           )}
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs font-semibold leading-5 text-white/55">
+            <p className={footerTextClass}>
               Ask Koi is the magic. This builder is the seatbelt.
             </p>
             <button

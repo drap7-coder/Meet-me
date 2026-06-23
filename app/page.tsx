@@ -915,24 +915,22 @@ export default function HomePage() {
                   onSubmitManualLocation={(input) => void resolveManualLocation(input)}
                   streamingSearch={form.category === "custom" && Boolean(form.watchSubcategory)}
                 />
+                <ClassicSearchControls
+                  form={form}
+                  loading={loading}
+                  savedLocationLabel={activeLocationLabel}
+                  expanded={builderExpanded}
+                  onExpandedChange={handleBuilderExpanded}
+                  mode={builderMode}
+                  onSearchPlaces={runPlacesSearchFromBuilder}
+                  onSearchWatch={runWatchSearch}
+                />
                 <PersistentLocationBar
                   label={activeLocationLabel}
                   busy={loading || locating || resolvingManual}
                   onChange={openLocationChange}
                 />
                 <SearchPromptDetailChips />
-                {!isStreamingForm ? (
-                  <ClassicSearchControls
-                    form={form}
-                    loading={loading}
-                    savedLocationLabel={activeLocationLabel}
-                    expanded={builderExpanded}
-                    onExpandedChange={handleBuilderExpanded}
-                    mode={builderMode}
-                    onSearchPlaces={runPlacesSearchFromBuilder}
-                    onSearchWatch={runWatchSearch}
-                  />
-                ) : null}
               </SearchPromptAssistProvider>
               <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
               <LocationFallbackPanel
@@ -999,6 +997,7 @@ export default function HomePage() {
                 builderMode={builderMode}
                 onPickQuery={fillSuggestedQuery}
                 seed={promptAssistSeed}
+                surface="page"
               >
                 <SearchPromptModePicker />
                 <AiSearchBox
@@ -1025,24 +1024,23 @@ export default function HomePage() {
                   onSubmitManualLocation={(input) => void resolveManualLocation(input)}
                   streamingSearch={form.category === "custom" && Boolean(form.watchSubcategory)}
                 />
+                <ClassicSearchControls
+                  form={form}
+                  loading={loading}
+                  savedLocationLabel={activeLocationLabel}
+                  expanded={builderExpanded}
+                  onExpandedChange={handleBuilderExpanded}
+                  mode={builderMode}
+                  onSearchPlaces={runPlacesSearchFromBuilder}
+                  onSearchWatch={runWatchSearch}
+                  surface="page"
+                />
                 <PersistentLocationBar
                   label={activeLocationLabel}
                   busy={loading || locating || resolvingManual}
                   onChange={openLocationChange}
                 />
                 <SearchPromptDetailChips />
-                {!isStreamingForm ? (
-                  <ClassicSearchControls
-                    form={form}
-                    loading={loading}
-                    savedLocationLabel={activeLocationLabel}
-                    expanded={builderExpanded}
-                    onExpandedChange={handleBuilderExpanded}
-                    mode={builderMode}
-                    onSearchPlaces={runPlacesSearchFromBuilder}
-                    onSearchWatch={runWatchSearch}
-                  />
-                ) : null}
               </SearchPromptAssistProvider>
               <LocationFallbackPanel
                 form={form}

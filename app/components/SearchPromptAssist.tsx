@@ -11,6 +11,7 @@ import {
   type LocalChipCategoryId
 } from "@/lib/searchBuilderOptions";
 import { STREAMING_SERVICES, streamingServiceQueryPhrase } from "@/lib/streamingServices";
+import { ModePickChip } from "@/app/components/ModePickChip";
 import { StreamingServiceChip } from "@/app/components/StreamingServiceChip";
 import type { SearchHalfwayRequest, VenueCategory, WatchSubcategory } from "@/lib/types";
 import type { SearchBuilderMode } from "@/lib/searchBuilderOptions";
@@ -35,9 +36,9 @@ type ProviderProps = {
 
 type WhenId = "open_now" | "tonight";
 type WhereId = "near" | "choose" | "halfway";
-type SelectedMode = "streaming" | "local";
+type SelectedMode = "streaming" | "local" | null;
 
-const CONCIERGE_TAGLINE = "Tap chips to build your ask, or just type it.";
+const CONCIERGE_TAGLINE = "What are you in the mood for?";
 
 export type BuilderState = {
   selectedMode: SelectedMode;
@@ -59,6 +60,7 @@ type AssistContextValue = {
   typeRefinements: ReturnType<typeof typeRefinementsFor>;
   vibeRefinements: ReturnType<typeof vibeRefinementsFor>;
   surface: "hero" | "page";
+  pickMode: (mode: Exclude<SelectedMode, null>) => void;
   pickLocalWhat: (id: LocalChipCategoryId) => void;
   pickStreamingType: (id: WatchSubcategory) => void;
   toggleType: (id: string) => void;
@@ -93,7 +95,7 @@ function initialBuilderState(seed?: Pick<PickQueryOptions, "category" | "watchSu
   }
 
   return {
-    selectedMode: "local",
+    selectedMode: null,
     localWhat: null,
     typeId: null,
     extras: new Set<string>(),
@@ -118,6 +120,13 @@ export function SearchPromptAssistProvider({
 
   function syncQuery(next: BuilderState) {
     const isStreaming = next.selectedMode === "streaming" && Boolean(next.streamingType);
+    const isExplore = next.selectedMode === "local" && Boolean(next.localWhat);
+
+    if (!isStreaming && !isExplore) {
+      setPromptQuery("");
+      return;
+    }
+
     const query = isStreaming ? buildStreamQuery(next) : buildPlaceQuery(next);
     if (!query) return;
     setPromptQuery(query);
@@ -152,9 +161,49 @@ export function SearchPromptAssistProvider({
 
   useEffect(() => {
     syncQuery(state);
-    // Seed the ask input once on mount; chip state drives all later updates.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function pickMode(mode: Exclude<SelectedMode, null>) {
+    commit((prev) => {
+      if (prev.selectedMode === mode) {
+        return {
+          ...prev,
+          selectedMode: null,
+          localWhat: null,
+          typeId: null,
+          extras: new Set<string>(),
+          streamingType: null,
+          genre: null,
+          streamingServices: new Set<string>()
+        };
+      }
+
+      if (mode === "streaming") {
+        return {
+          ...prev,
+          selectedMode: "streaming",
+          localWhat: null,
+          typeId: null,
+          extras: new Set<string>(),
+          streamingType: null,
+          genre: null,
+          streamingServices: new Set<string>()
+        };
+      }
+
+      return {
+        ...prev,
+        selectedMode: "local",
+        localWhat: null,
+        typeId: null,
+        extras: new Set<string>(),
+        streamingType: null,
+        genre: null,
+        streamingServices: new Set<string>()
+      };
+    });
+  }
 
   useEffect(() => {
     if (!builderMode) return;
@@ -267,6 +316,7 @@ export function SearchPromptAssistProvider({
         typeRefinements,
         vibeRefinements,
         surface,
+        pickMode,
         pickLocalWhat,
         pickStreamingType,
         toggleType,
@@ -289,6 +339,7 @@ export function SearchPromptChips() {
     state,
     typeRefinements,
     vibeRefinements,
+    pickMode,
     pickLocalWhat,
     pickStreamingType,
     toggleType,
@@ -299,108 +350,145 @@ export function SearchPromptChips() {
   } = useAssistContext();
 
   const onPage = surface === "page";
-  const moduleBoxClass = `grid gap-2.5 rounded-[16px] border p-3 sm:p-3.5 ${
-    onPage ? "border-line/80 bg-paper shadow-soft" : "border-white/12 bg-white/[0.04]"
+  const moduleBoxClass = `grid gap-3 rounded-[18px] border p-3.5 sm:gap-3.5 sm:p-4 ${
+    onPage ? "border-line/80 bg-paper shadow-soft" : "border-white/12 bg-white/[0.04] backdrop-blur-sm"
   }`;
-  const showStreamingDetails = state.selectedMode === "streaming" && Boolean(state.streamingType);
-  const showExploreDetails = state.selectedMode === "local" && Boolean(state.localWhat);
+  const showStreamingType = state.selectedMode === "streaming";
+  const showStreamingDetails = showStreamingType && Boolean(state.streamingType);
+  const showExploreCategories = state.selectedMode === "local";
+  const showExploreDetails = showExploreCategories && Boolean(state.localWhat);
   const streamGenres = state.streamingType ? getWatchGenresForSubcategory(state.streamingType) : [];
 
   return (
     <section className="grid gap-3" aria-label="Prompt builder">
-      <p className={`px-0.5 text-sm font-semibold ${onPage ? "text-slate" : "text-white/70"}`}>{CONCIERGE_TAGLINE}</p>
+      <p
+        className={`px-0.5 text-sm font-semibold tracking-wide sm:text-[0.9375rem] ${
+          onPage ? "text-slate" : "text-white/75"
+        }`}
+      >
+        {CONCIERGE_TAGLINE}
+      </p>
 
       <div className={moduleBoxClass}>
-        <ChipGroup label="📺 Streaming" onPage={onPage}>
-          {WATCH_SUBCATEGORIES.map((option) => (
-            <AssistChip
-              key={option.id}
-              label={option.label}
-              busy={busy}
-              variant="primary"
-              selected={state.selectedMode === "streaming" && state.streamingType === option.id}
-              onPick={() => pickStreamingType(option.id)}
-              onPage={onPage}
-            />
-          ))}
-        </ChipGroup>
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+          <ModePickChip
+            emoji="🍿"
+            title="Streaming"
+            subtitle="Movies, shows & trending"
+            busy={busy}
+            selected={state.selectedMode === "streaming"}
+            onPick={() => pickMode("streaming")}
+            onPage={onPage}
+            tone="streaming"
+          />
+          <ModePickChip
+            emoji="🧭"
+            title="Explore"
+            subtitle="Food, drinks & local spots"
+            busy={busy}
+            selected={state.selectedMode === "local"}
+            onPick={() => pickMode("local")}
+            onPage={onPage}
+            tone="explore"
+          />
+        </div>
 
-        {showStreamingDetails ? (
+        {showStreamingType ? (
           <>
-            <ChipGroup label="Streaming Services" onPage={onPage}>
-              {STREAMING_SERVICES.map((service) => (
-                <StreamingServiceChip
-                  key={service.id}
-                  service={service}
+            <div className={`h-px ${onPage ? "bg-line/60" : "bg-white/10"}`} aria-hidden="true" />
+            <ChipGroup label="Type" onPage={onPage}>
+              {WATCH_SUBCATEGORIES.map((option) => (
+                <AssistChip
+                  key={option.id}
+                  label={option.label}
                   busy={busy}
-                  selected={state.streamingServices.has(service.id)}
-                  onPick={() => toggleStreamingService(service.id)}
+                  variant="primary"
+                  selected={state.streamingType === option.id}
+                  onPick={() => pickStreamingType(option.id)}
                   onPage={onPage}
                 />
               ))}
             </ChipGroup>
 
-            <ChipGroup label={getWatchGenreGroupLabel(state.streamingType!)} onPage={onPage}>
-              {streamGenres.map((genre) => (
-                <AssistChip
-                  key={genre.id}
-                  label={genre.label}
-                  busy={busy}
-                  selected={state.genre === genre.id}
-                  onPick={() => toggleGenre(genre.id)}
-                  onPage={onPage}
-                />
-              ))}
-            </ChipGroup>
+            {showStreamingDetails ? (
+              <>
+                <ChipGroup label="Streaming Services" onPage={onPage}>
+                  {STREAMING_SERVICES.map((service) => (
+                    <StreamingServiceChip
+                      key={service.id}
+                      service={service}
+                      busy={busy}
+                      selected={state.streamingServices.has(service.id)}
+                      onPick={() => toggleStreamingService(service.id)}
+                      onPage={onPage}
+                    />
+                  ))}
+                </ChipGroup>
+
+                <ChipGroup label={getWatchGenreGroupLabel(state.streamingType!)} onPage={onPage}>
+                  {streamGenres.map((genre) => (
+                    <AssistChip
+                      key={genre.id}
+                      label={genre.label}
+                      busy={busy}
+                      selected={state.genre === genre.id}
+                      onPick={() => toggleGenre(genre.id)}
+                      onPage={onPage}
+                    />
+                  ))}
+                </ChipGroup>
+              </>
+            ) : null}
           </>
         ) : null}
-      </div>
 
-      <div className={`h-px ${onPage ? "bg-line/70" : "bg-white/10"}`} aria-hidden="true" />
-
-      <div className={moduleBoxClass}>
-        <ChipGroup label="🧭 Explore" onPage={onPage}>
-          {LOCAL_CHIP_CATEGORIES.map((def) => (
-            <AssistChip
-              key={def.id}
-              label={def.label}
-              busy={busy}
-              variant="primary"
-              selected={state.selectedMode === "local" && state.localWhat === def.id}
-              onPick={() => pickLocalWhat(def.id)}
-              onPage={onPage}
-            />
-          ))}
-        </ChipGroup>
-
-        {showExploreDetails && state.localWhat ? (
+        {showExploreCategories ? (
           <>
-            <ChipGroup label={localChipCategoryById(state.localWhat).subtypeLabel} onPage={onPage}>
-              {typeRefinements.map((refinement) => (
+            <div className={`h-px ${onPage ? "bg-line/60" : "bg-white/10"}`} aria-hidden="true" />
+            <ChipGroup label="Category" onPage={onPage}>
+              {LOCAL_CHIP_CATEGORIES.map((def) => (
                 <AssistChip
-                  key={refinement.id}
-                  label={refinement.label}
+                  key={def.id}
+                  label={def.label}
                   busy={busy}
-                  selected={state.typeId === refinement.id}
-                  onPick={() => toggleType(refinement.id)}
+                  variant="primary"
+                  selected={state.localWhat === def.id}
+                  onPick={() => pickLocalWhat(def.id)}
                   onPage={onPage}
                 />
               ))}
             </ChipGroup>
 
-            {vibeRefinements.length ? (
-              <ChipGroup label="✨ Vibe" onPage={onPage}>
-                {vibeRefinements.map((refinement) => (
-                  <AssistChip
-                    key={refinement.id}
-                    label={refinement.label}
-                    busy={busy}
-                    selected={state.extras.has(refinement.id)}
-                    onPick={() => toggleExtra(refinement.id)}
-                    onPage={onPage}
-                  />
-                ))}
-              </ChipGroup>
+            {showExploreDetails && state.localWhat ? (
+              <>
+                <ChipGroup label={localChipCategoryById(state.localWhat).subtypeLabel} onPage={onPage}>
+                  {typeRefinements.map((refinement) => (
+                    <AssistChip
+                      key={refinement.id}
+                      label={refinement.label}
+                      busy={busy}
+                      selected={state.typeId === refinement.id}
+                      onPick={() => toggleType(refinement.id)}
+                      onPage={onPage}
+                    />
+                  ))}
+                </ChipGroup>
+
+                {vibeRefinements.length ? (
+                  <ChipGroup label="✨ Vibe" onPage={onPage}>
+                    {vibeRefinements.map((refinement) => (
+                      <AssistChip
+                        key={refinement.id}
+                        label={refinement.label}
+                        busy={busy}
+                        selected={state.extras.has(refinement.id)}
+                        onPick={() => toggleExtra(refinement.id)}
+                        onPage={onPage}
+                      />
+                    ))}
+                  </ChipGroup>
+                ) : null}
+              </>
             ) : null}
           </>
         ) : null}
@@ -525,14 +613,17 @@ function builderModeForWhere(where: WhereId): SearchBuilderMode {
 
 function categoryFor(state: BuilderState): VenueCategory {
   if (state.selectedMode === "streaming") return "custom";
-  return venueCategoryForChip(state.localWhat ?? "food", state.typeId);
+  if (!state.localWhat) return "restaurant";
+  return venueCategoryForChip(state.localWhat, state.typeId);
 }
 
 export function buildPlaceQuery(state: BuilderState): string {
-  const def = localChipCategoryById(state.localWhat ?? "food");
+  if (!state.localWhat) return "";
+
+  const def = localChipCategoryById(state.localWhat);
   const refs = [
-    ...typeRefinementsFor(state.localWhat ?? "food"),
-    ...vibeRefinementsFor(state.localWhat ?? "food")
+    ...typeRefinementsFor(state.localWhat),
+    ...vibeRefinementsFor(state.localWhat)
   ];
   const type = refs.find((item) => item.group === "type" && item.id === state.typeId);
 

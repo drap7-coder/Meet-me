@@ -1,4 +1,4 @@
-import { shouldFetchTicketmasterEvents, classifyLocalEventProfile, isSportsEventQuery } from "@/lib/localEventIntent";
+import { shouldFetchTicketmasterEvents, classifyLocalEventProfile, isSportsEventQuery, isTeamSpecificSportsQuery } from "@/lib/localEventIntent";
 import { detectEventsIntent } from "@/lib/watchEvents";
 
 const SHOULD_TRIGGER = [
@@ -35,6 +35,14 @@ function run() {
   const sportsOnly = isSportsEventQuery("Yankees tickets near me") && !isSportsEventQuery("comedy shows tonight");
   console.log(`${sportsOnly ? "PASS" : "FAIL"}  sports   detects team queries without catching comedy`);
   if (!sportsOnly) failed += 1;
+
+  const teamNationwide =
+    isTeamSpecificSportsQuery("Yankees game this weekend") &&
+    isTeamSpecificSportsQuery("Phillies game tonight") &&
+    !isTeamSpecificSportsQuery("live sports near me") &&
+    !isTeamSpecificSportsQuery("NBA games this weekend");
+  console.log(`${teamNationwide ? "PASS" : "FAIL"}  team     nationwide team intent only for named teams`);
+  if (!teamNationwide) failed += 1;
 
   if (failed > 0) process.exitCode = 1;
 }

@@ -4,6 +4,7 @@ import { EmptyState } from "@/app/components/EmptyState";
 import { KoiThinkingLoader } from "@/app/components/KoiThinkingLoader";
 import { EventResultCard } from "@/app/components/EventResultCard";
 import { AiSearchBox, type AiSearchBoxHandle } from "@/app/components/AiSearchBox";
+import { extractSportsSearchKeyword, isTeamSpecificSportsQuery } from "@/lib/localEventIntent";
 import { CompactResultsHeader } from "@/app/components/home/CompactResultsHeader";
 import { MarketingHero } from "@/app/components/home/MarketingHero";
 import { HeroPopularSearches } from "@/app/components/home/HeroPopularSearches";
@@ -78,6 +79,15 @@ const initialForm: SearchHalfwayRequest = {
   meetupMode: "single",
   customQuery: ""
 };
+
+function eventResultsHeading(query: string) {
+  if (!isTeamSpecificSportsQuery(query)) return "Live events nearby";
+
+  const team = extractSportsSearchKeyword(query);
+  if (!team) return "Upcoming games";
+
+  return `${team.charAt(0).toUpperCase()}${team.slice(1)} games — all locations`;
+}
 
 function formWithStoredLocation(base: SearchHalfwayRequest = initialForm): SearchHalfwayRequest {
   const stored = getSavedUserLocation();
@@ -1266,7 +1276,9 @@ export default function HomePage() {
 
               {results.events?.length ? (
                 <div className="results-list-enter grid gap-4">
-                  <h2 className="text-sm font-black uppercase tracking-[0.14em] text-slate">Live events nearby</h2>
+                  <h2 className="text-sm font-black uppercase tracking-[0.14em] text-slate">
+                    {eventResultsHeading(results.query)}
+                  </h2>
                   {results.events.map((event, index) => (
                     <EventResultCard key={event.id} event={event} rank={index + 1} isKoiPick={index === 0} />
                   ))}

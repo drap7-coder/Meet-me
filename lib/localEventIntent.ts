@@ -35,6 +35,47 @@ const SPORTS_TEAM_PATTERN =
 
 const SPORTS_LEAGUE_PATTERN = /\b(?:nfl|nba|mlb|nhl|mls|ncaa|wnba)\b/i;
 
+const TEAM_TICKETMASTER_KEYWORDS: Record<string, string> = {
+  phillies: "Philadelphia Phillies",
+  yankees: "New York Yankees",
+  mets: "New York Mets",
+  dodgers: "Los Angeles Dodgers",
+  "red sox": "Boston Red Sox",
+  redsox: "Boston Red Sox",
+  eagles: "Philadelphia Eagles",
+  giants: "New York Giants",
+  jets: "New York Jets",
+  knicks: "New York Knicks",
+  nets: "Brooklyn Nets",
+  lakers: "Los Angeles Lakers",
+  celtics: "Boston Celtics",
+  bruins: "Boston Bruins",
+  rangers: "New York Rangers",
+  cowboys: "Dallas Cowboys",
+  patriots: "New England Patriots",
+  chiefs: "Kansas City Chiefs",
+  bills: "Buffalo Bills",
+  dolphins: "Miami Dolphins",
+  bears: "Chicago Bears",
+  packers: "Green Bay Packers",
+  warriors: "Golden State Warriors",
+  heat: "Miami Heat",
+  bulls: "Chicago Bulls",
+  cubs: "Chicago Cubs",
+  cardinals: "St. Louis Cardinals",
+  astros: "Houston Astros",
+  mariners: "Seattle Mariners",
+  padres: "San Diego Padres",
+  nuggets: "Denver Nuggets",
+  suns: "Phoenix Suns",
+  clippers: "LA Clippers",
+  capitals: "Washington Capitals",
+  penguins: "Pittsburgh Penguins",
+  devils: "New Jersey Devils",
+  islanders: "New York Islanders",
+  flyers: "Philadelphia Flyers"
+};
+
 export function isSportsEventQuery(query: string): boolean {
   const value = query.toLowerCase();
 
@@ -83,6 +124,34 @@ export function extractSportsSearchKeyword(query: string): string {
   }
 
   return "";
+}
+
+export function isTeamSpecificSportsQuery(query: string): boolean {
+  const value = query.toLowerCase();
+  if (SPORTS_TEAM_PATTERN.test(value)) return true;
+
+  const watchGameMatch = value.match(/\bwatch(?:ing)?(?: the)? ([a-z][a-z\s]{1,20}?) game\b/);
+  if (watchGameMatch?.[1]) {
+    const team = watchGameMatch[1].trim();
+    if (!["a", "the", "this", "that"].includes(team)) return true;
+  }
+
+  return false;
+}
+
+export function teamTicketmasterKeyword(query: string): string {
+  const token = extractSportsSearchKeyword(query).toLowerCase();
+  if (!token) return "";
+  return TEAM_TICKETMASTER_KEYWORDS[token] ?? token;
+}
+
+export function eventMatchesTeamQuery(eventTitle: string, query: string): boolean {
+  const token = extractSportsSearchKeyword(query).toLowerCase();
+  if (!token) return true;
+
+  const haystack = eventTitle.toLowerCase();
+  const fullName = TEAM_TICKETMASTER_KEYWORDS[token]?.toLowerCase() ?? "";
+  return haystack.includes(token) || (fullName ? haystack.includes(fullName) : false);
 }
 
 export function shouldFetchTicketmasterEvents(query: string, category?: VenueCategory): boolean {

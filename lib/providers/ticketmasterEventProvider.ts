@@ -1,5 +1,10 @@
 import type { EventResult } from "@/lib/eventResult";
-import { extractSportsSearchKeyword } from "@/lib/localEventIntent";
+import {
+  eventMatchesTeamQuery,
+  extractSportsSearchKeyword,
+  isTeamSpecificSportsQuery,
+  teamTicketmasterKeyword
+} from "@/lib/localEventIntent";
 import type { EventProvider, EventSearchParams } from "@/lib/providers/eventDiscoveryTypes";
 import { withTicketmasterCache } from "@/lib/ticketmasterCache";
 
@@ -104,7 +109,7 @@ function keywordForProfile(profile?: EventSearchParams["profile"], query = "") {
     case "weekend":
       return "";
     case "sports":
-      return extractSportsSearchKeyword(query);
+      return isTeamSpecificSportsQuery(query) ? teamTicketmasterKeyword(query) : extractSportsSearchKeyword(query);
     default:
       return "";
   }
@@ -125,6 +130,13 @@ function formatTicketmasterDateTime(value: string) {
   return date.toISOString().replace(/\.\d{3}Z$/, "Z");
 }
 
+function filterTeamEvents(events: EventResult[], query: string) {
+  if (!isTeamSpecificSportsQuery(query)) return events;
+
+  const filtered = events.filter((event) => eventMatchesTeamQuery(event.title, query));
+  return filtered.length ? filtered : events;
+}
+
 export const ticketmasterEventProvider: EventProvider = {
   isConfigured() {
     return Boolean(getTicketmasterApiKey());
@@ -134,15 +146,21 @@ export const ticketmasterEventProvider: EventProvider = {
     const apiKey = getTicketmasterApiKey();
     if (!apiKey) return [];
 
+    const nationwideTeamSearch =
+      request.profile === "sports" && isTeamSpecificSportsQuery(request.query);
+
     const params: Record<string, string> = {
       apikey: apiKey,
-      latlong: `${request.latitude},${request.longitude}`,
-      radius: String(request.radiusMiles ?? 25),
-      unit: "miles",
-      size: "20",
+      size: nationwideTeamSearch ? "50" : "20",
       sort: "date,asc",
       countryCode: "US"
     };
+
+    if (!nationwideTeamSearch) {
+      params.latlong = `${request.latitude},${request.longitude}`;
+      params.radius = String(request.radiusMiles ?? 25);
+      params.unit = "miles";
+    }
 
     applyProfileFilters(params, request.profile, request.query);
 
@@ -163,8 +181,10 @@ export const ticketmasterEventProvider: EventProvider = {
       return (await response.json()) as TicketmasterEventsResponse;
     });
 
-    return (payload._embedded?.events ?? [])
+    const events = (payload._embedded?.events ?? [])
       .map((event) => normalizeEvent(event))
       .filter((event): event is EventResult => Boolean(event?.startTime));
+
+    return filterTeamEvents(events, request.query);
   }
 };

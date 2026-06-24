@@ -1,4 +1,5 @@
 import type { LocalEventProfile } from "@/lib/eventResult";
+import { sportsTeamSearchPattern, sportsTeamById, SPORTS_TEAMS } from "@/lib/sportsTeams";
 import type { VenueCategory } from "@/lib/types";
 import { detectEventsIntent } from "@/lib/watchEvents";
 
@@ -30,51 +31,17 @@ const PLACE_ONLY_CATEGORIES = new Set<VenueCategory>([
 const PLACE_ONLY_QUERY =
   /\b(?:restaurant|restaurants|coffee shop|coffee|cafe|pizza|sushi|brunch|lunch|dinner|breakfast|brewery|breweries|bar|cafe|shopping|mall|store|stores|bookstore)\b/i;
 
-const SPORTS_TEAM_PATTERN =
-  /\b(?:phillies|yankees|mets|dodgers|red sox|redsox|eagles|giants|jets|knicks|nets|lakers|celtics|bruins|rangers|cowboys|patriots|chiefs|bills|dolphins|bears|packers|warriors|heat|bulls|cubs|cardinals|astros|mariners|padres|nuggets|suns|clippers|capitals|penguins|devils|islanders|flyers)\b/i;
+const SPORTS_TEAM_PATTERN = sportsTeamSearchPattern();
 
 const SPORTS_LEAGUE_PATTERN = /\b(?:nfl|nba|mlb|nhl|mls|ncaa|wnba)\b/i;
 
-const TEAM_TICKETMASTER_KEYWORDS: Record<string, string> = {
-  phillies: "Philadelphia Phillies",
-  yankees: "New York Yankees",
-  mets: "New York Mets",
-  dodgers: "Los Angeles Dodgers",
-  "red sox": "Boston Red Sox",
-  redsox: "Boston Red Sox",
-  eagles: "Philadelphia Eagles",
-  giants: "New York Giants",
-  jets: "New York Jets",
-  knicks: "New York Knicks",
-  nets: "Brooklyn Nets",
-  lakers: "Los Angeles Lakers",
-  celtics: "Boston Celtics",
-  bruins: "Boston Bruins",
-  rangers: "New York Rangers",
-  cowboys: "Dallas Cowboys",
-  patriots: "New England Patriots",
-  chiefs: "Kansas City Chiefs",
-  bills: "Buffalo Bills",
-  dolphins: "Miami Dolphins",
-  bears: "Chicago Bears",
-  packers: "Green Bay Packers",
-  warriors: "Golden State Warriors",
-  heat: "Miami Heat",
-  bulls: "Chicago Bulls",
-  cubs: "Chicago Cubs",
-  cardinals: "St. Louis Cardinals",
-  astros: "Houston Astros",
-  mariners: "Seattle Mariners",
-  padres: "San Diego Padres",
-  nuggets: "Denver Nuggets",
-  suns: "Phoenix Suns",
-  clippers: "LA Clippers",
-  capitals: "Washington Capitals",
-  penguins: "Pittsburgh Penguins",
-  devils: "New Jersey Devils",
-  islanders: "New York Islanders",
-  flyers: "Philadelphia Flyers"
-};
+const TEAM_TICKETMASTER_KEYWORDS = Object.fromEntries(
+  SPORTS_TEAMS.flatMap((team) => [
+    [team.id, team.ticketmasterKeyword],
+    [team.searchTerm.toLowerCase(), team.ticketmasterKeyword],
+    [team.label.toLowerCase(), team.ticketmasterKeyword]
+  ])
+);
 
 export function isSportsEventQuery(query: string): boolean {
   const value = query.toLowerCase();
@@ -127,6 +94,8 @@ export function extractSportsSearchKeyword(query: string): string {
 }
 
 export function isTeamSpecificSportsQuery(query: string): boolean {
+  if (/\bnear me\b/i.test(query)) return false;
+
   const value = query.toLowerCase();
   if (SPORTS_TEAM_PATTERN.test(value)) return true;
 
@@ -142,6 +111,10 @@ export function isTeamSpecificSportsQuery(query: string): boolean {
 export function teamTicketmasterKeyword(query: string): string {
   const token = extractSportsSearchKeyword(query).toLowerCase();
   if (!token) return "";
+
+  const byId = sportsTeamById(token.replace(/\s+/g, "_"));
+  if (byId) return byId.ticketmasterKeyword;
+
   return TEAM_TICKETMASTER_KEYWORDS[token] ?? token;
 }
 

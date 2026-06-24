@@ -1,3 +1,4 @@
+import { EVENT_TYPE_REFINEMENTS } from "@/lib/eventBuilderOptions";
 import type { VenueCategory } from "@/lib/types";
 
 export type SearchBuilderMode = "near_me" | "halfway" | "destination";
@@ -168,6 +169,7 @@ export const BUILDER_TYPE_REFINEMENTS: Partial<Record<LocalChipCategoryId, Build
   drinks: DRINKS_CUISINES,
   coffee: COFFEE_CUISINES,
   activities: ACTIVITY_SUBTYPES,
+  events: EVENT_TYPE_REFINEMENTS,
   thrift_vintage: THRIFT_SUBTYPES,
   shopping: SHOPPING_SUBTYPES
 };

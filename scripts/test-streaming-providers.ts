@@ -93,6 +93,7 @@ const streamQuery = buildStreamQuery({
   selectedMode: "streaming",
   localWhat: null,
   typeId: null,
+  sportsTeamId: null,
   extras: new Set<string>(),
   where: "near",
   streamingType: "movies",

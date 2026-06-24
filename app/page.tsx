@@ -81,6 +81,12 @@ const initialForm: SearchHalfwayRequest = {
 };
 
 function eventResultsHeading(query: string) {
+  if (/\bnear me\b/i.test(query)) {
+    const team = extractSportsSearchKeyword(query);
+    if (team) return `${team.charAt(0).toUpperCase()}${team.slice(1)} games nearby`;
+    return "Live events nearby";
+  }
+
   if (!isTeamSpecificSportsQuery(query)) return "Live events nearby";
 
   const team = extractSportsSearchKeyword(query);

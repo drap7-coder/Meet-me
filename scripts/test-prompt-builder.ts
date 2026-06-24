@@ -12,6 +12,7 @@ const stacked = {
   selectedMode: "local" as const,
   localWhat: "food" as const,
   typeId: "sushi",
+  sportsTeamId: null,
   extras: new Set(["date_night", "outdoor"]),
   where: "halfway" as const,
   streamingType: null,
@@ -32,6 +33,7 @@ const minimal = {
   selectedMode: "local" as const,
   localWhat: "food" as const,
   typeId: null,
+  sportsTeamId: null,
   extras: new Set<string>(),
   where: "near" as const,
   streamingType: null,
@@ -46,6 +48,7 @@ const drinksStacked = {
   selectedMode: "local" as const,
   localWhat: "drinks" as const,
   typeId: "wine",
+  sportsTeamId: null,
   extras: new Set(["upscale"]),
   where: "near" as const,
   streamingType: null,
@@ -63,6 +66,7 @@ const moviesBase = {
   selectedMode: "streaming" as const,
   localWhat: "food" as const,
   typeId: null,
+  sportsTeamId: null,
   extras: new Set<string>(),
   where: "near" as const,
   streamingType: "movies" as const,
@@ -91,5 +95,19 @@ assert(
   buildStreamQuery(trendingComedy) === "Trending comedy movies",
   "trending + comedy refines query"
 );
+
+const yankeesEvents = {
+  selectedMode: "local" as const,
+  localWhat: "events" as const,
+  typeId: "sports",
+  sportsTeamId: "yankees",
+  extras: new Set<string>(),
+  where: "near" as const,
+  streamingType: null,
+  streamingVibe: null,
+  genre: null,
+  streamingServices: new Set<string>()
+};
+assert(buildPlaceQuery(yankeesEvents) === "Yankees games near me", "events sports team builds geo query");
 
 console.log("PASS prompt builder stacking");

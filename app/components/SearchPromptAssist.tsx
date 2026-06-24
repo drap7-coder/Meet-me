@@ -10,6 +10,13 @@ import {
   vibeRefinementsFor,
   type LocalChipCategoryId
 } from "@/lib/searchBuilderOptions";
+import {
+  SPORTS_TEAMS,
+  isEventSportsType,
+  resolveEventTypeRefinement,
+  sportsTeamChipLabel
+} from "@/lib/eventBuilderOptions";
+import { sportsTeamById } from "@/lib/sportsTeams";
 import { STREAMING_SERVICES, streamingServiceQueryPhrase } from "@/lib/streamingServices";
 import type { HeroPopularSearch } from "@/app/components/home/HeroPopularSearches";
 import { HeroSectionLabel } from "@/app/components/home/HeroSectionLabel";
@@ -43,6 +50,7 @@ export type BuilderState = {
   selectedMode: SelectedMode;
   localWhat: LocalChipCategoryId | null;
   typeId: string | null;
+  sportsTeamId: string | null;
   extras: Set<string>;
   where: WhereId;
   streamingType: WatchSubcategory | null;
@@ -78,6 +86,7 @@ type AssistContextValue = {
   pickLocalWhat: (id: LocalChipCategoryId) => void;
   pickStreamingType: (id: "movies" | "tv_shows") => void;
   toggleType: (id: string) => void;
+  toggleSportsTeam: (id: string) => void;
   toggleExtra: (id: string) => void;
   setWhere: (id: WhereId) => void;
   toggleGenre: (genre: string) => void;
@@ -107,6 +116,7 @@ function initialBuilderState(seed?: Pick<PickQueryOptions, "category" | "watchSu
       selectedMode: "streaming",
       localWhat: null,
       typeId: null,
+      sportsTeamId: null,
       extras: new Set<string>(),
       where: "near",
       streamingType: seededTrending ? "movies" : normalizeStreamType(seed.watchSubcategory),
@@ -120,6 +130,7 @@ function initialBuilderState(seed?: Pick<PickQueryOptions, "category" | "watchSu
     selectedMode: null,
     localWhat: null,
     typeId: null,
+    sportsTeamId: null,
     extras: new Set<string>(),
     where: "near",
     streamingType: null,
@@ -169,6 +180,7 @@ export function SearchPromptAssistProvider({
           selectedMode: null,
           localWhat: null,
           typeId: null,
+          sportsTeamId: null,
           extras: new Set<string>(),
           streamingType: null,
           streamingVibe: null,
@@ -183,6 +195,7 @@ export function SearchPromptAssistProvider({
           selectedMode: "streaming",
           localWhat: null,
           typeId: null,
+          sportsTeamId: null,
           extras: new Set<string>(),
           streamingType: null,
           streamingVibe: null,
@@ -196,6 +209,7 @@ export function SearchPromptAssistProvider({
         selectedMode: "local",
         localWhat: null,
         typeId: null,
+        sportsTeamId: null,
         extras: new Set<string>(),
         streamingType: null,
         streamingVibe: null,
@@ -230,6 +244,7 @@ export function SearchPromptAssistProvider({
         selectedMode: "local",
         localWhat: null,
         typeId: null,
+        sportsTeamId: null,
         extras: new Set<string>(),
         where: "near",
         streamingType: null,
@@ -252,6 +267,7 @@ export function SearchPromptAssistProvider({
         selectedMode: "local",
         localWhat: "food",
         typeId: null,
+        sportsTeamId: null,
         extras: new Set<string>(),
         where: "halfway",
         streamingType: null,
@@ -265,13 +281,14 @@ export function SearchPromptAssistProvider({
   function pickLocalWhat(id: LocalChipCategoryId) {
     commit((prev) => {
       if (prev.selectedMode === "local" && prev.localWhat === id) {
-        return { ...prev, localWhat: null, typeId: null, extras: new Set<string>() };
+        return { ...prev, localWhat: null, typeId: null, sportsTeamId: null, extras: new Set<string>() };
       }
       return {
         ...prev,
         selectedMode: "local",
         localWhat: id,
         typeId: null,
+        sportsTeamId: null,
         extras: new Set<string>(),
         streamingType: null,
         streamingVibe: null,
@@ -300,7 +317,24 @@ export function SearchPromptAssistProvider({
   }
 
   function toggleType(id: string) {
-    commit((prev) => ({ ...prev, typeId: prev.typeId === id ? null : id }));
+    commit((prev) => {
+      const nextTypeId = prev.typeId === id ? null : id;
+      return {
+        ...prev,
+        typeId: nextTypeId,
+        sportsTeamId: nextTypeId === "sports" ? prev.sportsTeamId : null
+      };
+    });
+  }
+
+  function toggleSportsTeam(id: string) {
+    commit((prev) => ({
+      ...prev,
+      selectedMode: "local",
+      localWhat: "events",
+      typeId: "sports",
+      sportsTeamId: prev.sportsTeamId === id ? null : id
+    }));
   }
 
   function toggleExtra(id: string) {
@@ -383,6 +417,7 @@ export function SearchPromptAssistProvider({
         pickLocalWhat,
         pickStreamingType,
         toggleType,
+        toggleSportsTeam,
         toggleExtra,
         setWhere,
         toggleGenre,
@@ -457,6 +492,7 @@ export function SearchPromptDetailChips() {
     pickLocalWhat,
     pickStreamingType,
     toggleType,
+    toggleSportsTeam,
     toggleExtra,
     toggleGenre,
     toggleStreamingVibe,
@@ -474,6 +510,8 @@ export function SearchPromptDetailChips() {
   const showExploreCategories = state.selectedMode === "local";
   const showExploreDetails = showExploreCategories && Boolean(state.localWhat);
   const streamGenres = streamType ? getWatchGenresForSubcategory(streamType) : [];
+
+  const showEventSportsTeams = state.localWhat === "events" && isEventSportsType(state.typeId);
 
   if (!showStreamingType && !showExploreCategories) return null;
 
@@ -592,6 +630,26 @@ export function SearchPromptDetailChips() {
                       />
                     ))}
                   </ChipGroup>
+                ) : null}
+
+                {showEventSportsTeams ? (
+                  <>
+                    <div className={`h-px ${onPage ? "bg-line/60" : "bg-white/10"}`} aria-hidden="true" />
+                    <ChipGroup label="Teams" onPage={onPage}>
+                      {SPORTS_TEAMS.map((team) => (
+                        <AssistChip
+                          key={team.id}
+                          label={`${team.logo} ${team.label}`}
+                          busy={busy}
+                          variant={state.sportsTeamId === team.id ? "primary" : "accent"}
+                          selected={state.sportsTeamId === team.id}
+                          emphasis={state.sportsTeamId === team.id}
+                          onPick={() => toggleSportsTeam(team.id)}
+                          onPage={onPage}
+                        />
+                      ))}
+                    </ChipGroup>
+                  </>
                 ) : null}
               </>
             ) : null}
@@ -723,15 +781,32 @@ function categoryFor(state: BuilderState): VenueCategory {
   return venueCategoryForChip(state.localWhat, state.typeId);
 }
 
+function eventLocationSuffix(where: WhereId) {
+  if (where === "halfway") return "halfway between us";
+  if (where === "choose") return "near a specific location";
+  return "near me";
+}
+
 export function buildPlaceQuery(state: BuilderState): string {
   if (state.localWhat === "events") {
-    const suffix =
-      state.where === "halfway"
-        ? "halfway between us"
-        : state.where === "choose"
-          ? "near a specific location"
-          : "near me this weekend";
-    return `Things to do ${suffix}`.replace(/^\w/, (char) => char.toUpperCase());
+    const suffix = eventLocationSuffix(state.where);
+
+    if (state.typeId === "sports" && state.sportsTeamId) {
+      const team = sportsTeamById(state.sportsTeamId);
+      if (team) {
+        const phrase = `${team.searchTerm} games ${suffix}`;
+        return phrase.charAt(0).toUpperCase() + phrase.slice(1);
+      }
+    }
+
+    const eventType = resolveEventTypeRefinement(state.typeId);
+    if (eventType?.noun) {
+      const phrase = `${eventType.noun} ${suffix}`;
+      return phrase.charAt(0).toUpperCase() + phrase.slice(1);
+    }
+
+    const phrase = `Things to do ${suffix} this weekend`;
+    return phrase.charAt(0).toUpperCase() + phrase.slice(1);
   }
 
   if (!state.localWhat) return "";
@@ -878,6 +953,10 @@ function buildFilterPills(state: BuilderState): FilterPill[] {
     pills.push({ id: `type-${state.typeId}`, label: typeLabel });
   }
 
+  if (state.localWhat === "events" && state.sportsTeamId) {
+    pills.push({ id: `sports-team-${state.sportsTeamId}`, label: sportsTeamChipLabel(state.sportsTeamId) });
+  }
+
   for (const extraId of state.extras) {
     if (!state.localWhat) continue;
     const extraLabel =
@@ -917,11 +996,15 @@ function removeFilterFromState(state: BuilderState, pillId: string): BuilderStat
   }
 
   if (pillId.startsWith("local-")) {
-    return { ...state, localWhat: null, typeId: null, extras: new Set<string>() };
+    return { ...state, localWhat: null, typeId: null, sportsTeamId: null, extras: new Set<string>() };
   }
 
   if (pillId.startsWith("type-")) {
-    return { ...state, typeId: null };
+    return { ...state, typeId: null, sportsTeamId: null };
+  }
+
+  if (pillId.startsWith("sports-team-")) {
+    return { ...state, sportsTeamId: null };
   }
 
   if (pillId.startsWith("extra-")) {
@@ -946,6 +1029,7 @@ function builderStateFromPopularPreset(preset: HeroPopularSearch): BuilderState 
       selectedMode: "streaming",
       localWhat: null,
       typeId: null,
+      sportsTeamId: null,
       extras: new Set<string>(),
       where: "near",
       streamingType: normalizeStreamType(opts.watchSubcategory) ?? "movies",
@@ -960,6 +1044,7 @@ function builderStateFromPopularPreset(preset: HeroPopularSearch): BuilderState 
       selectedMode: "local",
       localWhat: "shopping",
       typeId: null,
+      sportsTeamId: null,
       extras: new Set<string>(),
       where: "near",
       streamingType: null,
@@ -974,6 +1059,7 @@ function builderStateFromPopularPreset(preset: HeroPopularSearch): BuilderState 
       selectedMode: "local",
       localWhat: "activities",
       typeId: null,
+      sportsTeamId: null,
       extras: new Set<string>(),
       where: opts?.builderMode === "halfway" || opts?.searchMode === "midpoint" ? "halfway" : "near",
       streamingType: null,
@@ -988,6 +1074,7 @@ function builderStateFromPopularPreset(preset: HeroPopularSearch): BuilderState 
       selectedMode: "local",
       localWhat: "events",
       typeId: null,
+      sportsTeamId: null,
       extras: new Set<string>(),
       where: opts?.builderMode === "halfway" || opts?.searchMode === "midpoint" ? "halfway" : "near",
       streamingType: null,
@@ -1001,6 +1088,7 @@ function builderStateFromPopularPreset(preset: HeroPopularSearch): BuilderState 
     selectedMode: "local",
     localWhat: "food",
     typeId: null,
+    sportsTeamId: null,
     extras: new Set<string>(),
     where: opts?.builderMode === "halfway" || opts?.searchMode === "midpoint" ? "halfway" : "near",
     streamingType: null,

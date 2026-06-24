@@ -38,6 +38,7 @@ function run() {
 
   const teamNationwide =
     isTeamSpecificSportsQuery("Yankees game this weekend") &&
+    !isTeamSpecificSportsQuery("Yankees games near me") &&
     isTeamSpecificSportsQuery("Phillies game tonight") &&
     !isTeamSpecificSportsQuery("live sports near me") &&
     !isTeamSpecificSportsQuery("NBA games this weekend");

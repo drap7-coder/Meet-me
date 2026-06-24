@@ -94,7 +94,6 @@ const streamQuery = buildStreamQuery({
   localWhat: null,
   typeId: null,
   extras: new Set<string>(),
-  when: null,
   where: "near",
   streamingType: "movies",
   streamingVibe: null,
@@ -103,7 +102,7 @@ const streamQuery = buildStreamQuery({
 });
 
 assert(
-  streamQuery === "What comedy movie should I watch on Netflix or Max tonight?",
+  streamQuery === "What comedy movie should I watch on Netflix or Max?",
   `stream query includes providers: ${streamQuery}`
 );
 

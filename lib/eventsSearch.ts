@@ -101,6 +101,5 @@ function buildEventsContextSummary(location: string, timeframe: string, topic: s
   const parts = [isLive ? "Live venues" : "Location-based"];
   if (topic) parts.push(topic);
   if (location) parts.push(location);
-  if (timeframe) parts.push(timeframe);
   return parts.join(" · ");
 }

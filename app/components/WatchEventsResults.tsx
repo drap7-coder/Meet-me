@@ -3,7 +3,7 @@
 import { DevResultsPanel } from "@/app/components/DevResultsPanel";
 import { useDevPanel } from "@/app/components/useDevPanel";
 import { WatchEventsCard } from "@/app/components/WatchEventsCard";
-import { buildActionableFilters, buildKoiUnderstoodChips } from "@/lib/koiResultChips";
+import { buildActionableFilters } from "@/lib/koiResultChips";
 import { KOI_PICK_DISPLAY_LIMIT } from "@/lib/koiCapabilityExamples";
 import { botModeToSearchKind, getSearchAccent } from "@/lib/searchAccent";
 import type { WatchEventsResult, WatchSubcategory } from "@/lib/types";
@@ -18,7 +18,6 @@ export function WatchEventsResults({ result, onRefineWatch, onRefineEvents }: Pr
   const accent = getSearchAccent(botModeToSearchKind(result.botMode));
   const curated = result.recommendations.slice(0, KOI_PICK_DISPLAY_LIMIT);
   const [koiPick, ...otherOptions] = curated;
-  const understood = buildKoiUnderstoodChips(result);
   const filters = buildActionableFilters(result);
   const { enabled: devPanelEnabled, toggle: toggleDevPanel } = useDevPanel();
   const showDevPanel = devPanelEnabled;
@@ -63,22 +62,6 @@ export function WatchEventsResults({ result, onRefineWatch, onRefineEvents }: Pr
           <p className={`text-sm font-black uppercase tracking-[0.14em] ${accent.text}`}>{result.intentLabel}</p>
           <h2 className="mt-2 text-2xl font-black tracking-tight text-ink">Your search</h2>
           <p className="mt-3 text-sm leading-6 text-slate">{result.contextSummary}</p>
-
-          {understood.length ? (
-            <div className="mt-4">
-              <p className="text-xs font-black uppercase tracking-[0.14em] text-slate">Koi understood</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {understood.map((chip) => (
-                  <span
-                    key={chip.id}
-                    className={`rounded-full border px-3 py-1.5 text-xs font-bold ${accent.borderSoft} ${accent.bgSoft} ${accent.text}`}
-                  >
-                    {chip.label}
-                  </span>
-                ))}
-              </div>
-            </div>
-          ) : null}
 
           {filters.length ? (
             <div className="mt-4">

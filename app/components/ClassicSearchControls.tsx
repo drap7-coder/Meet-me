@@ -70,7 +70,7 @@ export function ClassicSearchControls({
 
   function submitBuilderSearch() {
     if (isStreaming) {
-      onSearchWatch(filterPreview?.query.trim() || "what should I watch tonight", watchSubcategory);
+      onSearchWatch(filterPreview?.query.trim() || "what should I watch", watchSubcategory);
       return;
     }
 

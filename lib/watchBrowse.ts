@@ -57,49 +57,49 @@ export type WatchGenreOption = {
 
 export const WATCH_GENRES_BY_SUBCATEGORY: Partial<Record<WatchSubcategory, WatchGenreOption[]>> = {
   movies: [
-    { id: "action", label: "💥 Action", queryWord: "action", query: "Best action movies tonight" },
-    { id: "comedy", label: "😂 Comedy", queryWord: "comedy", query: "Best comedy movies tonight" },
-    { id: "drama", label: "🎭 Drama", queryWord: "drama", query: "Best drama movies tonight" },
+    { id: "action", label: "💥 Action", queryWord: "action", query: "Best action movies" },
+    { id: "comedy", label: "😂 Comedy", queryWord: "comedy", query: "Best comedy movies" },
+    { id: "drama", label: "🎭 Drama", queryWord: "drama", query: "Best drama movies" },
     {
       id: "horror_thriller",
       label: "👻 Horror & Thriller",
       queryWord: "horror and thriller",
-      query: "Best horror and thriller movies tonight"
+      query: "Best horror and thriller movies"
     },
-    { id: "romance", label: "💕 Romance", queryWord: "romance", query: "Best romance movies tonight" },
-    { id: "sci-fi", label: "🚀 Sci-Fi", queryWord: "sci-fi", query: "Best sci-fi movies tonight" },
-    { id: "documentary", label: "🎥 Documentary", queryWord: "documentary", query: "Best documentary movies tonight" },
-    { id: "family", label: "👨‍👩‍👧 Family", queryWord: "family", query: "Best family movies tonight" }
+    { id: "romance", label: "💕 Romance", queryWord: "romance", query: "Best romance movies" },
+    { id: "sci-fi", label: "🚀 Sci-Fi", queryWord: "sci-fi", query: "Best sci-fi movies" },
+    { id: "documentary", label: "🎥 Documentary", queryWord: "documentary", query: "Best documentary movies" },
+    { id: "family", label: "👨‍👩‍👧 Family", queryWord: "family", query: "Best family movies" }
   ],
   tv_shows: [
-    { id: "action", label: "💥 Action & Adventure", queryWord: "action", query: "Best action TV shows tonight" },
-    { id: "comedy", label: "😂 Comedy", queryWord: "comedy", query: "Best comedy TV shows tonight" },
-    { id: "drama", label: "🎭 Drama", queryWord: "drama", query: "Best drama TV shows tonight" },
+    { id: "action", label: "💥 Action & Adventure", queryWord: "action", query: "Best action TV shows" },
+    { id: "comedy", label: "😂 Comedy", queryWord: "comedy", query: "Best comedy TV shows" },
+    { id: "drama", label: "🎭 Drama", queryWord: "drama", query: "Best drama TV shows" },
     {
       id: "horror_thriller",
       label: "👻 Horror & Thriller",
       queryWord: "horror and thriller",
-      query: "Best horror and thriller TV shows tonight"
+      query: "Best horror and thriller TV shows"
     },
-    { id: "romance", label: "💕 Romance", queryWord: "romance", query: "Best romance TV shows tonight" },
-    { id: "sci-fi", label: "🚀 Sci-Fi & Fantasy", queryWord: "sci-fi", query: "Best sci-fi TV shows tonight" },
-    { id: "documentary", label: "🎥 Documentary", queryWord: "documentary", query: "Best documentary series tonight" },
-    { id: "family", label: "👨‍👩‍👧 Family", queryWord: "family", query: "Best family TV shows tonight" }
+    { id: "romance", label: "💕 Romance", queryWord: "romance", query: "Best romance TV shows" },
+    { id: "sci-fi", label: "🚀 Sci-Fi & Fantasy", queryWord: "sci-fi", query: "Best sci-fi TV shows" },
+    { id: "documentary", label: "🎥 Documentary", queryWord: "documentary", query: "Best documentary series" },
+    { id: "family", label: "👨‍👩‍👧 Family", queryWord: "family", query: "Best family TV shows" }
   ],
   trending: [
-    { id: "action", label: "💥 Action", queryWord: "action", query: "Trending action movies and shows tonight" },
-    { id: "comedy", label: "😂 Comedy", queryWord: "comedy", query: "Trending comedy movies and shows tonight" },
-    { id: "drama", label: "🎭 Drama", queryWord: "drama", query: "Trending drama movies and shows tonight" },
+    { id: "action", label: "💥 Action", queryWord: "action", query: "Trending action movies and shows" },
+    { id: "comedy", label: "😂 Comedy", queryWord: "comedy", query: "Trending comedy movies and shows" },
+    { id: "drama", label: "🎭 Drama", queryWord: "drama", query: "Trending drama movies and shows" },
     {
       id: "horror_thriller",
       label: "👻 Horror & Thriller",
       queryWord: "horror and thriller",
-      query: "Trending horror and thriller movies and shows tonight"
+      query: "Trending horror and thriller movies and shows"
     },
-    { id: "romance", label: "💕 Romance", queryWord: "romance", query: "Trending romance movies and shows tonight" },
-    { id: "sci-fi", label: "🚀 Sci-Fi", queryWord: "sci-fi", query: "Trending sci-fi movies and shows tonight" },
-    { id: "documentary", label: "🎥 Documentary", queryWord: "documentary", query: "Trending documentary movies and shows tonight" },
-    { id: "family", label: "👨‍👩‍👧 Family", queryWord: "family", query: "Trending family movies and shows tonight" }
+    { id: "romance", label: "💕 Romance", queryWord: "romance", query: "Trending romance movies and shows" },
+    { id: "sci-fi", label: "🚀 Sci-Fi", queryWord: "sci-fi", query: "Trending sci-fi movies and shows" },
+    { id: "documentary", label: "🎥 Documentary", queryWord: "documentary", query: "Trending documentary movies and shows" },
+    { id: "family", label: "👨‍👩‍👧 Family", queryWord: "family", query: "Trending family movies and shows" }
   ]
 };
 

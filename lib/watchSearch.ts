@@ -141,6 +141,5 @@ function buildWatchContextSummary(
   const serviceLabels = streamingServiceLabels(streamingServiceIds);
   if (serviceLabels.length) parts.push(serviceLabels.join(" · "));
   if (topic) parts.push(topic);
-  if (timeframe) parts.push(timeframe);
   return parts.join(" · ");
 }

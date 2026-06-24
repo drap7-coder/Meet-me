@@ -26,42 +26,42 @@ export const LOCAL_HAPPENINGS_OPTIONS: LocalHappeningsOption[] = [
   {
     id: "street_fairs",
     label: "Street Fairs",
-    query: "Street fairs near me this weekend",
+    query: "Street fairs near me",
     accent: "events",
     schedule: "one_off"
   },
   {
     id: "festivals",
     label: "Festivals",
-    query: "Festivals near me this weekend",
+    query: "Festivals near me",
     accent: "events",
     schedule: "one_off"
   },
   {
     id: "farmers_markets",
     label: "Farmers Markets",
-    query: "Farmers markets near me today",
+    query: "Farmers markets near me",
     accent: "market",
     schedule: "recurring"
   },
   {
     id: "art_walks",
     label: "Art Walks",
-    query: "Art walks near me this month",
+    query: "Art walks near me",
     accent: "events",
     schedule: "one_off"
   },
   {
     id: "flea_markets",
     label: "Flea Markets",
-    query: "Flea markets open this Saturday",
+    query: "Flea markets near me",
     accent: "market",
     schedule: "recurring"
   },
   {
     id: "pop_ups",
     label: "Pop-Ups",
-    query: "Pop-up events near me this weekend",
+    query: "Pop-up events near me",
     accent: "events",
     schedule: "one_off"
   },

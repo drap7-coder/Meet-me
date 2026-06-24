@@ -36,7 +36,6 @@ type ProviderProps = {
   children: ReactNode;
 };
 
-type WhenId = "open_now" | "tonight";
 type WhereId = "near" | "choose" | "halfway";
 type SelectedMode = "streaming" | "local" | null;
 
@@ -47,7 +46,6 @@ export type BuilderState = {
   localWhat: LocalChipCategoryId | null;
   typeId: string | null;
   extras: Set<string>;
-  when: WhenId | null;
   where: WhereId;
   streamingType: WatchSubcategory | null;
   streamingVibe: WatchStreamVibe | null;
@@ -83,7 +81,6 @@ type AssistContextValue = {
   pickStreamingType: (id: "movies" | "tv_shows") => void;
   toggleType: (id: string) => void;
   toggleExtra: (id: string) => void;
-  toggleWhen: (id: WhenId) => void;
   setWhere: (id: WhereId) => void;
   toggleGenre: (genre: string) => void;
   toggleStreamingVibe: (vibe: WatchStreamVibe) => void;
@@ -113,7 +110,6 @@ function initialBuilderState(seed?: Pick<PickQueryOptions, "category" | "watchSu
       localWhat: null,
       typeId: null,
       extras: new Set<string>(),
-      when: null,
       where: "near",
       streamingType: seededTrending ? "movies" : normalizeStreamType(seed.watchSubcategory),
       streamingVibe: seededTrending ? "trending" : null,
@@ -127,7 +123,6 @@ function initialBuilderState(seed?: Pick<PickQueryOptions, "category" | "watchSu
     localWhat: null,
     typeId: null,
     extras: new Set<string>(),
-    when: null,
     where: "near",
     streamingType: null,
     streamingVibe: null,
@@ -264,7 +259,6 @@ export function SearchPromptAssistProvider({
         localWhat: null,
         typeId: null,
         extras: new Set<string>(),
-        when: null,
         where: "near",
         streamingType: null,
         streamingVibe: null,
@@ -287,7 +281,6 @@ export function SearchPromptAssistProvider({
         localWhat: "food",
         typeId: null,
         extras: new Set<string>(),
-        when: null,
         where: "halfway",
         streamingType: null,
         streamingVibe: null,
@@ -345,10 +338,6 @@ export function SearchPromptAssistProvider({
       else extras.add(id);
       return { ...prev, extras };
     });
-  }
-
-  function toggleWhen(id: WhenId) {
-    commit((prev) => ({ ...prev, when: prev.when === id ? null : id }));
   }
 
   function setWhere(id: WhereId) {
@@ -423,7 +412,6 @@ export function SearchPromptAssistProvider({
         pickStreamingType,
         toggleType,
         toggleExtra,
-        toggleWhen,
         setWhere,
         toggleGenre,
         toggleStreamingVibe,
@@ -650,9 +638,9 @@ export function SearchPromptChips() {
   );
 }
 
-/** Where · When — rendered inside Advanced Search only. */
+/** Where — rendered inside Advanced Search only. */
 export function SearchPromptWhereWhen() {
-  const { busy, state, toggleWhen, setWhere } = useAssistContext();
+  const { busy, state, setWhere } = useAssistContext();
 
   return (
     <div className="grid gap-2.5">
@@ -669,21 +657,6 @@ export function SearchPromptWhereWhen() {
           busy={busy}
           selected={state.where === "halfway"}
           onPick={() => setWhere("halfway")}
-        />
-      </ChipGroup>
-
-      <ChipGroup label="When">
-        <AssistChip
-          label="Open Now"
-          busy={busy}
-          selected={state.when === "open_now"}
-          onPick={() => toggleWhen("open_now")}
-        />
-        <AssistChip
-          label="Tonight"
-          busy={busy}
-          selected={state.when === "tonight"}
-          onPick={() => toggleWhen("tonight")}
         />
       </ChipGroup>
     </div>
@@ -796,9 +769,6 @@ export function buildPlaceQuery(state: BuilderState): string {
   else if (state.where === "choose") suffixes.push("near a specific location");
   else suffixes.push("near me");
 
-  if (state.when === "open_now") suffixes.push("open now");
-  if (state.when === "tonight") suffixes.push("tonight");
-
   const phrase = [...prefixes, noun, ...suffixes].filter(Boolean).join(" ");
   return phrase.charAt(0).toUpperCase() + phrase.slice(1);
 }
@@ -807,33 +777,32 @@ export function buildStreamQuery(state: BuilderState): string {
   const type = state.streamingType === "movies" || state.streamingType === "tv_shows" ? state.streamingType : null;
   const genre = resolveWatchGenreQueryWord(type, state.genre);
   const providerPhrase = streamingServiceQueryPhrase([...state.streamingServices]);
-  const timing = state.when === "open_now" ? "" : " tonight";
   const trending = state.streamingVibe === "trending";
 
   if (trending) {
     if (type === "tv_shows") {
-      if (genre) return `Trending ${genre} TV shows${providerPhrase}${timing}`;
-      return `Trending TV shows${providerPhrase}${timing}`;
+      if (genre) return `Trending ${genre} TV shows${providerPhrase}`;
+      return `Trending TV shows${providerPhrase}`;
     }
     if (type === "movies") {
-      if (genre) return `Trending ${genre} movies${providerPhrase}${timing}`;
-      return `Trending movies${providerPhrase}${timing}`;
+      if (genre) return `Trending ${genre} movies${providerPhrase}`;
+      return `Trending movies${providerPhrase}`;
     }
-    if (genre) return `Trending ${genre} movies and shows${providerPhrase}${timing}`;
-    return `What's trending to watch${providerPhrase}${timing}?`;
+    if (genre) return `Trending ${genre} movies and shows${providerPhrase}`;
+    return `What's trending to watch${providerPhrase}?`;
   }
 
   if (type === "tv_shows") {
-    if (genre) return `What ${genre} TV show should I watch${providerPhrase}${timing}?`;
-    return `What TV show should I watch${providerPhrase}${timing}?`;
+    if (genre) return `What ${genre} TV show should I watch${providerPhrase}?`;
+    return `What TV show should I watch${providerPhrase}?`;
   }
 
   if (type === "movies") {
-    if (genre) return `What ${genre} movie should I watch${providerPhrase}${timing}?`;
-    return `What movie should I watch${providerPhrase}${timing}?`;
+    if (genre) return `What ${genre} movie should I watch${providerPhrase}?`;
+    return `What movie should I watch${providerPhrase}?`;
   }
 
-  return `What should I watch${providerPhrase}${timing}?`;
+  return `What should I watch${providerPhrase}?`;
 }
 
 function resolveFilterPreview(state: BuilderState): FilterPreview | null {
@@ -912,9 +881,6 @@ function buildFilterPills(state: BuilderState): FilterPill[] {
     pills.push({ id: `extra-${extraId}`, label: extraLabel });
   }
 
-  if (state.when === "open_now") pills.push({ id: "when-open_now", label: "Open now" });
-  if (state.when === "tonight") pills.push({ id: "when-tonight", label: "Tonight" });
-
   if (state.selectedMode === "local" && state.where === "choose") {
     pills.push({ id: "where-choose", label: "Choose location" });
   }
@@ -961,10 +927,6 @@ function removeFilterFromState(state: BuilderState, pillId: string): BuilderStat
     return { ...state, extras };
   }
 
-  if (pillId === "when-open_now" || pillId === "when-tonight") {
-    return { ...state, when: null };
-  }
-
   if (pillId === "where-choose") {
     return { ...state, where: "near" };
   }
@@ -974,7 +936,6 @@ function removeFilterFromState(state: BuilderState, pillId: string): BuilderStat
 
 function builderStateFromPopularPreset(preset: HeroPopularSearch): BuilderState {
   const opts = preset.options;
-  const tonight = /\btonight\b/i.test(preset.query);
 
   if (opts?.watchSubcategory || (opts?.category === "custom" && opts.streamingServiceIds?.length)) {
     return {
@@ -982,7 +943,6 @@ function builderStateFromPopularPreset(preset: HeroPopularSearch): BuilderState 
       localWhat: null,
       typeId: null,
       extras: new Set<string>(),
-      when: tonight ? "tonight" : null,
       where: "near",
       streamingType: normalizeStreamType(opts.watchSubcategory) ?? "movies",
       streamingVibe: null,
@@ -997,7 +957,6 @@ function builderStateFromPopularPreset(preset: HeroPopularSearch): BuilderState 
       localWhat: "shopping",
       typeId: null,
       extras: new Set<string>(),
-      when: null,
       where: "near",
       streamingType: null,
       streamingVibe: null,
@@ -1011,7 +970,6 @@ function builderStateFromPopularPreset(preset: HeroPopularSearch): BuilderState 
     localWhat: "food",
     typeId: null,
     extras: new Set<string>(),
-    when: tonight ? "tonight" : null,
     where: opts?.builderMode === "halfway" || opts?.searchMode === "midpoint" ? "halfway" : "near",
     streamingType: null,
     streamingVibe: null,

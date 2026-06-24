@@ -1,5 +1,4 @@
 import { LOCAL_HAPPENINGS_OPTIONS } from "@/lib/localHappenings";
-import { streamingServiceLabels } from "@/lib/streamingServices";
 import type { WatchEventsResult, WatchSubcategory } from "@/lib/types";
 import { WATCH_GENRES_BY_SUBCATEGORY, WATCH_SUBCATEGORIES } from "@/lib/watchBrowse";
 
@@ -13,46 +12,6 @@ export type ActionableFilter = KoiChip & {
   watchSubcategory?: WatchSubcategory;
 };
 
-const TIMEFRAME_FILTERS: ActionableFilter[] = [
-  { id: "tonight", label: "🌙 Tonight", query: "tonight" },
-  { id: "weekend", label: "📅 This weekend", query: "this weekend" },
-  { id: "open-now", label: "🟢 Open now", query: "open now" }
-];
-
-function dedupeChips(chips: KoiChip[]): KoiChip[] {
-  const seen = new Set<string>();
-  return chips.filter((chip) => {
-    const key = chip.label.toLowerCase();
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
-/** Parsed intent chips — what Koi inferred from the ask. */
-export function buildKoiUnderstoodChips(result: WatchEventsResult): KoiChip[] {
-  const chips: KoiChip[] = [];
-
-  if (result.intentLabel.trim()) {
-    chips.push({ id: "intent", label: result.intentLabel });
-  }
-  for (const label of streamingServiceLabels(result.streamingServiceIds ?? [])) {
-    chips.push({ id: `service-${label}`, label });
-  }
-  if (result.topic.trim()) {
-    chips.push({ id: "topic", label: result.topic });
-  }
-  if (result.timeframe.trim()) {
-    chips.push({ id: "timeframe", label: result.timeframe });
-  }
-  if (result.location.trim()) {
-    chips.push({ id: "location", label: result.location });
-  }
-
-  return dedupeChips(chips);
-}
-
-/** Refinement chips the user can tap to rerun search. */
 export function buildActionableFilters(result: WatchEventsResult): ActionableFilter[] {
   if (result.botMode === "watch") {
     const subcategoryFilters: ActionableFilter[] = WATCH_SUBCATEGORIES.map((option) => ({
@@ -71,13 +30,7 @@ export function buildActionableFilters(result: WatchEventsResult): ActionableFil
         watchSubcategory: activeSubcategory
       })) ?? [];
 
-    const timeframeFilters = TIMEFRAME_FILTERS.map((filter) => ({
-      ...filter,
-      id: `watch-${filter.id}`,
-      query: appendTimeframe(result.query, filter.query)
-    }));
-
-    return [...subcategoryFilters, ...genreFilters, ...timeframeFilters];
+    return [...subcategoryFilters, ...genreFilters];
   }
 
   const happeningFilters: ActionableFilter[] = LOCAL_HAPPENINGS_OPTIONS.slice(0, 6).map((option) => ({
@@ -86,13 +39,7 @@ export function buildActionableFilters(result: WatchEventsResult): ActionableFil
     query: option.query
   }));
 
-  const timeframeFilters = TIMEFRAME_FILTERS.map((filter) => ({
-    ...filter,
-    id: `events-${filter.id}`,
-    query: appendTimeframe(result.query, filter.query)
-  }));
-
-  return [...happeningFilters, ...timeframeFilters];
+  return happeningFilters;
 }
 
 function inferWatchSubcategory(result: WatchEventsResult): WatchSubcategory {
@@ -102,9 +49,3 @@ function inferWatchSubcategory(result: WatchEventsResult): WatchSubcategory {
   return "movies";
 }
 
-function appendTimeframe(query: string, timeframe: string) {
-  const trimmed = query.trim();
-  if (!trimmed) return timeframe;
-  if (new RegExp(timeframe.replace(/\s+/g, "\\s+"), "i").test(trimmed)) return trimmed;
-  return `${trimmed} ${timeframe}`;
-}

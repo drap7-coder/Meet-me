@@ -1,6 +1,6 @@
 type LogContext = Record<string, unknown>;
 
-function writeLog(level: "error" | "warn", route: string, message: string, context?: LogContext) {
+function writeLog(level: "error" | "warn" | "info", route: string, message: string, context?: LogContext) {
   console[level](
     JSON.stringify({
       level,
@@ -21,4 +21,15 @@ export function logApiError(route: string, error: unknown, context?: LogContext)
 
 export function logApiWarn(route: string, message: string, context?: LogContext) {
   writeLog("warn", route, message, context);
+}
+
+export function logSearchInfo(context: LogContext) {
+  console.info(
+    JSON.stringify({
+      level: "info",
+      event: "search_telemetry",
+      ts: new Date().toISOString(),
+      ...context
+    })
+  );
 }

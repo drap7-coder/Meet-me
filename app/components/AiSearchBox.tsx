@@ -10,6 +10,7 @@ import { hasStreamingWatchContext } from "@/lib/watchEvents";
 import { useSearchPromptAssist } from "@/app/components/SearchPromptAssist";
 import { BRAND } from "@/src/config/branding";
 import { LocationPinIcon } from "@/app/components/SavedLocationBadge";
+import { useSpeechRecognition } from "@/app/components/useSpeechRecognition";
 import { FormEvent, forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 
 type Props = {
@@ -100,6 +101,25 @@ function SendIcon() {
   );
 }
 
+function MicIcon({ active = false }: { active?: boolean }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className={`h-4 w-4 ${active ? "text-koi" : ""}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Z" />
+      <path d="M19 11a7 7 0 0 1-14 0" />
+      <path d="M12 18v3" />
+    </svg>
+  );
+}
+
 export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearchBox(
   {
     loading,
@@ -127,6 +147,17 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const {
+    supported: speechSupported,
+    listening,
+    message: speechMessage,
+    toggleListening,
+    stopListening,
+    clearMessage: clearSpeechMessage
+  } = useSpeechRecognition((transcript) => {
+    setQuery(transcript);
+    if (error) setError("");
+  });
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -176,6 +207,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
 
       if (loading) return;
 
+      stopListening();
       setQuery(trimmed);
       setError("");
 
@@ -185,7 +217,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
         builderStreaming: builderStreaming || hasStreamingWatchContext(trimmed)
       });
     },
-    [builderStreaming, filterPreview?.options.streamingServiceIds, loading, onSubmitQuery, watchActiveSubcategory]
+    [builderStreaming, filterPreview?.options.streamingServiceIds, loading, onSubmitQuery, stopListening, watchActiveSubcategory]
   );
 
   useImperativeHandle(
@@ -222,6 +254,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   const locationPromptMessage = combinedError || "Add your location so Koi can search nearby.";
   const manualPromptMessage = combinedError || "Enter a city, ZIP code, or address to search nearby.";
   const showStandaloneError = Boolean(combinedError) && !showLocationActions && !showManualFallback;
+  const showSpeechMessage = Boolean(speechMessage) && !showLocationActions && !showManualFallback;
   const promptPanelClass = onHero
     ? "rounded-[14px] border border-koi/35 bg-koi/20 p-3 shadow-[0_8px_24px_rgba(255,90,0,0.14)]"
     : "rounded-[14px] border border-koi/30 bg-koi/10 p-3";
@@ -254,6 +287,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
                   onChange={(event) => {
                     setQuery(event.target.value);
                     if (error) setError("");
+                    if (speechMessage) clearSpeechMessage();
                   }}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" && !event.shiftKey) {
@@ -269,6 +303,38 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
                       : "m-0 min-h-[2.75rem] w-0 min-w-0 flex-1 resize-none appearance-none border-0 bg-transparent py-1.5 text-base leading-6 text-ink outline-none placeholder:text-slate/55 [field-sizing:content] sm:min-h-[3rem] sm:py-2 sm:text-[1.0625rem]"
                   }
                 />
+                {speechSupported ? (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => toggleListening(query)}
+                    aria-label={listening ? "Stop listening" : "Start voice input"}
+                    aria-pressed={listening}
+                    title={listening ? "Listening… tap to stop" : "Speak your ask"}
+                    className={
+                      onHero
+                        ? `inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition focus:outline-none focus:ring-4 disabled:cursor-not-allowed disabled:opacity-60 sm:h-10 sm:w-10 ${
+                            listening
+                              ? "border-koi/70 bg-koi/20 text-white shadow-[0_0_0_3px_rgba(255,90,0,0.22)] focus:ring-koi/30"
+                              : "border-white/20 bg-white/8 text-white/80 hover:border-white/35 hover:bg-white/12 focus:ring-white/15"
+                          }`
+                        : `inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition focus:outline-none focus:ring-4 disabled:cursor-not-allowed disabled:opacity-60 sm:h-10 sm:w-10 ${
+                            listening
+                              ? "border-koi/60 bg-koi/10 text-koi shadow-[0_0_0_3px_rgba(255,90,0,0.16)] focus:ring-koi/20"
+                              : "border-line/80 bg-white text-slate/80 hover:border-koi/45 hover:bg-koi/8 hover:text-ink focus:ring-koi/10"
+                          }`
+                    }
+                  >
+                    {listening ? (
+                      <span className="relative flex h-4 w-4 items-center justify-center">
+                        <span className="absolute inline-flex h-4 w-4 animate-ping rounded-full bg-koi/35" />
+                        <MicIcon active />
+                      </span>
+                    ) : (
+                      <MicIcon />
+                    )}
+                  </button>
+                ) : null}
                 <button
                   type="submit"
                   disabled={busy}
@@ -295,9 +361,31 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
         <p className={`mt-2 px-1 text-xs font-semibold ${onHero ? "text-koi" : "text-koi"}`}>{locationSavedMessage}</p>
       ) : null}
 
-      {!showLocationActions && !showManualFallback && !showStandaloneError ? (
+      {listening ? (
+        <p className={`mt-2 px-1 text-xs font-semibold ${onHero ? "text-koi" : "text-koi"}`} aria-live="polite">
+          Listening… speak your ask, then edit or tap Search.
+        </p>
+      ) : null}
+
+      {showSpeechMessage ? (
+        <p
+          className={`mt-2 px-1 text-xs font-semibold leading-5 ${onHero ? "text-[#FFD4C8]" : "text-events"}`}
+          role="status"
+          aria-live="polite"
+        >
+          {speechMessage}
+        </p>
+      ) : null}
+
+      {!showLocationActions && !showManualFallback && !showStandaloneError && !listening && !showSpeechMessage ? (
         <p className={`mt-2 px-1 text-xs font-semibold ${onHero ? "text-white/45" : "text-slate/70"}`}>
-          {onHero ? "Type a free-form ask, or build filters below and tap Search." : "Press Enter for a free-form ask, or use filters below and tap Search."}
+          {onHero
+            ? speechSupported
+              ? "Type or tap the mic, or build filters below and tap Search."
+              : "Type a free-form ask, or build filters below and tap Search."
+            : speechSupported
+              ? "Press Enter or tap the mic for a free-form ask, or use filters below and tap Search."
+              : "Press Enter for a free-form ask, or use filters below and tap Search."}
         </p>
       ) : null}
 

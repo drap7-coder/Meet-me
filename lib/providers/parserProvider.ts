@@ -8,6 +8,7 @@ import {
 } from "@/lib/currentLocation";
 import { detectPreferencesFromQuery } from "@/lib/preferences";
 import { fetchWithTimeout } from "@/lib/providers/fetchWithTimeout";
+import { recordLlmUsed, recordProviderCall } from "@/lib/searchTelemetryRuntime";
 import type {
   KoiParseResponse,
   ParserProvider,
@@ -134,16 +135,20 @@ export class ParseSearchError extends Error {
 async function parseSearchQuery(query: string): Promise<ParsedSearchIntent> {
   if (shouldUseGeminiParser()) {
     try {
+      recordLlmUsed("gemini", "parse");
       return await parseWithGemini(query);
     } catch {
+      recordProviderCall("parser", "heuristic_fallback");
       return parseWithFallback(query);
     }
   }
 
   if (NLP_PROVIDER === "ollama" || OLLAMA_BASE_URL) {
+    recordLlmUsed("ollama", "parse");
     return parseWithOllama(query);
   }
 
+  recordProviderCall("parser", "heuristic");
   return parseWithFallback(query);
 }
 

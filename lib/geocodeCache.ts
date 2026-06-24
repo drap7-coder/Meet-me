@@ -1,4 +1,5 @@
 import { getRedisConfig, redisCommand } from "@/lib/redisRest";
+import { recordCacheHit, recordCacheMiss, recordProviderCall } from "@/lib/searchTelemetryRuntime";
 import type { GeocodedLocation, LatLng } from "@/lib/types";
 
 const CACHE_PREFIX = "geocode:v1:";
@@ -82,8 +83,13 @@ export async function writeGeocodeCache(key: string, value: GeocodedLocation) {
 
 export async function withGeocodeCache(key: string, loader: () => Promise<GeocodedLocation>) {
   const cached = await readGeocodeCache(key);
-  if (cached) return cached;
+  if (cached) {
+    recordCacheHit("geocode");
+    return cached;
+  }
 
+  recordCacheMiss("geocode");
+  recordProviderCall("google", "geocode");
   const result = await loader();
   await writeGeocodeCache(key, result);
   return result;

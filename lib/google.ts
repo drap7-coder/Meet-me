@@ -6,6 +6,7 @@ import {
 } from "@/lib/geocodeCache";
 import { calculateMidpoint, estimateSearchRadiusMeters } from "@/lib/geo";
 import { scoreVenue } from "@/lib/scoring";
+import { recordProviderCall } from "@/lib/searchTelemetryRuntime";
 import type {
   GeocodedLocation,
   LatLng,
@@ -191,6 +192,7 @@ async function searchPlacesForQuery(params: {
     ...(params.includedType ? { includedType: params.includedType } : {})
   };
 
+  recordProviderCall("google", "places_text_search");
   const response = await fetch(PLACES_TEXT_SEARCH_URL, {
     method: "POST",
     cache: "no-store",
@@ -277,6 +279,7 @@ export async function computeRouteMatrix(params: {
 }): Promise<RouteLeg[][]> {
   if (params.origins.length === 0 || params.destinations.length === 0) return [];
 
+  recordProviderCall("google", "route_matrix");
   const response = await fetch(ROUTE_MATRIX_URL, {
     method: "POST",
     cache: "no-store",

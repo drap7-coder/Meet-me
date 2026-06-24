@@ -1,4 +1,5 @@
 import { getRedisConfig, redisCommand } from "@/lib/redisRest";
+import { recordCacheHit, recordCacheMiss, recordProviderCall } from "@/lib/searchTelemetryRuntime";
 
 const CACHE_PREFIX = "tmdb:v1:";
 const CACHE_TTL_SECONDS = 60 * 60;
@@ -56,12 +57,15 @@ export async function withTmdbCache<T>(path: string, params: Record<string, stri
   const cached = await readCache(key);
   if (cached) {
     try {
+      recordCacheHit("tmdb");
       return JSON.parse(cached) as T;
     } catch {
       // fall through
     }
   }
 
+  recordCacheMiss("tmdb");
+  recordProviderCall("tmdb", path);
   const result = await loader();
   await writeCache(key, JSON.stringify(result));
   return result;

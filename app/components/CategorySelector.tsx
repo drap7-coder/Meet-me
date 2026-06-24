@@ -10,16 +10,21 @@ type Props = {
   onChange: (category: VenueCategory) => void;
 };
 
+// Shopping remains fully searchable via natural language + intent detection,
+// but is hidden as a top-level primary category to simplify the UI.
+const HIDDEN_PRIMARY_GROUP_IDS = new Set(["shopping"]);
+const VISIBLE_CATEGORY_GROUPS = CATEGORY_GROUPS.filter((group) => !HIDDEN_PRIMARY_GROUP_IDS.has(group.id));
+
 export function CategorySelector({ value, onChange }: Props) {
   const [showMore, setShowMore] = useState(false);
   const activePrimaryId = getPrimaryCategoryId(value);
-  const activePrimary = CATEGORY_GROUPS.find((group) => group.id === activePrimaryId) ?? CATEGORY_GROUPS[0];
+  const activePrimary = VISIBLE_CATEGORY_GROUPS.find((group) => group.id === activePrimaryId) ?? VISIBLE_CATEGORY_GROUPS[0];
   const hasMoreSheet = activePrimaryId === "drinks" || activePrimaryId === "outdoors";
 
   return (
     <div className="grid gap-4">
       <div className="grid grid-cols-2 gap-3">
-        {CATEGORY_GROUPS.map((category) => {
+        {VISIBLE_CATEGORY_GROUPS.map((category) => {
           const selected = category.id === activePrimaryId;
           const primaryCategory = category.subcategories[0]?.id ?? "coffee";
           return (

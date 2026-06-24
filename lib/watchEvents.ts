@@ -11,6 +11,10 @@ import {
   isLocalHappeningsQuery,
   localHappeningsTopic
 } from "@/lib/localHappenings";
+import { sportsTeamSearchPattern } from "@/lib/sportsTeams";
+
+const SPORTS_TEAM_NAME_PATTERN = sportsTeamSearchPattern();
+const SPORTS_CONTEXT_PATTERN = /\b(?:games?|tickets?|schedule|matchup|vs\.?|tonight|this weekend|saturday|sunday)\b/i;
 
 export const WATCH_TITLE = "Streaming";
 export const WATCH_DESCRIPTION = "Movies, TV shows, and trending picks.";
@@ -143,6 +147,8 @@ export function detectEventsIntent(query: string) {
     /\b(?:comedy clubs?|comedy shows?|stand[- ]?up|concert|concerts|festival|festivals)\b/i,
     /\b(?:live sports|game tonight|watch the .* game|watch .* game tonight)\b/i,
     /\b(?:nba|nfl|mlb|nhl|mls|wnba|ncaa)\b/i,
+    /\b(?:baseball|basketball|football|hockey|soccer)\b.*\bgames?\b/i,
+    /\bgames?\b.*\b(?:baseball|basketball|football|hockey|soccer)\b/i,
     /\b(?:game|games)\b.*\b(?:this weekend|tonight|saturday|sunday|weekend)\b/i,
     /\b(?:this weekend|tonight|saturday|sunday|weekend)\b.*\b(?:game|games)\b/i,
     /\b(?:tickets?|box office)\b/i,
@@ -169,6 +175,10 @@ export function detectEventsIntent(query: string) {
     /\b(?:sports|concert|festival|events?|game|games)\b/i.test(trimmed) &&
     /\bnear\b/i.test(trimmed)
   ) {
+    return true;
+  }
+
+  if (SPORTS_TEAM_NAME_PATTERN.test(trimmed) && SPORTS_CONTEXT_PATTERN.test(trimmed)) {
     return true;
   }
 

@@ -49,12 +49,6 @@ export function ResultsMap({ originA, originB, midpoint, venues, searchMode }: P
             </div>
           );
         })}
-        <div className="absolute left-4 top-4 rounded-lg border border-line bg-paper/95 p-3 shadow-[0_14px_34px_rgba(17,24,39,0.08)] backdrop-blur">
-          <p className="text-xs font-black uppercase tracking-[0.14em] text-koi">Fairness at a glance</p>
-          <p className="mt-1 max-w-[240px] text-sm font-semibold leading-5 text-slate">
-            {isSingleLocation ? "See the search center and the best places nearby." : "See both starting points and the best places between them."}
-          </p>
-        </div>
         <div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-2 rounded-lg border border-line bg-paper/95 p-3 text-xs font-bold text-slate shadow-[0_14px_34px_rgba(17,24,39,0.08)] backdrop-blur">
           {isSingleLocation ? null : <LegendDot className="bg-indigo" label="Person A" />}
           {isSingleLocation ? null : <LegendDot className="bg-ink" label="Person B" />}

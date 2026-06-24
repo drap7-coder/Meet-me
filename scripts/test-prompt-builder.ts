@@ -96,10 +96,10 @@ assert(
   "trending + comedy refines query"
 );
 
-const yankeesEvents = {
+const yankeesSports = {
   selectedMode: "local" as const,
-  localWhat: "events" as const,
-  typeId: "sports",
+  localWhat: "sports" as const,
+  typeId: "baseball",
   sportsTeamId: "yankees",
   extras: new Set<string>(),
   where: "near" as const,
@@ -108,6 +108,15 @@ const yankeesEvents = {
   genre: null,
   streamingServices: new Set<string>()
 };
-assert(buildPlaceQuery(yankeesEvents) === "Yankees games near me", "events sports team builds geo query");
+assert(buildPlaceQuery(yankeesSports) === "Yankees games", "sports team builds nationwide (no near me) query");
+
+const baseballNearby = {
+  ...yankeesSports,
+  sportsTeamId: null
+};
+assert(
+  buildPlaceQuery(baseballNearby) === "Baseball games near me",
+  "sport without team builds geo query"
+);
 
 console.log("PASS prompt builder stacking");

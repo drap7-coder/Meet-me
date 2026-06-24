@@ -3,6 +3,7 @@
 import { getWatchGenresForSubcategory, getWatchGenreGroupLabel, resolveWatchGenreQueryWord, WATCH_TYPE_OPTIONS, WATCH_VIBE_OPTIONS, type WatchStreamVibe } from "@/lib/watchBrowse";
 import {
   LOCAL_CHIP_CATEGORIES,
+  VISIBLE_LOCAL_CHIP_CATEGORIES,
   groupHasVibeOptions,
   localChipCategoryById,
   typeRefinementsFor,
@@ -10,13 +11,8 @@ import {
   vibeRefinementsFor,
   type LocalChipCategoryId
 } from "@/lib/searchBuilderOptions";
-import {
-  SPORTS_TEAMS,
-  isEventSportsType,
-  resolveEventTypeRefinement,
-  sportsTeamChipLabel
-} from "@/lib/eventBuilderOptions";
-import { sportsTeamById } from "@/lib/sportsTeams";
+import { resolveEventTypeRefinement, sportsTeamChipLabel } from "@/lib/eventBuilderOptions";
+import { majorSportById, sportIdForTeam, sportsTeamById, teamsForSport } from "@/lib/sportsTeams";
 import { STREAMING_SERVICES, streamingServiceQueryPhrase } from "@/lib/streamingServices";
 import type { HeroPopularSearch } from "@/app/components/home/HeroPopularSearches";
 import { HeroSectionLabel } from "@/app/components/home/HeroSectionLabel";
@@ -322,19 +318,22 @@ export function SearchPromptAssistProvider({
       return {
         ...prev,
         typeId: nextTypeId,
-        sportsTeamId: nextTypeId === "sports" ? prev.sportsTeamId : null
+        sportsTeamId: null
       };
     });
   }
 
   function toggleSportsTeam(id: string) {
-    commit((prev) => ({
-      ...prev,
-      selectedMode: "local",
-      localWhat: "events",
-      typeId: "sports",
-      sportsTeamId: prev.sportsTeamId === id ? null : id
-    }));
+    commit((prev) => {
+      const sportId = sportIdForTeam(id) ?? prev.typeId;
+      return {
+        ...prev,
+        selectedMode: "local",
+        localWhat: "sports",
+        typeId: sportId,
+        sportsTeamId: prev.sportsTeamId === id ? null : id
+      };
+    });
   }
 
   function toggleExtra(id: string) {
@@ -511,7 +510,8 @@ export function SearchPromptDetailChips() {
   const showExploreDetails = showExploreCategories && Boolean(state.localWhat);
   const streamGenres = streamType ? getWatchGenresForSubcategory(streamType) : [];
 
-  const showEventSportsTeams = state.localWhat === "events" && isEventSportsType(state.typeId);
+  const showSportsTeams = state.localWhat === "sports" && Boolean(state.typeId);
+  const sportsTeams = showSportsTeams ? teamsForSport(state.typeId) : [];
 
   if (!showStreamingType && !showExploreCategories) return null;
 
@@ -588,7 +588,7 @@ export function SearchPromptDetailChips() {
         {showExploreCategories ? (
           <>
             <ChipGroup label="Category" onPage={onPage}>
-              {LOCAL_CHIP_CATEGORIES.map((def) => (
+              {VISIBLE_LOCAL_CHIP_CATEGORIES.map((def) => (
                 <AssistChip
                   key={def.id}
                   label={def.label}
@@ -632,11 +632,11 @@ export function SearchPromptDetailChips() {
                   </ChipGroup>
                 ) : null}
 
-                {showEventSportsTeams ? (
+                {showSportsTeams && sportsTeams.length ? (
                   <>
                     <div className={`h-px ${onPage ? "bg-line/60" : "bg-white/10"}`} aria-hidden="true" />
-                    <ChipGroup label="Teams" onPage={onPage}>
-                      {SPORTS_TEAMS.map((team) => (
+                    <ChipGroup label="🏟️ Teams" onPage={onPage}>
+                      {sportsTeams.map((team) => (
                         <AssistChip
                           key={team.id}
                           label={`${team.logo} ${team.label}`}
@@ -788,16 +788,29 @@ function eventLocationSuffix(where: WhereId) {
 }
 
 export function buildPlaceQuery(state: BuilderState): string {
-  if (state.localWhat === "events") {
+  if (state.localWhat === "sports") {
     const suffix = eventLocationSuffix(state.where);
 
-    if (state.typeId === "sports" && state.sportsTeamId) {
+    if (state.sportsTeamId) {
       const team = sportsTeamById(state.sportsTeamId);
       if (team) {
-        const phrase = `${team.searchTerm} games ${suffix}`;
+        const phrase = `${team.searchTerm} games`;
         return phrase.charAt(0).toUpperCase() + phrase.slice(1);
       }
     }
+
+    const sport = majorSportById(state.typeId);
+    if (sport) {
+      const phrase = `${sport.label} games ${suffix}`;
+      return phrase.charAt(0).toUpperCase() + phrase.slice(1);
+    }
+
+    const phrase = `Live sports ${suffix}`;
+    return phrase.charAt(0).toUpperCase() + phrase.slice(1);
+  }
+
+  if (state.localWhat === "events") {
+    const suffix = eventLocationSuffix(state.where);
 
     const eventType = resolveEventTypeRefinement(state.typeId);
     if (eventType?.noun) {
@@ -953,7 +966,7 @@ function buildFilterPills(state: BuilderState): FilterPill[] {
     pills.push({ id: `type-${state.typeId}`, label: typeLabel });
   }
 
-  if (state.localWhat === "events" && state.sportsTeamId) {
+  if (state.localWhat === "sports" && state.sportsTeamId) {
     pills.push({ id: `sports-team-${state.sportsTeamId}`, label: sportsTeamChipLabel(state.sportsTeamId) });
   }
 

@@ -1,4 +1,4 @@
-import { EVENT_TYPE_REFINEMENTS } from "@/lib/eventBuilderOptions";
+import { EVENT_TYPE_REFINEMENTS, SPORT_TYPE_REFINEMENTS } from "@/lib/eventBuilderOptions";
 import type { VenueCategory } from "@/lib/types";
 
 export type SearchBuilderMode = "near_me" | "halfway" | "destination";
@@ -11,6 +11,7 @@ export type LocalChipCategoryId =
   | "coffee"
   | "activities"
   | "events"
+  | "sports"
   | "thrift_vintage"
   | "shopping";
 
@@ -70,6 +71,13 @@ export const LOCAL_CHIP_CATEGORIES: LocalChipCategory[] = [
     noun: "events and live shows",
     defaultVenueCategory: "events",
     subtypeLabel: "🎟️ Type"
+  },
+  {
+    id: "sports",
+    label: "🏟️ Sports",
+    noun: "live sports",
+    defaultVenueCategory: "events",
+    subtypeLabel: "🏆 Sport"
   },
   {
     id: "thrift_vintage",
@@ -170,6 +178,7 @@ export const BUILDER_TYPE_REFINEMENTS: Partial<Record<LocalChipCategoryId, Build
   coffee: COFFEE_CUISINES,
   activities: ACTIVITY_SUBTYPES,
   events: EVENT_TYPE_REFINEMENTS,
+  sports: SPORT_TYPE_REFINEMENTS,
   thrift_vintage: THRIFT_SUBTYPES,
   shopping: SHOPPING_SUBTYPES
 };
@@ -240,6 +249,17 @@ const SHOPPING_VENUE_CATEGORIES = new Set<VenueCategory>([
   "small_towns",
   "waterfronts"
 ]);
+
+/**
+ * Categories that are still fully supported via natural-language search and intent
+ * detection, but are intentionally hidden as top-level builder chips to simplify the UI.
+ */
+export const HIDDEN_PRIMARY_CHIP_CATEGORIES: LocalChipCategoryId[] = ["shopping", "thrift_vintage"];
+
+/** Primary categories surfaced as selectable chips in the builder UI. */
+export const VISIBLE_LOCAL_CHIP_CATEGORIES: LocalChipCategory[] = LOCAL_CHIP_CATEGORIES.filter(
+  (item) => !HIDDEN_PRIMARY_CHIP_CATEGORIES.includes(item.id)
+);
 
 export function localChipCategoryById(id: LocalChipCategoryId): LocalChipCategory {
   return LOCAL_CHIP_CATEGORIES.find((item) => item.id === id) ?? LOCAL_CHIP_CATEGORIES[0];

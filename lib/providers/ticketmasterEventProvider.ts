@@ -1,4 +1,5 @@
 import type { EventResult } from "@/lib/eventResult";
+import { extractSportsSearchKeyword } from "@/lib/localEventIntent";
 import type { EventProvider, EventSearchParams } from "@/lib/providers/eventDiscoveryTypes";
 import { withTicketmasterCache } from "@/lib/ticketmasterCache";
 
@@ -88,7 +89,6 @@ function keywordForProfile(profile?: EventSearchParams["profile"], query = "") {
   if (/\bcomedy\b/.test(value)) tokens.push("comedy");
   if (/\b(?:theater|theatre)\b/.test(value)) tokens.push("theater");
   if (/\bfestivals?\b/.test(value)) tokens.push("festival");
-  if (/\b(?:sports?|game)\b/.test(value)) tokens.push("sports");
   if (/\bfamily\b/.test(value)) tokens.push("family");
   if (/\bmusic\b/.test(value)) tokens.push("music");
 
@@ -103,9 +103,20 @@ function keywordForProfile(profile?: EventSearchParams["profile"], query = "") {
       return "comedy";
     case "weekend":
       return "";
+    case "sports":
+      return extractSportsSearchKeyword(query);
     default:
       return "";
   }
+}
+
+function applyProfileFilters(params: Record<string, string>, profile?: EventSearchParams["profile"], query = "") {
+  if (profile === "sports") {
+    params.segmentName = "Sports";
+  }
+
+  const keyword = keywordForProfile(profile, query);
+  if (keyword) params.keyword = keyword;
 }
 
 function formatTicketmasterDateTime(value: string) {
@@ -133,8 +144,7 @@ export const ticketmasterEventProvider: EventProvider = {
       countryCode: "US"
     };
 
-    const keyword = keywordForProfile(request.profile, request.query);
-    if (keyword) params.keyword = keyword;
+    applyProfileFilters(params, request.profile, request.query);
 
     if (request.startDateTime) params.startDateTime = formatTicketmasterDateTime(request.startDateTime);
     if (request.endDateTime) params.endDateTime = formatTicketmasterDateTime(request.endDateTime);

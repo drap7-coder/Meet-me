@@ -1,11 +1,14 @@
-import { shouldFetchTicketmasterEvents, classifyLocalEventProfile } from "@/lib/localEventIntent";
+import { shouldFetchTicketmasterEvents, classifyLocalEventProfile, isSportsEventQuery } from "@/lib/localEventIntent";
 import { detectEventsIntent } from "@/lib/watchEvents";
 
 const SHOULD_TRIGGER = [
   { query: "things to do this weekend", profile: "weekend" },
   { query: "concerts near me", profile: "general" },
   { query: "comedy shows tonight", profile: "tonight" },
-  { query: "date night", profile: "date_night" }
+  { query: "date night", profile: "date_night" },
+  { query: "Phillies game tonight", profile: "sports" },
+  { query: "live sports near me", profile: "sports" },
+  { query: "NBA games this weekend", profile: "sports" }
 ] as const;
 
 const SHOULD_NOT_TRIGGER = ["coffee near me", "sushi near me", "pizza near me"];
@@ -28,6 +31,10 @@ function run() {
     console.log(`${ok ? "PASS" : "FAIL"}  skip     ${query} -> shouldFetch=${shouldFetch}`);
     if (!ok) failed += 1;
   }
+
+  const sportsOnly = isSportsEventQuery("Yankees tickets near me") && !isSportsEventQuery("comedy shows tonight");
+  console.log(`${sportsOnly ? "PASS" : "FAIL"}  sports   detects team queries without catching comedy`);
+  if (!sportsOnly) failed += 1;
 
   if (failed > 0) process.exitCode = 1;
 }

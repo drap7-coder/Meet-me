@@ -13,7 +13,7 @@ export interface EventResult {
   source: string;
 }
 
-export type LocalEventProfile = "date_night" | "family" | "weekend" | "tonight" | "general";
+export type LocalEventProfile = "date_night" | "family" | "weekend" | "tonight" | "sports" | "general";
 
 export type EventSearchRequest = {
   query: string;

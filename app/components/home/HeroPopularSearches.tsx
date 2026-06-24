@@ -3,6 +3,7 @@
 import type { PickQueryOptions } from "@/app/components/SearchPromptAssist";
 import { useSearchPromptAssist } from "@/app/components/SearchPromptAssist";
 import { HeroSectionLabel } from "@/app/components/home/HeroSectionLabel";
+import { KOI_EXAMPLE } from "@/lib/koiExamples";
 
 export type HeroPopularSearch = {
   id: string;
@@ -14,40 +15,32 @@ export type HeroPopularSearch = {
 
 export const HERO_POPULAR_SEARCHES: HeroPopularSearch[] = [
   {
+    id: "watch-tonight",
+    icon: "📺",
+    label: "What should I watch tonight?",
+    query: "What should I watch tonight?",
+    options: { category: "custom", watchSubcategory: "movies" }
+  },
+  {
     id: "eat",
     icon: "🍽️",
-    label: "What's worth eating tonight?",
-    query: "What's worth eating near me tonight",
+    label: "Where should we eat?",
+    query: "Where should we eat near me",
     options: { category: "restaurant", builderMode: "near_me" }
   },
   {
-    id: "shop",
-    icon: "🛍️",
-    label: "Where should we shop?",
-    query: "Where should we go shopping near me",
-    options: { category: "shopping", builderMode: "near_me" }
+    id: "weekend",
+    icon: "📅",
+    label: "What's worth doing this weekend?",
+    query: "What's worth doing this weekend near me",
+    options: { category: "activities", builderMode: "near_me" }
   },
   {
-    id: "netflix-movie",
-    icon: "🎬",
-    label: "Pick my Netflix movie",
-    query: "What movie should I watch on Netflix tonight?",
-    options: {
-      category: "custom",
-      watchSubcategory: "movies",
-      streamingServiceIds: ["netflix"]
-    }
-  },
-  {
-    id: "peacock-show",
-    icon: "📺",
-    label: "What's good on Peacock?",
-    query: "What TV show should I watch on Peacock tonight?",
-    options: {
-      category: "custom",
-      watchSubcategory: "tv_shows",
-      streamingServiceIds: ["peacock"]
-    }
+    id: "halfway",
+    icon: "📍",
+    label: "Find a halfway spot",
+    query: KOI_EXAMPLE.halfwayQuery,
+    options: { builderMode: "halfway", searchMode: "midpoint" }
   }
 ];
 

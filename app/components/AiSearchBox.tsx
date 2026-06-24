@@ -377,18 +377,6 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
         </p>
       ) : null}
 
-      {!showLocationActions && !showManualFallback && !showStandaloneError && !listening && !showSpeechMessage ? (
-        <p className={`mt-2 px-1 text-xs font-semibold ${onHero ? "text-white/45" : "text-slate/70"}`}>
-          {onHero
-            ? speechSupported
-              ? "Type or tap the mic, or build filters below and tap Search."
-              : "Type a free-form ask, or build filters below and tap Search."
-            : speechSupported
-              ? "Press Enter or tap the mic for a free-form ask, or use filters below and tap Search."
-              : "Press Enter for a free-form ask, or use filters below and tap Search."}
-        </p>
-      ) : null}
-
       {showLocationActions ? (
         <div className={`mt-3 ${promptPanelClass}`} aria-live="polite">
           <div className="flex items-start gap-2">

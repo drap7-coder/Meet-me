@@ -1,4 +1,5 @@
 import { Logo } from "@/app/components/Logo";
+import { FeedbackTrigger } from "@/app/components/home/FeedbackTrigger";
 import { BRAND } from "@/src/config/branding";
 import { PAGE_CONTAINER } from "@/lib/pageLayout";
 
@@ -41,10 +42,6 @@ export function SiteHeader({ variant = "light" }: SiteHeaderProps) {
 }
 
 export function Footer() {
-  const feedbackHref = `mailto:nathandrapkin@gmail.com?subject=${encodeURIComponent(
-    `${BRAND.name} feedback`
-  )}&body=${encodeURIComponent("Questions, ideas, or feedback:\n")}`;
-
   return (
     <footer className="bg-ink py-10 text-[#B8B0A3]">
       <div className={`flex flex-col gap-6 text-sm sm:flex-row sm:items-end sm:justify-between ${PAGE_CONTAINER}`}>
@@ -56,9 +53,7 @@ export function Footer() {
         <div className="sm:text-right">
           <p className="leading-6">Questions, ideas, or feedback?</p>
           <p className="leading-6">We&apos;d love to hear from you.</p>
-          <a href={feedbackHref} className="mt-3 inline-flex font-bold text-koi hover:text-koi/80">
-            Send Feedback -&gt;
-          </a>
+          <FeedbackTrigger />
         </div>
       </div>
     </footer>

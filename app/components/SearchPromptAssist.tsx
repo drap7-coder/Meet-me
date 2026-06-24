@@ -37,7 +37,7 @@ type ProviderProps = {
 type WhereId = "near" | "choose" | "halfway";
 type SelectedMode = "streaming" | "local" | null;
 
-const CONCIERGE_TAGLINE = "What are you in the mood for?";
+const CONCIERGE_TAGLINE = "Not sure? Try one of these";
 
 export type BuilderState = {
   selectedMode: SelectedMode;
@@ -930,6 +930,20 @@ function builderStateFromPopularPreset(preset: HeroPopularSearch): BuilderState 
       typeId: null,
       extras: new Set<string>(),
       where: "near",
+      streamingType: null,
+      streamingVibe: null,
+      genre: null,
+      streamingServices: new Set<string>()
+    };
+  }
+
+  if (opts?.category === "activities") {
+    return {
+      selectedMode: "local",
+      localWhat: "activities",
+      typeId: null,
+      extras: new Set<string>(),
+      where: opts?.builderMode === "halfway" || opts?.searchMode === "midpoint" ? "halfway" : "near",
       streamingType: null,
       streamingVibe: null,
       genre: null,

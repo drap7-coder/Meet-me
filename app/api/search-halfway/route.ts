@@ -1,4 +1,5 @@
 import { normalizeCategory } from "@/lib/categories";
+import { enrichPlacesResponseWithEvents } from "@/lib/placesWithEvents";
 import { googlePlacesProvider } from "@/lib/providers/googlePlacesProvider";
 import {
   countPlacesResults,
@@ -19,6 +20,7 @@ export async function POST(request: Request) {
     const body = (await request.json()) as SearchHalfwayRequest;
     categoryHint = typeof body.category === "string" ? body.category : "";
     const searchMode = body.searchMode ?? "midpoint";
+    const queryHint = body.customQuery?.trim() || categoryHint;
     if (!body.locationA?.trim()) {
       finalizeSearchTelemetry({
         endpoint: ENDPOINT,
@@ -59,8 +61,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Enter a custom search term." }, { status: 400 });
     }
 
-    const { result, collector } = await executeInSearchTelemetry(() =>
-      googlePlacesProvider.searchHalfway({ ...body, category: normalizeCategory(body.category) })
+    const { result, collector } = await executeInSearchTelemetry(async () =>
+      enrichPlacesResponseWithEvents(
+        await googlePlacesProvider.searchHalfway({ ...body, category: normalizeCategory(body.category) }),
+        queryHint,
+        body
+      )
     );
     finalizeSearchTelemetry(
       {
@@ -68,7 +74,7 @@ export async function POST(request: Request) {
         searchKind: "places",
         categoryHint,
         status: 200,
-        resultCount: countPlacesResults(result),
+        resultCount: (countPlacesResults(result) ?? 0) + (result.events?.length ?? 0),
         startedAt
       },
       collector

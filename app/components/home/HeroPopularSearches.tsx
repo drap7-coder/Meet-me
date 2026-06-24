@@ -33,7 +33,7 @@ export const HERO_POPULAR_SEARCHES: HeroPopularSearch[] = [
     icon: "📅",
     label: "What's worth doing this weekend?",
     query: "What's worth doing this weekend near me",
-    options: { category: "activities", builderMode: "near_me" }
+    options: { category: "events", builderMode: "near_me" }
   },
   {
     id: "halfway",

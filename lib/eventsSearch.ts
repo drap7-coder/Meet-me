@@ -1,6 +1,9 @@
+import { searchLocalEvents, isEventDiscoveryConfigured } from "@/lib/eventDiscovery";
 import { buildLiveEventsFromPlaces, canUseLiveEventsSearch } from "@/lib/eventsPlaces";
 import { detectLocalHappeningsSubcategory, getLocalHappeningsOption } from "@/lib/localHappenings";
-import type { SearchHalfwayRequest, WatchEventsResult } from "@/lib/types";
+import { classifyLocalEventProfile } from "@/lib/localEventIntent";
+import { eventResultsToWatchRecommendations } from "@/lib/placesWithEvents";
+import type { SearchHalfwayRequest, WatchEventsRecommendation, WatchEventsResult } from "@/lib/types";
 import { EVENTS_DESCRIPTION } from "@/lib/watchBrowse";
 import {
   EVENTS_LIVE_MESSAGE,
@@ -25,16 +28,39 @@ export async function buildEventsResult(
   const timeframe = extractWatchEventsTimeframe(trimmed);
   const topic = extractWatchEventsTopic(trimmed, intent);
   const localSubcategory = detectLocalHappeningsSubcategory(trimmed);
-  const liveRecommendations =
-    locationContext && canUseLiveEventsSearch(locationContext)
-      ? await buildLiveEventsFromPlaces({
+  const profile = classifyLocalEventProfile(trimmed);
+
+  let liveRecommendations: WatchEventsRecommendation[] | null = null;
+
+  if (locationContext && isEventDiscoveryConfigured()) {
+    try {
+      const geocoded = await resolveSearchCoordinates(locationContext);
+      if (geocoded) {
+        const ticketmasterEvents = await searchLocalEvents({
           query: trimmed,
-          intent,
-          topic,
-          timeframe,
-          locationContext
-        })
-      : null;
+          latitude: geocoded.lat,
+          longitude: geocoded.lng,
+          profile
+        });
+        if (ticketmasterEvents.length) {
+          liveRecommendations = eventResultsToWatchRecommendations(ticketmasterEvents, trimmed);
+        }
+      }
+    } catch {
+      // Fall through to venue-based live search or preview.
+    }
+  }
+
+  if (!liveRecommendations?.length && locationContext && canUseLiveEventsSearch(locationContext)) {
+    liveRecommendations = await buildLiveEventsFromPlaces({
+      query: trimmed,
+      intent,
+      topic,
+      timeframe,
+      locationContext
+    });
+  }
+
   const isLive = Boolean(liveRecommendations?.length);
   const recommendations =
     liveRecommendations ??
@@ -60,10 +86,23 @@ export async function buildEventsResult(
     contextSummary: buildEventsContextSummary(location, timeframe, topic, isLive),
     resultCount: recommendations.length,
     recommendations,
-    futureProviders: ["Ticketmaster", "SeatGeek", "ESPN", "SportsDataIO"],
+    futureProviders: isLive ? ["Ticketmaster"] : ["Ticketmaster", "SeatGeek", "ESPN", "SportsDataIO"],
     preview: !isLive,
     hasMore: false
   };
+}
+
+async function resolveSearchCoordinates(locationContext: SearchHalfwayRequest) {
+  const { googlePlacesProvider } = await import("@/lib/providers/googlePlacesProvider");
+  const locationA = locationContext.locationA.trim();
+  if (!locationA) return null;
+
+  if (locationContext.locationACoordinates) {
+    return locationContext.locationACoordinates;
+  }
+
+  const geocoded = await googlePlacesProvider.geocodeAddress(locationA, locationContext.locationAPlaceId);
+  return geocoded.location;
 }
 
 function readFormLocation(form?: SearchHalfwayRequest) {
@@ -98,8 +137,9 @@ function intentLabel(
 }
 
 function buildEventsContextSummary(location: string, timeframe: string, topic: string, isLive: boolean) {
-  const parts = [isLive ? "Live venues" : "Location-based"];
+  const parts = [isLive ? "Live events" : "Location-based"];
   if (topic) parts.push(topic);
   if (location) parts.push(location);
+  if (timeframe) parts.push(timeframe);
   return parts.join(" · ");
 }

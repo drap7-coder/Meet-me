@@ -5,8 +5,8 @@ import {
   needsCurrentLocationResolution,
   resolveCurrentLocationInForm
 } from "@/lib/currentLocation";
+import { enrichPlacesResponseWithEvents } from "@/lib/placesWithEvents";
 import { ParseSearchError, parserProvider } from "@/lib/providers/parserProvider";
-import { eventsProvider } from "@/lib/providers/eventsProvider";
 import { googlePlacesProvider } from "@/lib/providers/googlePlacesProvider";
 import { watchProvider } from "@/lib/providers/watchProvider";
 import { isStreamingServiceId } from "@/lib/streamingServices";
@@ -64,10 +64,14 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
 
     return {
       kind: "places",
-      data: await googlePlacesProvider.searchHalfway({
-        ...resolvedPlaceForm,
-        category: normalizeCategory(resolvedPlaceForm.category)
-      })
+      data: await enrichPlacesResponseWithEvents(
+        await googlePlacesProvider.searchHalfway({
+          ...resolvedPlaceForm,
+          category: normalizeCategory(resolvedPlaceForm.category)
+        }),
+        query,
+        resolvedPlaceForm
+      )
     };
   }
 
@@ -98,9 +102,23 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
       };
     }
 
+    const blendedForm: SearchHalfwayRequest = {
+      ...eventForm,
+      category: "activities",
+      customQuery: query,
+      searchMode: eventForm.searchMode ?? "single"
+    };
+
     return {
-      kind: "events",
-      data: await eventsProvider.search(query, eventForm)
+      kind: "places",
+      data: await enrichPlacesResponseWithEvents(
+        await googlePlacesProvider.searchHalfway({
+          ...blendedForm,
+          category: normalizeCategory("activities")
+        }),
+        query,
+        blendedForm
+      )
     };
   }
 
@@ -120,10 +138,14 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
 
   return {
     kind: "places",
-    data: await googlePlacesProvider.searchHalfway({
-      ...resolvedForm,
-      category: normalizeCategory(resolvedForm.category)
-    })
+    data: await enrichPlacesResponseWithEvents(
+      await googlePlacesProvider.searchHalfway({
+        ...resolvedForm,
+        category: normalizeCategory(resolvedForm.category)
+      }),
+      query,
+      resolvedForm
+    )
   };
 }
 

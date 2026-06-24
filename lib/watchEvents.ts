@@ -23,7 +23,7 @@ export const EVENTS_TITLE = "Events";
 export const EVENTS_PREVIEW_MESSAGE =
   "Preview cards below are search suggestions curated by Koi. Add your location for live venue picks ranked by drive time.";
 export const EVENTS_LIVE_MESSAGE =
-  "Venues below are real places from Google Maps, ranked by drive time from your location(s). Event schedules and tickets from Ticketmaster and SeatGeek are coming soon.";
+  "Live events and nearby places below are matched to your ask. Ticket links come from Ticketmaster when configured.";
 
 /** @deprecated Use WATCH_TITLE */
 export const WATCH_EVENTS_TITLE = WATCH_TITLE;
@@ -136,6 +136,7 @@ export function detectEventsIntent(query: string) {
   if (hasStreamingWatchContext(trimmed)) return false;
 
   const eventPatterns = [
+    /\b(?:date night|fun tonight|family activit(?:y|ies)|festivals?(?:\s+nearby)?|live entertainment)\b/i,
     /\b(?:movie theaters?|movie theatres?|cinema|cinemas)\b/i,
     /\b(?:movies playing|now playing|playing nearby|showtimes?)\b/i,
     /\b(?:street fairs?|farmers? markets?|flea markets?|art walks?|pop[- ]?ups?|holiday markets?|seasonal markets?|food festivals?)\b/i,

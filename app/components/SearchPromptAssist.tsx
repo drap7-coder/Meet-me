@@ -724,6 +724,16 @@ function categoryFor(state: BuilderState): VenueCategory {
 }
 
 export function buildPlaceQuery(state: BuilderState): string {
+  if (state.localWhat === "events") {
+    const suffix =
+      state.where === "halfway"
+        ? "halfway between us"
+        : state.where === "choose"
+          ? "near a specific location"
+          : "near me this weekend";
+    return `Things to do ${suffix}`.replace(/^\w/, (char) => char.toUpperCase());
+  }
+
   if (!state.localWhat) return "";
 
   const def = localChipCategoryById(state.localWhat);
@@ -963,6 +973,20 @@ function builderStateFromPopularPreset(preset: HeroPopularSearch): BuilderState 
     return {
       selectedMode: "local",
       localWhat: "activities",
+      typeId: null,
+      extras: new Set<string>(),
+      where: opts?.builderMode === "halfway" || opts?.searchMode === "midpoint" ? "halfway" : "near",
+      streamingType: null,
+      streamingVibe: null,
+      genre: null,
+      streamingServices: new Set<string>()
+    };
+  }
+
+  if (opts?.category === "events") {
+    return {
+      selectedMode: "local",
+      localWhat: "events",
       typeId: null,
       extras: new Set<string>(),
       where: opts?.builderMode === "halfway" || opts?.searchMode === "midpoint" ? "halfway" : "near",

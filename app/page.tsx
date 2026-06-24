@@ -2,6 +2,7 @@
 
 import { EmptyState } from "@/app/components/EmptyState";
 import { KoiThinkingLoader } from "@/app/components/KoiThinkingLoader";
+import { EventResultCard } from "@/app/components/EventResultCard";
 import { AiSearchBox, type AiSearchBoxHandle } from "@/app/components/AiSearchBox";
 import { CompactResultsHeader } from "@/app/components/home/CompactResultsHeader";
 import { MarketingHero } from "@/app/components/home/MarketingHero";
@@ -430,9 +431,17 @@ export default function HomePage() {
     trackEvent("search_completed", {
       category: data.category,
       resultCount: data.venues.length,
+      eventCount: data.events?.length ?? 0,
+      hasEvents: Boolean(data.events?.length),
       hasWeather: true,
       hasPreferences: data.preferences.length > 0
     });
+    if (data.events?.length) {
+      trackEvent("event_search_completed", {
+        eventCount: data.events.length,
+        profile: data.eventProfile ?? "general"
+      });
+    }
   }
 
   function applyWatchEventsResults(data: WatchEventsResult) {
@@ -1254,6 +1263,15 @@ export default function HomePage() {
               ) : null}
 
               <WeatherCard midpoint={results.midpoint} searchMode={results.searchMode} />
+
+              {results.events?.length ? (
+                <div className="results-list-enter grid gap-4">
+                  <h2 className="text-sm font-black uppercase tracking-[0.14em] text-slate">Live events nearby</h2>
+                  {results.events.map((event, index) => (
+                    <EventResultCard key={event.id} event={event} rank={index + 1} isKoiPick={index === 0} />
+                  ))}
+                </div>
+              ) : null}
 
               {results.venues.length ? (
                 <div className="results-list-enter grid gap-4">

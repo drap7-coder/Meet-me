@@ -9,6 +9,7 @@ export type LocalChipCategoryId =
   | "drinks"
   | "coffee"
   | "activities"
+  | "events"
   | "thrift_vintage"
   | "shopping";
 
@@ -61,6 +62,13 @@ export const LOCAL_CHIP_CATEGORIES: LocalChipCategory[] = [
     noun: "things to do",
     defaultVenueCategory: "activities",
     subtypeLabel: "🎯 Type"
+  },
+  {
+    id: "events",
+    label: "🎟️ Events",
+    noun: "events and live shows",
+    defaultVenueCategory: "events",
+    subtypeLabel: "🎟️ Type"
   },
   {
     id: "thrift_vintage",
@@ -253,7 +261,8 @@ export function groupHasVibeOptions(group: LocalChipCategoryId): boolean {
 
 export function categoryGroupFor(category: VenueCategory): LocalChipCategoryId {
   if (category === "coffee") return "coffee";
-  if (ACTIVITY_VENUE_CATEGORIES.has(category) || category === "events") return "activities";
+  if (category === "events") return "events";
+  if (ACTIVITY_VENUE_CATEGORIES.has(category)) return "activities";
   if (THRIFT_VENUE_CATEGORIES.has(category)) return "thrift_vintage";
   if (SHOPPING_VENUE_CATEGORIES.has(category)) return "shopping";
   if (category === "custom") return "food";

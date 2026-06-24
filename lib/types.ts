@@ -1,3 +1,7 @@
+import type { EventResult, LocalEventProfile } from "@/lib/eventResult";
+
+export type { EventResult, LocalEventProfile } from "@/lib/eventResult";
+
 export type LatLng = {
   lat: number;
   lng: number;
@@ -240,4 +244,6 @@ export type SearchHalfwayResponse = {
   preferences: Preference[];
   query: string;
   venues: ScoredVenue[];
+  events?: EventResult[];
+  eventProfile?: LocalEventProfile;
 };

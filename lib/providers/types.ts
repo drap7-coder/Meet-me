@@ -63,6 +63,8 @@ export interface EventsProvider {
   search(query: string, locationContext?: SearchHalfwayRequest): Promise<WatchEventsResult>;
 }
 
+export type { EventProvider } from "@/lib/providers/eventDiscoveryTypes";
+
 export type WeatherProviderResult = {
   temperature: number;
   feelsLike: number;

@@ -1102,7 +1102,11 @@ export default function HomePage() {
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#0A1323] via-[#0A1323]/70 to-transparent sm:h-24" />
             <div className={`relative z-10 grid w-full gap-4 py-2 sm:gap-5 sm:py-4 ${PAGE_CONTAINER}`}>
               <MarketingHero />
-              <SearchPromptAssistProvider busy={loading || locating || resolvingManual} builderMode={builderMode}>
+              <SearchPromptAssistProvider
+                busy={loading || locating || resolvingManual}
+                builderMode={builderMode}
+                userCoordinates={locationContext.locationACoordinates}
+              >
                 <AiSearchBox
                   ref={searchBoxRef}
                   surface="hero"
@@ -1214,6 +1218,7 @@ export default function HomePage() {
                 busy={loading || locating || resolvingManual}
                 builderMode={builderMode}
                 surface="page"
+                userCoordinates={locationContext.locationACoordinates}
               >
                 <AiSearchBox
                   ref={searchBoxRef}

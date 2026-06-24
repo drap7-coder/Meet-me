@@ -12,13 +12,13 @@ import {
   type LocalChipCategoryId
 } from "@/lib/searchBuilderOptions";
 import { resolveEventTypeRefinement, sportsTeamChipLabel } from "@/lib/eventBuilderOptions";
-import { majorSportById, sportIdForTeam, sportsTeamById, teamsForSport } from "@/lib/sportsTeams";
+import { majorSportById, localTeamsForSport, otherTeamsForSport, sportIdForTeam, sportsTeamById } from "@/lib/sportsTeams";
 import { STREAMING_SERVICES, streamingServiceQueryPhrase } from "@/lib/streamingServices";
 import type { HeroPopularSearch } from "@/app/components/home/HeroPopularSearches";
 import { HeroSectionLabel } from "@/app/components/home/HeroSectionLabel";
 import { ModePickChip } from "@/app/components/ModePickChip";
 import { StreamingServiceChip } from "@/app/components/StreamingServiceChip";
-import type { SearchHalfwayRequest, VenueCategory, WatchSubcategory } from "@/lib/types";
+import type { LatLng, SearchHalfwayRequest, VenueCategory, WatchSubcategory } from "@/lib/types";
 import type { SearchBuilderMode } from "@/lib/searchBuilderOptions";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
@@ -36,6 +36,8 @@ type ProviderProps = {
   busy?: boolean;
   builderMode?: SearchBuilderMode;
   surface?: "hero" | "page";
+  /** Saved/current origin — used to split local vs all team chips. */
+  userCoordinates?: LatLng;
   children: ReactNode;
 };
 
@@ -75,6 +77,7 @@ type AssistContextValue = {
   filterPills: FilterPill[];
   filterPreview: FilterPreview | null;
   isStreaming: boolean;
+  userCoordinates?: LatLng;
   typeRefinements: ReturnType<typeof typeRefinementsFor>;
   vibeRefinements: ReturnType<typeof vibeRefinementsFor>;
   surface: "hero" | "page";
@@ -142,6 +145,7 @@ export function SearchPromptAssistProvider({
   busy = false,
   builderMode,
   surface = "hero",
+  userCoordinates,
   children
 }: ProviderProps) {
   const [state, setState] = useState<BuilderState>(() => initialBuilderState());
@@ -409,6 +413,7 @@ export function SearchPromptAssistProvider({
         filterPills,
         filterPreview,
         isStreaming,
+        userCoordinates,
         typeRefinements,
         vibeRefinements,
         surface,
@@ -498,7 +503,8 @@ export function SearchPromptDetailChips() {
     toggleGenre,
     toggleStreamingVibe,
     toggleStreamingService,
-    surface
+    surface,
+    userCoordinates
   } = useAssistContext();
 
   const onPage = surface === "page";
@@ -513,7 +519,24 @@ export function SearchPromptDetailChips() {
   const streamGenres = streamType ? getWatchGenresForSubcategory(streamType) : [];
 
   const showSportsTeams = state.localWhat === "sports" && Boolean(state.typeId);
-  const sportsTeams = showSportsTeams ? teamsForSport(state.typeId) : [];
+  const localSportsTeams = showSportsTeams ? localTeamsForSport(state.typeId, userCoordinates) : [];
+  const otherSportsTeams = showSportsTeams ? otherTeamsForSport(state.typeId, userCoordinates) : [];
+  const hasLocalSportsTeams = localSportsTeams.length > 0;
+
+  function renderSportsTeamChip(team: (typeof localSportsTeams)[number]) {
+    return (
+      <AssistChip
+        key={team.id}
+        label={`${team.logo} ${team.label}`}
+        busy={busy}
+        variant={state.sportsTeamId === team.id ? "primary" : "accent"}
+        selected={state.sportsTeamId === team.id}
+        emphasis={state.sportsTeamId === team.id}
+        onPick={() => toggleSportsTeam(team.id)}
+        onPage={onPage}
+      />
+    );
+  }
 
   if (!showStreamingType && !showExploreCategories) return null;
 
@@ -634,23 +657,24 @@ export function SearchPromptDetailChips() {
                   </ChipGroup>
                 ) : null}
 
-                {showSportsTeams && sportsTeams.length ? (
+                {showSportsTeams && (hasLocalSportsTeams || otherSportsTeams.length) ? (
                   <>
                     <div className={`h-px ${onPage ? "bg-line/60" : "bg-white/10"}`} aria-hidden="true" />
-                    <ChipGroup label="🏟️ Teams" onPage={onPage}>
-                      {sportsTeams.map((team) => (
-                        <AssistChip
-                          key={team.id}
-                          label={`${team.logo} ${team.label}`}
-                          busy={busy}
-                          variant={state.sportsTeamId === team.id ? "primary" : "accent"}
-                          selected={state.sportsTeamId === team.id}
-                          emphasis={state.sportsTeamId === team.id}
-                          onPick={() => toggleSportsTeam(team.id)}
-                          onPage={onPage}
-                        />
-                      ))}
-                    </ChipGroup>
+                    {hasLocalSportsTeams ? (
+                      <ChipGroup label="📍 Near you" onPage={onPage}>
+                        {localSportsTeams.map(renderSportsTeamChip)}
+                      </ChipGroup>
+                    ) : null}
+                    {otherSportsTeams.length ? (
+                      <>
+                        {hasLocalSportsTeams ? (
+                          <div className={`h-px ${onPage ? "bg-line/60" : "bg-white/10"}`} aria-hidden="true" />
+                        ) : null}
+                        <ChipGroup label={hasLocalSportsTeams ? "🌎 All teams" : "🏟️ Teams"} onPage={onPage}>
+                          {otherSportsTeams.map(renderSportsTeamChip)}
+                        </ChipGroup>
+                      </>
+                    ) : null}
                   </>
                 ) : null}
               </>

@@ -1,4 +1,4 @@
-import { shouldFetchTicketmasterEvents, classifyLocalEventProfile, isSportsEventQuery, isTeamSpecificSportsQuery, hasNamedTeamInQuery, isPureEventQuery } from "@/lib/localEventIntent";
+import { shouldFetchTicketmasterEvents, classifyLocalEventProfile, isSportsEventQuery, isTeamSpecificSportsQuery, hasNamedTeamInQuery, isPureEventQuery, eventTimeWindow } from "@/lib/localEventIntent";
 import { detectEventsIntent } from "@/lib/watchEvents";
 
 const SHOULD_TRIGGER = [
@@ -60,6 +60,19 @@ function run() {
     blendedEvents.every((query) => !isPureEventQuery(query));
   console.log(`${pureOk ? "PASS" : "FAIL"}  pure     event-first queries vs blended discovery`);
   if (!pureOk) failed += 1;
+
+  const dayMs = 24 * 60 * 60 * 1000;
+  const spanDays = (q: string) => {
+    const win = eventTimeWindow(classifyLocalEventProfile(q), q);
+    return (win.end.getTime() - win.start.getTime()) / dayMs;
+  };
+  const windowOk =
+    spanDays("Yankees games") > 300 && // unqualified team -> next games (wide window)
+    spanDays("Red Bulls games near me") > 300 &&
+    spanDays("Phillies game tonight") < 2 && // explicit tonight stays tight
+    spanDays("NBA games this weekend") <= 3; // explicit weekend stays tight
+  console.log(`${windowOk ? "PASS" : "FAIL"}  window   unqualified sports -> next games, explicit stays tight`);
+  if (!windowOk) failed += 1;
 
   if (failed > 0) process.exitCode = 1;
 }

@@ -219,8 +219,11 @@ export function eventTimeWindow(profile: LocalEventProfile, query = ""): { start
         end.setHours(23, 59, 59, 999);
         return { start, end };
       }
+      // Unqualified sport/team picks: just surface the NEXT games, regardless of how
+      // far out they are (e.g. a team on an in-season break). Ticketmaster sorts by
+      // date ascending, so a wide window returns the soonest upcoming games first.
       end.setTime(now.getTime());
-      end.setDate(end.getDate() + 21);
+      end.setFullYear(end.getFullYear() + 1);
       end.setHours(23, 59, 59, 999);
       return { start: now, end };
     }

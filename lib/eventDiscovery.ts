@@ -3,6 +3,7 @@ import { classifyLocalEventProfile, eventTimeWindow } from "@/lib/localEventInte
 import { rankEventResults } from "@/lib/eventRanking";
 import type { EventProvider } from "@/lib/providers/eventDiscoveryTypes";
 import { ticketmasterEventProvider } from "@/lib/providers/ticketmasterEventProvider";
+import { recordProviderError } from "@/lib/searchTelemetryRuntime";
 import { logApiError } from "@/lib/serverLog";
 
 const providers: EventProvider[] = [ticketmasterEventProvider];
@@ -27,6 +28,7 @@ export async function searchLocalEvents(request: EventSearchRequest): Promise<Ev
       });
       merged.push(...batch);
     } catch (error) {
+      recordProviderError("ticketmaster", "search_events");
       logApiError("ticketmaster-event-discovery", error);
     }
   }

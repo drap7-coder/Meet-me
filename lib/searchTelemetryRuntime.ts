@@ -13,10 +13,22 @@ export type CacheLayerStats = {
 export class SearchTelemetryCollector {
   llmUsed = false;
   private calls: ProviderCallRecord[] = [];
+  private errors: ProviderCallRecord[] = [];
+  private discarded = new Set<string>();
   private cache: Record<string, CacheLayerStats> = {};
 
   recordProviderCall(provider: string, operation: string) {
     this.calls.push({ provider, operation });
+  }
+
+  /** A provider call failed (timeout, non-200, parse error) but the search degraded gracefully. */
+  recordProviderError(provider: string, operation: string) {
+    this.errors.push({ provider, operation });
+  }
+
+  /** A provider was called but its results were ultimately dropped from the response. */
+  recordDiscardedProvider(provider: string) {
+    this.discarded.add(provider);
   }
 
   recordLlmUsed(provider: string, operation = "parse") {
@@ -38,6 +50,14 @@ export class SearchTelemetryCollector {
 
   getProviderCalls() {
     return [...this.calls];
+  }
+
+  getProviderErrors() {
+    return [...this.errors];
+  }
+
+  getDiscardedProviders() {
+    return [...this.discarded];
   }
 
   getCacheStats() {
@@ -64,6 +84,14 @@ export function getSearchTelemetryCollector() {
 
 export function recordProviderCall(provider: string, operation: string) {
   backend.getCollector()?.recordProviderCall(provider, operation);
+}
+
+export function recordProviderError(provider: string, operation: string) {
+  backend.getCollector()?.recordProviderError(provider, operation);
+}
+
+export function recordDiscardedProvider(provider: string) {
+  backend.getCollector()?.recordDiscardedProvider(provider);
 }
 
 export function recordLlmUsed(provider: string, operation = "parse") {

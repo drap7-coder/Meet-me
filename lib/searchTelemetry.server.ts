@@ -3,6 +3,7 @@ import "server-only";
 import { AsyncLocalStorage } from "async_hooks";
 import { createHash } from "crypto";
 import { resolveSearchCategoryFromQuery } from "@/lib/categories";
+import { deriveKillSignals } from "@/lib/searchKillList";
 import type { KoiSearchApiResponse } from "@/lib/searchIntent";
 import {
   registerSearchTelemetryBackend,
@@ -25,6 +26,9 @@ export type SearchTelemetryOutcome = {
   resultCount: number | null;
   startedAt: number;
   errorMessage?: string;
+  /** Kill-list inputs that only the caller can know (computed from the result body). */
+  topPickPresent?: boolean | null;
+  eventsReturned?: number | null;
 };
 
 const storage = new AsyncLocalStorage<SearchTelemetryCollector>();
@@ -99,7 +103,26 @@ export function finalizeSearchTelemetry(
 ) {
   const queryMeta = summarizeSearchQuery(outcome.query, outcome.categoryHint);
   const providerCalls = collector.getProviderCalls();
+  const providerErrors = collector.getProviderErrors();
+  const discardedProviders = collector.getDiscardedProviders();
   const cache = collector.getCacheStats();
+  const durationMs = Math.max(0, Date.now() - outcome.startedAt);
+  const ok = outcome.status >= 200 && outcome.status < 400;
+
+  const killList = deriveKillSignals({
+    durationMs,
+    status: outcome.status,
+    ok,
+    resultCount: outcome.resultCount,
+    searchKind: outcome.searchKind,
+    resolvedKind: outcome.resolvedKind,
+    providerCalls,
+    providerErrors,
+    discardedProviders,
+    cache,
+    topPickPresent: outcome.topPickPresent,
+    eventsReturned: outcome.eventsReturned
+  });
 
   logSearchInfo({
     endpoint: outcome.endpoint,
@@ -110,11 +133,17 @@ export function finalizeSearchTelemetry(
     llmUsed: collector.llmUsed,
     providerCalls,
     providerCallCount: providerCalls.length,
+    ...(providerErrors.length ? { providerErrors } : {}),
+    ...(discardedProviders.length ? { discardedProviders } : {}),
     ...(cache ? { cache } : {}),
-    durationMs: Math.max(0, Date.now() - outcome.startedAt),
+    durationMs,
     resultCount: outcome.resultCount,
+    ...(outcome.topPickPresent != null ? { topPickPresent: outcome.topPickPresent } : {}),
+    ...(outcome.eventsReturned != null ? { eventsReturned: outcome.eventsReturned } : {}),
     status: outcome.status,
-    ok: outcome.status >= 200 && outcome.status < 400,
+    ok,
+    killList,
+    ...(killList.reasons.length ? { killReasons: killList.reasons } : {}),
     ...(outcome.errorMessage ? { errorMessage: outcome.errorMessage } : {})
   });
 }

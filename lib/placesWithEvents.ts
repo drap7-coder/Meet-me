@@ -2,6 +2,7 @@ import { searchLocalEvents } from "@/lib/eventDiscovery";
 import type { EventResult } from "@/lib/eventResult";
 import { classifyLocalEventProfile, shouldFetchTicketmasterEvents } from "@/lib/localEventIntent";
 import { hasNamedTeamInQuery } from "@/lib/sportsEventFilter";
+import { recordDiscardedProvider } from "@/lib/searchTelemetryRuntime";
 import type { SearchHalfwayRequest, SearchHalfwayResponse } from "@/lib/types";
 
 export async function enrichPlacesResponseWithEvents(
@@ -26,8 +27,14 @@ export async function enrichPlacesResponseWithEvents(
     if (!events.length) {
       // For a specific team, never fall back to unrelated local venues (e.g. parks);
       // show an empty events state instead.
-      return teamOnlyResults ? { ...response, venues: [], eventProfile: profile } : response;
+      if (teamOnlyResults) {
+        if (response.venues.length) recordDiscardedProvider("google");
+        return { ...response, venues: [], eventProfile: profile };
+      }
+      return response;
     }
+
+    if (teamOnlyResults && response.venues.length) recordDiscardedProvider("google");
 
     return {
       ...response,

@@ -1,6 +1,7 @@
 import { executeKoiSearch } from "@/lib/koiSearchExecute";
 import { ParseSearchError } from "@/lib/providers/parserProvider";
 import { buildKoiSearchCacheKey, withSearchResponseCache } from "@/lib/searchResponseCache";
+import { buildTopPick } from "@/lib/topPick";
 import {
   countKoiSearchResult,
   executeInSearchTelemetry,
@@ -48,6 +49,10 @@ export async function POST(request: Request) {
       return cached.value;
     });
     const status = result.kind === "needs_location" ? 422 : 200;
+    const killInputs =
+      result.kind === "places"
+        ? { topPickPresent: buildTopPick(result.data) != null, eventsReturned: result.data.events?.length ?? 0 }
+        : {};
     finalizeSearchTelemetry(
       {
         endpoint: ENDPOINT,
@@ -56,7 +61,8 @@ export async function POST(request: Request) {
         query,
         status,
         resultCount: countKoiSearchResult(result),
-        startedAt
+        startedAt,
+        ...killInputs
       },
       collector
     );

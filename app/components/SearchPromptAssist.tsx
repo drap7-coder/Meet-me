@@ -30,8 +30,6 @@ export type PickQueryOptions = {
 type ProviderProps = {
   busy?: boolean;
   builderMode?: SearchBuilderMode;
-  onFiltersChange?: (options: PickQueryOptions) => void;
-  seed?: Pick<PickQueryOptions, "category" | "watchSubcategory">;
   surface?: "hero" | "page";
   children: ReactNode;
 };
@@ -134,58 +132,32 @@ function initialBuilderState(seed?: Pick<PickQueryOptions, "category" | "watchSu
 export function SearchPromptAssistProvider({
   busy = false,
   builderMode,
-  onFiltersChange,
-  seed,
   surface = "hero",
   children
 }: ProviderProps) {
-  const [state, setState] = useState<BuilderState>(() => initialBuilderState(seed));
+  const [state, setState] = useState<BuilderState>(() => initialBuilderState());
   const [promptQuery, setPromptQuery] = useState("");
 
-  function syncFilters(next: BuilderState) {
+  function updatePreview(next: BuilderState) {
     const preview = resolveFilterPreview(next);
     setPromptQuery(preview?.query ?? "");
-    if (preview?.options) {
-      onFiltersChange?.(preview.options);
-    }
   }
 
   function commit(updater: (prev: BuilderState) => BuilderState) {
     setState((prev) => {
       const next = updater(prev);
-      syncFilters(next);
+      updatePreview(next);
       return next;
     });
   }
 
   function replaceState(next: BuilderState) {
     setState(next);
-    syncFilters(next);
+    updatePreview(next);
   }
 
   useEffect(() => {
-    if (!seed?.watchSubcategory || seed.category !== "custom") return;
-    setState((prev) => {
-      const seededType = normalizeStreamType(seed.watchSubcategory);
-      if (!seededType) return prev;
-
-      if (prev.selectedMode === "streaming") {
-        if (prev.streamingType === seededType) return prev;
-        const next = { ...prev, streamingType: seededType };
-        syncFilters(next);
-        return next;
-      }
-
-      const next = initialBuilderState(seed);
-      syncFilters(next);
-      return next;
-    });
-    // Keep chip state aligned when the page form switches streaming subcategory.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seed?.category, seed?.watchSubcategory]);
-
-  useEffect(() => {
-    syncFilters(state);
+    updatePreview(state);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -240,7 +212,7 @@ export function SearchPromptAssistProvider({
     setState((prev) => {
       if (prev.where === where) return prev;
       const next = { ...prev, where };
-      syncFilters(next);
+      updatePreview(next);
       return next;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -250,7 +222,7 @@ export function SearchPromptAssistProvider({
     commit((prev) => {
       const active = prev.selectedMode === "local" && prev.where !== "halfway";
       if (active) {
-        return initialBuilderState(seed);
+        return initialBuilderState();
       }
 
       return {
@@ -272,7 +244,7 @@ export function SearchPromptAssistProvider({
     commit((prev) => {
       const active = prev.selectedMode === "local" && prev.where === "halfway";
       if (active) {
-        return initialBuilderState(seed);
+        return initialBuilderState();
       }
 
       return {

@@ -57,7 +57,7 @@ type Props = {
 };
 
 export function HeroPopularSearches({ busy = false, onSelect }: Props) {
-  const { surface } = useSearchPromptAssist();
+  const { surface, applyPopularPreset } = useSearchPromptAssist();
   const onPage = surface === "page";
 
   return (
@@ -73,7 +73,10 @@ export function HeroPopularSearches({ busy = false, onSelect }: Props) {
             key={item.id}
             type="button"
             disabled={busy}
-            onClick={() => onSelect(item.query, item.options)}
+            onClick={() => {
+              applyPopularPreset(item);
+              onSelect(item.query, item.options);
+            }}
             className="koi-popular-chip group flex w-full min-w-0 items-center gap-2 rounded-xl px-3 py-2.5 text-left text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
             <span aria-hidden="true" className="shrink-0 text-[0.9375rem] leading-none opacity-80">

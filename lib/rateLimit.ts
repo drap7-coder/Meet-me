@@ -4,6 +4,7 @@ import { getRedisConfig, redisCommand } from "@/lib/redisRest";
 const LIMITS: Record<string, { limit: number; windowSeconds: number }> = {
   "/api/search-halfway": { limit: 20, windowSeconds: 60 },
   "/api/parse-search": { limit: 30, windowSeconds: 60 },
+  "/api/koi-search": { limit: 20, windowSeconds: 60 },
   "/api/geocode": { limit: 60, windowSeconds: 60 },
   "/api/place-autocomplete": { limit: 90, windowSeconds: 60 },
   "/api/watch-search": { limit: 30, windowSeconds: 60 },

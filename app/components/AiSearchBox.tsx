@@ -3,11 +3,11 @@
 import type { SearchHalfwayRequest, WatchSubcategory } from "@/lib/types";
 import type { CurrentLocationContext } from "@/lib/currentLocation";
 import type { LocationUiState } from "@/lib/locationInput";
-import { trackEvent } from "@/lib/analytics";
 import { KOI_EXAMPLE } from "@/lib/koiExamples";
 import { KOI_ROTATING_PLACEHOLDERS } from "@/lib/koiCapabilityExamples";
 import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
 import { hasStreamingWatchContext } from "@/lib/watchEvents";
+import { useSearchPromptAssist } from "@/app/components/SearchPromptAssist";
 import { BRAND } from "@/src/config/branding";
 import { LocationPinIcon } from "@/app/components/SavedLocationBadge";
 import { FormEvent, forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
@@ -20,10 +20,16 @@ type Props = {
   manualLocationError?: string;
   locationContext?: CurrentLocationContext;
   defaultUserAddress?: string;
-  onParsed: (form: SearchHalfwayRequest, query: string) => void;
-  onWatchSearch: (query: string, subcategory: WatchSubcategory) => void;
-  onEventsSearch: (query: string) => void;
-  onNeedsFullFallback: () => void;
+  locationSavedMessage?: string;
+  submitError?: string;
+  onSubmitQuery: (
+    query: string,
+    options?: {
+      watchSubcategory?: WatchSubcategory;
+      streamingServiceIds?: string[];
+      builderStreaming?: boolean;
+    }
+  ) => void;
   onNeedsLocation: (form: SearchHalfwayRequest) => void;
   onPersistUserAddress?: (address: string) => void;
   onUseLocation: () => void;
@@ -33,14 +39,6 @@ type Props = {
   locating?: boolean;
   resolvingManual?: boolean;
   surface?: "hero" | "page";
-  streamingSearch?: boolean;
-};
-
-type ParseSearchResult = {
-  botMode?: "places" | "watch" | "events";
-  form?: SearchHalfwayRequest;
-  error?: string;
-  needsLocation?: boolean;
 };
 
 export type AiSearchBoxHandle = {
@@ -107,11 +105,9 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     loading,
     showManualFallback = false,
     manualLocationError,
-    locationContext,
-    onParsed,
-    onWatchSearch,
-    onEventsSearch,
-    onNeedsFullFallback,
+    locationSavedMessage,
+    submitError,
+    onSubmitQuery,
     onNeedsLocation,
     onUseLocation,
     onShowZipFallback,
@@ -119,13 +115,12 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     showLocationActions = false,
     locating = false,
     resolvingManual = false,
-    surface = "hero",
-    streamingSearch = false
+    surface = "hero"
   },
   ref
 ) {
+  const { filterPreview, isStreaming: builderStreaming } = useSearchPromptAssist();
   const [query, setQuery] = useState("");
-  const [parsing, setParsing] = useState(false);
   const [error, setError] = useState("");
   const [manualLocationInput, setManualLocationInput] = useState("");
   const [watchActiveSubcategory, setWatchActiveSubcategory] = useState<WatchSubcategory>(DEFAULT_WATCH_SUBCATEGORY);
@@ -172,79 +167,25 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   );
 
   const runSearch = useCallback(
-    async (searchQuery: string, watchSubcategory = watchActiveSubcategory) => {
+    (searchQuery: string, watchSubcategory = watchActiveSubcategory) => {
       const trimmed = searchQuery.trim();
       if (!trimmed) {
         setError(`Try something like: ${KOI_EXAMPLE.halfwayQuery}.`);
         return;
       }
 
-      if (loading || parsing) return;
+      if (loading) return;
 
       setQuery(trimmed);
-      setParsing(true);
       setError("");
 
-      if (streamingSearch || hasStreamingWatchContext(trimmed)) {
-        onWatchSearch(trimmed, watchSubcategory);
-        setParsing(false);
-        return;
-      }
-
-      try {
-        const response = await fetch("/api/parse-search", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            query: trimmed,
-            context: locationContext,
-            botMode: streamingSearch ? "watch" : undefined
-          })
-        });
-        const data = (await response.json()) as ParseSearchResult;
-        if (!response.ok) {
-          if (response.status === 422 && data.needsLocation && data.form) {
-            onNeedsLocation(data.form);
-            setError(data.error ?? "Add your city, ZIP code, or address to search nearby.");
-            return;
-          }
-          throw new Error(data.error ?? "I could not understand that search.");
-        }
-
-        if (data.botMode === "watch") {
-          onWatchSearch(trimmed, watchSubcategory);
-          return;
-        }
-
-        if (data.botMode === "events") {
-          onEventsSearch(trimmed);
-          return;
-        }
-
-        if (!data.form) throw new Error(data.error ?? "I could not understand that search.");
-        if (data.form.searchMode === "midpoint") {
-          trackEvent("halfway_search_submitted", { source: "freeform" });
-        }
-        onParsed(data.form, trimmed);
-      } catch (parseError) {
-        setError(parseError instanceof Error ? parseError.message : "I could not understand that search.");
-        onNeedsFullFallback();
-      } finally {
-        setParsing(false);
-      }
+      onSubmitQuery(trimmed, {
+        watchSubcategory,
+        streamingServiceIds: filterPreview?.options.streamingServiceIds,
+        builderStreaming: builderStreaming || hasStreamingWatchContext(trimmed)
+      });
     },
-    [
-      loading,
-      parsing,
-      locationContext,
-      onEventsSearch,
-      onNeedsFullFallback,
-      onNeedsLocation,
-      onParsed,
-      onWatchSearch,
-      watchActiveSubcategory,
-      streamingSearch
-    ]
+    [builderStreaming, filterPreview?.options.streamingServiceIds, loading, onSubmitQuery, watchActiveSubcategory]
   );
 
   useImperativeHandle(
@@ -270,16 +211,17 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     onSubmitManualLocation(manualLocationInput);
   }
 
-  const busy = loading || parsing;
+  const busy = loading;
   const locationBusy = locating || resolvingManual;
-  const submitLabel = parsing ? "Understanding" : loading ? "Finding options" : BRAND.askLabel;
+  const submitLabel = loading ? "Finding options" : BRAND.askLabel;
   const onHero = surface === "hero";
   const heroFieldClass = "koi-hero-field h-11 w-full px-4 text-base outline-none transition disabled:cursor-not-allowed disabled:opacity-60";
   const fieldClass = "koi-field h-11 w-full px-4 text-base outline-none transition placeholder:text-slate/60 disabled:cursor-not-allowed disabled:opacity-60";
   const rotatingPlaceholder = KOI_ROTATING_PLACEHOLDERS[placeholderIndex] ?? BRAND.searchPlaceholder;
-  const locationPromptMessage = error.trim() || "Add your location so Koi can search nearby.";
-  const manualPromptMessage = error.trim() || "Enter a city, ZIP code, or address to search nearby.";
-  const showStandaloneError = Boolean(error.trim()) && !showLocationActions && !showManualFallback;
+  const combinedError = error.trim() || submitError?.trim() || "";
+  const locationPromptMessage = combinedError || "Add your location so Koi can search nearby.";
+  const manualPromptMessage = combinedError || "Enter a city, ZIP code, or address to search nearby.";
+  const showStandaloneError = Boolean(combinedError) && !showLocationActions && !showManualFallback;
   const promptPanelClass = onHero
     ? "rounded-[14px] border border-koi/35 bg-koi/20 p-3 shadow-[0_8px_24px_rgba(255,90,0,0.14)]"
     : "rounded-[14px] border border-koi/30 bg-koi/10 p-3";
@@ -348,6 +290,10 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
           </label>
         </form>
       </section>
+
+      {!showLocationActions && !showManualFallback && !showStandaloneError && locationSavedMessage ? (
+        <p className={`mt-2 px-1 text-xs font-semibold ${onHero ? "text-koi" : "text-koi"}`}>{locationSavedMessage}</p>
+      ) : null}
 
       {!showLocationActions && !showManualFallback && !showStandaloneError ? (
         <p className={`mt-2 px-1 text-xs font-semibold ${onHero ? "text-white/45" : "text-slate/70"}`}>
@@ -434,7 +380,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
       {showStandaloneError ? (
         <div className={`mt-3 flex items-start gap-2 ${promptPanelClass}`} role="status">
           <LocationPinIcon className="mt-0.5 h-4 w-4 shrink-0 text-koi" />
-          <p className={`min-w-0 flex-1 text-sm font-semibold leading-6 ${promptTextClass}`}>{error}</p>
+          <p className={`min-w-0 flex-1 text-sm font-semibold leading-6 ${promptTextClass}`}>{combinedError}</p>
         </div>
       ) : null}
     </div>

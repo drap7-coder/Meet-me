@@ -35,8 +35,8 @@ export function ClassicSearchControls({
   const expanded = expandedProp ?? expandedInternal;
   const setExpanded = onExpandedChange ?? setExpandedInternal;
 
-  const { filterPreview } = useSearchPromptAssist();
-  const isStreaming = form.category === "custom" && Boolean(form.watchSubcategory);
+  const { filterPreview, isStreaming } = useSearchPromptAssist();
+  const isStreamingSearch = isStreaming;
   const onPage = surface === "page";
   const toggleClass = onPage
     ? "inline-flex items-center gap-1.5 px-0.5 text-sm font-bold text-slate/70 transition hover:text-ink"
@@ -69,7 +69,7 @@ export function ClassicSearchControls({
   }
 
   function submitBuilderSearch() {
-    if (isStreaming) {
+    if (isStreamingSearch) {
       onSearchWatch(filterPreview?.query.trim() || "what should I watch", watchSubcategory);
       return;
     }

@@ -55,6 +55,14 @@ import { readStoredLocationSnapshot, resolveLocationChipLabel, restoreStoredLoca
 import { mergeSavedUserLocation, getSavedUserLocation } from "@/lib/savedUserLocation";
 import { getSearchAccent } from "@/lib/searchAccent";
 import { extractStreamingProviders, mergeStreamingServiceIds } from "@/lib/streamingServices";
+import {
+  applyPickOptionsToSession,
+  buildPlacesFormFromOptions,
+  type KoiSearchApiResponse,
+  type SearchIntent
+} from "@/lib/searchIntent";
+import { hasStreamingWatchContext, isMovieTheaterEventsQuery } from "@/lib/watchEvents";
+import { resolveWatchPlaceSearchForm } from "@/lib/watchPlaceSearch";
 import { KOI_PICK_DISPLAY_LIMIT, THINKING_PROGRESS_LABELS } from "@/lib/koiCapabilityExamples";
 import type { KoiBotMode, LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory, WatchEventsApiResponse, WatchEventsResult, WatchSubcategory } from "@/lib/types";
 import { BRAND } from "@/src/config/branding";
@@ -120,7 +128,9 @@ export default function HomePage() {
   const [builderMode, setBuilderMode] = useState<SearchBuilderMode>("near_me");
   const [loadingPhase, setLoadingPhase] = useState(0);
   const [lastAskQuery, setLastAskQuery] = useState("");
+  const [locationSavedMessage, setLocationSavedMessage] = useState("");
   const searchBoxRef = useRef<AiSearchBoxHandle>(null);
+  const searchInFlightRef = useRef(false);
   const loadingPhaseLabel =
     THINKING_PROGRESS_LABELS[searchKind ?? "places"][loadingPhase] ??
     THINKING_PROGRESS_LABELS.places[loadingPhase] ??
@@ -188,10 +198,6 @@ export default function HomePage() {
   ]);
 
   const activeAccent = useMemo(() => getSearchAccent(searchKind), [searchKind]);
-  const isStreamingForm = form.category === "custom" && Boolean(form.watchSubcategory);
-  const promptAssistSeed = isStreamingForm
-    ? { category: form.category, watchSubcategory: form.watchSubcategory }
-    : undefined;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -229,7 +235,11 @@ export default function HomePage() {
         }
       }
       if (shouldAutoSearch && locationA && (searchMode === "single" || locationB)) {
-        submitSearch(nextForm, shareId ? `${window.location.origin}/s/${shareId}` : undefined);
+        void executeSearch({
+          kind: "places",
+          form: nextForm,
+          existingShareUrl: shareId ? `${window.location.origin}/s/${shareId}` : undefined
+        });
       }
     }
   }, []);
@@ -274,7 +284,7 @@ export default function HomePage() {
   }
 
   function openFullFallback(message?: string) {
-    if (isStreamingForm || searchKind === "watch") {
+    if (searchKind === "watch") {
       if (message) setError(message);
       return;
     }
@@ -287,8 +297,7 @@ export default function HomePage() {
 
   async function applyResolvedLocation(
     nextForm: SearchHalfwayRequest,
-    uiState: Extract<LocationUiState, "browser_success" | "manual_success">,
-    retry?: PendingRetry | null
+    uiState: Extract<LocationUiState, "browser_success" | "manual_success">
   ) {
     setForm(nextForm);
     persistSavedLocation(nextForm);
@@ -296,30 +305,8 @@ export default function HomePage() {
     setShowManualFallback(false);
     setShowLocationActions(false);
     setManualLocationError("");
-
-    const activeRetry = retry ?? pendingRetry;
-    if (activeRetry?.kind === "events") {
-      setShowClassicFallback(false);
-      setFallbackKind("none");
-      setPendingRetry(null);
-      await submitEventsSearch(activeRetry.query, nextForm);
-      return;
-    }
-    if (activeRetry?.kind === "places") {
-      setShowClassicFallback(false);
-      setFallbackKind("none");
-      setPendingRetry(null);
-      runParsedSearch(
-        {
-          ...activeRetry.form,
-          locationA: nextForm.locationA,
-          locationAPlaceId: nextForm.locationAPlaceId,
-          locationACoordinates: nextForm.locationACoordinates,
-          searchMode: "single"
-        },
-        activeRetry.form.customQuery?.trim() || lastAskQuery.trim() || "restaurants near me"
-      );
-    }
+    setLocationSavedMessage("Location saved — tap Search to continue.");
+    setError("");
   }
 
   async function resolveManualLocation(input: string) {
@@ -393,7 +380,7 @@ export default function HomePage() {
         locationACoordinates: coordinates,
         searchMode: "single"
       };
-      await applyResolvedLocation(nextForm, "browser_success", retry ?? pendingRetry);
+      await applyResolvedLocation(nextForm, "browser_success");
     } catch {
       syncUserLocationFromStorage();
       setLocationUiState("browser_failed");
@@ -426,43 +413,313 @@ export default function HomePage() {
     };
   }, [results]);
 
-  async function submitSearch(searchForm: SearchHalfwayRequest = form, existingShareUrl?: string) {
+  function applyPlacesResults(
+    searchForm: SearchHalfwayRequest,
+    data: SearchHalfwayResponse,
+    existingShareUrl?: string,
+    submitOptions?: SearchSubmitOptions
+  ) {
+    setResults(data);
+    setWatchEventsResult(null);
+    setSearchKind("places");
+    setForm(formForSessionAfterSearch(searchForm, getActiveLocationContext(), submitOptions));
+    const shareUrl = updateShareUrl(searchForm);
+    setCurrentShareUrl(existingShareUrl ?? shareUrl);
+    setRecentMeetups(saveRecentMeetup(createRecentMeetup(searchForm, data, shareUrl)));
+    syncUserLocationFromStorage();
+    trackEvent("search_completed", {
+      category: data.category,
+      resultCount: data.venues.length,
+      hasWeather: true,
+      hasPreferences: data.preferences.length > 0
+    });
+  }
+
+  function applyWatchEventsResults(data: WatchEventsResult) {
+    setWatchEventsResult(data);
+    setResults(null);
+    if (data.streamingServiceIds?.length) {
+      setActiveStreamingServiceIds(data.streamingServiceIds);
+    }
+    syncUserLocationFromStorage();
+    trackEvent("watch_events_completed", {
+      intent: data.intent,
+      resultCount: data.resultCount
+    });
+  }
+
+  function preparePlacesIntent(
+    searchForm: SearchHalfwayRequest,
+    askQuery?: string,
+    submitOptions?: SearchSubmitOptions
+  ): SearchIntent | null {
+    if (askQuery?.trim()) setLastAskQuery(askQuery.trim());
+    const resolvedForm = resolveCurrentLocationInForm(searchForm, getActiveLocationContext());
+    if (needsCurrentLocationResolution(resolvedForm)) {
+      setPendingRetry({ kind: "places", form: resolvedForm });
+      setShowLocationActions(true);
+      setShowManualFallback(false);
+      setError("Add your location to search nearby.");
+      return null;
+    }
+
+    setShowClassicFallback(false);
+    setFallbackKind("none");
+    setPendingRetry(null);
+    setShowLocationActions(false);
+    return { kind: "places", form: resolvedForm, askQuery, submitOptions };
+  }
+
+  async function fetchWatchResults(
+    query: string,
+    subcategory: WatchSubcategory,
+    streamingServiceIds: string[]
+  ): Promise<WatchEventsResult> {
+    const response = await fetch("/api/watch-search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query, subcategory, streamingServiceIds })
+    });
+    const data = (await response.json()) as WatchEventsResult & { error?: string };
+    if (!response.ok) throw new Error(data.error ?? "Watch search failed.");
+    return data;
+  }
+
+  async function executeSearch(intent: SearchIntent) {
+    if (searchInFlightRef.current || loading) return;
+    searchInFlightRef.current = true;
+
     const startedAt = Date.now();
     const shouldPlayMotion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    setSearchKind("places");
     setHasSearched(true);
     setLoading(true);
     setError("");
     setShareMessage("");
-    setWatchEventsResult(null);
-    trackEvent("search_started", {
-      category: searchForm.category,
-      hasPreferences: Boolean(searchForm.preferences?.length)
-    });
+    setLocationSavedMessage("");
+
     try {
-      const response = await fetch("/api/search-halfway", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(searchForm)
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? "Search failed.");
-      setResults(data);
-      const shareUrl = updateShareUrl(searchForm);
-      setCurrentShareUrl(existingShareUrl ?? shareUrl);
-      setRecentMeetups(saveRecentMeetup(createRecentMeetup(searchForm, data, shareUrl)));
-      syncUserLocationFromStorage();
-      trackEvent("search_completed", {
-        category: data.category,
-        resultCount: data.venues.length,
-        hasWeather: true,
-        hasPreferences: data.preferences.length > 0
-      });
+      if (intent.kind === "places") {
+        const prepared = preparePlacesIntent(intent.form, intent.askQuery, intent.submitOptions);
+        if (!prepared || prepared.kind !== "places") return;
+
+        setSearchKind("places");
+        setWatchEventsResult(null);
+        setResults(null);
+        trackEvent("search_started", {
+          category: prepared.form.category,
+          hasPreferences: Boolean(prepared.form.preferences?.length)
+        });
+
+        const response = await fetch("/api/search-halfway", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(prepared.form)
+        });
+        const data = (await response.json()) as SearchHalfwayResponse & { error?: string };
+        if (!response.ok) throw new Error(data.error ?? "Search failed.");
+        applyPlacesResults(prepared.form, data, intent.existingShareUrl, intent.submitOptions);
+        return;
+      }
+
+      if (intent.kind === "watch") {
+        const query = intent.query.trim();
+        if (!query) throw new Error("Tell Koi what you want to watch.");
+        setLastAskQuery(query);
+
+        const mergedStreamingServiceIds = mergeStreamingServiceIds(
+          intent.streamingServiceIds ?? activeStreamingServiceIds,
+          extractStreamingProviders(query)
+        );
+        const subcategory = intent.subcategory ?? activeWatchSubcategory;
+        setActiveStreamingServiceIds(mergedStreamingServiceIds);
+        setActiveWatchSubcategory(subcategory);
+        setSearchKind("watch");
+        setResults(null);
+        setWatchEventsResult(null);
+        setCurrentShareUrl("");
+        trackEvent("watch_events_opened", { queryLength: query.length });
+
+        const data = await fetchWatchResults(query, subcategory, mergedStreamingServiceIds);
+        applyWatchEventsResults(data);
+        return;
+      }
+
+      if (intent.kind === "events") {
+        const query = intent.query.trim();
+        if (!query) throw new Error("Tell Koi what events you want to find.");
+        setLastAskQuery(query);
+
+        let eventLocationContext = resolveCurrentLocationInForm(
+          intent.locationContext ?? form,
+          getActiveLocationContext()
+        );
+
+        const placeForm = resolveWatchPlaceSearchForm(query, eventLocationContext);
+        if (placeForm && !isMovieTheaterEventsQuery(query)) {
+          const placesIntent = preparePlacesIntent(placeForm, query);
+          if (!placesIntent || placesIntent.kind !== "places") return;
+
+          setSearchKind("places");
+          setWatchEventsResult(null);
+          setResults(null);
+          trackEvent("search_started", {
+            category: placesIntent.form.category,
+            hasPreferences: Boolean(placesIntent.form.preferences?.length)
+          });
+
+          const response = await fetch("/api/search-halfway", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(placesIntent.form)
+          });
+          const data = (await response.json()) as SearchHalfwayResponse & { error?: string };
+          if (!response.ok) throw new Error(data.error ?? "Search failed.");
+          applyPlacesResults(placesIntent.form, data);
+          return;
+        }
+
+        if (
+          looksLikeCurrentLocationQuery(query) &&
+          needsCurrentLocationResolution({ ...eventLocationContext, locationA: "me", searchMode: "single" })
+        ) {
+          setPendingRetry({ kind: "events", query });
+          setShowLocationActions(true);
+          setShowManualFallback(false);
+          setError("Add your location to search nearby.");
+          return;
+        }
+
+        if (!eventLocationContext.locationA.trim() || needsCurrentLocationResolution(eventLocationContext)) {
+          setSearchKind("events");
+          setResults(null);
+          setWatchEventsResult(null);
+          openLocationFallback({ kind: "events", query }, "Add your location to search nearby.");
+          return;
+        }
+
+        setSearchKind("events");
+        setResults(null);
+        setWatchEventsResult(null);
+        setCurrentShareUrl("");
+        trackEvent("watch_events_opened", { queryLength: query.length });
+
+        const response = await fetch("/api/watch-events", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query, form: eventLocationContext })
+        });
+        const data = (await response.json()) as WatchEventsApiResponse & { error?: string };
+        if (!response.ok) throw new Error(data.error ?? "Search failed.");
+
+        if ("append" in data && data.append) {
+          throw new Error("Unexpected load-more response.");
+        }
+
+        const result = data as WatchEventsResult;
+        if (result.preview) {
+          openLocationFallback({ kind: "events", query }, "Add your location to search nearby.");
+          throw new Error("Add your location to search nearby.");
+        }
+
+        setShowClassicFallback(false);
+        setFallbackKind("none");
+        setPendingRetry(null);
+        applyWatchEventsResults(result);
+        return;
+      }
+
+      if (intent.kind === "freeform") {
+        const query = intent.query.trim();
+        if (!query) throw new Error("Tell Koi what you are looking for.");
+        setLastAskQuery(query);
+
+        if (hasStreamingWatchContext(query)) {
+          const mergedStreamingServiceIds = mergeStreamingServiceIds(
+            intent.streamingServiceIds ?? activeStreamingServiceIds,
+            extractStreamingProviders(query)
+          );
+          const subcategory = intent.watchSubcategory ?? activeWatchSubcategory;
+          setActiveStreamingServiceIds(mergedStreamingServiceIds);
+          setActiveWatchSubcategory(subcategory);
+          setSearchKind("watch");
+          setCurrentShareUrl("");
+          trackEvent("watch_events_opened", { queryLength: query.length });
+          applyWatchEventsResults(await fetchWatchResults(query, subcategory, mergedStreamingServiceIds));
+          return;
+        }
+
+        setResults(null);
+        setWatchEventsResult(null);
+
+        const response = await fetch("/api/koi-search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            query,
+            context: intent.context ?? getActiveLocationContext(),
+            form,
+            watchSubcategory: intent.watchSubcategory,
+            streamingServiceIds: intent.streamingServiceIds
+          })
+        });
+        const data = (await response.json()) as KoiSearchApiResponse & { error?: string };
+        if (!response.ok) {
+          if (response.status === 422 && data.kind === "needs_location") {
+            if (data.botMode === "places" && data.form) {
+              handleNeedsLocation(data.form);
+            } else {
+              setPendingRetry({ kind: "events", query });
+              setShowLocationActions(true);
+              setShowManualFallback(false);
+            }
+            setError(data.error ?? "Add your location to search nearby.");
+            return;
+          }
+          throw new Error(data.error ?? "Search failed.");
+        }
+
+        if (data.kind === "places") {
+          setSearchKind("places");
+          trackEvent("search_started", {
+            category: data.data.category,
+            hasPreferences: Boolean(data.data.preferences?.length)
+          });
+          applyPlacesResults(
+            {
+              ...form,
+              category: data.data.category,
+              customQuery: query,
+              searchMode: data.data.searchMode
+            },
+            data.data
+          );
+          return;
+        }
+
+        if (data.kind === "watch") {
+          setSearchKind("watch");
+          trackEvent("watch_events_opened", { queryLength: query.length });
+          applyWatchEventsResults(data.data);
+          return;
+        }
+
+        if (data.kind === "events") {
+          setSearchKind("events");
+          trackEvent("watch_events_opened", { queryLength: query.length });
+          applyWatchEventsResults(data.data);
+        }
+      }
     } catch (searchError) {
       setResults(null);
+      setWatchEventsResult(null);
       setError(searchError instanceof Error ? searchError.message : "Search failed.");
+      if (intent.kind === "events" || intent.kind === "freeform") {
+        scrollToFallback();
+      }
     } finally {
-      const remainingMotionTime = 950 - (Date.now() - startedAt);
+      searchInFlightRef.current = false;
+      const motionMs = intent.kind === "places" ? 950 : 650;
+      const remainingMotionTime = motionMs - (Date.now() - startedAt);
       if (shouldPlayMotion && remainingMotionTime > 0) await wait(remainingMotionTime);
       setLoading(false);
     }
@@ -499,6 +756,7 @@ export default function HomePage() {
     setOpenedFromSharedHalfway(false);
     setHasSearched(false);
     setLastAskQuery("");
+    setLocationSavedMessage("");
     setShowClassicFallback(false);
     setFallbackKind("none");
     setPendingRetry(null);
@@ -513,26 +771,7 @@ export default function HomePage() {
   function rerunRecentMeetup(meetup: RecentMeetup) {
     const nextForm = recentMeetupToForm(meetup);
     setForm(nextForm);
-    submitSearch(nextForm);
-  }
-
-  function runParsedSearch(nextForm: SearchHalfwayRequest, askQuery: string, options?: SearchSubmitOptions) {
-    if (askQuery.trim()) setLastAskQuery(askQuery.trim());
-    setWatchEventsResult(null);
-    const resolvedForm = resolveCurrentLocationInForm(nextForm, getActiveLocationContext());
-    if (needsCurrentLocationResolution(resolvedForm)) {
-      setPendingRetry({ kind: "places", form: resolvedForm });
-      setShowLocationActions(true);
-      setShowManualFallback(false);
-      setError("Add your location to search nearby.");
-      return;
-    }
-    setShowClassicFallback(false);
-    setFallbackKind("none");
-    setPendingRetry(null);
-    setShowLocationActions(false);
-    setForm(formForSessionAfterSearch(resolvedForm, getActiveLocationContext(), options));
-    submitSearch(resolvedForm);
+    void executeSearch({ kind: "places", form: nextForm });
   }
 
   function handleNeedsLocation(pendingForm: SearchHalfwayRequest) {
@@ -541,161 +780,53 @@ export default function HomePage() {
     setShowManualFallback(false);
   }
 
-  async function submitWatchSearch(
+  function handleAiSubmitQuery(
     query: string,
-    subcategory: WatchSubcategory = activeWatchSubcategory,
-    streamingServiceIds: string[] = activeStreamingServiceIds
+    options?: {
+      watchSubcategory?: WatchSubcategory;
+      streamingServiceIds?: string[];
+      builderStreaming?: boolean;
+    }
   ) {
-    const mergedStreamingServiceIds = mergeStreamingServiceIds(
-      streamingServiceIds,
-      extractStreamingProviders(query)
-    );
-    setActiveStreamingServiceIds(mergedStreamingServiceIds);
-    const startedAt = Date.now();
-    const shouldPlayMotion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (query.trim()) setLastAskQuery(query.trim());
-    setSearchKind("watch");
-    setActiveWatchSubcategory(subcategory);
-    setHasSearched(true);
-    setLoading(true);
-    setResults(null);
-    setWatchEventsResult(null);
-    setError("");
-    setShareMessage("");
-    setCurrentShareUrl("");
-    trackEvent("watch_events_opened", {
-      queryLength: query.length
-    });
-
-    try {
-      const response = await fetch("/api/watch-search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, subcategory, streamingServiceIds: mergedStreamingServiceIds })
+    if (options?.builderStreaming || hasStreamingWatchContext(query)) {
+      void executeSearch({
+        kind: "watch",
+        query,
+        subcategory: options?.watchSubcategory,
+        streamingServiceIds: options?.streamingServiceIds
       });
-      const data = (await response.json()) as WatchEventsResult & { error?: string };
-      if (!response.ok) throw new Error(data.error ?? "Watch search failed.");
-
-      setWatchEventsResult(data);
-      if (data.streamingServiceIds?.length) {
-        setActiveStreamingServiceIds(data.streamingServiceIds);
-      }
-      syncUserLocationFromStorage();
-      trackEvent("watch_events_completed", {
-        intent: data.intent,
-        resultCount: data.resultCount
-      });
-    } catch (searchError) {
-      setWatchEventsResult(null);
-      setError(searchError instanceof Error ? searchError.message : "Watch search failed.");
-    } finally {
-      const remainingMotionTime = 650 - (Date.now() - startedAt);
-      if (shouldPlayMotion && remainingMotionTime > 0) await wait(remainingMotionTime);
-      setLoading(false);
-    }
-  }
-
-  async function submitEventsSearch(query: string, locationContext?: SearchHalfwayRequest) {
-    const startedAt = Date.now();
-    const shouldPlayMotion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (query.trim()) setLastAskQuery(query.trim());
-    let redirectedToPlaces = false;
-    let eventLocationContext = resolveCurrentLocationInForm(locationContext ?? form, getActiveLocationContext());
-    if (looksLikeCurrentLocationQuery(query) && needsCurrentLocationResolution({ ...eventLocationContext, locationA: "me", searchMode: "single" })) {
-      setPendingRetry({ kind: "events", query });
-      setShowLocationActions(true);
-      setShowManualFallback(false);
-      setError("Add your location to search nearby.");
-      return;
-    }
-    if (!eventLocationContext.locationA.trim() || needsCurrentLocationResolution(eventLocationContext)) {
-      setSearchKind("events");
-      setHasSearched(true);
-      setResults(null);
-      setWatchEventsResult(null);
-      openLocationFallback({ kind: "events", query }, "Add your location to search nearby.");
       return;
     }
 
-    setSearchKind("events");
-    setHasSearched(true);
-    setLoading(true);
-    setResults(null);
-    setWatchEventsResult(null);
-    setError("");
-    setShareMessage("");
-    setCurrentShareUrl("");
-    trackEvent("watch_events_opened", {
-      queryLength: query.length
+    void executeSearch({
+      kind: "freeform",
+      query,
+      context: getActiveLocationContext(),
+      watchSubcategory: options?.watchSubcategory,
+      streamingServiceIds: options?.streamingServiceIds
     });
-
-    try {
-      const response = await fetch("/api/watch-events", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, form: eventLocationContext })
-      });
-      const data = (await response.json()) as WatchEventsApiResponse & { error?: string };
-      if (!response.ok) throw new Error(data.error ?? "Search failed.");
-
-      if (data.botMode === "places") {
-        setForm(data.form);
-        await submitSearch(data.form);
-        redirectedToPlaces = true;
-        return;
-      }
-
-      if ("append" in data && data.append) {
-        throw new Error("Unexpected load-more response.");
-      }
-
-      const result = data as WatchEventsResult;
-      if (result.preview) {
-        openLocationFallback({ kind: "events", query }, "Add your location to search nearby.");
-        throw new Error("Add your location to search nearby.");
-      }
-      setShowClassicFallback(false);
-      setFallbackKind("none");
-      setPendingRetry(null);
-      setWatchEventsResult(result);
-      syncUserLocationFromStorage();
-      trackEvent("watch_events_completed", {
-        intent: result.intent,
-        resultCount: result.resultCount
-      });
-    } catch (searchError) {
-      setWatchEventsResult(null);
-      setError(searchError instanceof Error ? searchError.message : "Search failed.");
-      scrollToFallback();
-    } finally {
-      if (!redirectedToPlaces) {
-        const remainingMotionTime = 650 - (Date.now() - startedAt);
-        if (shouldPlayMotion && remainingMotionTime > 0) await wait(remainingMotionTime);
-        setLoading(false);
-      }
-    }
   }
 
   function runWatchSearch(query: string, subcategory: WatchSubcategory) {
-    if (query.trim()) setLastAskQuery(query.trim());
-    const mergedStreamingServiceIds = mergeStreamingServiceIds(
-      activeStreamingServiceIds,
-      extractStreamingProviders(query)
-    );
-    void submitWatchSearch(query, subcategory, mergedStreamingServiceIds);
+    void executeSearch({
+      kind: "watch",
+      query,
+      subcategory,
+      streamingServiceIds: mergeStreamingServiceIds(activeStreamingServiceIds, extractStreamingProviders(query))
+    });
   }
 
   function runEventsSearch(query: string) {
-    if (query.trim()) setLastAskQuery(query.trim());
-    void submitEventsSearch(query);
+    void executeSearch({ kind: "events", query });
   }
 
   function runPlacesSearchFromBuilder(nextForm: SearchHalfwayRequest, options?: SearchSubmitOptions) {
-    runParsedSearch(
-      nextForm,
-      nextForm.customQuery?.trim() || lastAskQuery.trim() || "restaurants near me",
-      options
-    );
+    void executeSearch({
+      kind: "places",
+      form: nextForm,
+      askQuery: nextForm.customQuery?.trim() || lastAskQuery.trim() || "restaurants near me",
+      submitOptions: options
+    });
   }
 
   function handleBuilderExpanded(expanded: boolean) {
@@ -712,66 +843,36 @@ export default function HomePage() {
       setShowManualFallback(false);
     }
     setManualLocationError("");
+    setLocationSavedMessage("");
     window.requestAnimationFrame(() => {
       document.getElementById("ask-koi")?.scrollIntoView({ behavior: "smooth", block: "center" });
     });
   }
 
-  function handleFiltersChange(options: PickQueryOptions) {
-    const stored = getActiveLocationContext();
-    if (options?.builderMode) setBuilderMode(options.builderMode);
-    else if (options?.searchMode === "midpoint") setBuilderMode("halfway");
-    if (options?.streamingServiceIds !== undefined) setActiveStreamingServiceIds(options.streamingServiceIds);
-    if (options?.watchSubcategory) setActiveWatchSubcategory(options.watchSubcategory);
-    setForm((current) => {
-      const next = { ...current };
-      if (!next.locationA.trim() && stored.locationA?.trim()) {
-        next.locationA = stored.locationA;
-        next.locationAPlaceId = stored.locationAPlaceId;
-        next.locationACoordinates = stored.locationACoordinates;
-      }
-      if (options?.category) next.category = options.category;
-      if (options?.watchSubcategory) next.watchSubcategory = options.watchSubcategory;
-      else if (options?.category && options.category !== "custom") next.watchSubcategory = undefined;
-      if (options?.searchMode) next.searchMode = options.searchMode;
-      return next;
-    });
-  }
-
-  function applyPopularSearch(query: string, options?: PickQueryOptions) {
-    searchBoxRef.current?.fillQuery(query, options?.watchSubcategory);
-    if (options) handleFiltersChange(options);
+  function applyPopularSearch(query: string) {
+    searchBoxRef.current?.fillQuery(query);
   }
 
   function runFilterSearch(query: string, options: PickQueryOptions, isStreaming: boolean) {
-    if (query.trim()) setLastAskQuery(query.trim());
-    handleFiltersChange(options);
+    applyPickOptionsToSession(options, setBuilderMode, setActiveWatchSubcategory, setActiveStreamingServiceIds);
 
     if (isStreaming || options.watchSubcategory) {
-      void submitWatchSearch(
+      void executeSearch({
+        kind: "watch",
         query,
-        options.watchSubcategory ?? activeWatchSubcategory,
-        options.streamingServiceIds ?? activeStreamingServiceIds
-      );
+        subcategory: options.watchSubcategory ?? activeWatchSubcategory,
+        streamingServiceIds: options.streamingServiceIds ?? activeStreamingServiceIds
+      });
       return;
     }
 
-    const stored = getActiveLocationContext();
-    const searchForm: SearchHalfwayRequest = {
-      ...form,
-      category: options.category ?? form.category,
-      customQuery: query,
-      searchMode: options.searchMode ?? form.searchMode ?? "single",
-      watchSubcategory: undefined,
-      locationA: stored.locationA?.trim() || form.locationA || "me",
-      locationB: options.searchMode === "midpoint" ? form.locationB : ""
-    };
-
-    runParsedSearch(
-      searchForm,
-      query,
-      options.builderMode === "destination" ? { preserveSavedHomeLocation: true } : undefined
-    );
+    const searchForm = buildPlacesFormFromOptions(form, query, options, getActiveLocationContext());
+    void executeSearch({
+      kind: "places",
+      form: searchForm,
+      askQuery: query,
+      submitOptions: options.builderMode === "destination" ? { preserveSavedHomeLocation: true } : undefined
+    });
   }
 
   function submitLocationFallback() {
@@ -801,12 +902,13 @@ export default function HomePage() {
     persistSavedLocation(form);
 
     if (retry.kind === "events") {
-      void submitEventsSearch(retry.query, form);
+      void executeSearch({ kind: "events", query: retry.query, locationContext: form });
       return;
     }
 
-    runParsedSearch(
-      {
+    void executeSearch({
+      kind: "places",
+      form: {
         ...retry.form,
         locationA: form.locationA,
         locationAPlaceId: form.locationAPlaceId,
@@ -816,12 +918,12 @@ export default function HomePage() {
         locationBCoordinates: form.locationBCoordinates,
         searchMode: form.searchMode ?? retry.form.searchMode
       },
-      retry.form.customQuery?.trim() || lastAskQuery.trim() || "restaurants near me"
-    );
+      askQuery: retry.form.customQuery?.trim() || lastAskQuery.trim() || "restaurants near me"
+    });
   }
 
   function submitClassicSearch() {
-    submitSearch();
+    void executeSearch({ kind: "places", form });
   }
 
   function clearRecent() {
@@ -936,12 +1038,7 @@ export default function HomePage() {
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#0A1323] via-[#0A1323]/70 to-transparent sm:h-24" />
             <div className={`relative z-10 grid w-full gap-4 py-2 sm:gap-5 sm:py-4 ${PAGE_CONTAINER}`}>
               <MarketingHero />
-              <SearchPromptAssistProvider
-                busy={loading || locating || resolvingManual}
-                builderMode={builderMode}
-                onFiltersChange={handleFiltersChange}
-                seed={promptAssistSeed}
-              >
+              <SearchPromptAssistProvider busy={loading || locating || resolvingManual} builderMode={builderMode}>
                 <AiSearchBox
                   ref={searchBoxRef}
                   surface="hero"
@@ -955,16 +1052,14 @@ export default function HomePage() {
                   defaultUserAddress={savedUserAddress}
                   locating={locating}
                   resolvingManual={resolvingManual}
-                  onParsed={runParsedSearch}
-                  onWatchSearch={runWatchSearch}
-                  onEventsSearch={runEventsSearch}
-                  onNeedsFullFallback={() => openFullFallback()}
+                  locationSavedMessage={locationSavedMessage}
+                  submitError={error}
+                  onSubmitQuery={handleAiSubmitQuery}
                   onNeedsLocation={handleNeedsLocation}
                   onPersistUserAddress={persistUserAddress}
                   onUseLocation={() => void requestUserLocation()}
                   onShowZipFallback={showZipFallback}
                   onSubmitManualLocation={(input) => void resolveManualLocation(input)}
-                  streamingSearch={form.category === "custom" && Boolean(form.watchSubcategory)}
                 />
                 <HeroPopularSearches busy={loading || locating || resolvingManual} onSelect={applyPopularSearch} />
                 <div className="h-px bg-white/10" aria-hidden="true" />
@@ -1005,7 +1100,7 @@ export default function HomePage() {
                 discoveryMode="places"
                 onChange={handleFormChange}
                 onSubmit={submitClassicSearch}
-                hidden={!showClassicFallback || fallbackKind !== "full" || isStreamingForm}
+                hidden={!showClassicFallback || fallbackKind !== "full" || searchKind === "watch"}
               />
             </div>
           </section>
@@ -1053,8 +1148,6 @@ export default function HomePage() {
               <SearchPromptAssistProvider
                 busy={loading || locating || resolvingManual}
                 builderMode={builderMode}
-                onFiltersChange={handleFiltersChange}
-                seed={promptAssistSeed}
                 surface="page"
               >
                 <AiSearchBox
@@ -1070,16 +1163,14 @@ export default function HomePage() {
                   defaultUserAddress={savedUserAddress}
                   locating={locating}
                   resolvingManual={resolvingManual}
-                  onParsed={runParsedSearch}
-                  onWatchSearch={runWatchSearch}
-                  onEventsSearch={runEventsSearch}
-                  onNeedsFullFallback={() => openFullFallback()}
+                  locationSavedMessage={locationSavedMessage}
+                  submitError={error}
+                  onSubmitQuery={handleAiSubmitQuery}
                   onNeedsLocation={handleNeedsLocation}
                   onPersistUserAddress={persistUserAddress}
                   onUseLocation={() => void requestUserLocation()}
                   onShowZipFallback={showZipFallback}
                   onSubmitManualLocation={(input) => void resolveManualLocation(input)}
-                  streamingSearch={form.category === "custom" && Boolean(form.watchSubcategory)}
                 />
                 <HeroPopularSearches busy={loading || locating || resolvingManual} onSelect={applyPopularSearch} />
                 <SearchPromptModePicker />
@@ -1119,7 +1210,7 @@ export default function HomePage() {
                 discoveryMode="places"
                 onChange={handleFormChange}
                 onSubmit={submitClassicSearch}
-                hidden={!showClassicFallback || fallbackKind !== "full" || isStreamingForm}
+                hidden={!showClassicFallback || fallbackKind !== "full" || searchKind === "watch"}
               />
               <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
             </section>

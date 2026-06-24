@@ -13,6 +13,7 @@ import { copyTextToClipboard } from "@/lib/share";
 import { trackEvent } from "@/lib/analytics";
 import { getCategoryConfig, getCategoryLabel, getPrimaryCategoryId } from "@/lib/categories";
 import { getPreferenceLabel } from "@/lib/preferences";
+import { venueSignalChips } from "@/lib/resultSignals";
 import type { MeetupMode, ScoredVenue, SearchMode, VenueCategory } from "@/lib/types";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -57,6 +58,7 @@ export function VenueCard({
     venue.travelFromA.status === "OK" &&
     venue.travelFromB.status === "OK";
   const venueAction = getVenueAction(venue, searchCategory);
+  const signalChips = venueSignalChips(venue, searchMode);
   const collegeResearchLinks = getPrimaryCategoryId(searchCategory) === "colleges" ? getCollegeResearchLinks(venue) : null;
   const reviewSnippet = venue.reviewQuote || venue.reviewSummary;
   const match = getMatchExplanation({
@@ -156,6 +158,18 @@ export function VenueCard({
             <CategoryIcon category={searchCategory} className="h-4 w-4" />
             {venue.category}
           </p>
+          {signalChips.length ? (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {signalChips.map((chip) => (
+                <span
+                  key={chip}
+                  className="inline-flex items-center rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate ring-1 ring-line"
+                >
+                  {chip}
+                </span>
+              ))}
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -182,15 +196,7 @@ export function VenueCard({
           ))}
         </div>
       </div>
-      <p className="mt-2 inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-bold text-ink">
-        {searchMode === "midpoint" ? <span>{formatDifference(venue.timeDifferenceMinutes)}</span> : null}
-        {typeof venue.rating === "number" ? <span>{searchMode === "midpoint" ? "· " : ""}{venue.rating.toFixed(1)} stars</span> : null}
-        {searchMode === "midpoint" && isClosestToHalfway ? <span>· Near the midpoint</span> : null}
-        <span className="inline-flex items-center gap-1 text-slate">
-          · <CategoryIcon category={searchCategory} active className="h-3.5 w-3.5" /> Category match
-        </span>
-      </p>
-      <p className="mt-3 text-sm leading-6 text-slate">{venue.address}</p>
+      <p className="mt-4 text-sm leading-6 text-slate">{venue.address}</p>
 
       {reviewSnippet ? (
         <figure className="mt-4 rounded-lg border border-line bg-white px-4 py-3">

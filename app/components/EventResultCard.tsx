@@ -2,6 +2,7 @@
 
 import { KoiPickBadge } from "@/app/components/KoiPickBadge";
 import { trackEvent } from "@/lib/analytics";
+import { eventCta, eventDistanceChip } from "@/lib/resultSignals";
 import type { EventResult } from "@/lib/types";
 import { useEffect, useRef } from "react";
 
@@ -15,6 +16,8 @@ export function EventResultCard({ event, rank, isKoiPick = false }: Props) {
   const cardRef = useRef<HTMLElement | null>(null);
   const viewed = useRef(false);
   const when = formatEventWhen(event.startTime);
+  const distanceChip = eventDistanceChip(event);
+  const cta = eventCta(event);
 
   useEffect(() => {
     if (!cardRef.current || viewed.current) return;
@@ -58,6 +61,11 @@ export function EventResultCard({ event, rank, isKoiPick = false }: Props) {
             <span className="rounded-full bg-koi/10 px-2.5 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-koi">
               {event.category}
             </span>
+            {distanceChip ? (
+              <span className="rounded-full bg-mint px-2.5 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-slate ring-1 ring-line">
+                {distanceChip}
+              </span>
+            ) : null}
           </div>
 
           <div className="grid gap-1">
@@ -69,22 +77,27 @@ export function EventResultCard({ event, rank, isKoiPick = false }: Props) {
             </p>
           </div>
 
-          {event.ticketUrl ? (
+          {cta ? (
             <div>
               <a
-                href={event.ticketUrl}
+                href={cta.href}
                 target="_blank"
                 rel="noreferrer"
                 onClick={() =>
                   trackEvent("event_card_clicked", {
                     rank,
                     category: event.category,
-                    source: event.source
+                    source: event.source,
+                    action: cta.kind
                   })
                 }
-                className="inline-flex h-10 items-center rounded-full bg-koi px-4 text-sm font-bold text-white transition hover:bg-koi-hover"
+                className={
+                  cta.kind === "tickets"
+                    ? "inline-flex h-10 items-center rounded-full bg-koi px-4 text-sm font-bold text-white transition hover:bg-koi-hover"
+                    : "inline-flex h-10 items-center rounded-full border border-koi/25 bg-koi/10 px-4 text-sm font-bold text-ink transition hover:border-koi hover:bg-koi hover:text-white"
+                }
               >
-                Get tickets
+                {cta.label}
               </a>
             </div>
           ) : null}

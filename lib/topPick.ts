@@ -1,4 +1,5 @@
 import { getPrimaryCategoryId } from "@/lib/categories";
+import { eventDistanceChip, mapsSearch, venueSignalChips } from "@/lib/resultSignals";
 import type { EventResult, ScoredVenue, SearchHalfwayResponse } from "@/lib/types";
 
 export type TopPickCta = {
@@ -250,22 +251,13 @@ function buildNightOut(
 // --- Shared signal helpers --------------------------------------------------
 
 function placeChips(venue: ScoredVenue, results: SearchHalfwayResponse): string[] {
-  const chips: string[] = [];
-  const travel = travelChip(venue, results);
-  if (travel) chips.push(travel);
-  if (venue.openNow === true) chips.push("Open now");
-  else if (venue.openNow === false) chips.push("Closed");
-  if (typeof venue.rating === "number") chips.push(`${venue.rating.toFixed(1)} ★ (${formatCount(venue.reviewCount)})`);
-  const price = formatPriceLevel(venue.priceLevel);
-  if (price) chips.push(price);
-  return chips.slice(0, 4);
+  return venueSignalChips(venue, results.searchMode);
 }
 
 function eventChips(event: EventResult): string[] {
   const chips: string[] = [];
-  if (typeof event.distance === "number") {
-    chips.push(event.distance < 1 ? "Under 1 mi" : `${Math.round(event.distance)} mi away`);
-  }
+  const distance = eventDistanceChip(event);
+  if (distance) chips.push(distance);
   if (event.city) chips.push(`${event.city}${event.state ? `, ${event.state}` : ""}`);
   return chips.slice(0, 3);
 }
@@ -291,17 +283,6 @@ function travelPhrase(venue: ScoredVenue, results: SearchHalfwayResponse): strin
   if (minutes <= 10) return "an easy drive";
   if (minutes <= 20) return "a short drive";
   return `about ${minutes} min away`;
-}
-
-function travelChip(venue: ScoredVenue, results: SearchHalfwayResponse): string | null {
-  if (results.searchMode === "midpoint") {
-    const diff = venue.timeDifferenceMinutes;
-    if (typeof diff === "number" && diff <= 12) return "Fair for both";
-    return null;
-  }
-  const minutes = venue.travelFromA?.durationMinutes;
-  if (typeof minutes === "number" && venue.travelFromA?.status === "OK") return `${minutes} min away`;
-  return null;
 }
 
 function eventActivityNoun(event: EventResult): string {
@@ -377,28 +358,6 @@ function joinList(items: string[]): string {
   if (parts.length === 1) return parts[0];
   if (parts.length === 2) return `${parts[0]} and ${parts[1]}`;
   return `${parts.slice(0, -1).join(", ")}, and ${parts[parts.length - 1]}`;
-}
-
-function formatCount(value: number): string {
-  if (!Number.isFinite(value) || value <= 0) return "0";
-  if (value >= 1000) return `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}k`;
-  return String(value);
-}
-
-function formatPriceLevel(priceLevel?: string): string | null {
-  if (!priceLevel) return null;
-  const prices: Record<string, string> = {
-    PRICE_LEVEL_FREE: "Free",
-    PRICE_LEVEL_INEXPENSIVE: "$",
-    PRICE_LEVEL_MODERATE: "$$",
-    PRICE_LEVEL_EXPENSIVE: "$$$",
-    PRICE_LEVEL_VERY_EXPENSIVE: "$$$$"
-  };
-  return prices[priceLevel] ?? null;
-}
-
-function mapsSearch(query: string): string {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query.trim())}`;
 }
 
 function truncate(value: string, max: number): string {

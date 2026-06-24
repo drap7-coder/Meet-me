@@ -96,11 +96,11 @@ function keywordForProfile(profile?: EventSearchParams["profile"], query = "") {
 
   switch (profile) {
     case "date_night":
-      return "concert comedy theater";
+      return "";
     case "family":
-      return "family festival sports";
+      return "family";
     case "tonight":
-      return "comedy concert";
+      return "comedy";
     case "weekend":
       return "";
     default:

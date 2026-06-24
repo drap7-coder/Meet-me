@@ -1339,6 +1339,11 @@ export default function HomePage() {
                     );
                   })()}
                 </div>
+              ) : results.events?.length ? null : results.eventProfile ? (
+                <EmptyState
+                  title="No upcoming events found"
+                  description="We couldn't find matching events in this window. Try another team, sport, or a wider timeframe."
+                />
               ) : (
                 <EmptyState />
               )}

@@ -8,6 +8,8 @@ export interface EventResult {
   city: string;
   state: string;
   distance?: number;
+  latitude?: number;
+  longitude?: number;
   ticketUrl?: string;
   imageUrl?: string;
   source: string;

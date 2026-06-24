@@ -9,8 +9,11 @@ import { enrichPlacesResponseWithEvents } from "@/lib/placesWithEvents";
 import { ParseSearchError, parserProvider } from "@/lib/providers/parserProvider";
 import { googlePlacesProvider } from "@/lib/providers/googlePlacesProvider";
 import { watchProvider } from "@/lib/providers/watchProvider";
+import { searchLocalEvents } from "@/lib/eventDiscovery";
+import { classifyLocalEventProfile, isPureEventQuery } from "@/lib/localEventIntent";
+import { logApiError } from "@/lib/serverLog";
 import { isStreamingServiceId } from "@/lib/streamingServices";
-import type { SearchHalfwayRequest, WatchSubcategory } from "@/lib/types";
+import type { GeocodedLocation, SearchHalfwayRequest, SearchHalfwayResponse, WatchSubcategory } from "@/lib/types";
 import { hasStreamingWatchContext, isMovieTheaterEventsQuery } from "@/lib/watchEvents";
 import { resolveWatchPlaceSearchForm } from "@/lib/watchPlaceSearch";
 import type { KoiSearchApiResponse } from "@/lib/searchIntent";
@@ -102,6 +105,15 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
       };
     }
 
+    // Pure event/sports/concert asks resolve directly through Ticketmaster and skip
+    // the costly Google Places + Routes round-trip used only to build a shell response.
+    if (isPureEventQuery(query)) {
+      return {
+        kind: "places",
+        data: await buildEventsOnlyResponse(query, eventForm)
+      };
+    }
+
     const blendedForm: SearchHalfwayRequest = {
       ...eventForm,
       category: "activities",
@@ -147,6 +159,62 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
       resolvedForm
     )
   };
+}
+
+/**
+ * Build an event-only response without calling Google Places or Google Routes.
+ * Origin coordinates are taken from known/saved coordinates when available, and
+ * otherwise resolved with a single (cheap) geocode call as a fallback.
+ */
+async function buildEventsOnlyResponse(
+  query: string,
+  form: SearchHalfwayRequest
+): Promise<SearchHalfwayResponse> {
+  const origin = await resolveEventOrigin(form);
+  const profile = classifyLocalEventProfile(query);
+
+  let events: Awaited<ReturnType<typeof searchLocalEvents>> = [];
+  try {
+    events = await searchLocalEvents({
+      query,
+      latitude: origin.location.lat,
+      longitude: origin.location.lng,
+      profile
+    });
+  } catch (error) {
+    // Graceful degradation: event provider failures should not break the search.
+    logApiError("events-only-search", error);
+    events = [];
+  }
+
+  return {
+    originA: origin,
+    originB: origin,
+    midpoint: origin.location,
+    category: "events",
+    searchMode: "single",
+    meetupMode: "single",
+    preferences: form.preferences ?? [],
+    query,
+    venues: [],
+    ...(events.length ? { events, eventProfile: profile } : { eventProfile: profile })
+  };
+}
+
+async function resolveEventOrigin(form: SearchHalfwayRequest): Promise<GeocodedLocation> {
+  // Cheapest path first: use coordinates we already have (current location / saved origin).
+  if (form.locationACoordinates) {
+    const label = form.locationA.trim() || "Current location";
+    return {
+      input: label,
+      formattedAddress: label,
+      location: form.locationACoordinates,
+      placeId: form.locationAPlaceId
+    };
+  }
+
+  // Fallback: a single geocode call (no Places, no Routes).
+  return googlePlacesProvider.geocodeAddress(form.locationA, form.locationAPlaceId);
 }
 
 function parseSubcategory(value: unknown): WatchSubcategory | undefined {

@@ -37,6 +37,7 @@ type TicketmasterEvent = {
       name?: string;
       city?: { name?: string };
       state?: { stateCode?: string };
+      location?: { latitude?: string; longitude?: string };
     }>;
   };
 };
@@ -70,6 +71,9 @@ function normalizeEvent(raw: TicketmasterEvent): EventResult | null {
   const startTime = formatIsoDate(raw.dates?.start?.dateTime ?? raw.dates?.start?.localDate, raw.dates?.start?.localTime);
   const endTime = formatIsoDate(raw.dates?.end?.dateTime ?? raw.dates?.end?.localDate, raw.dates?.end?.localTime);
 
+  const latitude = parseCoordinate(venue?.location?.latitude);
+  const longitude = parseCoordinate(venue?.location?.longitude);
+
   return {
     id: raw.id,
     title: raw.name.trim(),
@@ -80,10 +84,18 @@ function normalizeEvent(raw: TicketmasterEvent): EventResult | null {
     city: venue?.city?.name?.trim() || "",
     state: venue?.state?.stateCode?.trim() || "",
     distance: typeof raw.distance === "number" ? raw.distance : undefined,
+    latitude,
+    longitude,
     ticketUrl: raw.url,
     imageUrl: pickImage(raw.images) || undefined,
     source: "ticketmaster"
   };
+}
+
+function parseCoordinate(value?: string): number | undefined {
+  if (value == null) return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
 }
 
 /** Ticketmaster keyword matches event names only — not natural-language queries. */

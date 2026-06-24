@@ -1,4 +1,4 @@
-import { shouldFetchTicketmasterEvents, classifyLocalEventProfile, isSportsEventQuery, isTeamSpecificSportsQuery, hasNamedTeamInQuery } from "@/lib/localEventIntent";
+import { shouldFetchTicketmasterEvents, classifyLocalEventProfile, isSportsEventQuery, isTeamSpecificSportsQuery, hasNamedTeamInQuery, isPureEventQuery } from "@/lib/localEventIntent";
 import { detectEventsIntent } from "@/lib/watchEvents";
 
 const SHOULD_TRIGGER = [
@@ -45,6 +45,21 @@ function run() {
     !isTeamSpecificSportsQuery("NBA games this weekend");
   console.log(`${teamNationwide ? "PASS" : "FAIL"}  team     nationwide team intent only for named teams`);
   if (!teamNationwide) failed += 1;
+
+  const pureEvents = [
+    "baseball game this weekend",
+    "concerts near me",
+    "comedy shows tonight",
+    "Phillies tickets Saturday",
+    "festivals this weekend"
+  ];
+  const blendedEvents = ["date night Friday", "things to do this weekend", "fun saturday", "family activities"];
+
+  const pureOk =
+    pureEvents.every((query) => isPureEventQuery(query)) &&
+    blendedEvents.every((query) => !isPureEventQuery(query));
+  console.log(`${pureOk ? "PASS" : "FAIL"}  pure     event-first queries vs blended discovery`);
+  if (!pureOk) failed += 1;
 
   if (failed > 0) process.exitCode = 1;
 }

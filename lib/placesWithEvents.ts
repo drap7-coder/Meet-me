@@ -15,6 +15,7 @@ export async function enrichPlacesResponseWithEvents(
 
   try {
     const profile = classifyLocalEventProfile(query);
+    const teamOnlyResults = hasNamedTeamInQuery(query);
     const events = await searchLocalEvents({
       query,
       latitude: response.originA.location.lat,
@@ -22,18 +23,17 @@ export async function enrichPlacesResponseWithEvents(
       profile
     });
 
-    if (!events.length) return response;
-
-    const teamOnlyResults = hasNamedTeamInQuery(query);
+    if (!events.length) {
+      // For a specific team, never fall back to unrelated local venues (e.g. parks);
+      // show an empty events state instead.
+      return teamOnlyResults ? { ...response, venues: [], eventProfile: profile } : response;
+    }
 
     return {
       ...response,
       venues: teamOnlyResults ? [] : response.venues,
-      ...(events.length
-        ? { events, eventProfile: profile }
-        : teamOnlyResults
-          ? { eventProfile: profile }
-          : {})
+      events,
+      eventProfile: profile
     };
   } catch {
     return response;

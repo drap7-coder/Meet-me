@@ -98,6 +98,27 @@ export function isTeamSpecificSportsQuery(query: string): boolean {
   return hasNamedTeamInQuery(query) && !/\bnear me\b/i.test(query);
 }
 
+/**
+ * Concrete event-type signals (concerts, comedy, festivals, theater, sports, named
+ * teams). These are "event-first" asks that should resolve straight to Ticketmaster
+ * without spinning up a Google Places/Routes shell.
+ */
+const CONCRETE_EVENT_TYPE_PATTERN =
+  /\b(?:concerts?|comedy|stand[- ]?up|festivals?|theat(?:er|re)|broadway|live music|gigs?|tickets?)\b/i;
+
+/**
+ * True for pure event/sports/concert/team queries that should be answered by the
+ * event provider alone. Generic discovery asks ("date night", "things to do",
+ * "fun saturday", "family activities") return false so they still blend with
+ * Google local venues.
+ */
+export function isPureEventQuery(query: string): boolean {
+  const value = query.trim();
+  if (!value) return false;
+  if (isSportsEventQuery(value) || hasNamedTeamInQuery(value)) return true;
+  return CONCRETE_EVENT_TYPE_PATTERN.test(value);
+}
+
 export { hasNamedTeamInQuery, resolveNamedSportsTeam } from "@/lib/sportsEventFilter";
 
 export function teamTicketmasterKeyword(query: string): string {

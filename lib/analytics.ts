@@ -21,6 +21,8 @@ type EventName =
   | "event_search_completed"
   | "event_card_viewed"
   | "event_card_clicked"
+  | "top_pick_primary_clicked"
+  | "top_pick_secondary_clicked"
   | "halfway_mode_selected"
   | "spot_mode_selected"
   | "streaming_mode_selected"

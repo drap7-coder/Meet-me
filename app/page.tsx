@@ -3,6 +3,7 @@
 import { EmptyState } from "@/app/components/EmptyState";
 import { KoiThinkingLoader } from "@/app/components/KoiThinkingLoader";
 import { EventResultCard } from "@/app/components/EventResultCard";
+import { TopPickCard } from "@/app/components/TopPickCard";
 import { AiSearchBox, type AiSearchBoxHandle } from "@/app/components/AiSearchBox";
 import { extractSportsSearchKeyword, hasNamedTeamInQuery, isTeamSpecificSportsQuery } from "@/lib/localEventIntent";
 import { CompactResultsHeader } from "@/app/components/home/CompactResultsHeader";
@@ -40,6 +41,7 @@ import {
 import { normalizeCategory, parseMeetupMode, parseSearchMode } from "@/lib/categories";
 import { parsePreferences } from "@/lib/preferences";
 import { shareWithFallback, shouldUseNativeShare } from "@/lib/share";
+import { buildTopPick } from "@/lib/topPick";
 import { trackEvent } from "@/lib/analytics";
 import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
 import {
@@ -1302,6 +1304,11 @@ export default function HomePage() {
               {shareMessage ? (
                 <p className={`mb-4 text-sm font-semibold ${activeAccent.text}`}>{shareMessage}</p>
               ) : null}
+
+              {(() => {
+                const pick = buildTopPick(results);
+                return pick ? <TopPickCard pick={pick} /> : null;
+              })()}
 
               <WeatherCard midpoint={results.midpoint} searchMode={results.searchMode} />
 

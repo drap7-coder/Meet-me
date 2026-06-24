@@ -62,6 +62,7 @@ import { extractStreamingProviders, mergeStreamingServiceIds } from "@/lib/strea
 import {
   applyPickOptionsToSession,
   buildPlacesFormFromOptions,
+  shouldRouteFilterSearchToFreeform,
   type KoiSearchApiResponse,
   type SearchIntent
 } from "@/lib/searchIntent";
@@ -912,6 +913,19 @@ export default function HomePage() {
         query,
         subcategory: options.watchSubcategory ?? activeWatchSubcategory,
         streamingServiceIds: options.streamingServiceIds ?? activeStreamingServiceIds
+      });
+      return;
+    }
+
+    // Sports/events chip picks ("Yankees games", "Concerts near me") belong on the
+    // koi-search events path — not search-halfway, which would call Google Places first.
+    if (shouldRouteFilterSearchToFreeform(query, options)) {
+      void executeSearch({
+        kind: "freeform",
+        query,
+        context: getActiveLocationContext(),
+        watchSubcategory: options.watchSubcategory,
+        streamingServiceIds: options.streamingServiceIds
       });
       return;
     }

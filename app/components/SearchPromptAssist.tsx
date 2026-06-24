@@ -28,6 +28,8 @@ export type PickQueryOptions = {
   searchMode?: SearchHalfwayRequest["searchMode"];
   builderMode?: SearchBuilderMode;
   streamingServiceIds?: string[];
+  /** Sports/events chip picks should go through koi-search, not search-halfway. */
+  routeViaFreeform?: boolean;
 };
 
 type ProviderProps = {
@@ -917,7 +919,8 @@ function resolveFilterPreview(state: BuilderState): FilterPreview | null {
       watchSubcategory: isStreaming ? streamType ?? undefined : undefined,
       streamingServiceIds: isStreaming ? [...state.streamingServices] : undefined,
       searchMode: !isStreaming && state.where === "halfway" ? "midpoint" : "single",
-      builderMode: builderModeForWhere(state.where)
+      builderMode: builderModeForWhere(state.where),
+      routeViaFreeform: state.localWhat === "sports" || state.localWhat === "events"
     }
   };
 }

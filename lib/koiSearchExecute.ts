@@ -1,6 +1,7 @@
 import { normalizeCategory } from "@/lib/categories";
 import { readRequestLocationContext, readRequestSearchForm } from "@/lib/apiLocationContext";
 import {
+  isCurrentLocationReference,
   looksLikeCurrentLocationQuery,
   needsCurrentLocationResolution,
   resolveCurrentLocationInForm
@@ -10,7 +11,7 @@ import { ParseSearchError, parserProvider } from "@/lib/providers/parserProvider
 import { googlePlacesProvider } from "@/lib/providers/googlePlacesProvider";
 import { watchProvider } from "@/lib/providers/watchProvider";
 import { searchLocalEvents } from "@/lib/eventDiscovery";
-import { classifyLocalEventProfile, isPureEventQuery } from "@/lib/localEventIntent";
+import { classifyLocalEventProfile, isPureEventQuery, isTeamSpecificSportsQuery } from "@/lib/localEventIntent";
 import { logApiError } from "@/lib/serverLog";
 import { isStreamingServiceId } from "@/lib/streamingServices";
 import type { GeocodedLocation, SearchHalfwayRequest, SearchHalfwayResponse, WatchSubcategory } from "@/lib/types";
@@ -93,11 +94,14 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
 
   if (parsed.botMode === "events") {
     let eventForm = resolveCurrentLocationInForm(locationContext, parseContext);
+    const teamNationwide = isTeamSpecificSportsQuery(query);
+
     if (looksLikeCurrentLocationQuery(query)) {
       eventForm = { ...eventForm, locationA: "me", searchMode: "single" };
     }
 
-    if (!eventForm.locationA.trim() || needsCurrentLocationResolution(eventForm)) {
+    // Named-team picks ("Yankees games") are nationwide — never block on location.
+    if (!teamNationwide && (!eventForm.locationA.trim() || needsCurrentLocationResolution(eventForm))) {
       return {
         kind: "needs_location",
         botMode: "events",
@@ -163,6 +167,14 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
 
 /**
  * Build an event-only response without calling Google Places or Google Routes.
+ * Exported for search-halfway fast-path when chip queries still hit that route.
+ */
+export async function searchEventsOnly(query: string, form: SearchHalfwayRequest): Promise<SearchHalfwayResponse> {
+  return buildEventsOnlyResponse(query, form);
+}
+
+/**
+ * Build an event-only response without calling Google Places or Google Routes.
  * Origin coordinates are taken from known/saved coordinates when available, and
  * otherwise resolved with a single (cheap) geocode call as a fallback.
  */
@@ -213,8 +225,19 @@ async function resolveEventOrigin(form: SearchHalfwayRequest): Promise<GeocodedL
     };
   }
 
-  // Fallback: a single geocode call (no Places, no Routes).
-  return googlePlacesProvider.geocodeAddress(form.locationA, form.locationAPlaceId);
+  const address = form.locationA.trim();
+  if (address && !isCurrentLocationReference(address)) {
+    // Fallback: a single geocode call (no Places, no Routes).
+    return googlePlacesProvider.geocodeAddress(address, form.locationAPlaceId);
+  }
+
+  // Nationwide team/event searches don't need a real origin for Ticketmaster. Use a
+  // neutral US centroid so distance math still works when venue coords are present.
+  return {
+    input: "United States",
+    formattedAddress: "United States",
+    location: { lat: 39.8283, lng: -98.5795 }
+  };
 }
 
 function parseSubcategory(value: unknown): WatchSubcategory | undefined {

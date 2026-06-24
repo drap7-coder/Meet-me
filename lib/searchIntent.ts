@@ -1,6 +1,7 @@
 import type { PickQueryOptions } from "@/app/components/SearchPromptAssist";
 import type { CurrentLocationContext } from "@/lib/currentLocation";
 import type { SearchSubmitOptions } from "@/lib/searchLocation";
+import { resolveKoiBotMode } from "@/lib/watchEvents";
 import type { SearchHalfwayRequest, SearchHalfwayResponse, WatchEventsResult, WatchSubcategory } from "@/lib/types";
 
 export type SearchIntent =
@@ -40,6 +41,11 @@ export type KoiSearchApiResponse =
       form?: SearchHalfwayRequest;
       error: string;
     };
+
+export function shouldRouteFilterSearchToFreeform(query: string, options: PickQueryOptions): boolean {
+  if (options.routeViaFreeform) return true;
+  return resolveKoiBotMode(query.trim()) === "events";
+}
 
 export function buildPlacesFormFromOptions(
   baseForm: SearchHalfwayRequest,

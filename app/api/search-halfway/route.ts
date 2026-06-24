@@ -1,4 +1,7 @@
 import { normalizeCategory } from "@/lib/categories";
+import { needsCurrentLocationResolution } from "@/lib/currentLocation";
+import { isPureEventQuery, isTeamSpecificSportsQuery } from "@/lib/localEventIntent";
+import { searchEventsOnly } from "@/lib/koiSearchExecute";
 import { enrichPlacesResponseWithEvents } from "@/lib/placesWithEvents";
 import { googlePlacesProvider } from "@/lib/providers/googlePlacesProvider";
 import {
@@ -59,6 +62,30 @@ export async function POST(request: Request) {
         errorMessage: "missing_custom_query"
       });
       return NextResponse.json({ error: "Enter a custom search term." }, { status: 400 });
+    }
+
+    const searchForm = { ...body, searchMode: body.searchMode ?? "midpoint" };
+    const teamNationwide = isTeamSpecificSportsQuery(queryHint);
+
+    // Pure event/sports chip queries should never spin up Google Places first.
+    if (isPureEventQuery(queryHint) && (teamNationwide || !needsCurrentLocationResolution(searchForm))) {
+      const { result, collector } = await executeInSearchTelemetry(() => searchEventsOnly(queryHint, searchForm));
+      finalizeSearchTelemetry(
+        {
+          endpoint: ENDPOINT,
+          searchKind: "places",
+          resolvedKind: "events",
+          categoryHint,
+          query: queryHint,
+          status: 200,
+          resultCount: result.events?.length ?? 0,
+          startedAt,
+          topPickPresent: (result.events?.length ?? 0) > 0,
+          eventsReturned: result.events?.length ?? 0
+        },
+        collector
+      );
+      return NextResponse.json(result);
     }
 
     const { result, collector } = await executeInSearchTelemetry(async () =>

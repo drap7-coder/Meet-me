@@ -3,6 +3,7 @@ import { classifyLocalEventProfile, eventTimeWindow } from "@/lib/localEventInte
 import { rankEventResults } from "@/lib/eventRanking";
 import type { EventProvider } from "@/lib/providers/eventDiscoveryTypes";
 import { ticketmasterEventProvider } from "@/lib/providers/ticketmasterEventProvider";
+import { logApiError } from "@/lib/serverLog";
 
 const providers: EventProvider[] = [ticketmasterEventProvider];
 
@@ -25,8 +26,8 @@ export async function searchLocalEvents(request: EventSearchRequest): Promise<Ev
         endDateTime: window.end.toISOString()
       });
       merged.push(...batch);
-    } catch {
-      // Gracefully degrade per provider.
+    } catch (error) {
+      logApiError("ticketmaster-event-discovery", error);
     }
   }
 

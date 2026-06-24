@@ -20,6 +20,8 @@ Use `.env.example` as the source template for local development and Vercel confi
 | `KV_REST_API_TOKEN` | Production recommended | Redis REST | Token for `KV_REST_API_URL`. |
 | `UPSTASH_REDIS_REST_URL` | Production alternative | Redis REST | Alias supported by `lib/redisRest.ts`. |
 | `UPSTASH_REDIS_REST_TOKEN` | Production alternative | Redis REST | Alias supported by `lib/redisRest.ts`. |
+| `TICKETMASTER_API_KEY` | Optional | Live event search | Server-only Ticketmaster Discovery API key. When unset, Local search still works without live events. |
+| `FEEDBACK_EMAIL` | Optional | Feedback routing | Server-only destination for feedback submissions. |
 
 ## Public Variables
 
@@ -79,3 +81,5 @@ GEMINI_API_KEY=...
 - `KV_REST_API_TOKEN`
 - `UPSTASH_REDIS_REST_URL`
 - `UPSTASH_REDIS_REST_TOKEN`
+- `TICKETMASTER_API_KEY`
+- `FEEDBACK_EMAIL`

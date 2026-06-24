@@ -79,21 +79,39 @@ function normalizeEvent(raw: TicketmasterEvent): EventResult | null {
   };
 }
 
+/** Ticketmaster keyword matches event names only — not natural-language queries. */
 function keywordForProfile(profile?: EventSearchParams["profile"], query = "") {
-  const trimmed = query.trim();
-  if (trimmed) return trimmed.slice(0, 120);
+  const value = query.toLowerCase();
+  const tokens: string[] = [];
+
+  if (/\bconcerts?\b/.test(value)) tokens.push("concert");
+  if (/\bcomedy\b/.test(value)) tokens.push("comedy");
+  if (/\b(?:theater|theatre)\b/.test(value)) tokens.push("theater");
+  if (/\bfestivals?\b/.test(value)) tokens.push("festival");
+  if (/\b(?:sports?|game)\b/.test(value)) tokens.push("sports");
+  if (/\bfamily\b/.test(value)) tokens.push("family");
+  if (/\bmusic\b/.test(value)) tokens.push("music");
+
+  if (tokens.length) return [...new Set(tokens)].join(" ");
+
   switch (profile) {
     case "date_night":
       return "concert comedy theater";
     case "family":
       return "family festival sports";
     case "tonight":
-      return "live events tonight";
+      return "comedy concert";
     case "weekend":
-      return "events this weekend";
+      return "";
     default:
-      return "live events";
+      return "";
   }
+}
+
+function formatTicketmasterDateTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toISOString().replace(/\.\d{3}Z$/, "Z");
 }
 
 export const ticketmasterEventProvider: EventProvider = {
@@ -112,12 +130,14 @@ export const ticketmasterEventProvider: EventProvider = {
       unit: "miles",
       size: "20",
       sort: "date,asc",
-      countryCode: "US",
-      keyword: keywordForProfile(request.profile, request.query)
+      countryCode: "US"
     };
 
-    if (request.startDateTime) params.startDateTime = request.startDateTime;
-    if (request.endDateTime) params.endDateTime = request.endDateTime;
+    const keyword = keywordForProfile(request.profile, request.query);
+    if (keyword) params.keyword = keyword;
+
+    if (request.startDateTime) params.startDateTime = formatTicketmasterDateTime(request.startDateTime);
+    if (request.endDateTime) params.endDateTime = formatTicketmasterDateTime(request.endDateTime);
 
     const payload = await withTicketmasterCache("/events.json", params, async () => {
       const url = new URL(`${DISCOVERY_BASE}/events.json`);

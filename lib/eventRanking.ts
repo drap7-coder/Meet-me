@@ -1,5 +1,5 @@
 import type { EventResult, LocalEventProfile } from "@/lib/eventResult";
-import { extractSportsSearchKeyword, isTeamSpecificSportsQuery } from "@/lib/localEventIntent";
+import { extractSportsSearchKeyword, hasNamedTeamInQuery } from "@/lib/localEventIntent";
 
 const SUPPRESSED =
   /\b(?:conference|networking|trade show|tradeshow|webinar|virtual event|virtual only|business expo|summit|seminar)\b/i;
@@ -50,7 +50,7 @@ function scoreEvent(event: EventResult, profile: LocalEventProfile, now: Date, q
     }
   }
 
-  if (event.distance != null && !isTeamSpecificSportsQuery(query)) {
+  if (event.distance != null && !hasNamedTeamInQuery(query)) {
     score += Math.max(0, 24 - event.distance);
   }
 
@@ -68,7 +68,7 @@ function scoreEvent(event: EventResult, profile: LocalEventProfile, now: Date, q
       if (SPORTS_BOOST.test(haystack)) score += 35;
       const teamKeyword = extractSportsSearchKeyword(query);
       if (teamKeyword && haystack.includes(teamKeyword.toLowerCase())) score += 45;
-      if (isTeamSpecificSportsQuery(query) && teamKeyword && haystack.includes(teamKeyword.toLowerCase())) {
+      if (hasNamedTeamInQuery(query) && teamKeyword && haystack.includes(teamKeyword.toLowerCase())) {
         score += 20;
       }
       break;

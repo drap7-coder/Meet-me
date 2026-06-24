@@ -1,10 +1,11 @@
 import type { EventResult } from "@/lib/eventResult";
 import {
-  eventMatchesTeamQuery,
   extractSportsSearchKeyword,
+  hasNamedTeamInQuery,
   isTeamSpecificSportsQuery,
   teamTicketmasterKeyword
 } from "@/lib/localEventIntent";
+import { filterNamedTeamGameEvents } from "@/lib/sportsEventFilter";
 import type { EventProvider, EventSearchParams } from "@/lib/providers/eventDiscoveryTypes";
 import { withTicketmasterCache } from "@/lib/ticketmasterCache";
 
@@ -109,7 +110,7 @@ function keywordForProfile(profile?: EventSearchParams["profile"], query = "") {
     case "weekend":
       return "";
     case "sports":
-      return isTeamSpecificSportsQuery(query) ? teamTicketmasterKeyword(query) : extractSportsSearchKeyword(query);
+      return hasNamedTeamInQuery(query) ? teamTicketmasterKeyword(query) : extractSportsSearchKeyword(query);
     default:
       return "";
   }
@@ -130,13 +131,6 @@ function formatTicketmasterDateTime(value: string) {
   return date.toISOString().replace(/\.\d{3}Z$/, "Z");
 }
 
-function filterTeamEvents(events: EventResult[], query: string) {
-  if (!isTeamSpecificSportsQuery(query)) return events;
-
-  const filtered = events.filter((event) => eventMatchesTeamQuery(event.title, query));
-  return filtered.length ? filtered : events;
-}
-
 export const ticketmasterEventProvider: EventProvider = {
   isConfigured() {
     return Boolean(getTicketmasterApiKey());
@@ -151,7 +145,7 @@ export const ticketmasterEventProvider: EventProvider = {
 
     const params: Record<string, string> = {
       apikey: apiKey,
-      size: nationwideTeamSearch ? "50" : "20",
+      size: nationwideTeamSearch || hasNamedTeamInQuery(request.query) ? "50" : "20",
       sort: "date,asc",
       countryCode: "US"
     };
@@ -185,6 +179,6 @@ export const ticketmasterEventProvider: EventProvider = {
       .map((event) => normalizeEvent(event))
       .filter((event): event is EventResult => Boolean(event?.startTime));
 
-    return filterTeamEvents(events, request.query);
+    return filterNamedTeamGameEvents(events, request.query);
   }
 };

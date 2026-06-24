@@ -4,7 +4,7 @@ import { EmptyState } from "@/app/components/EmptyState";
 import { KoiThinkingLoader } from "@/app/components/KoiThinkingLoader";
 import { EventResultCard } from "@/app/components/EventResultCard";
 import { AiSearchBox, type AiSearchBoxHandle } from "@/app/components/AiSearchBox";
-import { extractSportsSearchKeyword, isTeamSpecificSportsQuery } from "@/lib/localEventIntent";
+import { extractSportsSearchKeyword, hasNamedTeamInQuery, isTeamSpecificSportsQuery } from "@/lib/localEventIntent";
 import { CompactResultsHeader } from "@/app/components/home/CompactResultsHeader";
 import { MarketingHero } from "@/app/components/home/MarketingHero";
 import { HeroPopularSearches } from "@/app/components/home/HeroPopularSearches";
@@ -81,10 +81,9 @@ const initialForm: SearchHalfwayRequest = {
 };
 
 function eventResultsHeading(query: string) {
-  if (/\bnear me\b/i.test(query)) {
+  if (hasNamedTeamInQuery(query) && /\bnear me\b/i.test(query)) {
     const team = extractSportsSearchKeyword(query);
     if (team) return `${team.charAt(0).toUpperCase()}${team.slice(1)} games nearby`;
-    return "Live events nearby";
   }
 
   if (!isTeamSpecificSportsQuery(query)) return "Live events nearby";

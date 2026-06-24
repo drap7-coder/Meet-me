@@ -1,4 +1,5 @@
 import type { LocalEventProfile } from "@/lib/eventResult";
+import { hasNamedTeamInQuery, resolveNamedSportsTeam } from "@/lib/sportsEventFilter";
 import { sportsTeamSearchPattern, sportsTeamById, SPORTS_TEAMS } from "@/lib/sportsTeams";
 import type { VenueCategory } from "@/lib/types";
 import { detectEventsIntent } from "@/lib/watchEvents";
@@ -73,10 +74,10 @@ export function isSportsEventQuery(query: string): boolean {
 }
 
 export function extractSportsSearchKeyword(query: string): string {
-  const value = query.toLowerCase();
+  const team = resolveNamedSportsTeam(query);
+  if (team) return team.searchTerm;
 
-  const teamMatch = value.match(SPORTS_TEAM_PATTERN);
-  if (teamMatch?.[0]) return teamMatch[0].replace(/\s+/g, " ").trim();
+  const value = query.toLowerCase();
 
   const leagueMatch = value.match(SPORTS_LEAGUE_PATTERN);
   if (leagueMatch?.[1]) return leagueMatch[1];
@@ -94,19 +95,10 @@ export function extractSportsSearchKeyword(query: string): string {
 }
 
 export function isTeamSpecificSportsQuery(query: string): boolean {
-  if (/\bnear me\b/i.test(query)) return false;
-
-  const value = query.toLowerCase();
-  if (SPORTS_TEAM_PATTERN.test(value)) return true;
-
-  const watchGameMatch = value.match(/\bwatch(?:ing)?(?: the)? ([a-z][a-z\s]{1,20}?) game\b/);
-  if (watchGameMatch?.[1]) {
-    const team = watchGameMatch[1].trim();
-    if (!["a", "the", "this", "that"].includes(team)) return true;
-  }
-
-  return false;
+  return hasNamedTeamInQuery(query) && !/\bnear me\b/i.test(query);
 }
+
+export { hasNamedTeamInQuery, resolveNamedSportsTeam } from "@/lib/sportsEventFilter";
 
 export function teamTicketmasterKeyword(query: string): string {
   const token = extractSportsSearchKeyword(query).toLowerCase();

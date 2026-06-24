@@ -1,6 +1,7 @@
 import { searchLocalEvents } from "@/lib/eventDiscovery";
 import type { EventResult } from "@/lib/eventResult";
 import { classifyLocalEventProfile, shouldFetchTicketmasterEvents } from "@/lib/localEventIntent";
+import { hasNamedTeamInQuery } from "@/lib/sportsEventFilter";
 import type { SearchHalfwayRequest, SearchHalfwayResponse } from "@/lib/types";
 
 export async function enrichPlacesResponseWithEvents(
@@ -23,10 +24,16 @@ export async function enrichPlacesResponseWithEvents(
 
     if (!events.length) return response;
 
+    const teamOnlyResults = hasNamedTeamInQuery(query);
+
     return {
       ...response,
-      events,
-      eventProfile: profile
+      venues: teamOnlyResults ? [] : response.venues,
+      ...(events.length
+        ? { events, eventProfile: profile }
+        : teamOnlyResults
+          ? { eventProfile: profile }
+          : {})
     };
   } catch {
     return response;

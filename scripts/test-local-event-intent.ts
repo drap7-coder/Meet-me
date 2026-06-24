@@ -1,4 +1,4 @@
-import { shouldFetchTicketmasterEvents, classifyLocalEventProfile, isSportsEventQuery, isTeamSpecificSportsQuery } from "@/lib/localEventIntent";
+import { shouldFetchTicketmasterEvents, classifyLocalEventProfile, isSportsEventQuery, isTeamSpecificSportsQuery, hasNamedTeamInQuery } from "@/lib/localEventIntent";
 import { detectEventsIntent } from "@/lib/watchEvents";
 
 const SHOULD_TRIGGER = [
@@ -38,6 +38,7 @@ function run() {
 
   const teamNationwide =
     isTeamSpecificSportsQuery("Yankees game this weekend") &&
+    hasNamedTeamInQuery("Yankees games near me") &&
     !isTeamSpecificSportsQuery("Yankees games near me") &&
     isTeamSpecificSportsQuery("Phillies game tonight") &&
     !isTeamSpecificSportsQuery("live sports near me") &&

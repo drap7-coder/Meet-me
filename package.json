@@ -11,7 +11,8 @@
     "test:parser": "npx tsx scripts/test-parse-search.ts",
     "test:routing": "npx tsx scripts/test-bot-mode-routing.ts",
     "test:destination-location": "npx tsx scripts/test-destination-location.ts",
-    "test:event-intent": "npx tsx scripts/test-local-event-intent.ts"
+    "test:event-intent": "npx tsx scripts/test-local-event-intent.ts",
+    "test:sports-event-filter": "npx tsx scripts/test-sports-event-filter.ts"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",

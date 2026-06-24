@@ -1,7 +1,7 @@
 import { getRedisConfig, redisCommand } from "@/lib/redisRest";
 import { recordCacheHit, recordCacheMiss, recordProviderCall } from "@/lib/searchTelemetryRuntime";
 
-const CACHE_PREFIX = "ticketmaster:v1:";
+const CACHE_PREFIX = "ticketmaster:v2:";
 const CACHE_TTL_SECONDS = 60 * 30;
 
 type MemoryEntry = {

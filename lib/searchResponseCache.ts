@@ -238,5 +238,5 @@ export function buildKoiSearchCacheKey(input: KoiCacheKeyInput): string {
     : "";
   const day = new Date().toISOString().slice(0, 10);
 
-  return `koi:v1:${stableHash([query, location, watch, streaming, day].join("|"))}`;
+  return `koi:v2:${stableHash([query, location, watch, streaming, day].join("|"))}`;
 }

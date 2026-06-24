@@ -15,7 +15,14 @@ export interface EventResult {
   source: string;
 }
 
-export type LocalEventProfile = "date_night" | "family" | "weekend" | "tonight" | "sports" | "general";
+export type LocalEventProfile =
+  | "date_night"
+  | "family"
+  | "weekend"
+  | "tonight"
+  | "sports"
+  | "music"
+  | "general";
 
 export type EventSearchRequest = {
   query: string;

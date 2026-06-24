@@ -13,6 +13,7 @@ const stacked = {
   localWhat: "food" as const,
   typeId: "sushi",
   sportsTeamId: null,
+  musicArtistId: null,
   extras: new Set(["date_night", "outdoor"]),
   where: "halfway" as const,
   streamingType: null,
@@ -34,6 +35,7 @@ const minimal = {
   localWhat: "food" as const,
   typeId: null,
   sportsTeamId: null,
+  musicArtistId: null,
   extras: new Set<string>(),
   where: "near" as const,
   streamingType: null,
@@ -49,6 +51,7 @@ const drinksStacked = {
   localWhat: "drinks" as const,
   typeId: "wine",
   sportsTeamId: null,
+  musicArtistId: null,
   extras: new Set(["upscale"]),
   where: "near" as const,
   streamingType: null,
@@ -67,6 +70,7 @@ const moviesBase = {
   localWhat: "food" as const,
   typeId: null,
   sportsTeamId: null,
+  musicArtistId: null,
   extras: new Set<string>(),
   where: "near" as const,
   streamingType: "movies" as const,
@@ -101,6 +105,7 @@ const yankeesSports = {
   localWhat: "sports" as const,
   typeId: "baseball",
   sportsTeamId: "yankees",
+  musicArtistId: null,
   extras: new Set<string>(),
   where: "near" as const,
   streamingType: null,
@@ -118,5 +123,23 @@ assert(
   buildPlaceQuery(baseballNearby) === "Baseball games near me",
   "sport without team builds geo query"
 );
+
+const rockConcerts = {
+  selectedMode: "local" as const,
+  localWhat: "events" as const,
+  typeId: "concerts",
+  sportsTeamId: null,
+  musicArtistId: null,
+  extras: new Set<string>(),
+  where: "near" as const,
+  streamingType: null,
+  streamingVibe: null,
+  genre: "rock",
+  streamingServices: new Set<string>()
+};
+assert(buildPlaceQuery(rockConcerts) === "Rock concerts near me", "concerts + rock genre");
+
+const taylorConcerts = { ...rockConcerts, genre: null, musicArtistId: "taylor_swift" };
+assert(buildPlaceQuery(taylorConcerts) === "Taylor Swift concerts near me", "concerts + artist chip");
 
 console.log("PASS prompt builder stacking");

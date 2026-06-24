@@ -1,6 +1,7 @@
 import { normalizeCategory } from "@/lib/categories";
 import { readRequestLocationContext, readRequestSearchForm } from "@/lib/apiLocationContext";
 import {
+  eventSearchLocationReady,
   isCurrentLocationReference,
   looksLikeCurrentLocationQuery,
   needsCurrentLocationResolution,
@@ -14,6 +15,7 @@ import { searchLocalEvents } from "@/lib/eventDiscovery";
 import { classifyLocalEventProfile, isPureEventQuery, isTeamSpecificSportsQuery } from "@/lib/localEventIntent";
 import { logApiError } from "@/lib/serverLog";
 import { isStreamingServiceId } from "@/lib/streamingServices";
+import type { CurrentLocationContext } from "@/lib/currentLocation";
 import type { GeocodedLocation, SearchHalfwayRequest, SearchHalfwayResponse, WatchSubcategory } from "@/lib/types";
 import { hasStreamingWatchContext, isMovieTheaterEventsQuery } from "@/lib/watchEvents";
 import { resolveWatchPlaceSearchForm } from "@/lib/watchPlaceSearch";
@@ -26,6 +28,8 @@ type ExecuteInput = {
   watchSubcategory?: WatchSubcategory;
   streamingServiceIds?: string[];
 };
+
+export type { ExecuteInput };
 
 export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchApiResponse> {
   const query = input.query.trim();
@@ -51,6 +55,26 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
     return {
       kind: "watch",
       data: await watchProvider.search(query, subcategory, streamingServiceIds)
+    };
+  }
+
+  // Chip picks like "Concerts near me" must hit Ticketmaster directly — before the
+  // parser or watch-place heuristics can send them through Google Places.
+  if (isPureEventQuery(query)) {
+    const teamNationwide = isTeamSpecificSportsQuery(query);
+    const eventForm = resolveEventSearchForm(query, locationContext, parseContext);
+
+    if (!teamNationwide && !eventSearchLocationReady(eventForm)) {
+      return {
+        kind: "needs_location",
+        botMode: "events",
+        error: "Add your location to search nearby."
+      };
+    }
+
+    return {
+      kind: "places",
+      data: await buildEventsOnlyResponse(query, eventForm)
     };
   }
 
@@ -93,28 +117,15 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
   }
 
   if (parsed.botMode === "events") {
-    let eventForm = resolveCurrentLocationInForm(locationContext, parseContext);
     const teamNationwide = isTeamSpecificSportsQuery(query);
-
-    if (looksLikeCurrentLocationQuery(query)) {
-      eventForm = { ...eventForm, locationA: "me", searchMode: "single" };
-    }
+    const eventForm = resolveEventSearchForm(query, locationContext, parseContext);
 
     // Named-team picks ("Yankees games") are nationwide — never block on location.
-    if (!teamNationwide && (!eventForm.locationA.trim() || needsCurrentLocationResolution(eventForm))) {
+    if (!teamNationwide && !eventSearchLocationReady(eventForm)) {
       return {
         kind: "needs_location",
         botMode: "events",
         error: "Add your location to search nearby."
-      };
-    }
-
-    // Pure event/sports/concert asks resolve directly through Ticketmaster and skip
-    // the costly Google Places + Routes round-trip used only to build a shell response.
-    if (isPureEventQuery(query)) {
-      return {
-        kind: "places",
-        data: await buildEventsOnlyResponse(query, eventForm)
       };
     }
 
@@ -182,8 +193,28 @@ async function buildEventsOnlyResponse(
   query: string,
   form: SearchHalfwayRequest
 ): Promise<SearchHalfwayResponse> {
-  const origin = await resolveEventOrigin(form);
   const profile = classifyLocalEventProfile(query);
+  let origin: GeocodedLocation;
+
+  try {
+    origin = await resolveEventOrigin(form);
+  } catch (error) {
+    logApiError("events-origin-resolve", error);
+    const label = form.locationA.trim() || "Current location";
+    const unresolved = { input: label, formattedAddress: label, location: { lat: 0, lng: 0 } };
+    return {
+      originA: unresolved,
+      originB: unresolved,
+      midpoint: { lat: 0, lng: 0 },
+      category: "events",
+      searchMode: "single",
+      meetupMode: "single",
+      preferences: form.preferences ?? [],
+      query,
+      venues: [],
+      eventProfile: profile
+    };
+  }
 
   let events: Awaited<ReturnType<typeof searchLocalEvents>> = [];
   try {
@@ -211,6 +242,49 @@ async function buildEventsOnlyResponse(
     venues: [],
     ...(events.length ? { events, eventProfile: profile } : { eventProfile: profile })
   };
+}
+
+/**
+ * Merge saved/current location into the search form. For "near me" asks, set locationA
+ * to "me" first so resolveCurrentLocationInForm can attach browser coordinates.
+ */
+export function resolveEventSearchForm(
+  query: string,
+  locationContext: SearchHalfwayRequest,
+  parseContext?: CurrentLocationContext
+): SearchHalfwayRequest {
+  let eventForm = { ...locationContext };
+
+  if (looksLikeCurrentLocationQuery(query)) {
+    if (parseContext?.locationACoordinates) {
+      eventForm = { ...eventForm, locationA: "me", searchMode: "single" };
+    } else {
+      const savedCity =
+        (typeof parseContext?.locationA === "string" ? parseContext.locationA.trim() : "") ||
+        eventForm.locationA.trim();
+      if (savedCity && !isCurrentLocationReference(savedCity)) {
+        eventForm = {
+          ...eventForm,
+          locationA: savedCity,
+          locationAPlaceId: eventForm.locationAPlaceId ?? parseContext?.locationAPlaceId,
+          searchMode: "single"
+        };
+      } else {
+        eventForm = { ...eventForm, locationA: "me", searchMode: "single" };
+      }
+    }
+  } else if (!eventForm.locationACoordinates && parseContext?.locationACoordinates) {
+    const contextLabel = typeof parseContext.locationA === "string" ? parseContext.locationA.trim() : "";
+    eventForm = {
+      ...eventForm,
+      locationA: eventForm.locationA.trim() || contextLabel || "Current location",
+      locationAPlaceId: eventForm.locationAPlaceId ?? parseContext.locationAPlaceId,
+      locationACoordinates: parseContext.locationACoordinates,
+      searchMode: eventForm.searchMode ?? "single"
+    };
+  }
+
+  return resolveCurrentLocationInForm(eventForm, parseContext);
 }
 
 async function resolveEventOrigin(form: SearchHalfwayRequest): Promise<GeocodedLocation> {

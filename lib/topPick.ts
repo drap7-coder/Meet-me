@@ -69,6 +69,7 @@ function resolveProfile(results: SearchHalfwayResponse): TopPickProfile {
       return "family";
     case "sports":
       return "sports";
+    case "music":
     case "tonight":
     case "weekend":
     case "general":

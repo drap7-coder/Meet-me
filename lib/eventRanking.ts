@@ -1,5 +1,7 @@
 import type { EventResult, LocalEventProfile } from "@/lib/eventResult";
 import { extractSportsSearchKeyword, hasNamedTeamInQuery } from "@/lib/localEventIntent";
+import { extractMusicGenreFromQuery } from "@/lib/musicGenres";
+import { resolveMusicArtistSearch } from "@/lib/musicArtists";
 
 const SUPPRESSED =
   /\b(?:conference|networking|trade show|tradeshow|webinar|virtual event|virtual only|business expo|summit|seminar)\b/i;
@@ -50,6 +52,7 @@ function scoreEvent(event: EventResult, profile: LocalEventProfile, now: Date, q
     }
   }
 
+  // Straight-line miles only (Ticketmaster or Haversine) — never Google Routes ETA.
   if (event.distance != null && !hasNamedTeamInQuery(query)) {
     score += Math.max(0, 24 - event.distance);
   }
@@ -70,6 +73,18 @@ function scoreEvent(event: EventResult, profile: LocalEventProfile, now: Date, q
       if (teamKeyword && haystack.includes(teamKeyword.toLowerCase())) score += 45;
       if (hasNamedTeamInQuery(query) && teamKeyword && haystack.includes(teamKeyword.toLowerCase())) {
         score += 20;
+      }
+      break;
+    }
+    case "music": {
+      const musicGenre = extractMusicGenreFromQuery(query);
+      const musicArtist = resolveMusicArtistSearch(query);
+      if (musicArtist && haystack.includes(musicArtist.ticketmasterKeyword.toLowerCase())) {
+        score += 45;
+      } else if (musicGenre && haystack.includes(musicGenre.ticketmasterClassification.toLowerCase())) {
+        score += 35;
+      } else if (DATE_NIGHT_BOOST.test(haystack)) {
+        score += 25;
       }
       break;
     }

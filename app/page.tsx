@@ -685,7 +685,7 @@ export default function HomePage() {
           body: JSON.stringify({
             query,
             context: intent.context ?? getActiveLocationContext(),
-            form,
+            form: intent.form ?? form,
             watchSubcategory: intent.watchSubcategory,
             streamingServiceIds: intent.streamingServiceIds
           })
@@ -920,10 +920,18 @@ export default function HomePage() {
     // Sports/events chip picks ("Yankees games", "Concerts near me") belong on the
     // koi-search events path — not search-halfway, which would call Google Places first.
     if (shouldRouteFilterSearchToFreeform(query, options)) {
+      const location = getActiveLocationContext();
       void executeSearch({
         kind: "freeform",
         query,
-        context: getActiveLocationContext(),
+        context: location,
+        form: {
+          ...form,
+          locationA: location.locationA?.trim() || form.locationA,
+          locationAPlaceId: location.locationAPlaceId ?? form.locationAPlaceId,
+          locationACoordinates: location.locationACoordinates ?? form.locationACoordinates,
+          searchMode: "single"
+        },
         watchSubcategory: options.watchSubcategory,
         streamingServiceIds: options.streamingServiceIds
       });

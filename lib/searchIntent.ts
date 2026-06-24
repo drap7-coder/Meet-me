@@ -27,6 +27,7 @@ export type SearchIntent =
       kind: "freeform";
       query: string;
       context?: CurrentLocationContext;
+      form?: SearchHalfwayRequest;
       watchSubcategory?: WatchSubcategory;
       streamingServiceIds?: string[];
     };

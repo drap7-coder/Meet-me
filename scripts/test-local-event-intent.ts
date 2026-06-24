@@ -1,9 +1,11 @@
-import { shouldFetchTicketmasterEvents, classifyLocalEventProfile, isSportsEventQuery, isTeamSpecificSportsQuery, hasNamedTeamInQuery, isPureEventQuery, eventTimeWindow } from "@/lib/localEventIntent";
+import { shouldFetchTicketmasterEvents, classifyLocalEventProfile, isMusicEventQuery, isSportsEventQuery, isTeamSpecificSportsQuery, hasNamedTeamInQuery, isPureEventQuery, eventTimeWindow } from "@/lib/localEventIntent";
 import { detectEventsIntent } from "@/lib/watchEvents";
 
 const SHOULD_TRIGGER = [
   { query: "things to do this weekend", profile: "weekend" },
-  { query: "concerts near me", profile: "general" },
+  { query: "concerts near me", profile: "music" },
+  { query: "live music near me", profile: "music" },
+  { query: "jazz near me", profile: "music" },
   { query: "comedy shows tonight", profile: "tonight" },
   { query: "date night", profile: "date_night" },
   { query: "Phillies game tonight", profile: "sports" },
@@ -49,6 +51,7 @@ function run() {
   const pureEvents = [
     "baseball game this weekend",
     "concerts near me",
+    "jazz near me",
     "comedy shows tonight",
     "Phillies tickets Saturday",
     "festivals this weekend"
@@ -82,9 +85,18 @@ function run() {
     spanDays("Yankees games") > 300 && // unqualified team -> next games (wide window)
     spanDays("Red Bulls games near me") > 300 &&
     spanDays("Phillies game tonight") < 2 && // explicit tonight stays tight
-    spanDays("NBA games this weekend") <= 3; // explicit weekend stays tight
-  console.log(`${windowOk ? "PASS" : "FAIL"}  window   unqualified sports -> next games, explicit stays tight`);
+    spanDays("NBA games this weekend") <= 3 && // explicit weekend stays tight
+    spanDays("concerts near me") > 300 && // unqualified music -> wide window
+    spanDays("concerts tonight near me") < 2; // explicit tonight stays tight
+  console.log(`${windowOk ? "PASS" : "FAIL"}  window   sports/music windows: wide by default, tight when explicit`);
   if (!windowOk) failed += 1;
+
+  const musicOk =
+    isMusicEventQuery("concerts near me") &&
+    isMusicEventQuery("live music this weekend") &&
+    !isMusicEventQuery("comedy shows tonight");
+  console.log(`${musicOk ? "PASS" : "FAIL"}  music    detects concert/live music without catching comedy`);
+  if (!musicOk) failed += 1;
 
   if (failed > 0) process.exitCode = 1;
 }

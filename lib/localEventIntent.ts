@@ -1,4 +1,6 @@
 import type { LocalEventProfile } from "@/lib/eventResult";
+import { extractMusicGenreFromQuery } from "@/lib/musicGenres";
+import { hasNamedMusicArtistInQuery } from "@/lib/musicArtists";
 import { hasNamedTeamInQuery, resolveNamedSportsTeam } from "@/lib/sportsEventFilter";
 import {
   SPORTS_CONTEXT_PATTERN,
@@ -118,6 +120,13 @@ export function isTeamSpecificSportsQuery(query: string): boolean {
 const CONCRETE_EVENT_TYPE_PATTERN =
   /\b(?:concerts?|comedy|stand[- ]?up|festivals?|theat(?:er|re)|broadway|live music|gigs?|tickets?)\b/i;
 
+/** Concert / live-music asks — use Ticketmaster Music segment, not keyword=concert. */
+export const MUSIC_EVENT_PATTERN = /\b(?:concerts?|live music|gigs?)\b/i;
+
+export function isMusicEventQuery(query: string): boolean {
+  return MUSIC_EVENT_PATTERN.test(query) || Boolean(extractMusicGenreFromQuery(query)) || hasNamedMusicArtistInQuery(query);
+}
+
 /**
  * True for pure event/sports/concert/team queries that should be answered by the
  * event provider alone. Generic discovery asks ("date night", "things to do",
@@ -128,6 +137,7 @@ export function isPureEventQuery(query: string): boolean {
   const value = query.trim();
   if (!value) return false;
   if (isSportsEventQuery(value) || hasNamedTeamInQuery(value)) return true;
+  if (isMusicEventQuery(value)) return true;
   return CONCRETE_EVENT_TYPE_PATTERN.test(value);
 }
 
@@ -200,6 +210,10 @@ export function classifyLocalEventProfile(query: string): LocalEventProfile {
     return "weekend";
   }
 
+  if (isMusicEventQuery(query)) {
+    return "music";
+  }
+
   return "general";
 }
 
@@ -247,6 +261,27 @@ export function eventTimeWindow(profile: LocalEventProfile, query = ""): { start
       end.setDate(end.getDate() + 2);
       end.setHours(23, 59, 59, 999);
       return { start, end };
+    }
+    case "music": {
+      if (/\b(?:tonight|today|this evening|right now)\b/i.test(value)) {
+        end.setDate(end.getDate() + 1);
+        end.setHours(5, 0, 0, 0);
+        return { start: now, end };
+      }
+      if (/\b(?:this weekend|saturday|sunday|weekend)\b/i.test(value)) {
+        const day = now.getDay();
+        const daysUntilSaturday = (6 - day + 7) % 7;
+        start.setDate(start.getDate() + daysUntilSaturday);
+        end.setTime(start.getTime());
+        end.setDate(end.getDate() + 2);
+        end.setHours(23, 59, 59, 999);
+        return { start, end };
+      }
+      // Unqualified concert picks: wide window so tours and on-sale dates aren't clipped.
+      end.setTime(now.getTime());
+      end.setFullYear(end.getFullYear() + 1);
+      end.setHours(23, 59, 59, 999);
+      return { start: now, end };
     }
     default:
       end.setDate(end.getDate() + 14);

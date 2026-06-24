@@ -277,6 +277,8 @@ export async function computeRouteMatrix(params: {
   origins: LatLng[];
   destinations: LatLng[];
 }): Promise<RouteLeg[][]> {
+  // Places-only: restaurants, bars, coffee, Meet Halfway venue cards.
+  // Ticketmaster events use straight-line miles (lib/eventDistance.ts) — never Routes.
   if (params.origins.length === 0 || params.destinations.length === 0) return [];
 
   recordProviderCall("google", "route_matrix");

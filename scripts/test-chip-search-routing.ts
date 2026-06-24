@@ -12,6 +12,7 @@ const yankeesState: BuilderState = {
   localWhat: "sports",
   typeId: "baseball",
   sportsTeamId: "yankees",
+  musicArtistId: null,
   extras: new Set(),
   where: "near",
   streamingType: null,

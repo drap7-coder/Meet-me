@@ -12,6 +12,8 @@ import {
   localHappeningsTopic
 } from "@/lib/localHappenings";
 import { SPORTS_CONTEXT_PATTERN, sportsTeamWeakPattern } from "@/lib/sportsTeams";
+import { extractMusicGenreFromQuery } from "@/lib/musicGenres";
+import { hasNamedMusicArtistInQuery } from "@/lib/musicArtists";
 
 const SPORTS_TEAM_NAME_PATTERN = sportsTeamWeakPattern();
 
@@ -53,7 +55,7 @@ const SHOW_ME_PLACES_PATTERN =
 const STREAMING_SERVICE_PATTERN =
   /\b(?:netflix|hulu|disney\+|disney plus|peacock|apple tv|hbo max|max|prime video|paramount\+|amazon prime)\b/i;
 const LIVE_EVENT_SIGNAL_PATTERN =
-  /\b(?:comedy clubs?|comedy shows?|stand[- ]?up|open mic|concert|concerts|festival|festivals|tickets?|box office|game tonight|events near|things to do|this weekend|movie theaters?|movie theatres?|cinema|cinemas)\b/i;
+  /\b(?:comedy clubs?|comedy shows?|stand[- ]?up|open mic|concert|concerts|live music|gigs?|festival|festivals|tickets?|box office|game tonight|events near|things to do|this weekend|movie theaters?|movie theatres?|cinema|cinemas)\b/i;
 
 /** Streaming/TMDB asks that should not be routed to live venue search. */
 export function hasStreamingWatchContext(query: string) {
@@ -137,13 +139,14 @@ export function detectEventsIntent(query: string) {
   if (!trimmed) return false;
   if (SHOW_ME_PLACES_PATTERN.test(trimmed)) return false;
   if (hasStreamingWatchContext(trimmed)) return false;
+  if (extractMusicGenreFromQuery(trimmed) || hasNamedMusicArtistInQuery(trimmed)) return true;
 
   const eventPatterns = [
     /\b(?:date night|fun tonight|family activit(?:y|ies)|festivals?(?:\s+nearby)?|live entertainment)\b/i,
     /\b(?:movie theaters?|movie theatres?|cinema|cinemas)\b/i,
     /\b(?:movies playing|now playing|playing nearby|showtimes?)\b/i,
     /\b(?:street fairs?|farmers? markets?|flea markets?|art walks?|pop[- ]?ups?|holiday markets?|seasonal markets?|food festivals?)\b/i,
-    /\b(?:comedy clubs?|comedy shows?|stand[- ]?up|concert|concerts|festival|festivals)\b/i,
+    /\b(?:comedy clubs?|comedy shows?|stand[- ]?up|concert|concerts|live music|gigs?|festival|festivals)\b/i,
     /\b(?:live sports|game tonight|watch the .* game|watch .* game tonight)\b/i,
     /\b(?:nba|nfl|mlb|nhl|mls|wnba|ncaa)\b/i,
     /\b(?:baseball|basketball|football|hockey|soccer)\b.*\bgames?\b/i,
@@ -171,7 +174,7 @@ export function detectEventsIntent(query: string) {
   }
 
   if (
-    /\b(?:sports|concert|festival|events?|game|games)\b/i.test(trimmed) &&
+    /\b(?:sports|concert|concerts|live music|gigs?|festival|events?|game|games)\b/i.test(trimmed) &&
     /\bnear\b/i.test(trimmed)
   ) {
     return true;

@@ -1,4 +1,5 @@
 import type { EventResult, ScoredVenue, SearchMode } from "@/lib/types";
+import { formatEventDistanceChip } from "@/lib/eventDistance";
 
 /**
  * Canonical, payload-only signal builders shared by the Top Pick and the result
@@ -47,10 +48,9 @@ function ratingChip(venue: ScoredVenue): string | null {
   return `${venue.rating.toFixed(1)} ★ (${formatCount(venue.reviewCount)})`;
 }
 
-/** A single distance chip for an event card, when distance is known. */
+/** Straight-line miles only — never Google Routes drive time. See lib/eventDistance.ts */
 export function eventDistanceChip(event: EventResult): string | null {
-  if (typeof event.distance !== "number") return null;
-  return event.distance < 1 ? "Under 1 mi" : `${Math.round(event.distance)} mi away`;
+  return formatEventDistanceChip(event.distance);
 }
 
 /** Primary CTA for an event: tickets if available, otherwise directions, else none. */

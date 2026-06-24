@@ -32,11 +32,12 @@ export function resolveCurrentLocationInForm(
 ): SearchHalfwayRequest {
   if (!isCurrentLocationReference(nextForm.locationA)) return nextForm;
 
-  if (context?.locationACoordinates && context.locationA.trim()) {
+  if (context?.locationACoordinates) {
+    const contextLabel = typeof context.locationA === "string" ? context.locationA.trim() : "";
     return {
       ...nextForm,
-      locationA: context.locationA,
-      locationAPlaceId: context.locationAPlaceId,
+      locationA: contextLabel || nextForm.locationA.trim() || "Current location",
+      locationAPlaceId: context.locationAPlaceId ?? nextForm.locationAPlaceId,
       locationACoordinates: context.locationACoordinates,
       searchMode: "single"
     };
@@ -47,6 +48,13 @@ export function resolveCurrentLocationInForm(
     locationA: "me",
     searchMode: "single"
   };
+}
+
+/** True when an event search can resolve an origin (coords or geocodable address). */
+export function eventSearchLocationReady(form: SearchHalfwayRequest): boolean {
+  if (form.locationACoordinates) return true;
+  const address = form.locationA.trim();
+  return Boolean(address) && !isCurrentLocationReference(address);
 }
 
 export function needsCurrentLocationResolution(form: SearchHalfwayRequest) {

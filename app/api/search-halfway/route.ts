@@ -1,5 +1,5 @@
 import { normalizeCategory } from "@/lib/categories";
-import { needsCurrentLocationResolution } from "@/lib/currentLocation";
+import { eventSearchLocationReady } from "@/lib/currentLocation";
 import { isPureEventQuery, isTeamSpecificSportsQuery } from "@/lib/localEventIntent";
 import { searchEventsOnly } from "@/lib/koiSearchExecute";
 import { enrichPlacesResponseWithEvents } from "@/lib/placesWithEvents";
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
     const teamNationwide = isTeamSpecificSportsQuery(queryHint);
 
     // Pure event/sports chip queries should never spin up Google Places first.
-    if (isPureEventQuery(queryHint) && (teamNationwide || !needsCurrentLocationResolution(searchForm))) {
+    if (isPureEventQuery(queryHint) && (teamNationwide || eventSearchLocationReady(searchForm))) {
       const { result, collector } = await executeInSearchTelemetry(() => searchEventsOnly(queryHint, searchForm));
       finalizeSearchTelemetry(
         {

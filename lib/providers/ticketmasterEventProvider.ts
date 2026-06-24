@@ -2,14 +2,22 @@ import type { EventResult } from "@/lib/eventResult";
 import {
   extractSportsSearchKeyword,
   hasNamedTeamInQuery,
+  isMusicEventQuery,
   isTeamSpecificSportsQuery,
   teamTicketmasterKeyword
 } from "@/lib/localEventIntent";
+import { extractMusicGenreFromQuery } from "@/lib/musicGenres";
+import { resolveMusicArtistSearch } from "@/lib/musicArtists";
+import { filterNamedArtistEvents } from "@/lib/musicEventFilter";
 import { filterNamedTeamGameEvents } from "@/lib/sportsEventFilter";
 import type { EventProvider, EventSearchParams } from "@/lib/providers/eventDiscoveryTypes";
 import { withTicketmasterCache } from "@/lib/ticketmasterCache";
 
 const DISCOVERY_BASE = "https://app.ticketmaster.com/discovery/v2";
+/** Ticketmaster max per page (values above 200 are rejected). */
+const MUSIC_PAGE_SIZE = "200";
+/** Fetch two pages for music — still within deep-paging limit (200 × 2 = 400). */
+const MUSIC_PAGES = 2;
 
 type TicketmasterEventsResponse = {
   _embedded?: {
@@ -23,8 +31,16 @@ type TicketmasterEvent = {
   url?: string;
   images?: Array<{ url?: string; ratio?: string; width?: number }>;
   dates?: {
-    start?: { dateTime?: string; localDate?: string; localTime?: string };
+    start?: {
+      dateTime?: string;
+      localDate?: string;
+      localTime?: string;
+      dateTBA?: boolean;
+      dateTBD?: boolean;
+      noSpecificTime?: boolean;
+    };
     end?: { dateTime?: string; localDate?: string; localTime?: string };
+    status?: { code?: string };
   };
   distance?: number;
   classifications?: Array<{
@@ -68,7 +84,9 @@ function normalizeEvent(raw: TicketmasterEvent): EventResult | null {
     classification?.subGenre?.name ||
     "Live event";
 
-  const startTime = formatIsoDate(raw.dates?.start?.dateTime ?? raw.dates?.start?.localDate, raw.dates?.start?.localTime);
+  const startTime =
+    formatIsoDate(raw.dates?.start?.dateTime ?? raw.dates?.start?.localDate, raw.dates?.start?.localTime) ||
+    (raw.dates?.start?.dateTBA || raw.dates?.start?.dateTBD ? "TBA" : "");
   const endTime = formatIsoDate(raw.dates?.end?.dateTime ?? raw.dates?.end?.localDate, raw.dates?.end?.localTime);
 
   const latitude = parseCoordinate(venue?.location?.latitude);
@@ -103,12 +121,10 @@ function keywordForProfile(profile?: EventSearchParams["profile"], query = "") {
   const value = query.toLowerCase();
   const tokens: string[] = [];
 
-  if (/\bconcerts?\b/.test(value)) tokens.push("concert");
   if (/\bcomedy\b/.test(value)) tokens.push("comedy");
   if (/\b(?:theater|theatre)\b/.test(value)) tokens.push("theater");
   if (/\bfestivals?\b/.test(value)) tokens.push("festival");
   if (/\bfamily\b/.test(value)) tokens.push("family");
-  if (/\bmusic\b/.test(value)) tokens.push("music");
 
   if (tokens.length) return [...new Set(tokens)].join(" ");
 
@@ -118,7 +134,7 @@ function keywordForProfile(profile?: EventSearchParams["profile"], query = "") {
     case "family":
       return "family";
     case "tonight":
-      return "comedy";
+      return isMusicEventQuery(query) ? "" : "comedy";
     case "weekend":
       return "";
     case "sports":
@@ -129,12 +145,28 @@ function keywordForProfile(profile?: EventSearchParams["profile"], query = "") {
 }
 
 function applyProfileFilters(params: Record<string, string>, profile?: EventSearchParams["profile"], query = "") {
+  const musicGenre = extractMusicGenreFromQuery(query);
+  const musicArtist = resolveMusicArtistSearch(query);
+  const musicQuery =
+    profile === "music" || isMusicEventQuery(query) || Boolean(musicGenre) || Boolean(musicArtist);
+
   if (profile === "sports") {
     params.segmentName = "Sports";
+  } else if (musicQuery) {
+    params.segmentName = "Music";
+    // Date-bounded searches default to excluding TBA/TBD — include them for fuller catalogs.
+    params.includeTBA = "yes";
+    params.includeTBD = "yes";
   }
 
-  const keyword = keywordForProfile(profile, query);
-  if (keyword) params.keyword = keyword;
+  if (musicGenre) {
+    params.classificationName = musicGenre.ticketmasterClassification;
+  } else if (musicArtist) {
+    params.keyword = musicArtist.ticketmasterKeyword;
+  } else {
+    const keyword = keywordForProfile(profile, query);
+    if (keyword) params.keyword = keyword;
+  }
 }
 
 function formatTicketmasterDateTime(value: string) {
@@ -154,17 +186,19 @@ export const ticketmasterEventProvider: EventProvider = {
 
     const nationwideTeamSearch =
       request.profile === "sports" && isTeamSpecificSportsQuery(request.query);
+    const musicSearch =
+      request.profile === "music" || isMusicEventQuery(request.query) || Boolean(resolveMusicArtistSearch(request.query));
 
     const params: Record<string, string> = {
       apikey: apiKey,
-      size: nationwideTeamSearch || hasNamedTeamInQuery(request.query) ? "50" : "20",
+      size: musicSearch ? MUSIC_PAGE_SIZE : nationwideTeamSearch || hasNamedTeamInQuery(request.query) ? "50" : "20",
       sort: "date,asc",
       countryCode: "US"
     };
 
     if (!nationwideTeamSearch) {
       params.latlong = `${request.latitude},${request.longitude}`;
-      params.radius = String(request.radiusMiles ?? 25);
+      params.radius = String(request.radiusMiles ?? (musicSearch ? 100 : 25));
       params.unit = "miles";
     }
 
@@ -173,24 +207,35 @@ export const ticketmasterEventProvider: EventProvider = {
     if (request.startDateTime) params.startDateTime = formatTicketmasterDateTime(request.startDateTime);
     if (request.endDateTime) params.endDateTime = formatTicketmasterDateTime(request.endDateTime);
 
-    const payload = await withTicketmasterCache("/events.json", params, async () => {
-      const url = new URL(`${DISCOVERY_BASE}/events.json`);
-      for (const [key, value] of Object.entries(params)) {
-        url.searchParams.set(key, value);
-      }
+    const pageCount = musicSearch ? MUSIC_PAGES : 1;
+    const rawEvents: TicketmasterEvent[] = [];
 
-      const response = await fetch(url, { cache: "no-store" });
-      if (!response.ok) {
-        throw new Error(`Ticketmaster search failed with ${response.status}.`);
-      }
+    for (let page = 0; page < pageCount; page += 1) {
+      const pageParams = { ...params, page: String(page) };
+      const payload = await withTicketmasterCache("/events.json", pageParams, async () => {
+        const url = new URL(`${DISCOVERY_BASE}/events.json`);
+        for (const [key, value] of Object.entries(pageParams)) {
+          url.searchParams.set(key, value);
+        }
 
-      return (await response.json()) as TicketmasterEventsResponse;
-    });
+        const response = await fetch(url, { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`Ticketmaster search failed with ${response.status}.`);
+        }
 
-    const events = (payload._embedded?.events ?? [])
+        return (await response.json()) as TicketmasterEventsResponse;
+      });
+
+      const batch = payload._embedded?.events ?? [];
+      rawEvents.push(...batch);
+      if (batch.length < Number(MUSIC_PAGE_SIZE)) break;
+    }
+
+    const events = rawEvents
       .map((event) => normalizeEvent(event))
       .filter((event): event is EventResult => Boolean(event?.startTime));
 
-    return filterNamedTeamGameEvents(events, request.query);
+    const teamFiltered = filterNamedTeamGameEvents(events, request.query);
+    return filterNamedArtistEvents(teamFiltered, request.query);
   }
 };

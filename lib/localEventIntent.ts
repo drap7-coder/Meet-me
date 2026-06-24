@@ -1,6 +1,12 @@
 import type { LocalEventProfile } from "@/lib/eventResult";
 import { hasNamedTeamInQuery, resolveNamedSportsTeam } from "@/lib/sportsEventFilter";
-import { sportsTeamSearchPattern, sportsTeamById, SPORTS_TEAMS } from "@/lib/sportsTeams";
+import {
+  SPORTS_CONTEXT_PATTERN,
+  SPORTS_TEAMS,
+  sportsTeamById,
+  sportsTeamStrongPattern,
+  sportsTeamWeakPattern
+} from "@/lib/sportsTeams";
 import type { VenueCategory } from "@/lib/types";
 import { detectEventsIntent } from "@/lib/watchEvents";
 
@@ -32,7 +38,8 @@ const PLACE_ONLY_CATEGORIES = new Set<VenueCategory>([
 const PLACE_ONLY_QUERY =
   /\b(?:restaurant|restaurants|coffee shop|coffee|cafe|pizza|sushi|brunch|lunch|dinner|breakfast|brewery|breweries|bar|cafe|shopping|mall|store|stores|bookstore)\b/i;
 
-const SPORTS_TEAM_PATTERN = sportsTeamSearchPattern();
+const SPORTS_TEAM_PATTERN = sportsTeamStrongPattern();
+const SPORTS_TEAM_WEAK_PATTERN = sportsTeamWeakPattern();
 
 const SPORTS_LEAGUE_PATTERN = /\b(?:nfl|nba|mlb|nhl|mls|ncaa|wnba)\b/i;
 
@@ -56,6 +63,11 @@ export function isSportsEventQuery(query: string): boolean {
   }
 
   if (SPORTS_TEAM_PATTERN.test(value) || SPORTS_LEAGUE_PATTERN.test(value)) {
+    return true;
+  }
+
+  // Singular team names ("Yankee game") only when sports context is also present.
+  if (SPORTS_TEAM_WEAK_PATTERN.test(value) && SPORTS_CONTEXT_PATTERN.test(value)) {
     return true;
   }
 

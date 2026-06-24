@@ -11,10 +11,9 @@ import {
   isLocalHappeningsQuery,
   localHappeningsTopic
 } from "@/lib/localHappenings";
-import { sportsTeamSearchPattern } from "@/lib/sportsTeams";
+import { SPORTS_CONTEXT_PATTERN, sportsTeamWeakPattern } from "@/lib/sportsTeams";
 
-const SPORTS_TEAM_NAME_PATTERN = sportsTeamSearchPattern();
-const SPORTS_CONTEXT_PATTERN = /\b(?:games?|tickets?|schedule|matchup|vs\.?|tonight|this weekend|saturday|sunday)\b/i;
+const SPORTS_TEAM_NAME_PATTERN = sportsTeamWeakPattern();
 
 export const WATCH_TITLE = "Streaming";
 export const WATCH_DESCRIPTION = "Movies, TV shows, and trending picks.";

@@ -74,12 +74,60 @@ export function sportsTeamTicketmasterKeywords(): Record<string, string> {
   return Object.fromEntries(SPORTS_TEAMS.map((team) => [team.id, team.ticketmasterKeyword]));
 }
 
-export function sportsTeamSearchPattern(): RegExp {
-  const tokens = SPORTS_TEAMS.flatMap((team) => [team.id.replace(/_/g, " "), team.searchTerm, team.label])
-    .map((token) => token.toLowerCase().replace(/\s+/g, " ").trim())
-    .filter(Boolean);
+/** Words that signal a sports/event context (used to disambiguate singular team names). */
+export const SPORTS_CONTEXT_PATTERN =
+  /\b(?:games?|tickets?|schedule|matchup|playoffs?|vs\.?|tonight|today|this weekend|saturday|sunday)\b/i;
+
+/**
+ * Singular forms that collide with common words; only ever match these as a team
+ * when explicit sports context is present elsewhere — never on their own.
+ */
+const AMBIGUOUS_SINGULAR_TOKENS = new Set(["giant", "chief", "flyer", "red bull", "ny red bull"]);
+
+function normalizeToken(token: string) {
+  return token.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function singularToken(token: string): string | null {
+  if (!token.endsWith("s")) return null;
+  const singular = token.slice(0, -1).trim();
+  // Require length >= 4 to avoid short, ambiguous stems (e.g. "met", "jet").
+  return singular.length >= 4 ? singular : null;
+}
+
+/** Unambiguous team aliases (full / plural names) safe to match without context. */
+export function teamStrongTokens(team: SportsTeamDefinition): string[] {
+  return [...new Set([team.id.replace(/_/g, " "), team.searchTerm, team.label].map(normalizeToken))].filter(Boolean);
+}
+
+/** Strong aliases plus singular variants; singulars should be gated by sports context. */
+export function teamWeakTokens(team: SportsTeamDefinition): string[] {
+  const strong = teamStrongTokens(team);
+  const singulars = strong
+    .map(singularToken)
+    .filter((token): token is string => Boolean(token) && !AMBIGUOUS_SINGULAR_TOKENS.has(token as string));
+  return [...new Set([...strong, ...singulars])];
+}
+
+function buildTeamPattern(tokensFor: (team: SportsTeamDefinition) => string[]): RegExp {
+  const tokens = SPORTS_TEAMS.flatMap(tokensFor).filter(Boolean);
   const unique = [...new Set(tokens)].sort((a, b) => b.length - a.length);
   return new RegExp(`\\b(?:${unique.map(escapeRegex).join("|")})\\b`, "i");
+}
+
+/** Matches full/plural team names only (safe to use without sports context). */
+export function sportsTeamStrongPattern(): RegExp {
+  return buildTeamPattern(teamStrongTokens);
+}
+
+/** Matches full/plural names plus singular variants (use together with SPORTS_CONTEXT_PATTERN). */
+export function sportsTeamWeakPattern(): RegExp {
+  return buildTeamPattern(teamWeakTokens);
+}
+
+/** @deprecated Prefer sportsTeamStrongPattern / sportsTeamWeakPattern. */
+export function sportsTeamSearchPattern(): RegExp {
+  return sportsTeamStrongPattern();
 }
 
 function escapeRegex(value: string) {

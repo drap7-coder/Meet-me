@@ -1,6 +1,6 @@
 import type { EventResult } from "@/lib/eventResult";
 import type { SportsTeamDefinition } from "@/lib/sportsTeams";
-import { SPORTS_TEAMS } from "@/lib/sportsTeams";
+import { SPORTS_CONTEXT_PATTERN, SPORTS_TEAMS, teamStrongTokens, teamWeakTokens } from "@/lib/sportsTeams";
 
 const NON_GAME_EVENT =
   /\b(?:parking|stadium tour|ballpark tour|venue tour|season ticket|waitlist|merchandise|fan fest|experience pass|hospitality only)\b/i;
@@ -14,11 +14,22 @@ function escapeRegex(value: string) {
 
 export function resolveNamedSportsTeam(query: string): SportsTeamDefinition | null {
   const value = query.toLowerCase();
+  const hasSportsContext = SPORTS_CONTEXT_PATTERN.test(value);
 
+  // Strong (full/plural) aliases match on their own.
   for (const team of SPORTS_TEAMS) {
-    const aliases = [team.searchTerm, team.label, team.id.replace(/_/g, " ")].map((part) => part.toLowerCase());
-    if (aliases.some((alias) => new RegExp(`\\b${escapeRegex(alias)}\\b`, "i").test(value))) {
+    if (teamStrongTokens(team).some((alias) => new RegExp(`\\b${escapeRegex(alias)}\\b`, "i").test(value))) {
       return team;
+    }
+  }
+
+  // Singular variants ("Yankee game") only count alongside sports context, so they
+  // don't hijack queries like "Yankee Candle store" or "met a friend".
+  if (hasSportsContext) {
+    for (const team of SPORTS_TEAMS) {
+      if (teamWeakTokens(team).some((alias) => new RegExp(`\\b${escapeRegex(alias)}\\b`, "i").test(value))) {
+        return team;
+      }
     }
   }
 

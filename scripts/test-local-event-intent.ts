@@ -61,6 +61,18 @@ function run() {
   console.log(`${pureOk ? "PASS" : "FAIL"}  pure     event-first queries vs blended discovery`);
   if (!pureOk) failed += 1;
 
+  const singularOk =
+    detectEventsIntent("Yankee game") &&
+    isSportsEventQuery("Yankee game") &&
+    hasNamedTeamInQuery("Yankee game") &&
+    isTeamSpecificSportsQuery("Yankee game") &&
+    // Singular team words without sports context must NOT be treated as sports.
+    !isSportsEventQuery("yankee candle store near me") &&
+    !hasNamedTeamInQuery("yankee candle store near me") &&
+    !detectEventsIntent("met a friend for coffee");
+  console.log(`${singularOk ? "PASS" : "FAIL"}  singular singular team + context matches, ambiguous words don't`);
+  if (!singularOk) failed += 1;
+
   const dayMs = 24 * 60 * 60 * 1000;
   const spanDays = (q: string) => {
     const win = eventTimeWindow(classifyLocalEventProfile(q), q);

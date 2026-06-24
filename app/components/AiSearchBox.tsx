@@ -32,6 +32,7 @@ type Props = {
     }
   ) => void;
   onNeedsLocation: (form: SearchHalfwayRequest) => void;
+  onPrefetchQuery?: (query: string) => void;
   onPersistUserAddress?: (address: string) => void;
   onUseLocation: () => void;
   onShowZipFallback: () => void;
@@ -129,6 +130,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     submitError,
     onSubmitQuery,
     onNeedsLocation,
+    onPrefetchQuery,
     onUseLocation,
     onShowZipFallback,
     onSubmitManualLocation,
@@ -239,6 +241,16 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     [fillHalfwayIntent, fillQuery, runSearch]
   );
 
+  // Warm the server cache on strong intent (hover/focus the send button, blur the
+  // field) so the query is usually ready by the time the user commits. Deduped
+  // server-side, so a prefetch that is followed by submit never doubles API calls.
+  const prefetch = useCallback(() => {
+    if (!onPrefetchQuery || loading) return;
+    const trimmed = query.trim();
+    if (!trimmed) return;
+    onPrefetchQuery(trimmed);
+  }, [loading, onPrefetchQuery, query]);
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     void runSearch(query);
@@ -301,6 +313,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
                       void runSearch(query);
                     }
                   }}
+                  onBlur={prefetch}
                   placeholder={onHero ? BRAND.searchPlaceholder : rotatingPlaceholder}
                   rows={onHero ? 1 : 2}
                   className={
@@ -345,6 +358,9 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
                   type="submit"
                   disabled={busy}
                   aria-label={submitLabel}
+                  onMouseEnter={prefetch}
+                  onFocus={prefetch}
+                  onPointerDown={prefetch}
                   className={
                     onHero
                       ? "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-koi text-white shadow-[0_8px_18px_rgba(255,90,0,0.28)] transition hover:bg-koi-hover focus:outline-none focus:ring-4 focus:ring-koi/25 disabled:cursor-not-allowed disabled:bg-koi/40 sm:h-10 sm:w-10"

@@ -1,5 +1,6 @@
 import { executeKoiSearch } from "@/lib/koiSearchExecute";
 import { ParseSearchError } from "@/lib/providers/parserProvider";
+import { buildKoiSearchCacheKey, withSearchResponseCache } from "@/lib/searchResponseCache";
 import {
   countKoiSearchResult,
   executeInSearchTelemetry,
@@ -9,6 +10,11 @@ import { logApiError } from "@/lib/serverLog";
 import { NextResponse } from "next/server";
 
 const ENDPOINT = "/api/koi-search";
+
+// Only cache fully-resolved result kinds — never location prompts or errors.
+const CACHEABLE_KINDS = new Set(["places", "watch", "events"]);
+const FRESH_TTL_SECONDS = 60 * 5;
+const STALE_TTL_SECONDS = 60 * 30;
 
 export async function POST(request: Request) {
   const startedAt = Date.now();
@@ -30,7 +36,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Tell Koi what you are looking for." }, { status: 400 });
     }
 
-    const { result, collector } = await executeInSearchTelemetry(() => executeKoiSearch(body));
+    const cacheKey = buildKoiSearchCacheKey(body);
+    const { result, collector } = await executeInSearchTelemetry(async () => {
+      const cached = await withSearchResponseCache({
+        key: cacheKey,
+        freshTtlSeconds: FRESH_TTL_SECONDS,
+        staleTtlSeconds: STALE_TTL_SECONDS,
+        loader: () => executeKoiSearch(body),
+        shouldCache: (value) => CACHEABLE_KINDS.has(value.kind)
+      });
+      return cached.value;
+    });
     const status = result.kind === "needs_location" ? 422 : 200;
     finalizeSearchTelemetry(
       {

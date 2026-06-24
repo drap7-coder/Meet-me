@@ -147,6 +147,7 @@ export default function HomePage() {
   const [locationSavedMessage, setLocationSavedMessage] = useState("");
   const searchBoxRef = useRef<AiSearchBoxHandle>(null);
   const searchInFlightRef = useRef(false);
+  const prefetchedAskRef = useRef("");
   const loadingPhaseLabel =
     THINKING_PROGRESS_LABELS[searchKind ?? "places"][loadingPhase] ??
     THINKING_PROGRESS_LABELS.places[loadingPhase] ??
@@ -831,6 +832,29 @@ export default function HomePage() {
     });
   }
 
+  // Warm the koi-search cache before the user commits. Only fires when we already
+  // have a resolved location (so it can return a cacheable result, not a 422
+  // location prompt) and skips streaming asks, which route to a different endpoint.
+  function prefetchAskQuery(query: string) {
+    const trimmed = query.trim();
+    if (!trimmed || loading) return;
+    if (hasStreamingWatchContext(trimmed)) return;
+
+    const context = getActiveLocationContext();
+    const hasResolvedLocation =
+      Boolean(context.locationACoordinates) || Boolean(form.locationACoordinates);
+    if (!hasResolvedLocation) return;
+
+    if (prefetchedAskRef.current === trimmed.toLowerCase()) return;
+    prefetchedAskRef.current = trimmed.toLowerCase();
+
+    void fetch("/api/koi-search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query: trimmed, context, form })
+    }).catch(() => {});
+  }
+
   function runWatchSearch(query: string, subcategory: WatchSubcategory) {
     void executeSearch({
       kind: "watch",
@@ -1079,6 +1103,7 @@ export default function HomePage() {
                   locationSavedMessage={locationSavedMessage}
                   submitError={error}
                   onSubmitQuery={handleAiSubmitQuery}
+                  onPrefetchQuery={prefetchAskQuery}
                   onNeedsLocation={handleNeedsLocation}
                   onPersistUserAddress={persistUserAddress}
                   onUseLocation={() => void requestUserLocation()}
@@ -1190,6 +1215,7 @@ export default function HomePage() {
                   locationSavedMessage={locationSavedMessage}
                   submitError={error}
                   onSubmitQuery={handleAiSubmitQuery}
+                  onPrefetchQuery={prefetchAskQuery}
                   onNeedsLocation={handleNeedsLocation}
                   onPersistUserAddress={persistUserAddress}
                   onUseLocation={() => void requestUserLocation()}

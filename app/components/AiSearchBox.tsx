@@ -139,7 +139,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   },
   ref
 ) {
-  const { filterPreview, isStreaming: builderStreaming } = useSearchPromptAssist();
+  const { filterPreview, isStreaming: builderStreaming, promptQuery } = useSearchPromptAssist();
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
   const [manualLocationInput, setManualLocationInput] = useState("");
@@ -165,6 +165,12 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     }, 4200);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (!promptQuery.trim()) return;
+    setQuery(promptQuery);
+    if (error) setError("");
+  }, [promptQuery]);
 
   const scrollToSearch = useCallback(() => {
     window.requestAnimationFrame(() => {

@@ -534,7 +534,9 @@ export function SearchPromptDetailChips() {
                       key={genre.id}
                       label={genre.label}
                       busy={busy}
+                      variant={state.genre === genre.id ? "primary" : "accent"}
                       selected={state.genre === genre.id}
+                      emphasis={state.genre === genre.id}
                       onPick={() => toggleGenre(genre.id)}
                       onPage={onPage}
                     />
@@ -668,6 +670,7 @@ function AssistChip({
   busy,
   variant = "accent",
   selected = false,
+  emphasis = false,
   onPage = false,
   onPick
 }: {
@@ -675,17 +678,22 @@ function AssistChip({
   busy: boolean;
   variant?: "primary" | "accent";
   selected?: boolean;
+  emphasis?: boolean;
   onPage?: boolean;
   onPick: () => void;
 }) {
   const tone = onPage
     ? selected && variant === "primary"
-      ? "border-koi bg-koi text-white shadow-[0_8px_18px_rgba(255,90,0,0.24)]"
+      ? emphasis
+        ? "border-koi bg-koi text-white shadow-[0_10px_22px_rgba(255,90,0,0.32)] ring-2 ring-koi/35"
+        : "border-koi bg-koi text-white shadow-[0_8px_18px_rgba(255,90,0,0.24)]"
       : selected
         ? "border-koi/70 bg-koi/10 text-ink"
         : "border-line bg-paper text-ink hover:border-koi/40 hover:bg-koi/5"
     : selected && variant === "primary"
-      ? "border-koi bg-koi text-white shadow-[0_8px_18px_rgba(255,90,0,0.24)]"
+      ? emphasis
+        ? "border-koi bg-koi text-white shadow-[0_10px_22px_rgba(255,90,0,0.32)] ring-2 ring-koi/40"
+        : "border-koi bg-koi text-white shadow-[0_8px_18px_rgba(255,90,0,0.24)]"
       : selected
         ? "border-koi/70 bg-koi/15 text-white"
         : "border-white/14 bg-white/[0.06] text-white/75 hover:border-white/30 hover:bg-white/10";
@@ -750,6 +758,7 @@ export function buildStreamQuery(state: BuilderState): string {
   const genre = resolveWatchGenreQueryWord(type, state.genre);
   const providerPhrase = streamingServiceQueryPhrase([...state.streamingServices]);
   const trending = state.streamingVibe === "trending";
+  const classic = state.streamingVibe === "classic";
 
   if (trending) {
     if (type === "tv_shows") {
@@ -762,6 +771,19 @@ export function buildStreamQuery(state: BuilderState): string {
     }
     if (genre) return `Trending ${genre} movies and shows${providerPhrase}`;
     return `What's trending to watch${providerPhrase}?`;
+  }
+
+  if (classic) {
+    if (type === "tv_shows") {
+      if (genre) return `Best classic ${genre} TV shows${providerPhrase}`;
+      return `Best classic TV shows${providerPhrase}`;
+    }
+    if (type === "movies") {
+      if (genre) return `Best classic ${genre} movies${providerPhrase}`;
+      return `Best classic movies${providerPhrase}`;
+    }
+    if (genre) return `Best classic ${genre} movies and shows${providerPhrase}`;
+    return `What classic should I watch${providerPhrase}?`;
   }
 
   if (type === "tv_shows") {

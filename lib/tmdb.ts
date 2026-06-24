@@ -197,6 +197,70 @@ export async function fetchTrendingTv(limit = 3) {
   return fetchTrendingMedia("tv", limit);
 }
 
+export async function fetchClassicMedia(
+  kind: TmdbMediaKind,
+  limit = 5,
+  excludeKeys: string[] = []
+) {
+  const path = kind === "tv" ? "/tv/top_rated" : "/movie/top_rated";
+  const excluded = new Set(excludeKeys);
+  const picks: TmdbPick[] = [];
+
+  for (let page = 1; page <= TMDB_MAX_DISCOVER_PAGE && picks.length < limit; page += 1) {
+    const data =
+      kind === "tv"
+        ? await tmdbFetch<TmdbTvListResponse>(path, { page: String(page) })
+        : await tmdbFetch<TmdbMovieListResponse>(path, { page: String(page) });
+
+    for (const item of data.results ?? []) {
+      const pick = kind === "tv" ? normalizeTv(item as TmdbTvResponse) : normalizeMovie(item as TmdbMovieResponse);
+      if (excluded.has(pickKey(pick))) continue;
+      picks.push(await enrichPick(pick));
+      if (picks.length >= limit) return picks;
+    }
+
+    if (!data.results?.length) break;
+  }
+
+  return picks;
+}
+
+export async function discoverClassicMediaByGenre(
+  genre: string,
+  kind: TmdbMediaKind,
+  limit = 5,
+  excludeKeys: string[] = []
+) {
+  const genreId = resolveTmdbGenreId(genre, kind);
+  if (!genreId) return [];
+
+  const dateField = kind === "tv" ? "first_air_date.lte" : "primary_release_date.lte";
+  const baseParams: Record<string, string> = {
+    with_genres: String(genreId),
+    sort_by: "vote_average.desc",
+    "vote_count.gte": "250",
+    [dateField]: "2009-12-31"
+  };
+
+  const seen = new Set(excludeKeys);
+  const picks: TmdbPick[] = [];
+
+  for (let page = 1; page <= TMDB_MAX_DISCOVER_PAGE && picks.length < limit; page += 1) {
+    const batch = kind === "tv" ? await discoverTv(baseParams, page) : await discoverMovies(baseParams, page);
+    if (!batch.length) break;
+
+    for (const pick of batch) {
+      const key = pickKey(pick);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      picks.push(await enrichPick(pick));
+      if (picks.length >= limit) return picks;
+    }
+  }
+
+  return picks;
+}
+
 export async function fetchNewReleaseMedia(
   kind: TmdbMediaKind,
   limit = 5,

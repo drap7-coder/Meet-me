@@ -2,7 +2,9 @@ import type { WatchEventsIntent, WatchEventsRecommendation } from "@/lib/types";
 import { extractSimilarMediaTitle } from "@/lib/watchQuery";
 import { WATCH_PICK_PAGE_SIZE } from "@/lib/watchMedia";
 import {
+  discoverClassicMediaByGenre,
   discoverMediaByGenre,
+  fetchClassicMedia,
   fetchNewReleaseMedia,
   fetchSimilarMedia,
   fetchTrendingMedia,
@@ -72,6 +74,7 @@ export async function tryBuildLiveMovieRecommendations(
     }
 
     if (context.genre) {
+      const classic = /\bclassic\b/i.test(context.query);
       return finalizeBatch(
         await buildGenreRecommendations(
           context.genre,
@@ -79,6 +82,37 @@ export async function tryBuildLiveMovieRecommendations(
           mediaKind,
           fetchLimit,
           excludeKeys,
+          startRank,
+          classic
+        ),
+        context.streamingServiceIds,
+        limit
+      );
+    }
+
+    if (/\bclassic\b/i.test(context.query)) {
+      return finalizeBatch(
+        await buildSimpleRecommendations(
+          await fetchClassicMedia(mediaKind, fetchLimit, excludeKeys),
+          context.timeframe,
+          mediaKind === "tv" ? "Classic TV" : "Classic picks",
+          mediaKind,
+          fetchLimit,
+          startRank
+        ),
+        context.streamingServiceIds,
+        limit
+      );
+    }
+
+    if (/\btrending\b/i.test(context.query)) {
+      return finalizeBatch(
+        await buildSimpleRecommendations(
+          await fetchTrendingMedia(mediaKind, fetchLimit, excludeKeys),
+          context.timeframe,
+          mediaKind === "tv" ? "Trending TV" : "Trending",
+          mediaKind,
+          fetchLimit,
           startRank
         ),
         context.streamingServiceIds,
@@ -149,29 +183,39 @@ async function buildGenreRecommendations(
   mediaKind: TmdbMediaKind,
   limit: number,
   excludeKeys: string[],
-  startRank: number
+  startRank: number,
+  classic = false
 ): Promise<LiveWatchRecommendationBatch | null> {
-  const picks = await discoverMediaByGenre(genre, mediaKind, limit, excludeKeys);
+  const picks = classic
+    ? await discoverClassicMediaByGenre(genre, mediaKind, limit, excludeKeys)
+    : await discoverMediaByGenre(genre, mediaKind, limit, excludeKeys);
   if (!picks.length) return null;
 
   const label = genre === "sci-fi" ? "Sci-Fi" : capitalizeWords(genre);
   const formatLabel = mediaKind === "tv" ? "TV series" : "Movie";
+  const lane = classic ? "Classic" : timeframe;
   const recommendations = picks.map((pick, index) =>
     mediaRecommendation({
       pick,
       rank: startRank + index,
       kind: "general",
       badge: badgeForIndex(index),
-      subtitle: `${timeframe} · ${label} ${mediaKind === "tv" ? "series" : "movies"}`,
+      subtitle: `${lane} · ${label} ${mediaKind === "tv" ? "series" : "movies"}`,
       explanation:
         index === 0 && startRank === 1
-          ? `Koi matched your ${label.toLowerCase()} ask to a strong ${formatLabel.toLowerCase()} in that genre.`
+          ? classic
+            ? `Koi matched your classic ${label.toLowerCase()} ask to a highly rated ${formatLabel.toLowerCase()} worth revisiting.`
+            : `Koi matched your ${label.toLowerCase()} ask to a strong ${formatLabel.toLowerCase()} in that genre.`
           : index === 1 && startRank === 1
-            ? `A well-rated ${label.toLowerCase()} ${formatLabel.toLowerCase()} when you want something with more acclaim.`
+            ? classic
+              ? `Another beloved ${label.toLowerCase()} ${formatLabel.toLowerCase()} with strong ratings.`
+              : `A well-rated ${label.toLowerCase()} ${formatLabel.toLowerCase()} when you want something with more acclaim.`
             : startRank === 1
-              ? `A fresher ${label.toLowerCase()} ${formatLabel.toLowerCase()} if you want something newer or less obvious.`
+              ? classic
+                ? `A deeper-cut classic ${label.toLowerCase()} ${formatLabel.toLowerCase()} if you want something less obvious.`
+                : `A fresher ${label.toLowerCase()} ${formatLabel.toLowerCase()} if you want something newer or less obvious.`
               : `Another ${label.toLowerCase()} ${formatLabel.toLowerCase()} worth adding to your list.`,
-      tags: [label, timeframe, formatRating(pick.rating)],
+      tags: [classic ? "Classic" : label, timeframe, formatRating(pick.rating)],
       meta: buildMediaMeta(pick, label)
     })
   );

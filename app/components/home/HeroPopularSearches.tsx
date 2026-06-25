@@ -17,7 +17,7 @@ export type HeroPopularSearch = {
 type Props = {
   busy?: boolean;
   onSelect: (query: string, options?: PickQueryOptions) => void;
-  /** Tighter layout when grouped with recent searches at the bottom of the hero. */
+  /** Tighter layout when grouped with other hero discovery sections. */
   compact?: boolean;
 };
 

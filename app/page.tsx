@@ -16,7 +16,6 @@ import { Footer, SiteHeader } from "@/app/components/home/SiteChrome";
 import { HomeFaqSection } from "@/app/components/home/HomeFaqSection";
 import { ClassicSearchControls } from "@/app/components/ClassicSearchControls";
 import { SearchContextStrip } from "@/app/components/SearchContextStrip";
-import { KoiExampleSearchCard } from "@/app/components/KoiExampleSearchCard";
 import { LocationForm } from "@/app/components/LocationForm";
 import { RoadDivider } from "@/app/components/BrandRoad";
 import {
@@ -30,15 +29,6 @@ import { formForSessionAfterSearch, type SearchSubmitOptions } from "@/lib/searc
 import { VenueCard } from "@/app/components/VenueCard";
 import { WatchEventsResults } from "@/app/components/WatchEventsResults";
 import { WeatherCard } from "@/app/components/WeatherCard";
-import {
-  clearRecentMeetups,
-  createRecentMeetup,
-  getRecentMeetupCardDisplay,
-  getRecentMeetups,
-  recentMeetupToForm,
-  saveRecentMeetup,
-  type RecentMeetup
-} from "@/lib/recentMeetups";
 import { normalizeCategory, parseMeetupMode, parseSearchMode } from "@/lib/categories";
 import { parsePreferences } from "@/lib/preferences";
 import { shareWithFallback, shouldUseNativeShare } from "@/lib/share";
@@ -145,7 +135,6 @@ export default function HomePage() {
   const [openedFromSharedHalfway, setOpenedFromSharedHalfway] = useState(false);
   const [shareDialog, setShareDialog] = useState<ShareDialogState | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
-  const [recentMeetups, setRecentMeetups] = useState<RecentMeetup[]>([]);
   const [showRoadDividerPreview, setShowRoadDividerPreview] = useState(false);
   const [builderExpanded, setBuilderExpanded] = useState(false);
   const [builderMode, setBuilderMode] = useState<SearchBuilderMode>("near_me");
@@ -289,10 +278,6 @@ export default function HomePage() {
 
   useEffect(() => {
     setForm((current) => formWithStoredLocation(current));
-  }, []);
-
-  useEffect(() => {
-    setRecentMeetups(getRecentMeetups());
   }, []);
 
   useEffect(() => {
@@ -468,7 +453,6 @@ export default function HomePage() {
     setForm(formForSessionAfterSearch(searchForm, getActiveLocationContext(), submitOptions));
     const shareUrl = updateShareUrl(searchForm);
     setCurrentShareUrl(existingShareUrl ?? shareUrl);
-    setRecentMeetups(saveRecentMeetup(createRecentMeetup(searchForm, data, shareUrl)));
     syncUserLocationFromStorage();
     trackEvent("search_completed", {
       category: data.category,
@@ -820,12 +804,6 @@ export default function HomePage() {
     window.requestAnimationFrame(() => document.getElementById("search")?.scrollIntoView({ behavior: "smooth" }));
   }
 
-  function rerunRecentMeetup(meetup: RecentMeetup) {
-    const nextForm = recentMeetupToForm(meetup);
-    setForm(nextForm);
-    void executeSearch({ kind: "places", form: nextForm });
-  }
-
   function promptForEventLocation(query: string): boolean {
     if (!queryRequiresEventLocation(query)) return false;
 
@@ -1068,11 +1046,6 @@ export default function HomePage() {
     void executeSearch({ kind: "places", form });
   }
 
-  function clearRecent() {
-    clearRecentMeetups();
-    setRecentMeetups([]);
-  }
-
   async function shareVenue(venue: ScoredVenue) {
     const url = currentShareUrl || window.location.href;
     const text = buildSingleVenueEmailBody(venue, url, results?.searchMode ?? "midpoint");
@@ -1245,7 +1218,6 @@ export default function HomePage() {
                   onSelect={applyPopularSearch}
                 />
               </SearchPromptAssistProvider>
-              <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
               <HomeFaqSection />
               <LocationFallbackPanel
                 form={form}
@@ -1383,7 +1355,6 @@ export default function HomePage() {
                 onSubmit={submitClassicSearch}
                 hidden={!showClassicFallback || fallbackKind !== "full" || searchKind === "watch"}
               />
-              <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
             </section>
           ) : null}
 
@@ -1584,52 +1555,6 @@ function SharedHalfwayReferralBanner({ onStartSearch }: { onStartSearch: () => v
         Ask Koi your own question
       </button>
     </div>
-  );
-}
-
-function RecentSearchesSection({
-  meetups,
-  onSelect,
-  onClear
-}: {
-  meetups: RecentMeetup[];
-  onSelect: (meetup: RecentMeetup) => void;
-  onClear: () => void;
-}) {
-  if (!meetups.length) return null;
-
-  return (
-    <section className="w-full min-w-0">
-      <div className="flex min-w-0 items-start justify-between gap-3 sm:items-center sm:gap-4">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-white/45">Recent Searches</h2>
-        </div>
-        <button
-          type="button"
-          onClick={onClear}
-          className="shrink-0 rounded-lg border border-white/15 bg-white/[0.03] px-3 py-2 text-sm font-bold text-white/75 transition hover:border-white/22 hover:bg-white/[0.05] hover:text-white"
-        >
-          Clear
-        </button>
-      </div>
-      <div className="mt-4 grid min-w-0 grid-cols-1 gap-3">
-        {meetups.slice(0, 2).map((meetup) => {
-          const card = getRecentMeetupCardDisplay(meetup);
-          const isHalfway = meetup.searchMode !== "single";
-          return (
-            <KoiExampleSearchCard
-              key={meetup.id}
-              icon={card.icon}
-              title={card.title}
-              subtitle={card.subtitle}
-              accent="places"
-              featured={isHalfway}
-              onClick={() => onSelect(meetup)}
-            />
-          );
-        })}
-      </div>
-    </section>
   );
 }
 

@@ -329,7 +329,6 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
                   onChange={(event) => {
                     setQuery(event.target.value);
                     if (error) setError("");
-                    if (searchError) onClearSearchError?.();
                     if (speechMessage) clearSpeechMessage();
                   }}
                   onKeyDown={(event) => {

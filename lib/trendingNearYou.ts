@@ -1,8 +1,5 @@
 import type { EventResult } from "@/lib/eventResult";
-import { isEventDiscoveryConfigured } from "@/lib/eventDiscovery";
-import { discoverFarmersMarketPick } from "@/lib/farmersMarketDiscovery";
-import { fetchNearbyChargers, hasOpenChargeMapApiKey } from "@/lib/providers/openChargeMap";
-import { openTripMapProvider } from "@/lib/providers/openTripMapProvider";
+import { ticketmasterEventProvider } from "@/lib/providers/ticketmasterEventProvider";
 import type { TrendingNearYouCard, TrendingNearYouPayload } from "@/lib/trendingNearYouTypes";
 import { fetchTrendingNearYouEvents } from "@/lib/weekendTrendingEvents";
 import { logApiError } from "@/lib/serverLog";
@@ -10,38 +7,18 @@ import { logApiError } from "@/lib/serverLog";
 export type { TrendingNearYouCard, TrendingNearYouPayload } from "@/lib/trendingNearYouTypes";
 
 const MAX_CARDS = 6;
-const MAX_EVENT_CARDS = 4;
 
 export async function fetchTrendingNearYou(latitude: number, longitude: number): Promise<TrendingNearYouCard[]> {
-  const cards: TrendingNearYouCard[] = [];
-
-  const [events, farmersMarket, evCount] = await Promise.all([
-    loadEvents(latitude, longitude),
-    loadFarmersMarketPick(latitude, longitude),
-    loadEvSummary(latitude, longitude)
-  ]);
-
-  for (const event of events.slice(0, MAX_EVENT_CARDS)) {
-    cards.push(eventCardToTrendingCard(event));
-  }
-
-  if (farmersMarket) cards.push(farmersMarket);
-  if (evCount) cards.push(evCount);
-
-  return cards.slice(0, MAX_CARDS);
+  const events = await loadEvents(latitude, longitude);
+  return events.slice(0, MAX_CARDS).map(eventCardToTrendingCard);
 }
 
 export function isTrendingNearYouConfigured() {
-  return (
-    isEventDiscoveryConfigured() ||
-    openTripMapProvider.isConfigured() ||
-    Boolean(process.env.GOOGLE_MAPS_API_KEY?.trim()) ||
-    hasOpenChargeMapApiKey()
-  );
+  return ticketmasterEventProvider.isConfigured();
 }
 
 async function loadEvents(latitude: number, longitude: number): Promise<EventResult[]> {
-  if (!isEventDiscoveryConfigured()) return [];
+  if (!ticketmasterEventProvider.isConfigured()) return [];
   try {
     return await fetchTrendingNearYouEvents(latitude, longitude);
   } catch (error) {
@@ -61,42 +38,6 @@ function eventCardToTrendingCard(event: EventResult): TrendingNearYouCard {
     actionUrl: event.ticketUrl,
     searchQuery: "Events near me this weekend"
   };
-}
-
-async function loadFarmersMarketPick(latitude: number, longitude: number): Promise<TrendingNearYouCard | null> {
-  try {
-    const result = await discoverFarmersMarketPick(latitude, longitude);
-    return result.card;
-  } catch (error) {
-    logApiError("trending-near-you-farmers-market", error);
-    return null;
-  }
-}
-
-async function loadEvSummary(latitude: number, longitude: number): Promise<TrendingNearYouCard | null> {
-  if (!hasOpenChargeMapApiKey()) return null;
-  try {
-    const chargers = await fetchNearbyChargers({
-      origin: { lat: latitude, lng: longitude },
-      radiusKm: 15,
-      maxResults: 20
-    });
-    if (!chargers.length) return null;
-    const fastCount = chargers.filter((item) => item.isFastCharger).length;
-    return {
-      id: "ev-nearby",
-      kind: "ev",
-      title: `${chargers.length} chargers nearby`,
-      subtitle: fastCount
-        ? `${fastCount} fast-charging option${fastCount === 1 ? "" : "s"} within range`
-        : "EV charging locations near your area",
-      badge: "EV Charging",
-      searchQuery: "Restaurant with EV charging near me"
-    };
-  } catch (error) {
-    logApiError("trending-near-you-ev", error);
-    return null;
-  }
 }
 
 function formatEventWhen(value: string) {

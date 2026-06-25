@@ -56,6 +56,37 @@ export async function searchLocalEvents(request: EventSearchRequest): Promise<Ev
   return rankEventResults(deduped, profile, new Date(), request.query).slice(0, resultCap);
 }
 
+/** Ticketmaster-only search — used where we want rich event imagery (e.g. Trending Near You). */
+export async function searchTicketmasterEvents(request: EventSearchRequest): Promise<EventResult[]> {
+  if (!ticketmasterEventProvider.isConfigured()) return [];
+
+  const profile = request.profile ?? classifyLocalEventProfile(request.query);
+  const window =
+    request.startDateTime && request.endDateTime
+      ? { start: new Date(request.startDateTime), end: new Date(request.endDateTime) }
+      : eventTimeWindow(profile, request.query);
+  const isMusic = profile === "music" || isMusicEventQuery(request.query);
+
+  try {
+    const batch = await ticketmasterEventProvider.searchEvents({
+      ...request,
+      profile,
+      radiusMiles: request.radiusMiles ?? (isMusic ? MUSIC_RADIUS_MILES : DEFAULT_RADIUS_MILES),
+      startDateTime: window.start.toISOString(),
+      endDateTime: window.end.toISOString()
+    });
+    const withDistance = batch.map((event) =>
+      withEventStraightLineDistance(event, request.latitude, request.longitude)
+    );
+    const resultCap = request.resultCap ?? (isMusic ? MUSIC_RESULT_CAP : DEFAULT_RESULT_CAP);
+    return rankEventResults(withDistance, profile, new Date(), request.query).slice(0, resultCap);
+  } catch (error) {
+    recordProviderError(ticketmasterEventProvider.name, "search_events");
+    logApiError("ticketmaster-event-discovery", error);
+    return [];
+  }
+}
+
 function dedupeEvents(events: EventResult[]) {
   const seen = new Set<string>();
   const results: EventResult[] = [];

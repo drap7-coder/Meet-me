@@ -13,7 +13,7 @@ export const BRAND = {
   description:
     "Ask one question and get a great recommendation for restaurants, live events, activities, explore plans, and streaming picks.",
   footerDescription: "Ask one question. Get one great answer — places, events, streaming, and fair meetups.",
-  searchPlaceholder: "Ask Koi anything…",
+  searchPlaceholder: "ask koi...",
   searchPlaceholderSpot: "Sports bar near Hoboken, Italian in Edison…",
   searchPlaceholderFreeform: "Dinner halfway between Hoboken and Edison, or funny shows on Netflix…"
 };

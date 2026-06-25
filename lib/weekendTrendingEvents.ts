@@ -1,4 +1,4 @@
-import { isEventDiscoveryConfigured, searchLocalEvents } from "@/lib/eventDiscovery";
+import { isEventDiscoveryConfigured, searchLocalEvents, searchTicketmasterEvents } from "@/lib/eventDiscovery";
 import type { EventResult } from "@/lib/eventResult";
 import { upcomingWeekendWindow, weekendTrendingWeekKey } from "@/lib/weekendWindow";
 
@@ -6,9 +6,13 @@ export { upcomingWeekendWindow, weekendTrendingWeekKey } from "@/lib/weekendWind
 
 export const WEEKEND_TRENDING_CAP = 5;
 export const WEEKEND_TRENDING_RADIUS_MILES = 30;
-export const TRENDING_NEAR_YOU_EVENT_CAP = 4;
+export const TRENDING_NEAR_YOU_EVENT_CAP = 6;
 
-const SEGMENT_FETCH_CAP = 6;
+const SEGMENT_FETCH_CAP = 10;
+
+function withEventImages(events: EventResult[]) {
+  return events.filter((event) => Boolean(event.imageUrl?.trim()));
+}
 
 function isComedyEvent(event: EventResult): boolean {
   const haystack = `${event.title} ${event.category} ${event.venue}`;
@@ -101,8 +105,6 @@ export async function fetchTrendingNearYouEvents(
   latitude: number,
   longitude: number
 ): Promise<EventResult[]> {
-  if (!isEventDiscoveryConfigured()) return [];
-
   const window = upcomingWeekendWindow();
   const base = {
     latitude,
@@ -114,18 +116,23 @@ export async function fetchTrendingNearYouEvents(
   };
 
   const [sports, comedyRaw, music] = await Promise.all([
-    searchLocalEvents({ ...base, query: "sports this weekend", profile: "sports", segmentName: "Sports" }),
-    searchLocalEvents({
+    searchTicketmasterEvents({ ...base, query: "sports this weekend", profile: "sports", segmentName: "Sports" }),
+    searchTicketmasterEvents({
       ...base,
       query: "comedy shows this weekend",
       profile: "weekend",
       segmentName: "Arts & Theatre"
     }),
-    searchLocalEvents({ ...base, query: "concerts this weekend", profile: "music", segmentName: "Music" })
+    searchTicketmasterEvents({ ...base, query: "concerts this weekend", profile: "music", segmentName: "Music" })
   ]);
 
-  const comedy = comedyRaw.filter(isComedyEvent);
-  return blendTrendingNearYouMix(sports, comedy.length ? comedy : comedyRaw, music);
+  const comedy = withEventImages(comedyRaw.filter(isComedyEvent));
+  return blendTrendingNearYouMix(
+    withEventImages(sports),
+    comedy.length ? comedy : withEventImages(comedyRaw),
+    withEventImages(music),
+    TRENDING_NEAR_YOU_EVENT_CAP
+  );
 }
 
 export async function fetchTrendingWeekendEvents(

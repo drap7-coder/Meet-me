@@ -4,11 +4,11 @@ import type { SearchHalfwayRequest, WatchSubcategory } from "@/lib/types";
 import type { CurrentLocationContext } from "@/lib/currentLocation";
 import type { LocationUiState } from "@/lib/locationInput";
 import { KOI_EXAMPLE } from "@/lib/koiExamples";
-import { KOI_ROTATING_PLACEHOLDERS } from "@/lib/koiCapabilityExamples";
 import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
 import { hasStreamingWatchContext } from "@/lib/watchEvents";
 import { AddressAutocompleteInput } from "@/app/components/AddressAutocompleteInput";
 import { useSearchPromptAssist } from "@/app/components/SearchPromptAssist";
+import { KOI_SEARCH_PLACEHOLDER, useTypewriterPlaceholder } from "@/app/components/useTypewriterPlaceholder";
 import { BRAND } from "@/src/config/branding";
 import { LocationPinIcon } from "@/app/components/SavedLocationBadge";
 import { useSpeechRecognition } from "@/app/components/useSpeechRecognition";
@@ -150,7 +150,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   const [manualLocationInput, setManualLocationInput] = useState("");
   const [manualLocationPlaceId, setManualLocationPlaceId] = useState<string | undefined>();
   const [watchActiveSubcategory, setWatchActiveSubcategory] = useState<WatchSubcategory>(DEFAULT_WATCH_SUBCATEGORY);
-  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [inputFocused, setInputFocused] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const {
@@ -172,12 +172,9 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     setManualLocationPlaceId(locationContext?.locationAPlaceId);
   }, [defaultUserAddress, locationContext?.locationA, locationContext?.locationAPlaceId, showManualFallback]);
 
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setPlaceholderIndex((current) => (current + 1) % KOI_ROTATING_PLACEHOLDERS.length);
-    }, 4200);
-    return () => window.clearInterval(timer);
-  }, []);
+  const animatePlaceholder = !query.trim() && !inputFocused && !loading;
+  const typewriterPlaceholder = useTypewriterPlaceholder(animatePlaceholder, KOI_SEARCH_PLACEHOLDER);
+  const searchPlaceholder = animatePlaceholder ? typewriterPlaceholder : "";
 
   useEffect(() => {
     if (!promptQuery.trim()) return;
@@ -283,7 +280,6 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   const manualAddressLabelClass = onHero ? "sr-only" : "text-sm font-bold text-ink";
   const manualAddressSelectedClass = onHero ? "text-xs font-semibold text-white/75" : "text-xs font-semibold text-clay";
   const manualAddressStatusClass = onHero ? "text-xs font-semibold text-white/60" : "text-xs font-semibold text-slate";
-  const rotatingPlaceholder = KOI_ROTATING_PLACEHOLDERS[placeholderIndex] ?? BRAND.searchPlaceholder;
   const combinedError = error.trim() || submitError?.trim() || "";
   const locationPromptMessage = combinedError || "Add your location so Koi can search nearby.";
   const manualPromptMessage = combinedError || "Enter a city, ZIP code, or address to search nearby.";
@@ -336,8 +332,12 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
                       void runSearch(query);
                     }
                   }}
-                  onBlur={prefetch}
-                  placeholder={onHero ? BRAND.searchPlaceholder : rotatingPlaceholder}
+                  onBlur={() => {
+                    setInputFocused(false);
+                    prefetch();
+                  }}
+                  onFocus={() => setInputFocused(true)}
+                  placeholder={searchPlaceholder}
                   rows={onHero ? 1 : 2}
                   className={
                     onHero

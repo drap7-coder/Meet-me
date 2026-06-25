@@ -59,7 +59,7 @@ export function withTemporalExploreResults(
 ): SearchHalfwayResponse {
   return {
     ...response,
-    events: rankTemporalEvents(events),
+    events,
     venues: venues.slice(0, 18),
     eventProfile: response.eventProfile ?? "weekend"
   };

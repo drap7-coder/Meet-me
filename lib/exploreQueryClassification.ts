@@ -50,7 +50,12 @@ const CLASSIFICATION_RULES: ClassificationRule[] = [
   {
     category: "activities",
     subcategoryId: null,
-    pattern: /\b(?:things to do|fun|plans?|what(?:'s| is) happening)\b.*\b(?:this weekend|weekend|tonight|today|tomorrow|saturday|sunday|this afternoon|this evening)\b/i
+    pattern: /\b(?:things to do|fun|plans?|what should we do|what to do|what(?:'s| is) happening|ideas?|date ideas?|family things?)\b.*\b(?:this weekend|weekend|tonight|today|tomorrow|saturday|sunday|this afternoon|this evening)\b/i
+  },
+  {
+    category: "activities",
+    subcategoryId: null,
+    pattern: /\b(?:weekend ideas?|today ideas?|tonight ideas?)\b/i
   },
   {
     category: "activities",

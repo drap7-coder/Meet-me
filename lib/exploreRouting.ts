@@ -15,7 +15,7 @@ import { logApiError } from "@/lib/serverLog";
 import { hasEventbriteFoodMarketSources, hasEventbriteSources } from "@/src/config/eventbriteSources";
 
 const TEMPORAL_QUERY_PATTERN =
-  /\b(?:things to do|fun|events?|outdoor activit(?:y|ies)|what(?:'s| is) happening|plans?)\b.*\b(?:this weekend|weekend|tonight|today|tomorrow|saturday|sunday|this afternoon|this evening)\b|\b(?:tonight|today|tomorrow|saturday|sunday|this afternoon|this evening)\b.*\b(?:things to do|fun|events?|outdoor activit(?:y|ies)|what(?:'s| is) happening|plans?)\b/i;
+  /\b(?:things to do|fun|events?|outdoor activit(?:y|ies)|what should we do|what to do|what(?:'s| is) happening|plans?|ideas?|date ideas?|family things?)\b.*\b(?:this weekend|weekend|tonight|today|tomorrow|saturday|sunday|this afternoon|this evening)\b|\b(?:tonight|today|tomorrow|saturday|sunday|this afternoon|this evening)\b.*\b(?:things to do|fun|events?|outdoor activit(?:y|ies)|what should we do|what to do|what(?:'s| is) happening|plans?|ideas?|date ideas?|family things?)\b|\b(?:weekend ideas?|today ideas?|tonight ideas?)\b/i;
 
 const TEMPORAL_EVENT_WORD_PATTERN =
   /\b(?:events?|concerts?|comedy|theat(?:er|re)|festivals?|street fairs?|farmers? markets?|live music|sports?|games?)\b.*\b(?:this weekend|weekend|tonight|today|tomorrow|saturday|sunday|this afternoon|this evening)\b/i;

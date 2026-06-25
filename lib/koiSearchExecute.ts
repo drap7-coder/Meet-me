@@ -36,9 +36,12 @@ import {
 import type { ExploreIntentPayload, NormalizedExploreIntent } from "@/lib/exploreIntent";
 import {
   enoughTimeAwareCoverage,
+  rankTemporalEvents,
   rankTemporalVenues,
+  temporalEventScore,
   withTemporalExploreResults
 } from "@/lib/timeAwareExplore";
+import { diversifyExploreResults, shouldApplyDiversityRanking } from "@/lib/resultDiversityRanking";
 
 export class EventLocationRequiredError extends Error {
   constructor(message = "Add your location to search nearby.") {
@@ -217,6 +220,25 @@ async function executeTimeAwareExploreSearch(
     ...otmVenues.map((venue) => ({ venue, source: "opentripmap" as const })),
     ...fallbackVenues.map((venue) => ({ venue, source: "google_places" as const }))
   ]);
+  const applyDiversity = shouldApplyDiversityRanking(query, exploreIntent);
+  const rankedEvents = rankTemporalEvents(events);
+  const diversifiedEvents = applyDiversity
+    ? diversifyExploreResults(rankedEvents, {
+        query,
+        intent: exploreIntent,
+        getProvider: (event) => event.source,
+        getScore: (event) => temporalEventScore(event),
+        maxRelevanceGap: 24
+      })
+    : rankedEvents;
+  const diversifiedVenues = applyDiversity
+    ? diversifyExploreResults(venues, {
+        query,
+        intent: exploreIntent,
+        getScore: (_venue, index) => 100 - index * 4,
+        maxRelevanceGap: 12
+      })
+    : venues;
 
   const response: SearchHalfwayResponse = fallbackResponse ?? {
     originA: origin,
@@ -234,7 +256,7 @@ async function executeTimeAwareExploreSearch(
 
   return {
     kind: "places",
-    data: withTemporalExploreResults({ ...response, eventProfile: profile }, events, venues)
+    data: withTemporalExploreResults({ ...response, eventProfile: profile }, diversifiedEvents, diversifiedVenues)
   };
 }
 

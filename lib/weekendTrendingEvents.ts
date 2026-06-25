@@ -1,5 +1,6 @@
 import { isEventDiscoveryConfigured, searchLocalEvents, searchTicketmasterEvents } from "@/lib/eventDiscovery";
 import type { EventResult } from "@/lib/eventResult";
+import { localTeamsForSport } from "@/lib/sportsTeams";
 import { composeTrendingPicks, inSeasonSportIds, type TrendingCompositionContext } from "@/lib/trendingComposition";
 import { upcomingWeekendWindow, weekendTrendingWeekKey } from "@/lib/weekendWindow";
 
@@ -47,31 +48,41 @@ export function blendTrendingNearYouMix(
   return composeTrendingPicks(withEventImages([...sports, ...comedy, ...music]), { cap });
 }
 
+const LOCAL_TEAM_FETCH_CAP = 2;
+
+/** Query plan for seasonal sports fetches — exported for diagnostics/tests. */
+export function seasonalSportsFetchQueries(
+  latitude: number,
+  longitude: number,
+  date = new Date()
+): string[] {
+  const origin = { lat: latitude, lng: longitude };
+  const inSeason = inSeasonSportIds(date, origin);
+  const queries = ["sports this weekend"];
+  const teamQueries = new Set<string>();
+
+  if (inSeason.has("baseball")) queries.push("baseball");
+  if (inSeason.has("football")) queries.push("football");
+  if (inSeason.has("soccer")) queries.push("soccer");
+
+  for (const sport of inSeason) {
+    for (const team of localTeamsForSport(sport, origin).slice(0, LOCAL_TEAM_FETCH_CAP)) {
+      teamQueries.add(team.ticketmasterKeyword);
+    }
+  }
+
+  return [...queries, ...teamQueries];
+}
+
 async function fetchSeasonalSportsEvents(
   base: Omit<Parameters<typeof searchTicketmasterEvents>[0], "query" | "profile" | "segmentName">,
   latitude: number,
   longitude: number
 ) {
-  const inSeason = inSeasonSportIds(new Date(), { lat: latitude, lng: longitude });
-  const requests: Array<Promise<EventResult[]>> = [
-    searchTicketmasterEvents({ ...base, query: "sports this weekend", profile: "sports", segmentName: "Sports" })
-  ];
-
-  if (inSeason.has("baseball")) {
-    requests.push(
-      searchTicketmasterEvents({ ...base, query: "baseball", profile: "sports", segmentName: "Sports" })
-    );
-  }
-  if (inSeason.has("football")) {
-    requests.push(
-      searchTicketmasterEvents({ ...base, query: "football", profile: "sports", segmentName: "Sports" })
-    );
-  }
-  if (inSeason.has("soccer")) {
-    requests.push(
-      searchTicketmasterEvents({ ...base, query: "soccer", profile: "sports", segmentName: "Sports" })
-    );
-  }
+  const queries = seasonalSportsFetchQueries(latitude, longitude);
+  const requests = queries.map((query) =>
+    searchTicketmasterEvents({ ...base, query, profile: "sports", segmentName: "Sports" })
+  );
 
   const batches = await Promise.all(requests);
   return dedupeEvents(batches.flat());

@@ -262,16 +262,21 @@ export function teamsForSport(sportId: string | null | undefined): SportsTeamDef
   return SPORTS_TEAMS.filter((team) => team.sport === sportId);
 }
 
-/** Teams whose home market is within `radiusMiles` of the user's origin. */
+/** Teams whose home market is within `radiusMiles` of the user's origin, nearest first. */
 export function localTeamsForSport(
   sportId: string | null | undefined,
   origin?: LatLng | null,
   radiusMiles = LOCAL_TEAM_RADIUS_MILES
 ): SportsTeamDefinition[] {
   if (!sportId || !origin) return [];
-  return teamsForSport(sportId).filter(
-    (team) => haversineMiles(origin.lat, origin.lng, team.homeMarket.latitude, team.homeMarket.longitude) <= radiusMiles
-  );
+  return teamsForSport(sportId)
+    .map((team) => ({
+      team,
+      distance: haversineMiles(origin.lat, origin.lng, team.homeMarket.latitude, team.homeMarket.longitude)
+    }))
+    .filter((entry) => entry.distance <= radiusMiles)
+    .sort((left, right) => left.distance - right.distance)
+    .map((entry) => entry.team);
 }
 
 /** Teams outside the local radius — shown under "All teams" when local chips are visible. */

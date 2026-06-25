@@ -13,6 +13,7 @@ import {
   fetchTrendingNearYouCandidateBatches,
   fetchTrendingNearYouEvents,
   finalizeTrendingEvents,
+  seasonalSportsFetchQueries,
   TRENDING_NEAR_YOU_EVENT_CAP,
   withEventImages,
   WEEKEND_TRENDING_RADIUS_MILES
@@ -87,6 +88,7 @@ export type TrendingDiagnosticReport = {
   radiusMiles: number;
   window: { start: string; end: string };
   inSeasonSports: string[];
+  sportsFetchQueries: string[];
   fetch: {
     sportsCount: number;
     comedyCount: number;
@@ -203,6 +205,7 @@ export async function runTrendingDiagnostic(params: TrendingDiagnosticParams): P
     radiusMiles: WEEKEND_TRENDING_RADIUS_MILES,
     window: { start: window.start.toISOString(), end: window.end.toISOString() },
     inSeasonSports: [...inSeason],
+    sportsFetchQueries: seasonalSportsFetchQueries(latitude, longitude),
     fetch: {
       sportsCount: sports.length,
       comedyCount: comedy.length,

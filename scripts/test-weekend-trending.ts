@@ -2,6 +2,7 @@ import {
   blendTrendingNearYouMix,
   blendWeekendTrendingMix,
   finalizeTrendingEvents,
+  seasonalSportsFetchQueries,
   upcomingWeekendWindow,
   weekendTrendingWeekKey
 } from "../lib/weekendTrendingEvents";
@@ -75,6 +76,12 @@ const sparseImages = finalizeTrendingEvents(
   { cap: 4 }
 );
 assert(sparseImages.length === 4, "trending fills to cap when only one event has an image");
+
+const phillySportsQueries = seasonalSportsFetchQueries(39.9526, -75.1652, new Date(2026, 5, 25));
+assert(
+  phillySportsQueries.includes("Philadelphia Phillies"),
+  "Philly trending sports fetch includes local Phillies team schedule"
+);
 
 function baseballEvent(id: string, withImage: boolean): EventResult {
   return {

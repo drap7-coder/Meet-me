@@ -6,6 +6,8 @@ export type EventSearchParams = EventSearchRequest & {
 };
 
 export interface EventProvider {
+  /** Stable identifier used for telemetry, caching, and dedupe (e.g. "ticketmaster"). */
+  name: string;
   searchEvents(request: EventSearchParams): Promise<EventResult[]>;
   isConfigured(): boolean;
 }

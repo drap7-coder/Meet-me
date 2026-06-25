@@ -4,10 +4,11 @@ import { classifyLocalEventProfile, eventTimeWindow, isMusicEventQuery } from "@
 import { rankEventResults } from "@/lib/eventRanking";
 import type { EventProvider } from "@/lib/providers/eventDiscoveryTypes";
 import { ticketmasterEventProvider } from "@/lib/providers/ticketmasterEventProvider";
+import { eventbriteEventProvider } from "@/lib/providers/eventbriteEventProvider";
 import { recordProviderError } from "@/lib/searchTelemetryRuntime";
 import { logApiError } from "@/lib/serverLog";
 
-const providers: EventProvider[] = [ticketmasterEventProvider];
+const providers: EventProvider[] = [ticketmasterEventProvider, eventbriteEventProvider];
 
 const DEFAULT_RADIUS_MILES = 25;
 const MUSIC_RADIUS_MILES = 100;
@@ -39,8 +40,8 @@ export async function searchLocalEvents(request: EventSearchRequest): Promise<Ev
       });
       merged.push(...batch);
     } catch (error) {
-      recordProviderError("ticketmaster", "search_events");
-      logApiError("ticketmaster-event-discovery", error);
+      recordProviderError(provider.name, "search_events");
+      logApiError(`${provider.name}-event-discovery`, error);
     }
   }
 

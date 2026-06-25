@@ -188,6 +188,8 @@ function formatTicketmasterDateTime(value: string) {
 }
 
 export const ticketmasterEventProvider: EventProvider = {
+  name: "ticketmaster",
+
   isConfigured() {
     return Boolean(getTicketmasterApiKey());
   },

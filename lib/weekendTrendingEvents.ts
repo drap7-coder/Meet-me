@@ -4,6 +4,8 @@ import type { EventResult } from "@/lib/eventResult";
 export const WEEKEND_TRENDING_CAP = 5;
 export const WEEKEND_TRENDING_RADIUS_MILES = 30;
 
+const SEGMENT_FETCH_CAP = 6;
+
 /** ISO year + week number — used for dismiss-until-next-week storage. */
 export function weekendTrendingWeekKey(now = new Date()): string {
   const year = now.getFullYear();
@@ -38,6 +40,48 @@ export function upcomingWeekendWindow(now = new Date()): { start: Date; end: Dat
   return { start, end };
 }
 
+/** Interleave sports, music, and arts so the strip is not concert-heavy. */
+export function blendWeekendTrendingMix(
+  sports: EventResult[],
+  music: EventResult[],
+  arts: EventResult[],
+  cap = WEEKEND_TRENDING_CAP
+): EventResult[] {
+  const seen = new Set<string>();
+  const indices = { sports: 0, music: 0, arts: 0 };
+  const results: EventResult[] = [];
+
+  function takeNext(pool: EventResult[], key: keyof typeof indices): EventResult | undefined {
+    while (indices[key] < pool.length) {
+      const event = pool[indices[key]++];
+      const id = `${event.source}:${event.id}`;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      return event;
+    }
+    return undefined;
+  }
+
+  const pattern: Array<keyof typeof indices> = ["sports", "music", "sports", "music", "arts"];
+
+  for (const key of pattern) {
+    if (results.length >= cap) break;
+    const event = takeNext(key === "sports" ? sports : key === "music" ? music : arts, key);
+    if (event) results.push(event);
+  }
+
+  for (const pool of [sports, music, arts] as const) {
+    const key = pool === sports ? "sports" : pool === music ? "music" : "arts";
+    while (results.length < cap) {
+      const event = takeNext(pool, key);
+      if (!event) break;
+      results.push(event);
+    }
+  }
+
+  return results;
+}
+
 export async function fetchTrendingWeekendEvents(
   latitude: number,
   longitude: number
@@ -45,16 +89,21 @@ export async function fetchTrendingWeekendEvents(
   if (!isEventDiscoveryConfigured()) return [];
 
   const window = upcomingWeekendWindow();
-  const events = await searchLocalEvents({
+  const base = {
     query: "events this weekend",
     latitude,
     longitude,
-    profile: "weekend",
     radiusMiles: WEEKEND_TRENDING_RADIUS_MILES,
     startDateTime: window.start.toISOString(),
     endDateTime: window.end.toISOString(),
-    resultCap: WEEKEND_TRENDING_CAP
-  });
+    resultCap: SEGMENT_FETCH_CAP
+  };
 
-  return events.slice(0, WEEKEND_TRENDING_CAP);
+  const [sports, music, arts] = await Promise.all([
+    searchLocalEvents({ ...base, profile: "sports", segmentName: "Sports" }),
+    searchLocalEvents({ ...base, profile: "music", segmentName: "Music" }),
+    searchLocalEvents({ ...base, profile: "weekend", segmentName: "Arts & Theatre" })
+  ]);
+
+  return blendWeekendTrendingMix(sports, music, arts);
 }

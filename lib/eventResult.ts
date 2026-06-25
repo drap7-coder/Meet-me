@@ -35,4 +35,6 @@ export type EventSearchRequest = {
   endDateTime?: string;
   /** Cap ranked results — defaults to search-local-events limits. */
   resultCap?: number;
+  /** Ticketmaster segment override (e.g. Sports, Music, Arts & Theatre). */
+  segmentName?: string;
 };

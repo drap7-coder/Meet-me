@@ -144,7 +144,19 @@ function keywordForProfile(profile?: EventSearchParams["profile"], query = "") {
   }
 }
 
-function applyProfileFilters(params: Record<string, string>, profile?: EventSearchParams["profile"], query = "") {
+function applyProfileFilters(
+  params: Record<string, string>,
+  profile?: EventSearchParams["profile"],
+  query = "",
+  segmentName?: string
+) {
+  if (segmentName) {
+    params.segmentName = segmentName;
+    const keyword = keywordForProfile(profile, query);
+    if (keyword) params.keyword = keyword;
+    return;
+  }
+
   const musicGenre = extractMusicGenreFromQuery(query);
   const musicArtist = resolveMusicArtistSearch(query);
   const musicQuery =
@@ -202,7 +214,7 @@ export const ticketmasterEventProvider: EventProvider = {
       params.unit = "miles";
     }
 
-    applyProfileFilters(params, request.profile, request.query);
+    applyProfileFilters(params, request.profile, request.query, request.segmentName);
 
     if (request.startDateTime) params.startDateTime = formatTicketmasterDateTime(request.startDateTime);
     if (request.endDateTime) params.endDateTime = formatTicketmasterDateTime(request.endDateTime);

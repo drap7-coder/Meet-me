@@ -38,6 +38,16 @@ assertNear("coffee near an EV charger", {
   relatedFeature: "ev_charger",
   locationQuery: null
 });
+assertNear("coffee near EV", {
+  primaryQuery: "coffee",
+  relatedFeature: "ev_charger",
+  locationQuery: null
+});
+assertNear("coffee near an EV", {
+  primaryQuery: "coffee",
+  relatedFeature: "ev_charger",
+  locationQuery: null
+});
 assertNear("restaurant near a park", {
   primaryQuery: "restaurant",
   relatedFeature: "park",

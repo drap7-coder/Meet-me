@@ -11,7 +11,7 @@ export function isEvChargingIntent(query: string | null | undefined): boolean {
 
   return (
     /\b(?:ev[-\s]?friendly|charger nearby|near a charger|with charging|charging nearby|charging on site)\b/.test(value) ||
-    /\b(?:restaurants?|cafes?|coffee|bars?|food)\b.*\b(?:with|near)\b.*\b(?:ev\s+)?charg/i.test(value) ||
+    /\b(?:restaurants?|cafes?|coffee|bars?|food)\b.*\b(?:with|near)\b.*\b(?:an?\s+)?(?:ev|e[\s-]?v)(?:\s+charg(?:e|ing|ers?))?\b/i.test(value) ||
     /\b(?:where (?:can|to) i charge|need (?:to )?charge|while i charge)\b/.test(value)
   );
 }
@@ -27,9 +27,10 @@ export function isDirectEvChargerSearch(query: string | null | undefined): boole
 export function stripEvChargingPhrases(query: string): string {
   return query
     .replace(
-      /\b(?:with|near|by|at)\s+(?:a\s+)?(?:nearby\s+)?(?:ev\s+|electric\s+vehicle\s+)?(?:charg(?:e|ing|ers?)|supercharg(?:e|er|ing)|charging stations?)(?:\s+(?:nearby|available|on[\s-]?site))?\b/gi,
+      /\b(?:with|near|by|at)\s+(?:a\s+)?(?:nearby\s+)?(?:an?\s+)?(?:ev\s+|electric\s+vehicle\s+|e[\s-]?v\s*)?(?:charg(?:e|ing|ers?)|supercharg(?:e|er|ing)|charging stations?)(?:\s+(?:nearby|available|on[\s-]?site))?\b/gi,
       ""
     )
+    .replace(/\b(?:with|near|by|at)\s+(?:a\s+)?(?:an?\s+)?(?:ev|e[\s-]?v)\b/gi, "")
     .replace(/\b(?:ev|electric(?:\s+vehicle)?)\s+(?:charg(?:e|ing|ers?)|supercharg(?:e|er|ing))\b/gi, "")
     .replace(/\b(?:where (?:can|to) i charge|need (?:to )?charge while|while (?:i|we) charge)\b/gi, "")
     .replace(/\s{2,}/g, " ")

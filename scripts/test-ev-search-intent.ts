@@ -20,6 +20,9 @@ async function run() {
   assert(effectiveTravelModeForQuery("auto", evRestaurant) === "ev", "auto + charging query -> ev mode");
   assert(effectiveTravelModeForQuery("drive", evRestaurant) === "ev", "drive + charging query -> ev mode");
   assert(effectiveTravelModeForQuery("walk", "coffee near me") === "walk", "non-charging query keeps mode");
+  assert(isEvChargingIntent("coffee near EV"), "detects coffee near EV shorthand");
+  assert(stripEvChargingPhrases("coffee near EV").toLowerCase() === "coffee", "strips near EV from coffee query");
+  assert(effectiveTravelModeForQuery("auto", "coffee near EV") === "ev", "coffee near EV switches to ev mode");
 
   const category = resolveSearchCategoryFromQuery(evRestaurant);
   assert(category.category === "restaurant", "EV restaurant resolves to restaurant category");

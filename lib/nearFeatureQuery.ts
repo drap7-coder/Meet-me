@@ -27,7 +27,8 @@ export type NearRelationIntent = {
 const FEATURE_RULES: Array<{ id: RelatedFeatureId; pattern: RegExp }> = [
   {
     id: "ev_charger",
-    pattern: /\b(?:ev\s+)?(?:charg(?:e|ing|ers?)|charging stations?|supercharg(?:e|er|ing))\b/i
+    pattern:
+      /\b(?:ev\s+)?(?:charg(?:e|ing|ers?)|charging stations?|supercharg(?:e|er|ing))\b|^(?:an?\s+)?e[\s-]?v$/i
   },
   {
     id: "trail",

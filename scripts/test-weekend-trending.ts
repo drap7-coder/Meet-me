@@ -112,4 +112,38 @@ assert(
   "in-season baseball without image is included when ranked pool reaches composition"
 );
 
+function wizardEvent(id: string, startTime: string): EventResult {
+  return {
+    id,
+    title: "Philadelphia Orchestra presents The Wizard of Oz in Concert",
+    category: "Other",
+    venue: "Marian Anderson Hall - Kimmel Center",
+    startTime,
+    city: "Philadelphia",
+    state: "PA",
+    source: "ticketmaster",
+    imageUrl: "https://img.example/wizard.jpg"
+  };
+}
+
+const multiDayRun = finalizeTrendingEvents(
+  [
+    wizardEvent("wizard-fri", "2026-06-26T23:30:00Z"),
+    wizardEvent("wizard-sat", "2026-06-27T22:00:00Z"),
+    stubEvent("comedy-1", "Comedy"),
+    stubEvent("music-1", "Music"),
+    stubEvent("music-2", "Music"),
+    stubEvent("music-3", "Music")
+  ],
+  { cap: 6 }
+);
+assert(
+  multiDayRun.filter((event) => /wizard of oz/i.test(event.title)).length === 1,
+  "multi-day runs dedupe to a single trending card"
+);
+assert(
+  multiDayRun.some((event) => event.id === "wizard-fri"),
+  "earliest showtime kept when deduping multi-day runs"
+);
+
 console.log("PASS weekend trending");

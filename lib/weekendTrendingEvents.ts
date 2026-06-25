@@ -1,5 +1,6 @@
 import { isEventDiscoveryConfigured, searchLocalEvents, searchTicketmasterEvents } from "@/lib/eventDiscovery";
 import type { EventResult } from "@/lib/eventResult";
+import { dedupeTrendingEvents, eventInstanceKey, normalizeEventShowKey } from "@/lib/eventDedupe";
 import { localTeamsForSport } from "@/lib/sportsTeams";
 import { composeTrendingPicks, inSeasonSportIds, type TrendingCompositionContext } from "@/lib/trendingComposition";
 import { upcomingWeekendWindow, weekendTrendingWeekKey } from "@/lib/weekendWindow";
@@ -17,15 +18,7 @@ function withEventImages(events: EventResult[]) {
 }
 
 function dedupeEvents(events: EventResult[]) {
-  const seen = new Set<string>();
-  const results: EventResult[] = [];
-  for (const event of events) {
-    const key = `${event.source}:${event.id}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    results.push(event);
-  }
-  return results;
+  return dedupeTrendingEvents(events);
 }
 
 /** @deprecated Prefer composeTrendingPicks — kept for legacy tests. */
@@ -112,13 +105,16 @@ export function finalizeTrendingEvents(
   const composed = composeTrendingPicks(ranked, { ...context, relaxedFill: true });
   if (composed.length >= cap) return composed.slice(0, cap);
 
-  const seen = new Set(composed.map((event) => `${event.source}:${event.id}`));
+  const seenIds = new Set(composed.map((event) => eventInstanceKey(event)));
+  const seenShows = new Set(composed.map((event) => normalizeEventShowKey(event)));
   const filled = [...composed];
   for (const event of ranked) {
     if (filled.length >= cap) break;
-    const key = `${event.source}:${event.id}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
+    const idKey = eventInstanceKey(event);
+    const showKey = normalizeEventShowKey(event);
+    if (seenIds.has(idKey) || seenShows.has(showKey)) continue;
+    seenIds.add(idKey);
+    seenShows.add(showKey);
     filled.push(event);
   }
 

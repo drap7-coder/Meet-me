@@ -7,22 +7,44 @@ import { useEffect, useState } from "react";
 type Props = {
   latitude?: number | null;
   longitude?: number | null;
+  /** True while a saved city/ZIP is being geocoded for trending. */
+  locationPending?: boolean;
   busy?: boolean;
   onSearchQuery?: (query: string) => void;
+  onRequestLocation?: () => void;
 };
 
-export function TrendingNearYouStrip({ latitude, longitude, busy = false, onSearchQuery }: Props) {
+function hasValidCoordinates(latitude?: number | null, longitude?: number | null) {
+  return (
+    latitude != null &&
+    longitude != null &&
+    Number.isFinite(latitude) &&
+    Number.isFinite(longitude)
+  );
+}
+
+export function TrendingNearYouStrip({
+  latitude,
+  longitude,
+  locationPending = false,
+  busy = false,
+  onSearchQuery,
+  onRequestLocation
+}: Props) {
   const [cards, setCards] = useState<TrendingNearYouCard[]>([]);
   const [loading, setLoading] = useState(false);
+  const canFetch = hasValidCoordinates(latitude, longitude);
+  const showSkeleton = locationPending || (canFetch && loading);
 
   useEffect(() => {
-    if (busy) return;
-    if (latitude == null || longitude == null || !Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    if (!canFetch) {
       setCards([]);
+      setLoading(false);
       return;
     }
 
     const controller = new AbortController();
+    let cancelled = false;
     setLoading(true);
 
     void fetch(`/api/trending-near-you?lat=${latitude}&lng=${longitude}`, { signal: controller.signal })
@@ -30,33 +52,71 @@ export function TrendingNearYouStrip({ latitude, longitude, busy = false, onSear
         if (!response.ok) return { cards: [] as TrendingNearYouCard[] };
         return (await response.json()) as { cards?: TrendingNearYouCard[] };
       })
-      .then((payload) => setCards(Array.isArray(payload.cards) ? payload.cards : []))
+      .then((payload) => {
+        if (!cancelled) setCards(Array.isArray(payload.cards) ? payload.cards : []);
+      })
       .catch(() => {
-        if (!controller.signal.aborted) setCards([]);
+        if (!cancelled) setCards([]);
       })
       .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
+        if (!cancelled) setLoading(false);
       });
 
-    return () => controller.abort();
-  }, [latitude, longitude, busy]);
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [canFetch, latitude, longitude]);
 
-  if (loading || cards.length === 0) return null;
+  if (!canFetch && !locationPending) {
+    if (!onRequestLocation) return null;
+
+    return (
+      <section
+        className="grid min-w-0 gap-3 rounded-[20px] border border-white/12 bg-white/[0.06] px-4 py-3.5 shadow-[0_10px_40px_rgba(0,0,0,0.14)] backdrop-blur-md"
+        aria-label="Trending near you"
+      >
+        <div className="min-w-0 grid gap-0.5">
+          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-white/45">Trending near you</p>
+          <h2 className="text-sm font-bold text-white">Picks for your area</h2>
+        </div>
+        <button
+          type="button"
+          onClick={onRequestLocation}
+          disabled={busy}
+          className="rounded-xl border border-white/15 bg-white/[0.08] px-3 py-2.5 text-left text-sm font-semibold text-white transition hover:border-white/25 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          Set your location to see trending events and picks nearby.
+        </button>
+      </section>
+    );
+  }
+
+  if (!showSkeleton && cards.length === 0) return null;
 
   return (
     <section
-      className="grid gap-3 rounded-[20px] border border-white/12 bg-white/[0.06] px-4 py-3.5 shadow-[0_10px_40px_rgba(0,0,0,0.14)] backdrop-blur-md"
+      className="grid min-w-0 gap-3 rounded-[20px] border border-white/12 bg-white/[0.06] px-4 py-3.5 shadow-[0_10px_40px_rgba(0,0,0,0.14)] backdrop-blur-md"
       aria-label="Trending near you"
+      aria-busy={showSkeleton}
     >
       <div className="min-w-0 grid gap-0.5">
         <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-white/45">Trending near you</p>
         <h2 className="text-sm font-bold text-white">Picks for your area</h2>
       </div>
 
-      <div className="-mx-0.5 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-0.5 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {cards.map((card) => (
-          <TrendingCard key={card.id} card={card} onSearchQuery={onSearchQuery} />
-        ))}
+      <div className="min-w-0 -mx-0.5 flex snap-x snap-mandatory gap-2.5 overflow-x-auto overscroll-x-contain px-0.5 pb-0.5 [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden">
+        {showSkeleton
+          ? Array.from({ length: 3 }, (_, index) => (
+              <div
+                key={`trending-skeleton-${index}`}
+                className="h-[8.75rem] w-[11.5rem] shrink-0 animate-pulse snap-start rounded-2xl border border-white/10 bg-white/[0.08]"
+                aria-hidden="true"
+              />
+            ))
+          : cards.map((card) => (
+              <TrendingCard key={card.id} card={card} busy={busy} onSearchQuery={onSearchQuery} />
+            ))}
       </div>
     </section>
   );
@@ -64,9 +124,11 @@ export function TrendingNearYouStrip({ latitude, longitude, busy = false, onSear
 
 function TrendingCard({
   card,
+  busy = false,
   onSearchQuery
 }: {
   card: TrendingNearYouCard;
+  busy?: boolean;
   onSearchQuery?: (query: string) => void;
 }) {
   const body = (
@@ -95,6 +157,9 @@ function TrendingCard({
     if (card.searchQuery && onSearchQuery) onSearchQuery(card.searchQuery);
   }
 
+  const cardClass =
+    "koi-popular-chip group w-[11.5rem] shrink-0 snap-start overflow-hidden rounded-2xl border border-white/10 text-left transition hover:border-white/25 disabled:cursor-not-allowed disabled:opacity-60";
+
   if (card.actionUrl) {
     return (
       <a
@@ -102,7 +167,8 @@ function TrendingCard({
         target="_blank"
         rel="noreferrer"
         onClick={() => trackEvent("trending_near_you_clicked", { kind: card.kind, id: card.id })}
-        className="koi-popular-chip group w-[11.5rem] shrink-0 snap-start overflow-hidden rounded-2xl border border-white/10 text-left transition hover:border-white/25"
+        className={cardClass}
+        aria-disabled={busy}
       >
         {body}
       </a>
@@ -110,11 +176,7 @@ function TrendingCard({
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      className="koi-popular-chip group w-[11.5rem] shrink-0 snap-start overflow-hidden rounded-2xl border border-white/10 text-left transition hover:border-white/25"
-    >
+    <button type="button" onClick={handleClick} disabled={busy} className={cardClass}>
       {body}
     </button>
   );

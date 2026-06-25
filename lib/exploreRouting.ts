@@ -14,6 +14,17 @@ import { hasEventbriteApiKey } from "@/lib/providers/eventbriteEventProvider";
 import { logApiError } from "@/lib/serverLog";
 import { hasEventbriteFoodMarketSources, hasEventbriteSources } from "@/src/config/eventbriteSources";
 
+const TEMPORAL_QUERY_PATTERN =
+  /\b(?:things to do|fun|events?|outdoor activit(?:y|ies)|what should we do|what to do|what(?:'s| is) happening|plans?|ideas?|date ideas?|family things?)\b.*\b(?:this weekend|weekend|tonight|today|tomorrow|saturday|sunday|this afternoon|this evening)\b|\b(?:tonight|today|tomorrow|saturday|sunday|this afternoon|this evening)\b.*\b(?:things to do|fun|events?|outdoor activit(?:y|ies)|what should we do|what to do|what(?:'s| is) happening|plans?|ideas?|date ideas?|family things?)\b|\b(?:weekend ideas?|today ideas?|tonight ideas?)\b/i;
+
+const TEMPORAL_EVENT_WORD_PATTERN =
+  /\b(?:events?|concerts?|comedy|theat(?:er|re)|festivals?|street fairs?|farmers? markets?|live music|sports?|games?)\b.*\b(?:this weekend|weekend|tonight|today|tomorrow|saturday|sunday|this afternoon|this evening)\b/i;
+
+const BARE_TEMPORAL_DISCOVERY_PATTERN =
+  /^(?:tonight|today|tomorrow|saturday|sunday|this afternoon|this evening)$/i;
+
+const PLACE_PRIMARY_TEMPORAL_CATEGORIES = new Set<ExploreCategory>(["food_drink", "nightlife"]);
+
 export type ExploreRoutingInput = {
   query: string;
   mode?: ExploreMode | null;
@@ -33,6 +44,7 @@ export function logExploreRoutingDecision(intent: NormalizedExploreIntent, reaso
     providers: intent.providers,
     routeViaTicketmaster: intent.routeViaTicketmaster,
     preferOpenTripMap: intent.preferOpenTripMap,
+    timeAwareExplore: intent.timeAwareExplore,
     venueCategory: intent.venueCategory,
     queryPreview: intent.query.slice(0, 80)
   });
@@ -74,6 +86,26 @@ export function selectProvidersForExplore(
   return available.length ? available : ["google_places"];
 }
 
+export function hasTemporalExploreIntent(query: string): boolean {
+  const value = query.trim();
+  if (!value) return false;
+  return TEMPORAL_QUERY_PATTERN.test(value) || TEMPORAL_EVENT_WORD_PATTERN.test(value) || BARE_TEMPORAL_DISCOVERY_PATTERN.test(value);
+}
+
+export function isTimeAwareExploreCategory(category: ExploreCategory | null): boolean {
+  return Boolean(category && !PLACE_PRIMARY_TEMPORAL_CATEGORIES.has(category));
+}
+
+export function selectProvidersForTimeAwareExplore(category: ExploreCategory | null): ProviderKey[] {
+  const providers: ProviderKey[] = ["ticketmaster"];
+  if (hasEventbriteApiKey() && hasEventbriteSources()) providers.push("eventbrite");
+  if (category === "activities" || category === "outdoors" || category === "events" || category === "sports") {
+    providers.push("opentripmap");
+  }
+  providers.push("google_places");
+  return providers;
+}
+
 function inferSubcategoryFromQuery(category: ExploreCategory, query: string, subcategoryId: string | null): string | null {
   return inferExploreSubcategoryFromQuery(category, query, subcategoryId);
 }
@@ -102,14 +134,18 @@ export function normalizeExploreIntent(input: ExploreRoutingInput): NormalizedEx
       providers: [],
       venueCategory: "restaurant",
       routeViaTicketmaster: false,
-      preferOpenTripMap: false
+      preferOpenTripMap: false,
+      timeAwareExplore: false
     };
   }
 
-  const providers = selectProvidersForExplore(category, subcategoryId);
+  const timeAwareExplore = hasTemporalExploreIntent(query) && isTimeAwareExploreCategory(category);
+  const providers = timeAwareExplore
+    ? selectProvidersForTimeAwareExplore(category)
+    : selectProvidersForExplore(category, subcategoryId);
   const routeViaTicketmaster =
-    providers.includes("ticketmaster") && isTicketmasterExploreSubcategory(category, subcategoryId);
-  const preferOpenTripMap = providers[0] === "opentripmap";
+    !timeAwareExplore && providers.includes("ticketmaster") && isTicketmasterExploreSubcategory(category, subcategoryId);
+  const preferOpenTripMap = !timeAwareExplore && providers[0] === "opentripmap";
 
   const intent: NormalizedExploreIntent = {
     mode,
@@ -119,7 +155,8 @@ export function normalizeExploreIntent(input: ExploreRoutingInput): NormalizedEx
     providers,
     venueCategory: venueCategoryForExplore(category, subcategoryId),
     routeViaTicketmaster,
-    preferOpenTripMap
+    preferOpenTripMap,
+    timeAwareExplore
   };
 
   logExploreRoutingDecision(
@@ -162,7 +199,11 @@ export function shouldSupplementWithOpenTripMap(intent: NormalizedExploreIntent)
 
 /** Typed or chip queries that should use Places + OpenTripMap instead of Ticketmaster-only. */
 export function shouldUseOpenTripMapExplorePath(intent: NormalizedExploreIntent): boolean {
-  return intent.mode === "explore" && intent.category !== null && shouldSupplementWithOpenTripMap(intent);
+  return intent.mode === "explore" && intent.category !== null && !intent.timeAwareExplore && shouldSupplementWithOpenTripMap(intent);
+}
+
+export function shouldUseTimeAwareExplorePath(intent: NormalizedExploreIntent): boolean {
+  return intent.mode === "explore" && intent.category !== null && intent.timeAwareExplore;
 }
 
 /** Prevent streaming and explore chip sets from appearing together in structured state. */

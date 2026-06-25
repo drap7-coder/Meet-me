@@ -44,6 +44,7 @@ export type NormalizedExploreIntent = {
   venueCategory: VenueCategory;
   routeViaTicketmaster: boolean;
   preferOpenTripMap: boolean;
+  timeAwareExplore: boolean;
 };
 
 const FOOD_DRINK_REFINEMENTS: BuilderRefinement[] = [

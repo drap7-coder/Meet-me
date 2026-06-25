@@ -24,7 +24,7 @@ const OTM_CATEGORY_BY_SUBCATEGORY: Partial<Record<string, OpenTripMapCategory[]>
   farmers_markets: ["interesting_places", "cultural", "natural"]
 };
 
-function otmCategoriesForIntent(intent: NormalizedExploreIntent): OpenTripMapCategory[] | undefined {
+export function otmCategoriesForIntent(intent: NormalizedExploreIntent): OpenTripMapCategory[] | undefined {
   if (intent.subcategoryId && OTM_CATEGORY_BY_SUBCATEGORY[intent.subcategoryId]) {
     return OTM_CATEGORY_BY_SUBCATEGORY[intent.subcategoryId];
   }
@@ -63,6 +63,43 @@ function dedupeVenues(venues: ScoredVenue[]): ScoredVenue[] {
   return out;
 }
 
+export async function discoverOpenTripMapExploreVenues(
+  intent: NormalizedExploreIntent,
+  origin: LatLng,
+  travelMode: SearchHalfwayResponse["travelMode"],
+  options: { limit?: number; radiusMeters?: number } = {}
+): Promise<ScoredVenue[]> {
+  if (!openTripMapProvider.isConfigured()) return [];
+  if (intent.mode !== "explore") return [];
+  if (!intent.providers.includes("opentripmap")) return [];
+
+  const places = await openTripMapProvider.discoverNearby({
+    origin,
+    categories: otmCategoriesForIntent(intent),
+    radiusMeters: options.radiusMeters ?? Math.round(5000 * getExploreModeRadiusMultiplier(travelMode)),
+    limit: options.limit ?? 12
+  });
+
+  return places.map((place) => {
+    const candidate = openTripMapPlaceToCandidate(place, intent);
+    const travelFromA = {
+      distanceMeters: place.distanceMeters,
+      durationMinutes: null,
+      status: "OK"
+    };
+    return {
+      ...candidate,
+      travelFromA,
+      travelFromB: travelFromA,
+      fairnessScore: 70 + (place.rating ?? 1) * 8 - Math.min((place.distanceMeters ?? 0) / 1000, 12),
+      preferenceScore: 0,
+      preferenceMatches: [],
+      timeDifferenceMinutes: 0,
+      totalTravelMinutes: null
+    };
+  });
+}
+
 /**
  * Supplement a Google Places response with OpenTripMap POIs when the explore
  * routing layer selected OTM. Degrades gracefully when no API key or no results.
@@ -76,37 +113,12 @@ export async function supplementExploreWithOpenTripMap(
   if (intent.mode !== "explore") return response;
   if (!intent.providers.includes("opentripmap")) return response;
 
-  const categories = otmCategoriesForIntent(intent);
-  const places = await openTripMapProvider.discoverNearby({
-    origin,
-    categories,
-    radiusMeters: Math.round(5000 * getExploreModeRadiusMultiplier(response.travelMode)),
-    limit: 12
-  });
+  const supplemental = await discoverOpenTripMapExploreVenues(intent, origin, response.travelMode);
 
-  if (!places.length) {
+  if (!supplemental.length) {
     logExploreRoutingDecision(intent, "opentripmap_no_results");
     return response;
   }
-
-  const supplemental: ScoredVenue[] = places.map((place) => {
-    const candidate = openTripMapPlaceToCandidate(place, intent);
-    const travelFromA = response.venues[0]?.travelFromA ?? {
-      distanceMeters: place.distanceMeters,
-      durationMinutes: null,
-      status: "OK"
-    };
-    return {
-      ...candidate,
-      travelFromA,
-      travelFromB: travelFromA,
-      fairnessScore: 0.35 + (place.rating ?? 1) * 0.05,
-      preferenceScore: 0,
-      preferenceMatches: [],
-      timeDifferenceMinutes: 0,
-      totalTravelMinutes: travelFromA.durationMinutes
-    };
-  });
 
   const merged = applyExploreTravelModeRanking(
     dedupeVenues([...response.venues, ...supplemental]),

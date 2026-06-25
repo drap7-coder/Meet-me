@@ -16,7 +16,6 @@ import { Footer, SiteHeader } from "@/app/components/home/SiteChrome";
 import { HomeFaqSection } from "@/app/components/home/HomeFaqSection";
 import { ClassicSearchControls } from "@/app/components/ClassicSearchControls";
 import { SearchContextStrip } from "@/app/components/SearchContextStrip";
-import { KoiExampleSearchCard } from "@/app/components/KoiExampleSearchCard";
 import { LocationForm } from "@/app/components/LocationForm";
 import { RoadDivider } from "@/app/components/BrandRoad";
 import {
@@ -30,15 +29,6 @@ import { formForSessionAfterSearch, type SearchSubmitOptions } from "@/lib/searc
 import { VenueCard } from "@/app/components/VenueCard";
 import { WatchEventsResults } from "@/app/components/WatchEventsResults";
 import { WeatherCard } from "@/app/components/WeatherCard";
-import {
-  clearRecentMeetups,
-  createRecentMeetup,
-  getRecentMeetupCardDisplay,
-  getRecentMeetups,
-  recentMeetupToForm,
-  saveRecentMeetup,
-  type RecentMeetup
-} from "@/lib/recentMeetups";
 import { normalizeCategory, parseMeetupMode, parseSearchMode } from "@/lib/categories";
 import { parsePreferences } from "@/lib/preferences";
 import { shareWithFallback, shouldUseNativeShare } from "@/lib/share";
@@ -145,7 +135,6 @@ export default function HomePage() {
   const [openedFromSharedHalfway, setOpenedFromSharedHalfway] = useState(false);
   const [shareDialog, setShareDialog] = useState<ShareDialogState | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
-  const [recentMeetups, setRecentMeetups] = useState<RecentMeetup[]>([]);
   const [showRoadDividerPreview, setShowRoadDividerPreview] = useState(false);
   const [builderExpanded, setBuilderExpanded] = useState(false);
   const [builderMode, setBuilderMode] = useState<SearchBuilderMode>("near_me");
@@ -155,6 +144,8 @@ export default function HomePage() {
   const searchBoxRef = useRef<AiSearchBoxHandle>(null);
   const searchInFlightRef = useRef(false);
   const prefetchedAskRef = useRef("");
+  const trendingGeocodeAttemptRef = useRef("");
+  const [trendingGeocoding, setTrendingGeocoding] = useState(false);
   const loadingPhaseLabel =
     THINKING_PROGRESS_LABELS[searchKind ?? "places"][loadingPhase] ??
     THINKING_PROGRESS_LABELS.places[loadingPhase] ??
@@ -227,6 +218,7 @@ export default function HomePage() {
 
   const locationContext = useMemo(() => getActiveLocationContext(), [
     savedLocation,
+    savedUserAddress,
     travelMode,
     form.locationA,
     form.locationAPlaceId,
@@ -292,12 +284,59 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    setRecentMeetups(getRecentMeetups());
-  }, []);
-
-  useEffect(() => {
     syncUserLocationFromStorage();
   }, []);
+
+  // Saved city/ZIP labels often lack coordinates on mobile — geocode once so Trending can load.
+  useEffect(() => {
+    if (locationContext.locationACoordinates) {
+      setTrendingGeocoding(false);
+      return;
+    }
+
+    const address = savedUserAddress.trim() || savedLocation.locationA?.trim() || form.locationA.trim();
+    if (!address) {
+      setTrendingGeocoding(false);
+      return;
+    }
+
+    const placeId = savedLocation.locationAPlaceId ?? form.locationAPlaceId;
+    const attemptKey = `${address}|${placeId ?? ""}`;
+    if (trendingGeocodeAttemptRef.current === attemptKey) return;
+    trendingGeocodeAttemptRef.current = attemptKey;
+
+    let cancelled = false;
+    setTrendingGeocoding(true);
+    void geocodeManualLocation(address, placeId)
+      .then((resolved) => {
+        if (cancelled) return;
+        persistSavedLocation(resolved);
+        setForm((current) => ({
+          ...current,
+          locationA: resolved.locationA,
+          locationAPlaceId: resolved.locationAPlaceId,
+          locationACoordinates: resolved.locationACoordinates,
+          searchMode: current.searchMode ?? "single"
+        }));
+      })
+      .catch(() => {
+        // Trending shows a location CTA until the user sets a resolvable location.
+      })
+      .finally(() => {
+        if (!cancelled) setTrendingGeocoding(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    form.locationA,
+    form.locationAPlaceId,
+    locationContext.locationACoordinates,
+    savedLocation.locationA,
+    savedLocation.locationAPlaceId,
+    savedUserAddress
+  ]);
 
   useEffect(() => {
     if (!loading) {
@@ -468,7 +507,6 @@ export default function HomePage() {
     setForm(formForSessionAfterSearch(searchForm, getActiveLocationContext(), submitOptions));
     const shareUrl = updateShareUrl(searchForm);
     setCurrentShareUrl(existingShareUrl ?? shareUrl);
-    setRecentMeetups(saveRecentMeetup(createRecentMeetup(searchForm, data, shareUrl)));
     syncUserLocationFromStorage();
     trackEvent("search_completed", {
       category: data.category,
@@ -820,12 +858,6 @@ export default function HomePage() {
     window.requestAnimationFrame(() => document.getElementById("search")?.scrollIntoView({ behavior: "smooth" }));
   }
 
-  function rerunRecentMeetup(meetup: RecentMeetup) {
-    const nextForm = recentMeetupToForm(meetup);
-    setForm(nextForm);
-    void executeSearch({ kind: "places", form: nextForm });
-  }
-
   function promptForEventLocation(query: string): boolean {
     if (!queryRequiresEventLocation(query)) return false;
 
@@ -1068,11 +1100,6 @@ export default function HomePage() {
     void executeSearch({ kind: "places", form });
   }
 
-  function clearRecent() {
-    clearRecentMeetups();
-    setRecentMeetups([]);
-  }
-
   async function shareVenue(venue: ScoredVenue) {
     const url = currentShareUrl || window.location.href;
     const text = buildSingleVenueEmailBody(venue, url, results?.searchMode ?? "midpoint");
@@ -1175,7 +1202,7 @@ export default function HomePage() {
 
       {showLandingHero ? (
         <>
-          <section id="search" className="relative isolate overflow-x-clip bg-ink pb-8 pt-2 sm:pb-10">
+          <section id="search" className="relative isolate overflow-x-hidden bg-ink pb-8 pt-2 sm:pb-10">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_50%_-15%,rgba(255,90,0,0.14),transparent_58%),radial-gradient(circle_at_88%_8%,rgba(10,132,255,0.08),transparent_32%),linear-gradient(180deg,#0A1323_0%,#0c1729_50%,#0A1323_100%)]" />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#0A1323] via-[#0A1323]/70 to-transparent sm:h-24" />
             <div className={`relative z-10 grid w-full gap-4 py-2 sm:gap-5 sm:py-4 ${PAGE_CONTAINER}`}>
@@ -1190,8 +1217,10 @@ export default function HomePage() {
               <TrendingNearYouStrip
                 latitude={locationContext.locationACoordinates?.lat}
                 longitude={locationContext.locationACoordinates?.lng}
+                locationPending={trendingGeocoding}
                 busy={loading || locating || resolvingManual}
                 onSearchQuery={applyPopularSearch}
+                onRequestLocation={openLocationChange}
               />
               <SearchPromptAssistProvider
                 busy={loading || locating || resolvingManual}
@@ -1245,7 +1274,6 @@ export default function HomePage() {
                   onSelect={applyPopularSearch}
                 />
               </SearchPromptAssistProvider>
-              <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
               <HomeFaqSection />
               <LocationFallbackPanel
                 form={form}
@@ -1383,7 +1411,6 @@ export default function HomePage() {
                 onSubmit={submitClassicSearch}
                 hidden={!showClassicFallback || fallbackKind !== "full" || searchKind === "watch"}
               />
-              <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
             </section>
           ) : null}
 
@@ -1584,52 +1611,6 @@ function SharedHalfwayReferralBanner({ onStartSearch }: { onStartSearch: () => v
         Ask Koi your own question
       </button>
     </div>
-  );
-}
-
-function RecentSearchesSection({
-  meetups,
-  onSelect,
-  onClear
-}: {
-  meetups: RecentMeetup[];
-  onSelect: (meetup: RecentMeetup) => void;
-  onClear: () => void;
-}) {
-  if (!meetups.length) return null;
-
-  return (
-    <section className="w-full min-w-0">
-      <div className="flex min-w-0 items-start justify-between gap-3 sm:items-center sm:gap-4">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-white/45">Recent Searches</h2>
-        </div>
-        <button
-          type="button"
-          onClick={onClear}
-          className="shrink-0 rounded-lg border border-white/15 bg-white/[0.03] px-3 py-2 text-sm font-bold text-white/75 transition hover:border-white/22 hover:bg-white/[0.05] hover:text-white"
-        >
-          Clear
-        </button>
-      </div>
-      <div className="mt-4 grid min-w-0 grid-cols-1 gap-3">
-        {meetups.slice(0, 2).map((meetup) => {
-          const card = getRecentMeetupCardDisplay(meetup);
-          const isHalfway = meetup.searchMode !== "single";
-          return (
-            <KoiExampleSearchCard
-              key={meetup.id}
-              icon={card.icon}
-              title={card.title}
-              subtitle={card.subtitle}
-              accent="places"
-              featured={isHalfway}
-              onClick={() => onSelect(meetup)}
-            />
-          );
-        })}
-      </div>
-    </section>
   );
 }
 

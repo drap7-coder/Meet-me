@@ -297,7 +297,14 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   return (
     <div ref={containerRef} id="ask-koi" className="w-full min-w-0 max-w-full scroll-mt-24">
       <section className="w-full min-w-0" aria-labelledby="ai-search-title">
-        <h2 id="ai-search-title" className="sr-only">
+        <h2
+          id="ai-search-title"
+          className={
+            onHero
+              ? "mb-2.5 text-[0.8125rem] font-bold uppercase tracking-[0.14em] text-koi"
+              : "sr-only"
+          }
+        >
           {BRAND.askLabel}
         </h2>
 
@@ -307,12 +314,12 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
             <div
               className={
                 onHero
-                  ? "koi-search-box koi-search-box--hero group/search flex w-full min-w-0 items-center gap-2.5 px-4 py-3.5 sm:gap-3 sm:px-5 sm:py-4"
+                  ? "koi-search-box koi-search-box--hero group/search flex w-full min-w-0 items-center gap-2.5 px-4 py-4 sm:gap-3 sm:px-5 sm:py-[1.125rem]"
                   : "koi-search-box koi-search-box--page group/search w-full min-w-0 overflow-x-clip"
               }
             >
               <div className={`flex w-full min-w-0 items-center gap-2.5 ${onHero ? "" : "px-3 py-3.5 sm:px-4 sm:py-4"}`}>
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center sm:h-11 sm:w-11">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center sm:h-12 sm:w-12">
                   {onHero ? <SearchIcon /> : <AiSparkleIcon />}
                 </div>
                 <textarea
@@ -334,7 +341,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
                   rows={onHero ? 1 : 2}
                   className={
                     onHero
-                      ? "m-0 min-h-[3rem] w-0 min-w-0 flex-1 resize-none appearance-none border-0 bg-transparent py-2 text-base leading-6 text-white outline-none placeholder:text-white/42 [field-sizing:content] sm:min-h-[3.25rem] sm:text-[1.0625rem]"
+                      ? "m-0 min-h-[3.25rem] w-0 min-w-0 flex-1 resize-none appearance-none border-0 bg-transparent py-2 text-[1.0625rem] leading-6 text-white outline-none placeholder:text-white/45 [field-sizing:content] sm:min-h-[3.5rem] sm:text-[1.125rem]"
                       : "m-0 min-h-[3.25rem] w-0 min-w-0 flex-1 resize-none appearance-none border-0 bg-transparent py-2 text-base leading-6 text-ink outline-none placeholder:text-slate/55 [field-sizing:content] sm:min-h-[3.5rem] sm:text-[1.0625rem]"
                   }
                 />
@@ -379,7 +386,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
                   onPointerDown={prefetch}
                   className={
                     onHero
-                      ? "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-koi text-white shadow-[0_10px_22px_rgba(255,90,0,0.34)] transition hover:bg-koi-hover focus:outline-none focus:ring-4 focus:ring-koi/25 disabled:cursor-not-allowed disabled:bg-koi/40 sm:h-11 sm:w-11"
+                      ? "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-koi text-white shadow-[0_12px_26px_rgba(255,90,0,0.42)] transition hover:bg-koi-hover focus:outline-none focus:ring-4 focus:ring-koi/25 disabled:cursor-not-allowed disabled:bg-koi/40 sm:h-12 sm:w-12"
                       : "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink text-white shadow-[0_8px_20px_rgba(10,19,35,0.18)] transition hover:bg-ink/88 focus:outline-none focus:ring-4 focus:ring-ink/15 disabled:cursor-not-allowed disabled:bg-ink/30 sm:h-11 sm:w-11"
                   }
                 >

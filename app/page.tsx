@@ -145,6 +145,7 @@ export default function HomePage() {
   const searchInFlightRef = useRef(false);
   const prefetchedAskRef = useRef("");
   const trendingGeocodeAttemptRef = useRef("");
+  const [trendingGeocoding, setTrendingGeocoding] = useState(false);
   const loadingPhaseLabel =
     THINKING_PROGRESS_LABELS[searchKind ?? "places"][loadingPhase] ??
     THINKING_PROGRESS_LABELS.places[loadingPhase] ??
@@ -288,10 +289,16 @@ export default function HomePage() {
 
   // Saved city/ZIP labels often lack coordinates on mobile — geocode once so Trending can load.
   useEffect(() => {
-    if (locationContext.locationACoordinates) return;
+    if (locationContext.locationACoordinates) {
+      setTrendingGeocoding(false);
+      return;
+    }
 
     const address = savedUserAddress.trim() || savedLocation.locationA?.trim() || form.locationA.trim();
-    if (!address) return;
+    if (!address) {
+      setTrendingGeocoding(false);
+      return;
+    }
 
     const placeId = savedLocation.locationAPlaceId ?? form.locationAPlaceId;
     const attemptKey = `${address}|${placeId ?? ""}`;
@@ -299,6 +306,7 @@ export default function HomePage() {
     trendingGeocodeAttemptRef.current = attemptKey;
 
     let cancelled = false;
+    setTrendingGeocoding(true);
     void geocodeManualLocation(address, placeId)
       .then((resolved) => {
         if (cancelled) return;
@@ -312,7 +320,10 @@ export default function HomePage() {
         }));
       })
       .catch(() => {
-        // Trending stays hidden until the user sets a resolvable location.
+        // Trending shows a location CTA until the user sets a resolvable location.
+      })
+      .finally(() => {
+        if (!cancelled) setTrendingGeocoding(false);
       });
 
     return () => {
@@ -1206,8 +1217,10 @@ export default function HomePage() {
               <TrendingNearYouStrip
                 latitude={locationContext.locationACoordinates?.lat}
                 longitude={locationContext.locationACoordinates?.lng}
+                locationPending={trendingGeocoding}
                 busy={loading || locating || resolvingManual}
                 onSearchQuery={applyPopularSearch}
+                onRequestLocation={openLocationChange}
               />
               <SearchPromptAssistProvider
                 busy={loading || locating || resolvingManual}

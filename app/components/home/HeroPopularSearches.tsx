@@ -3,7 +3,8 @@
 import type { PickQueryOptions } from "@/app/components/SearchPromptAssist";
 import { useSearchPromptAssist } from "@/app/components/SearchPromptAssist";
 import { HeroSectionLabel } from "@/app/components/home/HeroSectionLabel";
-import { KOI_EXAMPLE } from "@/lib/koiExamples";
+import { getSeasonalPopularSearches } from "@/src/config/popularSearches";
+import { useMemo } from "react";
 
 export type HeroPopularSearch = {
   id: string;
@@ -12,37 +13,6 @@ export type HeroPopularSearch = {
   query: string;
   options?: PickQueryOptions;
 };
-
-export const HERO_POPULAR_SEARCHES: HeroPopularSearch[] = [
-  {
-    id: "watch-tonight",
-    icon: "📺",
-    label: "What should I watch tonight?",
-    query: "What should I watch tonight?",
-    options: { category: "custom", watchSubcategory: "movies" }
-  },
-  {
-    id: "eat",
-    icon: "🍽️",
-    label: "Where should we eat?",
-    query: "Where should we eat near me",
-    options: { category: "restaurant", builderMode: "near_me" }
-  },
-  {
-    id: "weekend",
-    icon: "📅",
-    label: "What's worth doing this weekend?",
-    query: "What's worth doing this weekend near me",
-    options: { category: "events", builderMode: "near_me" }
-  },
-  {
-    id: "halfway",
-    icon: "📍",
-    label: "Find a halfway spot",
-    query: KOI_EXAMPLE.halfwayQuery,
-    options: { builderMode: "halfway", searchMode: "midpoint" }
-  }
-];
 
 type Props = {
   busy?: boolean;
@@ -53,6 +23,7 @@ type Props = {
 
 export function HeroPopularSearches({ busy = false, onSelect, compact = false }: Props) {
   const { surface, applyPopularPreset } = useSearchPromptAssist();
+  const popularSearches = useMemo(() => getSeasonalPopularSearches(), []);
   const onPage = surface === "page";
   const labelClass = compact
     ? "text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-white/45"
@@ -74,7 +45,7 @@ export function HeroPopularSearches({ busy = false, onSelect, compact = false }:
             : "grid grid-cols-2 gap-2"
         }
       >
-        {HERO_POPULAR_SEARCHES.map((item) => (
+        {popularSearches.map((item) => (
           <button
             key={item.id}
             type="button"

@@ -18,6 +18,7 @@
     "test:explore-routing": "npx tsx scripts/test-explore-routing.ts",
     "test:weekend-trending": "npx tsx scripts/test-weekend-trending.ts",
     "test:seo-faq": "npx tsx scripts/test-seo-faq.ts",
+    "test:popular-searches": "npx tsx scripts/test-popular-searches.ts",
     "test:discovery-providers": "npx tsx scripts/test-discovery-providers.ts"
   },
   "dependencies": {

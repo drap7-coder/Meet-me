@@ -24,6 +24,7 @@ type EventName =
   | "weekend_trending_dismissed"
   | "weekend_trending_browse_all"
   | "weekend_trending_event_clicked"
+  | "trending_near_you_clicked"
   | "top_pick_primary_clicked"
   | "top_pick_secondary_clicked"
   | "halfway_mode_selected"

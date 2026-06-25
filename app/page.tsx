@@ -439,7 +439,7 @@ export default function HomePage() {
   async function resolveManualLocation(input: string, placeId?: string) {
     const trimmed = input.trim();
     if (!trimmed) {
-      setManualLocationError("Enter a ZIP code or city.");
+      setManualLocationError("Enter an address, city, or ZIP code.");
       setLocationUiState("manual_error");
       return;
     }

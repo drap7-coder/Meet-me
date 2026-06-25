@@ -1,13 +1,20 @@
 "use client";
 
-import { AddressAutocompleteInput } from "@/app/components/AddressAutocompleteInput";
+import { LocationManualEntryFields } from "@/app/components/LocationManualEntryFields";
 import { LocationPinIcon } from "@/app/components/SavedLocationBadge";
-import { FormEvent, useState } from "react";
+import {
+  type LocationManualEntry,
+  resolveManualEntryInput,
+  seedManualLocationFields
+} from "@/lib/locationInput";
+import { FormEvent, useEffect, useState } from "react";
 
 type Props = {
   locating?: boolean;
   resolvingManual?: boolean;
   manualLocationError?: string;
+  seedLabel?: string;
+  seedPlaceId?: string;
   onUseCurrentLocation: () => void;
   onSubmitManualLocation: (input: string, placeId?: string) => void;
 };
@@ -16,17 +23,27 @@ export function LocationOnboardingCard({
   locating = false,
   resolvingManual = false,
   manualLocationError = "",
+  seedLabel = "",
+  seedPlaceId,
   onUseCurrentLocation,
   onSubmitManualLocation
 }: Props) {
   const [step, setStep] = useState<"intro" | "manual">("intro");
-  const [manualInput, setManualInput] = useState("");
-  const [manualPlaceId, setManualPlaceId] = useState<string | undefined>();
+  const [manualEntry, setManualEntry] = useState<LocationManualEntry>({
+    address: "",
+    zip: ""
+  });
   const busy = locating || resolvingManual;
+
+  useEffect(() => {
+    if (step !== "manual" || !seedLabel.trim()) return;
+    setManualEntry(seedManualLocationFields(seedLabel, seedPlaceId));
+  }, [seedLabel, seedPlaceId, step]);
 
   function handleManualSubmit(event: FormEvent) {
     event.preventDefault();
-    onSubmitManualLocation(manualInput, manualPlaceId);
+    const resolved = resolveManualEntryInput(manualEntry);
+    onSubmitManualLocation(resolved.input, resolved.placeId);
   }
 
   return (
@@ -73,27 +90,7 @@ export function LocationOnboardingCard({
           </div>
         ) : (
           <form onSubmit={handleManualSubmit} className="grid gap-2.5">
-            <div className="relative min-w-0">
-              <LocationPinIcon className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-koi" />
-              <AddressAutocompleteInput
-                label=""
-                value={manualInput}
-                placeId={manualPlaceId}
-                placeholder="City, ZIP code, or address"
-                inputClassName="koi-hero-field h-11 w-full min-w-0 pl-10 pr-11 text-base outline-none transition"
-                labelClassName="sr-only"
-                selectedClassName="text-xs font-semibold text-white/75"
-                statusClassName="text-xs font-semibold text-white/55"
-                onChange={(text, placeId) => {
-                  setManualInput(text);
-                  setManualPlaceId(placeId);
-                }}
-                onClear={() => {
-                  setManualInput("");
-                  setManualPlaceId(undefined);
-                }}
-              />
-            </div>
+            <LocationManualEntryFields value={manualEntry} onChange={setManualEntry} surface="hero" />
             <button
               type="submit"
               disabled={busy}

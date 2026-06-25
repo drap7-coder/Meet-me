@@ -1,6 +1,7 @@
 "use client";
 
 import type { PlaceSuggestion } from "@/lib/types";
+import type { InputHTMLAttributes } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -14,6 +15,8 @@ type Props = {
   labelClassName?: string;
   selectedClassName?: string;
   statusClassName?: string;
+  inputMode?: InputHTMLAttributes<HTMLInputElement>["inputMode"];
+  autoComplete?: string;
   onChange: (value: string, placeId?: string) => void;
   onClear?: () => void;
 };
@@ -37,6 +40,8 @@ export function AddressAutocompleteInput({
   labelClassName = "text-sm font-bold text-ink",
   selectedClassName = "text-xs font-semibold text-clay",
   statusClassName = "text-xs font-semibold text-slate",
+  inputMode,
+  autoComplete = "off",
   onChange,
   onClear
 }: Props) {
@@ -172,7 +177,8 @@ export function AddressAutocompleteInput({
           }}
           placeholder={placeholder}
           className={inputClassName}
-          autoComplete="off"
+          autoComplete={autoComplete}
+          inputMode={inputMode}
         />
         {value ? (
           <button

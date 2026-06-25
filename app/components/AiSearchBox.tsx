@@ -6,7 +6,7 @@ import type { LocationUiState } from "@/lib/locationInput";
 import { KOI_EXAMPLE } from "@/lib/koiExamples";
 import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
 import { hasStreamingWatchContext } from "@/lib/watchEvents";
-import { AddressAutocompleteInput } from "@/app/components/AddressAutocompleteInput";
+import { LocationManualEntryFields } from "@/app/components/LocationManualEntryFields";
 import { useSearchPromptAssist } from "@/app/components/SearchPromptAssist";
 import { KOI_SEARCH_PLACEHOLDER, useTypewriterPlaceholder } from "@/app/components/useTypewriterPlaceholder";
 import { BRAND } from "@/src/config/branding";
@@ -15,6 +15,11 @@ import { useSpeechRecognition } from "@/app/components/useSpeechRecognition";
 import { SearchInlineMessage } from "@/app/components/SearchInlineMessage";
 import type { SearchError } from "@/lib/searchStatus";
 import { shouldShowInlineSearchError } from "@/lib/searchStatus";
+import {
+  type LocationManualEntry,
+  resolveManualEntryInput,
+  seedManualLocationFields
+} from "@/lib/locationInput";
 import { FormEvent, forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 
 type Props = {
@@ -152,8 +157,10 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   const { filterPreview, isStreaming: builderStreaming, promptQuery } = useSearchPromptAssist();
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
-  const [manualLocationInput, setManualLocationInput] = useState("");
-  const [manualLocationPlaceId, setManualLocationPlaceId] = useState<string | undefined>();
+  const [manualEntry, setManualEntry] = useState<LocationManualEntry>({
+    address: "",
+    zip: ""
+  });
   const [watchActiveSubcategory, setWatchActiveSubcategory] = useState<WatchSubcategory>(DEFAULT_WATCH_SUBCATEGORY);
   const [inputFocused, setInputFocused] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -173,8 +180,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   useEffect(() => {
     if (!showManualFallback) return;
     const seed = defaultUserAddress?.trim() || locationContext?.locationA?.trim() || "";
-    setManualLocationInput(seed);
-    setManualLocationPlaceId(locationContext?.locationAPlaceId);
+    setManualEntry(seedManualLocationFields(seed, locationContext?.locationAPlaceId));
   }, [defaultUserAddress, locationContext?.locationA, locationContext?.locationAPlaceId, showManualFallback]);
 
   const animatePlaceholder = !query.trim() && !inputFocused && !loading;
@@ -271,7 +277,8 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
 
   function handleManualLocationSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    onSubmitManualLocation(manualLocationInput, manualLocationPlaceId);
+    const resolved = resolveManualEntryInput(manualEntry);
+    onSubmitManualLocation(resolved.input, resolved.placeId);
   }
 
   const busy = loading;
@@ -280,14 +287,9 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   const onHero = surface === "hero";
   const heroFieldClass = "koi-hero-field h-11 w-full px-4 text-base outline-none transition disabled:cursor-not-allowed disabled:opacity-60";
   const fieldClass = "koi-field h-11 w-full px-4 text-base outline-none transition placeholder:text-slate/60 disabled:cursor-not-allowed disabled:opacity-60";
-  const heroManualAddressClass = `${heroFieldClass} min-w-0 pl-10 pr-11`;
-  const pageManualAddressClass = `${fieldClass} min-w-0 pl-10 pr-11`;
-  const manualAddressLabelClass = onHero ? "sr-only" : "text-sm font-bold text-ink";
-  const manualAddressSelectedClass = onHero ? "text-xs font-semibold text-white/75" : "text-xs font-semibold text-clay";
-  const manualAddressStatusClass = onHero ? "text-xs font-semibold text-white/60" : "text-xs font-semibold text-slate";
   const combinedError = error.trim() || (searchError?.kind === "NEEDS_LOCATION" ? searchError.message : "");
   const locationPromptMessage = combinedError || "Add your location so Koi can search nearby.";
-  const manualPromptMessage = combinedError || "Enter a city, ZIP code, or address to search nearby.";
+  const manualPromptMessage = combinedError || "Enter an address, city, or ZIP code to search nearby.";
   const showInlineSearchError = shouldShowInlineSearchError(searchError);
   const showSpeechMessage = Boolean(speechMessage) && !showLocationActions && !showManualFallback;
   const promptPanelClass = onHero
@@ -469,29 +471,9 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
             <LocationPinIcon className="mt-0.5 h-4 w-4 shrink-0 text-koi" />
             <p className={`min-w-0 flex-1 text-sm font-semibold leading-6 ${promptTextClass}`}>{manualPromptMessage}</p>
           </div>
-          <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-start">
-            <div className="relative min-w-0 flex-1">
-              <LocationPinIcon
-                className={`pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 ${onHero ? "text-koi" : "text-watch"}`}
-              />
-              <AddressAutocompleteInput
-                label=""
-                value={manualLocationInput}
-                placeId={manualLocationPlaceId}
-                placeholder="City, ZIP code, or address"
-                inputClassName={onHero ? heroManualAddressClass : pageManualAddressClass}
-                labelClassName={manualAddressLabelClass}
-                selectedClassName={manualAddressSelectedClass}
-                statusClassName={manualAddressStatusClass}
-                onChange={(text, placeId) => {
-                  setManualLocationInput(text);
-                  setManualLocationPlaceId(placeId);
-                }}
-                onClear={() => {
-                  setManualLocationInput("");
-                  setManualLocationPlaceId(undefined);
-                }}
-              />
+          <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="min-w-0 flex-1">
+              <LocationManualEntryFields value={manualEntry} onChange={setManualEntry} surface={surface} />
             </div>
             <button
               type="submit"

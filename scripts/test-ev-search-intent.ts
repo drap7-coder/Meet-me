@@ -1,0 +1,61 @@
+import {
+  effectiveTravelModeForQuery,
+  isEvChargingIntent,
+  placesSearchQuery,
+  stripEvChargingPhrases
+} from "@/lib/evSearchIntent";
+import { resolveSearchCategoryFromQuery } from "@/lib/categories";
+import { applyEvEnrichment, resetEvEnrichmentProvider, setEvEnrichmentProvider } from "@/lib/providers/evEnrichment";
+import type { ScoredVenue } from "@/lib/types";
+
+function assert(condition: boolean, message: string) {
+  if (!condition) throw new Error(message);
+}
+
+async function run() {
+  const evRestaurant = "restaurant with EV charging";
+  assert(isEvChargingIntent(evRestaurant), "detects restaurant + EV charging");
+  assert(stripEvChargingPhrases(evRestaurant).toLowerCase() === "restaurant", "strips charging from restaurant query");
+  assert(effectiveTravelModeForQuery("auto", evRestaurant) === "ev", "auto + charging query -> ev mode");
+  assert(effectiveTravelModeForQuery("drive", evRestaurant) === "ev", "drive + charging query -> ev mode");
+  assert(effectiveTravelModeForQuery("walk", "coffee near me") === "walk", "non-charging query keeps mode");
+
+  const category = resolveSearchCategoryFromQuery(evRestaurant);
+  assert(category.category === "restaurant", "EV restaurant resolves to restaurant category");
+
+  const italianEv = resolveSearchCategoryFromQuery("Italian restaurant with EV charging near me");
+  assert(italianEv.category === "restaurant", "Italian EV resolves to restaurant");
+  assert(Boolean(italianEv.customQuery?.toLowerCase().includes("italian")), "preserves cuisine qualifier");
+
+  assert(placesSearchQuery("custom", evRestaurant)?.toLowerCase() === "restaurant", "places query strips charging");
+  assert(
+    placesSearchQuery("restaurant", evRestaurant)?.toLowerCase() === "restaurant",
+    "restaurant category strips charging from customQuery"
+  );
+
+  let enrichCalled = false;
+  setEvEnrichmentProvider({
+    id: "test",
+    async enrich(venues) {
+      enrichCalled = true;
+      return venues;
+    }
+  });
+
+  const sampleVenue = { id: "1", fairnessScore: 0.5 } as ScoredVenue;
+  await applyEvEnrichment([sampleVenue], {
+    travelMode: "auto",
+    origin: null,
+    query: evRestaurant,
+    category: "restaurant"
+  });
+  assert(enrichCalled, "EV enrichment runs on charging intent without EV mode selected");
+
+  resetEvEnrichmentProvider();
+  console.log("PASS ev search intent");
+}
+
+run().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

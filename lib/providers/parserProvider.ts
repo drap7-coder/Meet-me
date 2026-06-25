@@ -187,6 +187,7 @@ async function parseWithOllama(query: string): Promise<ParsedSearchIntent> {
             "Use short human-readable place strings. Include state when the user provides or implies it confidently.",
             "Use category as the requested venue/activity type, such as coffee, Italian, breweries, cocktail bars, park, hiking, bookstore, bowling, shopping mall, stores, ramen, or restaurant.",
             "When the user asks about eating, dinner, lunch, food, or what is worth eating, use category restaurant.",
+            "When the user asks for a restaurant or place with EV charging, use category restaurant — charging is handled separately, not in the category field.",
             "Use search_mode midpoint when the user wants a place between two locations.",
             "Use search_mode single when the user wants places near, in, or around one location. For single searches, put the place in location_a and leave location_b empty.",
             "When the user says near me, around me, or my location, set location_a to me and search_mode to single.",

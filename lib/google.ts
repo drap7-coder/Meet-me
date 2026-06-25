@@ -5,6 +5,10 @@ import {
   withGeocodeCache
 } from "@/lib/geocodeCache";
 import { calculateMidpoint, estimateSearchRadiusMeters } from "@/lib/geo";
+import { effectiveTravelModeForQuery, placesSearchQuery, sortVenuesForEvIntent } from "@/lib/evSearchIntent";
+import { applyPlaceInsight } from "@/lib/placeInsight";
+import { applyEvEnrichment, setEvEnrichmentProvider } from "@/lib/providers/evEnrichment";
+import { openChargeMapEnrichmentProvider } from "@/lib/providers/openChargeMapEnrichment";
 import { scoreVenue } from "@/lib/scoring";
 import { recordProviderCall } from "@/lib/searchTelemetryRuntime";
 import type {
@@ -22,6 +26,10 @@ const PLACES_AUTOCOMPLETE_URL = "https://places.googleapis.com/v1/places:autocom
 const PLACES_TEXT_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText";
 const ROUTE_MATRIX_URL = "https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix";
 const MAX_PLACES_RADIUS_METERS = 50_000;
+
+// Activate Open Charge Map enrichment for EV travel mode. The provider self-gates
+// on OPENCHARGEMAP_API_KEY, so this stays a no-op until the key is configured.
+setEvEnrichmentProvider(openChargeMapEnrichmentProvider);
 
 function getGoogleMapsKey() {
   const key = process.env.GOOGLE_MAPS_API_KEY;
@@ -325,8 +333,11 @@ export async function computeRouteMatrix(params: {
 
 export async function searchHalfway(request: SearchHalfwayRequest): Promise<SearchHalfwayResponse> {
   const preferences = request.preferences ?? [];
+  const evQuery = request.insightQuery ?? request.customQuery ?? "";
+  const travelMode = effectiveTravelModeForQuery(request.travelMode ?? "auto", evQuery);
   const searchMode = request.searchMode ?? DEFAULT_SEARCH_MODE;
   const meetupMode = request.meetupMode ?? DEFAULT_MEETUP_MODE;
+  const placesQuery = placesSearchQuery(request.category, request.customQuery);
   const isSingleLocation = searchMode === "single";
   if (isSingleLocation) {
     const originA = await resolveRequestLocation(request.locationA, request.locationAPlaceId, request.locationACoordinates);
@@ -335,7 +346,7 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
       midpoint: center,
       category: request.category,
       meetupMode: request.meetupMode,
-      customQuery: request.customQuery,
+      customQuery: placesQuery,
       radiusMeters: 24_000
     });
 
@@ -351,9 +362,23 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
           ...venue,
           travelFromA,
           travelFromB: travelFromA
-        }, preferences);
+        }, preferences, travelMode);
       })
       .sort((a, b) => b.fairnessScore - a.fairnessScore);
+
+    const enrichedVenues = sortVenuesForEvIntent(
+      await applyEvEnrichment(scoredVenues, {
+        travelMode,
+        origin: center,
+        query: evQuery,
+        category: request.category
+      }),
+      evQuery,
+      travelMode
+    );
+    const finalVenues = await applyPlaceInsight(enrichedVenues, {
+      query: evQuery
+    });
 
     return {
       originA,
@@ -363,8 +388,9 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
       searchMode,
       meetupMode,
       preferences,
+      travelMode,
       query: getCategorySearchTerm(request.category, request.customQuery, request.meetupMode),
-      venues: scoredVenues
+      venues: finalVenues
     };
   }
 
@@ -379,7 +405,7 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
     midpoint,
     category: request.category,
     meetupMode: request.meetupMode,
-    customQuery: request.customQuery,
+    customQuery: placesQuery,
     radiusMeters
   });
 
@@ -392,6 +418,7 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
       searchMode,
       meetupMode,
       preferences,
+      travelMode,
       query: getCategorySearchTerm(request.category, request.customQuery, request.meetupMode),
       venues: []
     };
@@ -408,9 +435,23 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
         ...venue,
         travelFromA: routeMatrix[0]?.[index] ?? unavailableLeg(),
         travelFromB: routeMatrix[1]?.[index] ?? unavailableLeg()
-      }, preferences)
+      }, preferences, travelMode)
     )
     .sort((a, b) => b.fairnessScore - a.fairnessScore);
+
+  const enrichedVenues = sortVenuesForEvIntent(
+    await applyEvEnrichment(scoredVenues, {
+      travelMode,
+      origin: midpoint,
+      query: evQuery,
+      category: request.category
+    }),
+    evQuery,
+    travelMode
+  );
+  const finalVenues = await applyPlaceInsight(enrichedVenues, {
+    query: evQuery
+  });
 
   return {
     originA,
@@ -420,8 +461,9 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
     searchMode,
     meetupMode,
     preferences,
+    travelMode,
     query: getCategorySearchTerm(request.category, request.customQuery, request.meetupMode),
-    venues: scoredVenues
+    venues: finalVenues
   };
 }
 

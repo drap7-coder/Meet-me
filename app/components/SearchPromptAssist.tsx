@@ -22,7 +22,7 @@ import { HeroSectionLabel } from "@/app/components/home/HeroSectionLabel";
 import { ModePickChip } from "@/app/components/ModePickChip";
 import { StreamingServiceChip } from "@/app/components/StreamingServiceChip";
 import type { LatLng, SearchHalfwayRequest, VenueCategory, WatchSubcategory } from "@/lib/types";
-import type { SearchBuilderMode } from "@/lib/searchBuilderOptions";
+import { builderModeForWhere, type SearchBuilderMode } from "@/lib/searchBuilderOptions";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 export type PickQueryOptions = {
@@ -38,6 +38,7 @@ export type PickQueryOptions = {
 type ProviderProps = {
   busy?: boolean;
   builderMode?: SearchBuilderMode;
+  onBuilderModeChange?: (mode: SearchBuilderMode) => void;
   surface?: "hero" | "page";
   /** Saved/current origin — used to split local vs all team chips. */
   userCoordinates?: LatLng;
@@ -159,6 +160,7 @@ function initialBuilderState(seed?: Pick<PickQueryOptions, "category" | "watchSu
 export function SearchPromptAssistProvider({
   busy = false,
   builderMode,
+  onBuilderModeChange,
   surface = "hero",
   userCoordinates,
   children
@@ -429,6 +431,7 @@ export function SearchPromptAssistProvider({
       eventWhen: null,
       eventDate: null
     }));
+    onBuilderModeChange?.(builderModeForWhere(id));
   }
 
   function toggleGenre(genreId: string) {
@@ -994,12 +997,6 @@ function AssistChip({
   );
 }
 
-function builderModeForWhere(where: WhereId): SearchBuilderMode {
-  if (where === "halfway") return "halfway";
-  if (where === "choose") return "destination";
-  return "near_me";
-}
-
 function categoryFor(state: BuilderState): VenueCategory {
   if (state.selectedMode === "streaming") return "custom";
   if (!state.localWhat) return "restaurant";
@@ -1204,7 +1201,7 @@ function buildFilterPills(state: BuilderState): FilterPill[] {
   if (state.localWhat === "events" && state.eventWhen && state.typeId !== "weekend") {
     pills.push({
       id: `event-when-${state.eventWhen}`,
-      label: eventWhenChipLabel(state.eventWhen, state.eventDate)
+      label: eventWhenChipLabel(state.eventWhen, state.eventDate ?? null)
     });
   }
 

@@ -2,7 +2,7 @@ import type { SearchHalfwayRequest } from "@/lib/types";
 
 export type CurrentLocationContext = Pick<
   SearchHalfwayRequest,
-  "locationA" | "locationAPlaceId" | "locationACoordinates"
+  "locationA" | "locationAPlaceId" | "locationACoordinates" | "travelMode"
 >;
 
 export function looksLikeCurrentLocationQuery(query: string) {

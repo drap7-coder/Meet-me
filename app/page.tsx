@@ -15,6 +15,7 @@ import { ShareDialog, type ShareDialogState } from "@/app/components/home/ShareD
 import { Footer, SiteHeader } from "@/app/components/home/SiteChrome";
 import { ClassicSearchControls } from "@/app/components/ClassicSearchControls";
 import { PersistentLocationBar } from "@/app/components/PersistentLocationBar";
+import { TravelModeSelector } from "@/app/components/TravelModeSelector";
 import { KoiExampleSearchCard } from "@/app/components/KoiExampleSearchCard";
 import { LocationForm } from "@/app/components/LocationForm";
 import { RoadDivider } from "@/app/components/BrandRoad";
@@ -60,6 +61,8 @@ import {
 import { readStoredLocationSnapshot, resolveLocationChipLabel, restoreStoredLocation } from "@/lib/homeLocation";
 import { mergeSavedUserLocation, getSavedUserLocation } from "@/lib/savedUserLocation";
 import { getSearchAccent } from "@/lib/searchAccent";
+import { getSavedTravelMode, saveTravelMode } from "@/lib/travelMode";
+import { isEvChargingIntent } from "@/lib/evSearchIntent";
 import { extractStreamingProviders, mergeStreamingServiceIds } from "@/lib/streamingServices";
 import {
   applyPickOptionsToSession,
@@ -71,7 +74,7 @@ import {
 import { hasStreamingWatchContext, isMovieTheaterEventsQuery } from "@/lib/watchEvents";
 import { resolveWatchPlaceSearchForm } from "@/lib/watchPlaceSearch";
 import { KOI_PICK_DISPLAY_LIMIT, THINKING_PROGRESS_LABELS } from "@/lib/koiCapabilityExamples";
-import type { KoiBotMode, LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, VenueCategory, WatchEventsApiResponse, WatchEventsResult, WatchSubcategory } from "@/lib/types";
+import type { KoiBotMode, LatLng, ScoredVenue, SearchHalfwayRequest, SearchHalfwayResponse, TravelMode, VenueCategory, WatchEventsApiResponse, WatchEventsResult, WatchSubcategory } from "@/lib/types";
 import { BRAND } from "@/src/config/branding";
 import { PAGE_CONTAINER } from "@/lib/pageLayout";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -131,6 +134,7 @@ export default function HomePage() {
   const [savedLocation, setSavedLocation] = useState(() => readStoredLocationSnapshot().savedLocation);
   const [savedUserAddress, setSavedUserAddress] = useState(() => readStoredLocationSnapshot().savedUserAddress);
   const [locationUiState, setLocationUiState] = useState<LocationUiState>("idle");
+  const [travelMode, setTravelMode] = useState<TravelMode>(() => getSavedTravelMode());
   const [showManualFallback, setShowManualFallback] = useState(false);
   const [showLocationActions, setShowLocationActions] = useState(false);
   const [manualLocationError, setManualLocationError] = useState("");
@@ -182,31 +186,50 @@ export default function HomePage() {
 
   function getActiveLocationContext(): CurrentLocationContext {
     if (savedLocation.locationACoordinates && savedLocation.locationA?.trim()) {
-      return savedLocation;
+      return { ...savedLocation, travelMode };
     }
 
     const stored = getSavedUserLocation();
     if (stored?.locationACoordinates && stored.locationA.trim()) {
-      return stored;
+      return { ...stored, travelMode };
     }
 
     if (savedUserAddress.trim()) {
       return {
         locationA: savedUserAddress,
         locationAPlaceId: stored?.locationAPlaceId,
-        locationACoordinates: stored?.locationACoordinates
+        locationACoordinates: stored?.locationACoordinates,
+        travelMode
       };
     }
 
     return {
       locationA: form.locationA,
       locationAPlaceId: form.locationAPlaceId,
-      locationACoordinates: form.locationACoordinates
+      locationACoordinates: form.locationACoordinates,
+      travelMode
     };
+  }
+
+  function handleTravelModeChange(mode: TravelMode) {
+    setTravelMode(mode);
+    saveTravelMode(mode);
+    trackEvent("travel_mode_changed", { travelMode: mode });
+  }
+
+  /** Switch to EV mode when the ask explicitly mentions charging. */
+  function travelModeForQuery(query: string): TravelMode {
+    if (!isEvChargingIntent(query)) return travelMode;
+    if (travelMode === "ev") return travelMode;
+    setTravelMode("ev");
+    saveTravelMode("ev");
+    trackEvent("travel_mode_changed", { travelMode: "ev" });
+    return "ev";
   }
 
   const locationContext = useMemo(() => getActiveLocationContext(), [
     savedLocation,
+    travelMode,
     form.locationA,
     form.locationAPlaceId,
     form.locationACoordinates
@@ -543,7 +566,7 @@ export default function HomePage() {
         const response = await fetch("/api/search-halfway", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(prepared.form)
+          body: JSON.stringify({ ...prepared.form, travelMode })
         });
         const data = (await response.json()) as SearchHalfwayResponse & { error?: string };
         if (!response.ok) throw new Error(data.error ?? "Search failed.");
@@ -601,7 +624,7 @@ export default function HomePage() {
           const response = await fetch("/api/search-halfway", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(placesIntent.form)
+            body: JSON.stringify({ ...placesIntent.form, travelMode })
           });
           const data = (await response.json()) as SearchHalfwayResponse & { error?: string };
           if (!response.ok) throw new Error(data.error ?? "Search failed.");
@@ -635,7 +658,7 @@ export default function HomePage() {
         const response = await fetch("/api/watch-events", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query, form: eventLocationContext })
+          body: JSON.stringify({ query, form: { ...eventLocationContext, travelMode } })
         });
         const data = (await response.json()) as WatchEventsApiResponse & { error?: string };
         if (!response.ok) throw new Error(data.error ?? "Search failed.");
@@ -661,6 +684,7 @@ export default function HomePage() {
         const query = intent.query.trim();
         if (!query) throw new Error("Tell Koi what you are looking for.");
         setLastAskQuery(query);
+        const activeTravelMode = travelModeForQuery(query);
 
         if (hasStreamingWatchContext(query)) {
           const mergedStreamingServiceIds = mergeStreamingServiceIds(
@@ -685,8 +709,8 @@ export default function HomePage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             query,
-            context: intent.context ?? getActiveLocationContext(),
-            form: intent.form ?? form,
+            context: { ...(intent.context ?? getActiveLocationContext()), travelMode: activeTravelMode },
+            form: { ...(intent.form ?? form), travelMode: activeTravelMode },
             watchSubcategory: intent.watchSubcategory,
             streamingServiceIds: intent.streamingServiceIds
           })
@@ -927,7 +951,6 @@ export default function HomePage() {
 
   function handleBuilderExpanded(expanded: boolean) {
     setBuilderExpanded(expanded);
-    if (expanded) setBuilderMode("halfway");
   }
 
   function openLocationChange() {
@@ -1160,6 +1183,7 @@ export default function HomePage() {
               <SearchPromptAssistProvider
                 busy={loading || locating || resolvingManual}
                 builderMode={builderMode}
+                onBuilderModeChange={setBuilderMode}
                 userCoordinates={locationContext.locationACoordinates}
               >
                 <AiSearchBox
@@ -1207,6 +1231,18 @@ export default function HomePage() {
                   label={activeLocationLabel}
                   busy={loading || locating || resolvingManual}
                   onChange={openLocationChange}
+                  trailing={
+                    <div className="flex items-center gap-2">
+                      <span className="hidden text-xs font-bold uppercase tracking-wide text-white/45 sm:inline">
+                        Getting around
+                      </span>
+                      <TravelModeSelector
+                        value={travelMode}
+                        onChange={handleTravelModeChange}
+                        busy={loading || locating || resolvingManual}
+                      />
+                    </div>
+                  }
                 />
               </SearchPromptAssistProvider>
               <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
@@ -1272,6 +1308,7 @@ export default function HomePage() {
               <SearchPromptAssistProvider
                 busy={loading || locating || resolvingManual}
                 builderMode={builderMode}
+                onBuilderModeChange={setBuilderMode}
                 surface="page"
                 userCoordinates={locationContext.locationACoordinates}
               >
@@ -1320,6 +1357,20 @@ export default function HomePage() {
                   label={activeLocationLabel}
                   busy={loading || locating || resolvingManual}
                   onChange={openLocationChange}
+                  surface="page"
+                  trailing={
+                    <div className="flex items-center gap-2">
+                      <span className="hidden text-xs font-bold uppercase tracking-wide text-slate/60 sm:inline">
+                        Getting around
+                      </span>
+                      <TravelModeSelector
+                        value={travelMode}
+                        onChange={handleTravelModeChange}
+                        busy={loading || locating || resolvingManual}
+                        surface="page"
+                      />
+                    </div>
+                  }
                 />
               </SearchPromptAssistProvider>
               <LocationFallbackPanel

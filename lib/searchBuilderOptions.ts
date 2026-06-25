@@ -2,6 +2,14 @@ import { EVENT_TYPE_REFINEMENTS, SPORT_TYPE_REFINEMENTS } from "@/lib/eventBuild
 import type { VenueCategory } from "@/lib/types";
 
 export type SearchBuilderMode = "near_me" | "halfway" | "destination";
+export type SearchWhereId = "near" | "choose" | "halfway";
+
+/** Map the advanced-search "Where" chip to the builder location mode. */
+export function builderModeForWhere(where: SearchWhereId): SearchBuilderMode {
+  if (where === "halfway") return "halfway";
+  if (where === "choose") return "destination";
+  return "near_me";
+}
 export type RadiusOption = "10 min" | "20 min" | "30 min" | "Flexible";
 export type ResultMode = "best" | "more";
 

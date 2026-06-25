@@ -31,7 +31,8 @@ type EventName =
   | "halfway_result_clicked"
   | "halfway_result_shared"
   | "halfway_share_opened"
-  | "halfway_recipient_search_started";
+  | "halfway_recipient_search_started"
+  | "travel_mode_changed";
 
 type EventProperties = Record<string, string | number | boolean | null | undefined>;
 

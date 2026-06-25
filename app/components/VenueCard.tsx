@@ -14,7 +14,7 @@ import { trackEvent } from "@/lib/analytics";
 import { getCategoryConfig, getCategoryLabel, getPrimaryCategoryId } from "@/lib/categories";
 import { getPreferenceLabel } from "@/lib/preferences";
 import { venueSignalChips } from "@/lib/resultSignals";
-import type { MeetupMode, ScoredVenue, SearchMode, VenueCategory } from "@/lib/types";
+import type { EvChargingInfo, MeetupMode, ScoredVenue, SearchMode, VenueCategory } from "@/lib/types";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type Props = {
@@ -197,6 +197,29 @@ export function VenueCard({
         </div>
       </div>
       <p className="mt-4 text-sm leading-6 text-slate">{venue.address}</p>
+
+      {venue.insight ? (
+        <figure className="mt-4 rounded-lg border border-line bg-white px-4 py-3">
+          <blockquote className="text-sm font-semibold leading-6 text-ink">{venue.insight.blurb}</blockquote>
+          <figcaption className="mt-2">
+            <a
+              href={venue.insight.url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs font-bold text-koi transition hover:text-koi-hover"
+            >
+              {venue.insight.title} on Wikipedia →
+            </a>
+          </figcaption>
+        </figure>
+      ) : null}
+
+      {venue.evCharging ? (
+        <div className="mt-4 rounded-lg border border-koi/25 bg-koi/5 px-4 py-3">
+          <p className="text-sm font-black text-ink">EV charging nearby</p>
+          <p className="mt-1 text-sm leading-6 text-slate">{describeEvCharging(venue.evCharging)}</p>
+        </div>
+      ) : null}
 
       {reviewSnippet ? (
         <figure className="mt-4 rounded-lg border border-line bg-white px-4 py-3">
@@ -775,4 +798,17 @@ function formatMinutes(value: number | null) {
   const hours = Math.floor(value / 60);
   const minutes = value % 60;
   return minutes ? `${hours}h ${minutes}m` : `${hours}h`;
+}
+
+function describeEvCharging(ev: EvChargingInfo): string {
+  if (ev.nearbyCount > 0) {
+    const fast = ev.fastChargingAvailable ? " Fast charging available." : "";
+    return `${ev.nearbyCount} charger${ev.nearbyCount === 1 ? "" : "s"} within about 1 km of this spot.${fast}`;
+  }
+  if (ev.nearestDistanceMeters != null) {
+    const miles = (ev.nearestDistanceMeters / 1609.34).toFixed(1);
+    const name = ev.nearestName ? ` (${ev.nearestName})` : "";
+    return `Nearest charger is about ${miles} mi away${name}.`;
+  }
+  return "No nearby chargers found in this area.";
 }

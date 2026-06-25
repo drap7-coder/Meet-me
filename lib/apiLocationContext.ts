@@ -1,4 +1,5 @@
 import type { CurrentLocationContext } from "@/lib/currentLocation";
+import { isTravelMode } from "@/lib/travelMode";
 import type { SearchHalfwayRequest } from "@/lib/types";
 
 export function readRequestLocationContext(body: Record<string, unknown>): CurrentLocationContext | undefined {
@@ -9,7 +10,8 @@ export function readRequestLocationContext(body: Record<string, unknown>): Curre
   return {
     locationA: typeof value.locationA === "string" ? value.locationA : "",
     locationAPlaceId: typeof value.locationAPlaceId === "string" ? value.locationAPlaceId : undefined,
-    locationACoordinates: value.locationACoordinates
+    locationACoordinates: value.locationACoordinates,
+    travelMode: isTravelMode(value.travelMode) ? value.travelMode : undefined
   };
 }
 
@@ -28,6 +30,7 @@ export function readRequestSearchForm(body: Record<string, unknown>): SearchHalf
     category: value.category ?? "coffee",
     searchMode: value.searchMode ?? "midpoint",
     meetupMode: value.meetupMode ?? "single",
-    customQuery: typeof value.customQuery === "string" ? value.customQuery : ""
+    customQuery: typeof value.customQuery === "string" ? value.customQuery : "",
+    travelMode: isTravelMode(value.travelMode) ? value.travelMode : undefined
   };
 }

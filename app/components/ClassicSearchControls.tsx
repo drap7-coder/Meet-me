@@ -3,11 +3,12 @@
 import { AddressAutocompleteInput } from "@/app/components/AddressAutocompleteInput";
 import { SearchPromptWhereWhen, useSearchPromptAssist } from "@/app/components/SearchPromptAssist";
 import type { SearchSubmitOptions } from "@/lib/searchLocation";
+import { builderModeForWhere } from "@/lib/searchBuilderOptions";
 import type { SearchHalfwayRequest, WatchSubcategory } from "@/lib/types";
 import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
 import type { SearchBuilderMode } from "@/lib/searchBuilderOptions";
 import type { ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 type Props = {
   form: SearchHalfwayRequest;
@@ -41,8 +42,10 @@ export function ClassicSearchControls({
   const expanded = expandedProp ?? expandedInternal;
   const setExpanded = onExpandedChange ?? setExpandedInternal;
 
-  const { filterPreview, isStreaming } = useSearchPromptAssist();
+  const { filterPreview, isStreaming, state, setWhere } = useSearchPromptAssist();
   const isStreamingSearch = isStreaming;
+  // Where chips in advanced search are the source of truth for location mode.
+  const effectiveMode = builderModeForWhere(state.where);
   const onPage = surface === "page";
   const toggleClass = onPage
     ? "inline-flex items-center gap-1.5 px-0.5 text-sm font-bold text-slate/70 transition hover:text-ink"
@@ -65,18 +68,11 @@ export function ClassicSearchControls({
   const [halfwayLocationA, setHalfwayLocationA] = useState<LocationDraft>({ text: "" });
   const [halfwayLocationB, setHalfwayLocationB] = useState<LocationDraft>({ text: "" });
   const watchSubcategory = form.watchSubcategory ?? DEFAULT_WATCH_SUBCATEGORY;
-  const previousMode = useRef(mode);
 
-  useEffect(() => {
-    if (mode === "halfway" && previousMode.current !== "halfway") {
-      setHalfwayLocationA({ text: "" });
-      setHalfwayLocationB({ text: "" });
-    }
-    if (mode === "destination" && previousMode.current !== "destination") {
-      setDestination({ text: "" });
-    }
-    previousMode.current = mode;
-  }, [mode]);
+  function openAdvancedSearch() {
+    setWhere("halfway");
+    setExpanded(true);
+  }
 
   function useSavedLocationForHalfwayA() {
     const saved = savedLocationLabel.trim() || form.locationA.trim();
@@ -97,18 +93,18 @@ export function ClassicSearchControls({
     const searchForm: SearchHalfwayRequest = {
       ...form,
       customQuery: query,
-      searchMode: mode === "halfway" ? "midpoint" : "single",
+      searchMode: effectiveMode === "halfway" ? "midpoint" : "single",
       watchSubcategory: undefined
     };
 
-    if (mode === "halfway") {
+    if (effectiveMode === "halfway") {
       searchForm.locationA = halfwayLocationA.text.trim();
       searchForm.locationB = halfwayLocationB.text.trim();
       searchForm.locationAPlaceId = halfwayLocationA.placeId;
       searchForm.locationBPlaceId = halfwayLocationB.placeId;
       searchForm.locationACoordinates = undefined;
       searchForm.locationBCoordinates = undefined;
-    } else if (mode === "destination" && destination.text.trim()) {
+    } else if (effectiveMode === "destination" && destination.text.trim()) {
       searchForm.locationA = destination.text.trim();
       searchForm.locationB = "";
       searchForm.locationAPlaceId = destination.placeId;
@@ -117,7 +113,7 @@ export function ClassicSearchControls({
       searchForm.locationB = "";
     }
 
-    onSearchPlaces(searchForm, mode === "destination" ? { preserveSavedHomeLocation: true } : undefined);
+    onSearchPlaces(searchForm, effectiveMode === "destination" ? { preserveSavedHomeLocation: true } : undefined);
   }
 
   if (!expanded) {
@@ -125,9 +121,7 @@ export function ClassicSearchControls({
       <section id="classic-search" className="w-full">
         <button
           type="button"
-          onClick={() => {
-            setExpanded(true);
-          }}
+          onClick={openAdvancedSearch}
           className={toggleClass}
           aria-expanded={false}
           aria-controls="advanced-search-panel"
@@ -152,8 +146,8 @@ export function ClassicSearchControls({
         <span aria-hidden="true">▴</span>
       </button>
 
-      <div id="advanced-search-panel" className={panelClass}>
-        <div className={innerPanelClass}>
+      <div id="advanced-search-panel" className={`${panelClass} overflow-visible`}>
+        <div className={`${innerPanelClass} overflow-visible`}>
           {isStreaming ? (
             <p className={helperTextClass}>
               Streaming picks come from your selected filters. Refine below, then tap Search.
@@ -162,7 +156,7 @@ export function ClassicSearchControls({
             <>
               <SearchPromptWhereWhen />
 
-              {mode === "near_me" ? (
+              {effectiveMode === "near_me" ? (
                 <Field label="Location" labelClassName={labelClassName}>
                   <div
                     className={`flex h-11 items-center rounded-lg border px-3 text-sm ${
@@ -181,8 +175,9 @@ export function ClassicSearchControls({
                 </Field>
               ) : null}
 
-              {mode === "halfway" ? (
+              {effectiveMode === "halfway" ? (
                 <div className="grid gap-3">
+                  <p className={statusClassName}>Type an address or city — suggestions appear as you type.</p>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <AddressAutocompleteInput
                       label="Location A"
@@ -225,8 +220,9 @@ export function ClassicSearchControls({
                 </div>
               ) : null}
 
-              {mode === "destination" ? (
-                <AddressAutocompleteInput
+              {effectiveMode === "destination" ? (
+                <div className="overflow-visible">
+                  <AddressAutocompleteInput
                   label="Near"
                   value={destination.text}
                   placeId={destination.placeId}
@@ -238,6 +234,7 @@ export function ClassicSearchControls({
                   onChange={(text, placeId) => setDestination({ text, placeId })}
                   onClear={() => setDestination({ text: "" })}
                 />
+                </div>
               ) : null}
             </>
           )}
@@ -252,7 +249,7 @@ export function ClassicSearchControls({
               disabled={loading}
               className="h-11 rounded-full bg-koi px-5 text-sm font-black text-white shadow-[0_10px_24px_rgba(255,90,0,0.24)] transition hover:bg-koi-hover focus:outline-none focus:ring-4 focus:ring-koi/25 disabled:cursor-not-allowed disabled:bg-white/20"
             >
-              {isStreaming ? "Find streaming picks" : mode === "halfway" ? "Find places" : "Search"}
+              {isStreaming ? "Find streaming picks" : effectiveMode === "halfway" ? "Find places" : "Search"}
             </button>
           </div>
         </div>

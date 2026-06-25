@@ -2,6 +2,8 @@
 
 import { trackEvent } from "@/lib/analytics";
 import type { TopPick } from "@/lib/topPick";
+import type { EvChargingInfo } from "@/lib/types";
+import { EV_TRAVEL_ICON } from "@/lib/travelMode";
 
 type Props = {
   pick: TopPick;
@@ -22,6 +24,26 @@ export function TopPickCard({ pick }: Props) {
           <p className="text-xs font-black uppercase tracking-[0.16em] text-koi">{pick.eyebrow}</p>
           <h2 className="mt-1 text-2xl font-black leading-tight sm:text-3xl">{pick.headline}</h2>
           <p className="mt-2 text-sm leading-6 text-white/80">{pick.summary}</p>
+
+          {pick.insight ? (
+            <div className="mt-3 rounded-xl border border-white/15 bg-white/5 px-3.5 py-3">
+              <p className="text-sm leading-6 text-white/90">{pick.insight.blurb}</p>
+              <a
+                href={pick.insight.url}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-1.5 inline-flex text-xs font-bold text-koi transition hover:text-koi-hover"
+              >
+                Read more on Wikipedia →
+              </a>
+            </div>
+          ) : null}
+
+          {pick.evCharging ? (
+            <p className="mt-3 text-sm font-semibold text-white/85">
+              {EV_TRAVEL_ICON} {formatEvChargingLine(pick.evCharging)}
+            </p>
+          ) : null}
 
           {pick.chips.length ? (
             <div className="mt-3 flex flex-wrap gap-2">
@@ -62,4 +84,17 @@ export function TopPickCard({ pick }: Props) {
       </div>
     </article>
   );
+}
+
+function formatEvChargingLine(ev: EvChargingInfo): string {
+  if (ev.nearbyCount > 0) {
+    const fast = ev.fastChargingAvailable ? " (fast charging available)" : "";
+    return `${ev.nearbyCount} charger${ev.nearbyCount === 1 ? "" : "s"} at or near this spot${fast}`;
+  }
+  if (ev.nearestDistanceMeters != null) {
+    const miles = (ev.nearestDistanceMeters / 1609.34).toFixed(1);
+    const name = ev.nearestName ? ` — ${ev.nearestName}` : "";
+    return `Nearest charger about ${miles} mi away${name}`;
+  }
+  return "Charging info unavailable nearby";
 }

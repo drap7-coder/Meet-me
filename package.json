@@ -12,7 +12,10 @@
     "test:routing": "npx tsx scripts/test-bot-mode-routing.ts",
     "test:destination-location": "npx tsx scripts/test-destination-location.ts",
     "test:event-intent": "npx tsx scripts/test-local-event-intent.ts",
-    "test:sports-event-filter": "npx tsx scripts/test-sports-event-filter.ts"
+    "test:sports-event-filter": "npx tsx scripts/test-sports-event-filter.ts",
+    "test:travel-mode": "npx tsx scripts/test-travel-mode.ts",
+    "test:ev-search-intent": "npx tsx scripts/test-ev-search-intent.ts",
+    "test:discovery-providers": "npx tsx scripts/test-discovery-providers.ts"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",

@@ -1,6 +1,6 @@
 import { getPrimaryCategoryId } from "@/lib/categories";
 import { eventDistanceChip, mapsSearch, venueSignalChips } from "@/lib/resultSignals";
-import type { EventResult, ScoredVenue, SearchHalfwayResponse } from "@/lib/types";
+import type { EventResult, PlaceInsight, ScoredVenue, SearchHalfwayResponse } from "@/lib/types";
 
 export type TopPickCta = {
   label: string;
@@ -29,6 +29,10 @@ export type TopPick = {
   primary: TopPickCta;
   secondary?: TopPickCta;
   imageUrl?: string;
+  /** Optional "why it's interesting" context (e.g. Wikipedia), when enriched. */
+  insight?: PlaceInsight;
+  /** EV charging context for the top venue, when travel mode is EV. */
+  evCharging?: ScoredVenue["evCharging"];
 };
 
 /** Max straight-line miles between a place and an event to still call it "nearby". */
@@ -99,7 +103,9 @@ function buildPlacePick(venue: ScoredVenue, results: SearchHalfwayResponse, prof
     summary: placeSummary(venue, results, profile),
     chips: placeChips(venue, results),
     primary: { label: "Get directions", href: venue.googleMapsUri },
-    secondary: venue.websiteUri ? { label: "Visit site", href: venue.websiteUri } : undefined
+    secondary: venue.websiteUri ? { label: "Visit site", href: venue.websiteUri } : undefined,
+    insight: venue.insight,
+    evCharging: venue.evCharging
   };
 }
 
@@ -245,7 +251,9 @@ function buildNightOut(
     chips: placeChips(venue, results),
     primary: { label: "Directions to dinner", href: venue.googleMapsUri },
     secondary: event.ticketUrl ? { label: `Then: ${truncate(event.title, 28)}`, href: event.ticketUrl } : undefined,
-    imageUrl: event.imageUrl
+    imageUrl: event.imageUrl,
+    insight: venue.insight,
+    evCharging: venue.evCharging
   };
 }
 

@@ -1,4 +1,5 @@
 import type { MeetupMode, SearchMode, VenueCategory } from "@/lib/types";
+import { isEvChargingIntent, stripEvChargingPhrases } from "@/lib/evSearchIntent";
 
 export type PrimaryCategoryId = "food" | "drinks" | "shopping" | "activities" | "family" | "explore" | "colleges" | "outdoors";
 
@@ -492,6 +493,14 @@ export function resolveSearchCategoryFromQuery(
   parsedCategory?: string,
   hintedCategory?: VenueCategory
 ): { category: VenueCategory; customQuery?: string } {
+  if (isEvChargingIntent(query) && /\b(?:restaurants?|food|dinner|lunch|brunch|eat|cafe|coffee|bar)\b/i.test(query)) {
+    const stripped = stripEvChargingPhrases(query);
+    const bareRestaurant = /^(?:restaurants?|food|dinner|lunch|brunch|eat|cafe|coffee|bars?)$/i.test(stripped);
+    return bareRestaurant || !stripped
+      ? { category: "restaurant" }
+      : { category: "restaurant", customQuery: stripped };
+  }
+
   const matched = matchCategoryInQuery(query);
   if (matched) return { category: matched };
 

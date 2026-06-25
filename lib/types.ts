@@ -88,6 +88,20 @@ export type MeetupMode = "single";
 
 export type SearchMode = "single" | "midpoint";
 
+/**
+ * "Getting Around" travel mode — persistent user context (not a filter).
+ * Influences recommendation ranking and future provider enrichment (e.g. EV
+ * charging), never a separate search experience.
+ *   - auto:    let Koi decide (defaults to drive-style behavior)
+ *   - drive:   driving
+ *   - ev:      electric vehicle — currently behaves like drive; reserved as the
+ *              extension point for future EV charging enrichment
+ *   - walk:    prefer closer results / penalize long distances
+ *   - bike:    prefer reasonable bike-distance results when distance data exists
+ *   - transit: reserved / no-op for now
+ */
+export type TravelMode = "auto" | "drive" | "ev" | "walk" | "bike" | "transit";
+
 export type KoiBotMode = "places" | "watch" | "events";
 
 export type WatchSubcategory = "movies" | "tv_shows" | "trending";
@@ -209,6 +223,37 @@ export type RouteLeg = {
   status: string;
 };
 
+/**
+ * EV charging context attached to a venue by the EV enrichment provider
+ * (e.g. Open Charge Map) when the user is in EV travel mode. Optional — absent
+ * when EV mode is off or no provider/key is configured.
+ */
+export type EvChargingInfo = {
+  /** Chargers found within the "at this venue" radius. */
+  nearbyCount: number;
+  /** Straight-line meters to the closest charger, when known. */
+  nearestDistanceMeters: number | null;
+  /** Title/name of the closest charger, when known. */
+  nearestName?: string;
+  /** True when at least one nearby charger reports fast/rapid charging. */
+  fastChargingAvailable: boolean;
+};
+
+/**
+ * Short contextual blurb attached to a venue (e.g. from Wikipedia) when the user
+ * asks why a place is interesting. Optional — absent for ordinary searches.
+ */
+export type PlaceInsight = {
+  /** One or two sentence plain-text blurb. */
+  blurb: string;
+  /** Source article title. */
+  title: string;
+  /** Canonical source URL. */
+  url: string;
+  thumbnailUrl?: string;
+  source: "wikipedia";
+};
+
 export type ScoredVenue = VenueCandidate & {
   travelFromA: RouteLeg;
   travelFromB: RouteLeg;
@@ -217,6 +262,8 @@ export type ScoredVenue = VenueCandidate & {
   fairnessScore: number;
   preferenceScore: number;
   preferenceMatches: Preference[];
+  evCharging?: EvChargingInfo;
+  insight?: PlaceInsight;
 };
 
 export type SearchHalfwayRequest = {
@@ -232,6 +279,12 @@ export type SearchHalfwayRequest = {
   customQuery?: string;
   watchSubcategory?: WatchSubcategory;
   preferences?: Preference[];
+  travelMode?: TravelMode;
+  /**
+   * Raw natural-language query used only to detect "why is this place
+   * interesting?" intent for Wikipedia enrichment. Does not affect place search.
+   */
+  insightQuery?: string;
 };
 
 export type SearchHalfwayResponse = {
@@ -246,4 +299,5 @@ export type SearchHalfwayResponse = {
   venues: ScoredVenue[];
   events?: EventResult[];
   eventProfile?: LocalEventProfile;
+  travelMode?: TravelMode;
 };

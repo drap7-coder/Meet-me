@@ -1,3 +1,4 @@
+import { effectiveTravelModeForQuery } from "@/lib/evSearchIntent";
 import { normalizeCategory } from "@/lib/categories";
 import { readRequestLocationContext, readRequestSearchForm } from "@/lib/apiLocationContext";
 import {
@@ -77,6 +78,10 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
   const parseContext = readRequestLocationContext(input);
   const subcategory = parseSubcategory(input.watchSubcategory);
   const streamingServiceIds = parseStreamingServiceIds(input.streamingServiceIds);
+  // "Getting Around" context — applied to every Places form so ranking + EV
+  // enrichment stay consistent regardless of which path resolves the search.
+  const baseTravelMode = locationContext.travelMode ?? parseContext?.travelMode ?? "auto";
+  const travelMode = effectiveTravelModeForQuery(baseTravelMode, query);
 
   if (hasStreamingWatchContext(query)) {
     return {
@@ -125,6 +130,8 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
       data: await enrichPlacesResponseWithEvents(
         await googlePlacesProvider.searchHalfway({
           ...resolvedPlaceForm,
+          travelMode,
+          insightQuery: query,
           category: normalizeCategory(resolvedPlaceForm.category)
         }),
         query,
@@ -157,6 +164,7 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
 
     const blendedForm: SearchHalfwayRequest = {
       ...eventForm,
+      travelMode,
       category: "activities",
       customQuery: query,
       searchMode: eventForm.searchMode ?? "single"
@@ -201,6 +209,8 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
     data: await enrichPlacesResponseWithEvents(
       await googlePlacesProvider.searchHalfway({
         ...resolvedForm,
+        travelMode,
+        insightQuery: query,
         category: normalizeCategory(resolvedForm.category)
       }),
       query,
@@ -256,6 +266,7 @@ async function buildEventsOnlyResponse(
     searchMode: "single",
     meetupMode: "single",
     preferences: form.preferences ?? [],
+    travelMode: form.travelMode ?? "auto",
     query,
     venues: [],
     ...(events.length ? { events, eventProfile: profile } : { eventProfile: profile })

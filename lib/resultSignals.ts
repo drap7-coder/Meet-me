@@ -1,4 +1,5 @@
 import type { EventResult, ScoredVenue, SearchMode } from "@/lib/types";
+import { EV_TRAVEL_ICON } from "@/lib/travelMode";
 import { formatEventDistanceChip } from "@/lib/eventDistance";
 
 /**
@@ -29,6 +30,9 @@ export function venueSignalChips(venue: ScoredVenue, searchMode: SearchMode): st
   const price = formatPriceLevel(venue.priceLevel);
   if (price) chips.push(price);
 
+  const ev = evChargingChip(venue);
+  if (ev) chips.push(ev);
+
   return chips.slice(0, 4);
 }
 
@@ -46,6 +50,21 @@ function driveChip(venue: ScoredVenue, searchMode: SearchMode): string | null {
 function ratingChip(venue: ScoredVenue): string | null {
   if (typeof venue.rating !== "number") return null;
   return `${venue.rating.toFixed(1)} ★ (${formatCount(venue.reviewCount)})`;
+}
+
+/** Compact EV charging signal for venue cards when enrichment ran. */
+export function evChargingChip(venue: ScoredVenue): string | null {
+  const ev = venue.evCharging;
+  if (!ev) return null;
+  if (ev.nearbyCount > 0) {
+    const fast = ev.fastChargingAvailable ? " · fast" : "";
+    return `${EV_TRAVEL_ICON} ${ev.nearbyCount} charger${ev.nearbyCount === 1 ? "" : "s"} nearby${fast}`;
+  }
+  if (ev.nearestDistanceMeters != null) {
+    const miles = (ev.nearestDistanceMeters / 1609.34).toFixed(1);
+    return `${EV_TRAVEL_ICON} Charger ${miles} mi away`;
+  }
+  return null;
 }
 
 /** Straight-line miles only — never Google Routes drive time. See lib/eventDistance.ts */

@@ -6,6 +6,7 @@ import {
 } from "@/lib/geocodeCache";
 import { calculateMidpoint, estimateSearchRadiusMeters } from "@/lib/geo";
 import { effectiveTravelModeForQuery, placesSearchQuery, sortVenuesForEvIntent } from "@/lib/evSearchIntent";
+import { isGenericNearTarget } from "@/lib/nearFeatureQuery";
 import {
   applyExploreTravelModeRanking,
   getExploreModeQueryHints,
@@ -108,6 +109,10 @@ export async function reverseGeocodeLocation(location: LatLng, input = "Current 
 
 function resolveRequestLocation(input: string, placeId: string | undefined, coordinates: LatLng | undefined) {
   if (coordinates) return reverseGeocodeLocation(coordinates, input.trim() || "Current location");
+  const trimmed = input.trim();
+  if (isGenericNearTarget(trimmed)) {
+    throw new Error("Add your location to search near that kind of place.");
+  }
   return geocodeAddress(input, placeId);
 }
 

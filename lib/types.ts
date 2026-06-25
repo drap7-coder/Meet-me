@@ -285,6 +285,8 @@ export type SearchHalfwayRequest = {
    * interesting?" intent for Wikipedia enrichment. Does not affect place search.
    */
   insightQuery?: string;
+  /** Parsed "near a trail/charger/park" relationship — not a geocodable location. */
+  nearRelation?: import("@/lib/nearFeatureQuery").NearRelationIntent | null;
 };
 
 export type SearchHalfwayResponse = {

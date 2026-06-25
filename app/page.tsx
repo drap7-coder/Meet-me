@@ -1187,6 +1187,12 @@ export default function HomePage() {
                 onTravelModeChange={handleTravelModeChange}
                 busy={loading || locating || resolvingManual}
               />
+              <TrendingNearYouStrip
+                latitude={locationContext.locationACoordinates?.lat}
+                longitude={locationContext.locationACoordinates?.lng}
+                busy={loading || locating || resolvingManual}
+                onSearchQuery={applyPopularSearch}
+              />
               <SearchPromptAssistProvider
                 busy={loading || locating || resolvingManual}
                 builderMode={builderMode}
@@ -1239,12 +1245,6 @@ export default function HomePage() {
                   onSelect={applyPopularSearch}
                 />
               </SearchPromptAssistProvider>
-              <TrendingNearYouStrip
-                latitude={locationContext.locationACoordinates?.lat}
-                longitude={locationContext.locationACoordinates?.lng}
-                busy={loading || locating || resolvingManual}
-                onSearchQuery={applyPopularSearch}
-              />
               <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
               <HomeFaqSection />
               <LocationFallbackPanel

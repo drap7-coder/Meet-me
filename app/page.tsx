@@ -3,7 +3,6 @@
 import { EmptyState } from "@/app/components/EmptyState";
 import { KoiThinkingLoader } from "@/app/components/KoiThinkingLoader";
 import { EventResultCard } from "@/app/components/EventResultCard";
-import { TopPickCard } from "@/app/components/TopPickCard";
 import { AiSearchBox, type AiSearchBoxHandle } from "@/app/components/AiSearchBox";
 import { extractSportsSearchKeyword, hasNamedTeamInQuery, isTeamSpecificSportsQuery, queryRequiresEventLocation } from "@/lib/localEventIntent";
 import { resolveEventSearchForm } from "@/lib/koiSearchExecute";
@@ -14,12 +13,10 @@ import { SelectedFiltersPanel } from "@/app/components/home/SelectedFiltersPanel
 import { ShareDialog, type ShareDialogState } from "@/app/components/home/ShareDialog";
 import { Footer, SiteHeader } from "@/app/components/home/SiteChrome";
 import { ClassicSearchControls } from "@/app/components/ClassicSearchControls";
-import { PersistentLocationBar } from "@/app/components/PersistentLocationBar";
-import { TravelModeSelector } from "@/app/components/TravelModeSelector";
+import { SearchContextStrip } from "@/app/components/SearchContextStrip";
 import { KoiExampleSearchCard } from "@/app/components/KoiExampleSearchCard";
 import { LocationForm } from "@/app/components/LocationForm";
 import { RoadDivider } from "@/app/components/BrandRoad";
-import { ResultsMap } from "@/app/components/ResultsMap";
 import {
   SearchPromptAssistProvider,
   SearchPromptDetailChips,
@@ -43,7 +40,6 @@ import {
 import { normalizeCategory, parseMeetupMode, parseSearchMode } from "@/lib/categories";
 import { parsePreferences } from "@/lib/preferences";
 import { shareWithFallback, shouldUseNativeShare } from "@/lib/share";
-import { buildTopPick } from "@/lib/topPick";
 import { trackEvent } from "@/lib/analytics";
 import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
 import {
@@ -1180,6 +1176,13 @@ export default function HomePage() {
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#0A1323] via-[#0A1323]/70 to-transparent sm:h-24" />
             <div className={`relative z-10 grid w-full gap-4 py-2 sm:gap-5 sm:py-4 ${PAGE_CONTAINER}`}>
               <MarketingHero />
+              <SearchContextStrip
+                locationLabel={activeLocationLabel}
+                onChangeLocation={openLocationChange}
+                travelMode={travelMode}
+                onTravelModeChange={handleTravelModeChange}
+                busy={loading || locating || resolvingManual}
+              />
               <SearchPromptAssistProvider
                 busy={loading || locating || resolvingManual}
                 builderMode={builderMode}
@@ -1226,23 +1229,6 @@ export default function HomePage() {
                 <SelectedFiltersPanel
                   busy={loading || locating || resolvingManual}
                   onSearch={runFilterSearch}
-                />
-                <PersistentLocationBar
-                  label={activeLocationLabel}
-                  busy={loading || locating || resolvingManual}
-                  onChange={openLocationChange}
-                  trailing={
-                    <div className="flex items-center gap-2">
-                      <span className="hidden text-xs font-bold uppercase tracking-wide text-white/45 sm:inline">
-                        Getting around
-                      </span>
-                      <TravelModeSelector
-                        value={travelMode}
-                        onChange={handleTravelModeChange}
-                        busy={loading || locating || resolvingManual}
-                      />
-                    </div>
-                  }
                 />
               </SearchPromptAssistProvider>
               <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
@@ -1305,6 +1291,14 @@ export default function HomePage() {
 
           {error && !loading && !results && !watchEventsResult ? (
           <section id="search" className="mt-5 grid w-full gap-5">
+              <SearchContextStrip
+                locationLabel={activeLocationLabel}
+                onChangeLocation={openLocationChange}
+                travelMode={travelMode}
+                onTravelModeChange={handleTravelModeChange}
+                busy={loading || locating || resolvingManual}
+                surface="page"
+              />
               <SearchPromptAssistProvider
                 busy={loading || locating || resolvingManual}
                 builderMode={builderMode}
@@ -1353,25 +1347,6 @@ export default function HomePage() {
                   busy={loading || locating || resolvingManual}
                   onSearch={runFilterSearch}
                 />
-                <PersistentLocationBar
-                  label={activeLocationLabel}
-                  busy={loading || locating || resolvingManual}
-                  onChange={openLocationChange}
-                  surface="page"
-                  trailing={
-                    <div className="flex items-center gap-2">
-                      <span className="hidden text-xs font-bold uppercase tracking-wide text-slate/60 sm:inline">
-                        Getting around
-                      </span>
-                      <TravelModeSelector
-                        value={travelMode}
-                        onChange={handleTravelModeChange}
-                        busy={loading || locating || resolvingManual}
-                        surface="page"
-                      />
-                    </div>
-                  }
-                />
               </SearchPromptAssistProvider>
               <LocationFallbackPanel
                 form={form}
@@ -1408,20 +1383,8 @@ export default function HomePage() {
         ) : null}
 
         {results && !loading ? (
-          <section className="search-results-enter mt-5 grid gap-5 pb-16 lg:grid-cols-[1fr_420px] lg:items-start">
-            {results.venues.length ? (
-              <div className="results-panel-enter order-1 lg:order-2">
-                <ResultsMap
-                  originA={results.originA}
-                  originB={results.originB}
-                  midpoint={results.midpoint}
-                  venues={results.venues}
-                  searchMode={results.searchMode}
-                />
-              </div>
-            ) : null}
-
-            <div className="results-panel-enter order-2 grid gap-5 lg:order-1">
+          <section className="search-results-enter mt-5 grid gap-5 pb-16">
+            <div className="results-panel-enter grid gap-5">
               {openedFromSharedHalfway && results.searchMode === "midpoint" ? (
                 <SharedHalfwayReferralBanner onStartSearch={startNewSearch} />
               ) : null}
@@ -1429,11 +1392,6 @@ export default function HomePage() {
               {shareMessage ? (
                 <p className={`mb-4 text-sm font-semibold ${activeAccent.text}`}>{shareMessage}</p>
               ) : null}
-
-              {(() => {
-                const pick = buildTopPick(results);
-                return pick ? <TopPickCard pick={pick} /> : null;
-              })()}
 
               <WeatherCard midpoint={results.midpoint} searchMode={results.searchMode} />
 

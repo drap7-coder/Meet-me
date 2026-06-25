@@ -112,7 +112,7 @@ export function WatchEventsCard({ item, botMode = "watch", isKoiPick = false, pr
         </p>
       ) : null}
 
-      {isLivePick && (item.overview || item.explanation || item.meta.length) ? (
+      {isLivePick && (item.overview || item.meta.length) ? (
         <div className="mt-4">
           <button
             type="button"
@@ -124,36 +124,19 @@ export function WatchEventsCard({ item, botMode = "watch", isKoiPick = false, pr
         </div>
       ) : null}
 
-      {(!isLivePick || expanded) && (
-        <>
-          <div className={`mt-4 rounded-lg border p-4 ${searchSuggestion ? accent.panelSoft : "border-line bg-mint"}`}>
-            <p className="text-sm font-black text-ink">Why Koi picked it</p>
-            <p className="mt-2 text-sm leading-6 text-slate">{item.explanation}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {item.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate ring-1 ring-line"
-                >
-                  {tag}
-                </span>
-              ))}
+      {(!isLivePick || expanded) && item.meta.length ? (
+        <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+          {item.meta.map((entry) => (
+            <div
+              key={entry.label}
+              className={`rounded-lg px-3 py-2.5 ${searchSuggestion ? `${accent.bgSoft} ring-1 ${accent.borderSoft}` : "bg-sky"}`}
+            >
+              <div className="text-xs font-bold uppercase text-slate">{entry.label}</div>
+              <div className="mt-1 font-bold text-ink">{entry.value}</div>
             </div>
-          </div>
-
-          <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-            {item.meta.map((entry) => (
-              <div
-                key={entry.label}
-                className={`rounded-lg px-3 py-2.5 ${searchSuggestion ? `${accent.bgSoft} ring-1 ${accent.borderSoft}` : "bg-sky"}`}
-              >
-                <div className="text-xs font-bold uppercase text-slate">{entry.label}</div>
-                <div className="mt-1 font-bold text-ink">{entry.value}</div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
+          ))}
+        </div>
+      ) : null}
 
       {!isLivePick ? (
         <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto]">

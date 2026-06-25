@@ -173,29 +173,6 @@ export function VenueCard({
         </div>
       </div>
 
-      <div className="mt-4 rounded-lg border border-line bg-mint p-4">
-        <p className="text-sm font-black text-ink">Why Koi picked it</p>
-        {searchMode === "midpoint" && hasTravelTimes ? (
-          <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-            <div>
-              <span className="text-xs font-bold uppercase text-slate">You</span>
-              <p className="mt-0.5 font-bold text-ink">{timeA}</p>
-            </div>
-            <div>
-              <span className="text-xs font-bold uppercase text-slate">Them</span>
-              <p className="mt-0.5 font-bold text-ink">{timeB}</p>
-            </div>
-          </div>
-        ) : null}
-        <p className="mt-2 text-sm leading-6 text-slate">{match.explanation}</p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {match.tags.map((tag) => (
-            <span key={tag} className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate ring-1 ring-line">
-              {tag}
-            </span>
-          ))}
-        </div>
-      </div>
       <p className="mt-4 text-sm leading-6 text-slate">{venue.address}</p>
 
       {venue.insight ? (
@@ -289,20 +266,6 @@ export function VenueCard({
           </a>
         </div>
       ) : null}
-
-      <details className="group mt-4 rounded-lg border border-line bg-mint">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-bold text-ink">
-          <span>Why Koi picked it</span>
-          <span className="text-lg leading-none text-slate transition group-open:rotate-45">+</span>
-        </summary>
-        <div className="grid gap-3 border-t border-line px-4 py-4 text-sm leading-6 text-slate">
-          <Detail label={searchMode === "single" ? "Distance" : "Drive balance"} value={match.details.balance} />
-          <Detail label="Venue rating" value={match.details.rating} />
-          <Detail label="Category match" value={match.details.category} category={searchCategory} />
-          <Detail label="Preference match" value={match.details.preference} />
-          <Detail label="Convenience" value={match.details.convenience} />
-        </div>
-      </details>
 
       <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
         <a
@@ -493,18 +456,6 @@ function Metric({ label, value }: { label: string; value: string }) {
     <div className="rounded-lg bg-sky px-3 py-2.5">
       <div className="text-xs font-bold uppercase text-slate">{label}</div>
       <div className="mt-1 font-bold text-ink">{value}</div>
-    </div>
-  );
-}
-
-function Detail({ label, value, category }: { label: string; value: string; category?: VenueCategory }) {
-  return (
-    <div>
-      <span className="inline-flex items-center gap-1 font-bold text-ink">
-        {category ? <CategoryIcon category={category} active className="h-3.5 w-3.5" /> : null}
-        {label}:
-      </span>{" "}
-      <span>{value}</span>
     </div>
   );
 }

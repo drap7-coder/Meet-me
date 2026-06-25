@@ -1,6 +1,7 @@
 import {
   classifySearchError,
   isSearchError,
+  isRecoverableSearchError,
   searchError,
   SEARCH_ERROR_MESSAGES,
   shouldShowInlineSearchError
@@ -27,5 +28,7 @@ assert(network.kind === "NETWORK_ERROR", "fetch failure maps to NETWORK_ERROR");
 const structured = searchError("PROVIDER_ERROR");
 assert(isSearchError(structured), "searchError helper produces SearchError");
 assert(classifySearchError(structured).kind === "PROVIDER_ERROR", "structured errors pass through");
+assert(isRecoverableSearchError(structured), "provider errors stay on the search box");
+assert(!isRecoverableSearchError(needsLocation), "needs location is not recoverable inline");
 
 console.log("PASS search status");

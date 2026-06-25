@@ -105,3 +105,8 @@ export function shouldShowInlineSearchError(error: SearchError | null | undefine
   if (!error) return false;
   return error.kind !== "NEEDS_LOCATION";
 }
+
+/** Recoverable ask failures that should keep the search box in place with a retry message. */
+export function isRecoverableSearchError(error: SearchError | null | undefined): boolean {
+  return shouldShowInlineSearchError(error);
+}

@@ -56,6 +56,7 @@ import {
   isSearchError,
   searchError as createSearchError,
   SEARCH_ERROR_MESSAGES,
+  shouldShowInlineSearchError,
   type SearchError
 } from "@/lib/searchStatus";
 import { getSavedTravelMode, saveTravelMode } from "@/lib/travelMode";
@@ -332,6 +333,11 @@ export default function HomePage() {
     syncUserLocationFromStorage();
   }, []);
 
+  useEffect(() => {
+    if (loading || !lastAskQuery.trim() || !searchError || !shouldShowInlineSearchError(searchError)) return;
+    searchBoxRef.current?.fillQuery(lastAskQuery);
+  }, [lastAskQuery, loading, searchError]);
+
   // Saved city/ZIP labels often lack coordinates on mobile — geocode once so Trending can load.
   useEffect(() => {
     if (locationContext.locationACoordinates) {
@@ -548,6 +554,7 @@ export default function HomePage() {
     submitOptions?: SearchSubmitOptions
   ) {
     clearSearchError();
+    setHasSearched(true);
     setResults(data);
     setWatchEventsResult(null);
     setSearchKind("places");
@@ -573,6 +580,7 @@ export default function HomePage() {
 
   function applyWatchEventsResults(data: WatchEventsResult) {
     clearSearchError();
+    setHasSearched(true);
     setWatchEventsResult(data);
     setResults(null);
     if (data.streamingServiceIds?.length) {
@@ -628,7 +636,6 @@ export default function HomePage() {
 
     const startedAt = Date.now();
     const shouldPlayMotion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    setHasSearched(true);
     setLoading(true);
     setSearchError(null);
     setShareMessage("");
@@ -1235,7 +1242,7 @@ export default function HomePage() {
     }
   }
 
-  const showLandingHero = !hasSearched && !results && !watchEventsResult && !loading;
+  const showLandingHero = !hasSearched && !results && !watchEventsResult;
   const showLocationOnboarding = showLandingHero && !hasHomeLocation;
 
   return (
@@ -1331,6 +1338,11 @@ export default function HomePage() {
                   onSelect={applyPopularSearch}
                 />
               </SearchPromptAssistProvider>
+              {loading ? (
+                <section className="mt-2" aria-live="polite">
+                  <KoiThinkingLoader searchKind={searchKind} phase={loadingPhase} />
+                </section>
+              ) : null}
               <HomeFaqSection />
               <LocationFallbackPanel
                 form={form}
@@ -1357,7 +1369,7 @@ export default function HomePage() {
 
       <div className="bg-mint">
         <div className={PAGE_CONTAINER}>
-          {hasSearched || results || watchEventsResult || loading ? (
+          {hasSearched || results || watchEventsResult ? (
             <CompactResultsHeader
               loading={loading}
               searchKind={searchKind}
@@ -1379,7 +1391,7 @@ export default function HomePage() {
             />
           ) : null}
 
-          {hasSearched || results || watchEventsResult || loading || showRoadDividerPreview ? (
+          {hasSearched || results || watchEventsResult || showRoadDividerPreview ? (
             <RoadDivider className="mt-5 w-full" />
           ) : null}
 
@@ -1466,7 +1478,7 @@ export default function HomePage() {
             </section>
           ) : null}
 
-        {loading ? (
+        {loading && !showLandingHero ? (
           <section className="mt-8">
             <KoiThinkingLoader searchKind={searchKind} phase={loadingPhase} />
           </section>

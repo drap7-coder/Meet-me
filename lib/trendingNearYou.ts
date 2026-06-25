@@ -1,13 +1,20 @@
 import type { EventResult } from "@/lib/eventResult";
 import { isEventDiscoveryConfigured } from "@/lib/eventDiscovery";
+import {
+  farmersMarketCardFromEvent,
+  pickFarmersMarketEvent
+} from "@/lib/eventbriteFarmersMarket";
+import {
+  fetchEventbriteFoodMarketEvents,
+  isEventbriteFoodMarketConfigured
+} from "@/lib/providers/eventbriteEventProvider";
 import { fetchNearbyChargers, hasOpenChargeMapApiKey } from "@/lib/providers/openChargeMap";
-import { fetchTrendingWeekendEvents } from "@/lib/weekendTrendingEvents";
-import { isTmdbConfigured, fetchTrendingMovies } from "@/lib/tmdb";
+import { fetchTrendingNearYouEvents } from "@/lib/weekendTrendingEvents";
 import { logApiError } from "@/lib/serverLog";
 
 export type TrendingNearYouCard = {
   id: string;
-  kind: "event" | "streaming" | "ev";
+  kind: "event" | "farmers_market" | "ev";
   title: string;
   subtitle: string;
   badge: string;
@@ -27,9 +34,9 @@ const MAX_EVENT_CARDS = 4;
 export async function fetchTrendingNearYou(latitude: number, longitude: number): Promise<TrendingNearYouCard[]> {
   const cards: TrendingNearYouCard[] = [];
 
-  const [events, streaming, evCount] = await Promise.all([
+  const [events, farmersMarket, evCount] = await Promise.all([
     loadEvents(latitude, longitude),
-    loadStreamingPick(),
+    loadFarmersMarketPick(latitude, longitude),
     loadEvSummary(latitude, longitude)
   ]);
 
@@ -37,20 +44,20 @@ export async function fetchTrendingNearYou(latitude: number, longitude: number):
     cards.push(eventCardToTrendingCard(event));
   }
 
-  if (streaming) cards.push(streaming);
+  if (farmersMarket) cards.push(farmersMarket);
   if (evCount) cards.push(evCount);
 
   return cards.slice(0, MAX_CARDS);
 }
 
 export function isTrendingNearYouConfigured() {
-  return isEventDiscoveryConfigured() || isTmdbConfigured() || hasOpenChargeMapApiKey() || true;
+  return isEventDiscoveryConfigured() || isEventbriteFoodMarketConfigured() || hasOpenChargeMapApiKey();
 }
 
 async function loadEvents(latitude: number, longitude: number): Promise<EventResult[]> {
   if (!isEventDiscoveryConfigured()) return [];
   try {
-    return await fetchTrendingWeekendEvents(latitude, longitude);
+    return await fetchTrendingNearYouEvents(latitude, longitude);
   } catch (error) {
     logApiError("trending-near-you-events", error);
     return [];
@@ -70,23 +77,15 @@ function eventCardToTrendingCard(event: EventResult): TrendingNearYouCard {
   };
 }
 
-async function loadStreamingPick(): Promise<TrendingNearYouCard | null> {
-  if (!isTmdbConfigured()) return null;
+async function loadFarmersMarketPick(latitude: number, longitude: number): Promise<TrendingNearYouCard | null> {
+  if (!isEventbriteFoodMarketConfigured()) return null;
   try {
-    const picks = await fetchTrendingMovies(1);
-    const pick = picks[0];
+    const events = await fetchEventbriteFoodMarketEvents(latitude, longitude);
+    const pick = pickFarmersMarketEvent(events);
     if (!pick) return null;
-    return {
-      id: `stream-${pick.id}`,
-      kind: "streaming",
-      title: pick.title,
-      subtitle: "Trending to watch this week",
-      badge: "Streaming",
-      imageUrl: pick.posterUrl || undefined,
-      searchQuery: "Trending movies this week"
-    };
+    return farmersMarketCardFromEvent(pick);
   } catch (error) {
-    logApiError("trending-near-you-streaming", error);
+    logApiError("trending-near-you-farmers-market", error);
     return null;
   }
 }

@@ -3,8 +3,14 @@ import type { EventResult } from "@/lib/eventResult";
 
 export const WEEKEND_TRENDING_CAP = 5;
 export const WEEKEND_TRENDING_RADIUS_MILES = 30;
+export const TRENDING_NEAR_YOU_EVENT_CAP = 4;
 
 const SEGMENT_FETCH_CAP = 6;
+
+function isComedyEvent(event: EventResult): boolean {
+  const haystack = `${event.title} ${event.category} ${event.venue}`;
+  return /\b(?:comedy|stand[- ]?up|comedian)\b/i.test(haystack);
+}
 
 /** ISO year + week number — used for dismiss-until-next-week storage. */
 export function weekendTrendingWeekKey(now = new Date()): string {
@@ -80,6 +86,77 @@ export function blendWeekendTrendingMix(
   }
 
   return results;
+}
+
+/** Trending Near You: always lead with one sport and one comedian when available, then music. */
+export function blendTrendingNearYouMix(
+  sports: EventResult[],
+  comedy: EventResult[],
+  music: EventResult[],
+  cap = TRENDING_NEAR_YOU_EVENT_CAP
+): EventResult[] {
+  const seen = new Set<string>();
+  const results: EventResult[] = [];
+
+  function takeNext(pool: EventResult[]): EventResult | undefined {
+    for (const event of pool) {
+      const id = `${event.source}:${event.id}`;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      return event;
+    }
+    return undefined;
+  }
+
+  function takeFrom(pool: EventResult[]) {
+    if (results.length >= cap) return;
+    const event = takeNext(pool);
+    if (event) results.push(event);
+  }
+
+  takeFrom(sports);
+  takeFrom(comedy);
+
+  for (const pool of [music, sports, comedy]) {
+    while (results.length < cap) {
+      const before = results.length;
+      takeFrom(pool);
+      if (results.length === before) break;
+    }
+  }
+
+  return results;
+}
+
+export async function fetchTrendingNearYouEvents(
+  latitude: number,
+  longitude: number
+): Promise<EventResult[]> {
+  if (!isEventDiscoveryConfigured()) return [];
+
+  const window = upcomingWeekendWindow();
+  const base = {
+    latitude,
+    longitude,
+    radiusMiles: WEEKEND_TRENDING_RADIUS_MILES,
+    startDateTime: window.start.toISOString(),
+    endDateTime: window.end.toISOString(),
+    resultCap: SEGMENT_FETCH_CAP
+  };
+
+  const [sports, comedyRaw, music] = await Promise.all([
+    searchLocalEvents({ ...base, query: "sports this weekend", profile: "sports", segmentName: "Sports" }),
+    searchLocalEvents({
+      ...base,
+      query: "comedy shows this weekend",
+      profile: "weekend",
+      segmentName: "Arts & Theatre"
+    }),
+    searchLocalEvents({ ...base, query: "concerts this weekend", profile: "music", segmentName: "Music" })
+  ]);
+
+  const comedy = comedyRaw.filter(isComedyEvent);
+  return blendTrendingNearYouMix(sports, comedy.length ? comedy : comedyRaw, music);
 }
 
 export async function fetchTrendingWeekendEvents(

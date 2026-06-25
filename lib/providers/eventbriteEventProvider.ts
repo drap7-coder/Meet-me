@@ -7,9 +7,12 @@ import { logApiError } from "@/lib/serverLog";
 import {
   EVENTBRITE_ORGANIZATION_SOURCES,
   EVENTBRITE_VENUE_SOURCES,
+  getEventbriteFoodMarketSources,
+  hasEventbriteFoodMarketSources,
   hasEventbriteSources,
   type EventbriteSource
 } from "@/src/config/eventbriteSources";
+import { upcomingWeekendWindow } from "@/lib/weekendTrendingEvents";
 
 export const EVENTBRITE_API_BASE = "https://www.eventbriteapi.com/v3";
 const API_BASE = EVENTBRITE_API_BASE;
@@ -171,6 +174,75 @@ function toEventbriteTimestamp(value: string) {
  * events for organization/venue IDs this token owns or is authorized for, listed in
  * src/config/eventbriteSources.ts. It is deprioritized behind Ticketmaster.
  */
+async function collectAuthorizedEvents(
+  request: EventSearchParams,
+  organizations: EventbriteSource[],
+  venues: EventbriteSource[]
+): Promise<EventResult[]> {
+  const token = getEventbriteToken();
+  if (!token || (organizations.length === 0 && venues.length === 0)) return [];
+
+  const window = { startDateTime: request.startDateTime, endDateTime: request.endDateTime };
+
+  const batches = await Promise.all([
+    ...organizations.map((source) => fetchSourceEvents("organizations", source, token, window)),
+    ...venues.map((source) => fetchSourceEvents("venues", source, token, window))
+  ]);
+
+  const radiusMiles = request.radiusMiles ?? DEFAULT_RADIUS_MILES;
+  const events: EventResult[] = [];
+  const seen = new Set<string>();
+
+  for (const event of batches.flat()) {
+    if (seen.has(event.id)) continue;
+    seen.add(event.id);
+
+    if (event.latitude != null && event.longitude != null) {
+      const distance = haversineMilesBetween(
+        request.latitude,
+        request.longitude,
+        event.latitude,
+        event.longitude
+      );
+      if (distance > radiusMiles) continue;
+      events.push({ ...event, distance });
+    } else {
+      events.push(event);
+    }
+  }
+
+  return events;
+}
+
+/** One cached fetch for food_markets-tagged sources only — powers the trending farmers market card. */
+export async function fetchEventbriteFoodMarketEvents(
+  latitude: number,
+  longitude: number
+): Promise<EventResult[]> {
+  if (!hasEventbriteApiKey() || !hasEventbriteFoodMarketSources()) return [];
+
+  const { organizations, venues } = getEventbriteFoodMarketSources();
+  const window = upcomingWeekendWindow();
+
+  return collectAuthorizedEvents(
+    {
+      query: "farmers market",
+      latitude,
+      longitude,
+      radiusMiles: DEFAULT_RADIUS_MILES,
+      startDateTime: window.start.toISOString(),
+      endDateTime: window.end.toISOString(),
+      resultCap: 8
+    },
+    organizations,
+    venues
+  );
+}
+
+export function isEventbriteFoodMarketConfigured() {
+  return hasEventbriteApiKey() && hasEventbriteFoodMarketSources();
+}
+
 export const eventbriteEventProvider: EventProvider = {
   name: "eventbrite",
 
@@ -179,41 +251,7 @@ export const eventbriteEventProvider: EventProvider = {
   },
 
   async searchEvents(request: EventSearchParams) {
-    const token = getEventbriteToken();
-    if (!token || !hasEventbriteSources()) return [];
-
-    const window = { startDateTime: request.startDateTime, endDateTime: request.endDateTime };
-
-    const batches = await Promise.all([
-      ...EVENTBRITE_ORGANIZATION_SOURCES.map((source) =>
-        fetchSourceEvents("organizations", source, token, window)
-      ),
-      ...EVENTBRITE_VENUE_SOURCES.map((source) => fetchSourceEvents("venues", source, token, window))
-    ]);
-
-    const radiusMiles = request.radiusMiles ?? DEFAULT_RADIUS_MILES;
-    const events: EventResult[] = [];
-    const seen = new Set<string>();
-
-    for (const event of batches.flat()) {
-      if (seen.has(event.id)) continue;
-      seen.add(event.id);
-
-      if (event.latitude != null && event.longitude != null) {
-        const distance = haversineMilesBetween(
-          request.latitude,
-          request.longitude,
-          event.latitude,
-          event.longitude
-        );
-        if (distance > radiusMiles) continue;
-        events.push({ ...event, distance });
-      } else {
-        // Keep coordinate-less events; ranking will deprioritize them.
-        events.push(event);
-      }
-    }
-
-    return events;
+    if (!getEventbriteToken() || !hasEventbriteSources()) return [];
+    return collectAuthorizedEvents(request, EVENTBRITE_ORGANIZATION_SOURCES, EVENTBRITE_VENUE_SOURCES);
   }
 };

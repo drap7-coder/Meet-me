@@ -76,7 +76,7 @@ function TrendingCard({
         <img src={card.imageUrl} alt="" className="h-14 w-full object-cover" />
       ) : (
         <div className="grid h-14 place-items-center bg-koi/15 text-lg" aria-hidden="true">
-          {card.kind === "streaming" ? "📺" : card.kind === "ev" ? "⚡" : "🎟️"}
+          {card.kind === "farmers_market" ? "🧺" : card.kind === "ev" ? "⚡" : "🎟️"}
         </div>
       )}
       <div className="grid gap-1 p-2.5">

@@ -1,4 +1,9 @@
-import { blendWeekendTrendingMix, upcomingWeekendWindow, weekendTrendingWeekKey } from "../lib/weekendTrendingEvents";
+import {
+  blendTrendingNearYouMix,
+  blendWeekendTrendingMix,
+  upcomingWeekendWindow,
+  weekendTrendingWeekKey
+} from "../lib/weekendTrendingEvents";
 import type { EventResult } from "../lib/eventResult";
 
 function assert(condition: boolean, message: string) {
@@ -42,5 +47,11 @@ assert(mixed[0]?.id === "s1", "blend leads with sports");
 assert(mixed[1]?.id === "m1", "blend alternates music");
 assert(mixed[2]?.id === "m2", "blend takes second music slot");
 assert(mixed.some((event) => event.id === "a1"), "blend includes arts");
+
+const comedy = [{ id: "c1", source: "ticketmaster", title: "Stand-up Night", category: "Comedy", venue: "Punch Line" }] as EventResult[];
+const nearYou = blendTrendingNearYouMix(sports, comedy, music, 4);
+assert(nearYou[0]?.id === "s1", "near-you blend leads with sports");
+assert(nearYou[1]?.id === "c1", "near-you blend includes comedian second");
+assert(nearYou.length === 4, "near-you blend fills to cap with music");
 
 console.log("PASS weekend trending");

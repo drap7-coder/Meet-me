@@ -62,10 +62,13 @@ export type EventbriteSource = {
  *   - Dev endpoint:  GET /api/dev/eventbrite-diagnostic
  *   - CLI:           npm run diagnose:eventbrite
  *
- * Example (replace with real IDs):
+ * Example (authorized org only — get IDs from GET /v3/users/me/organizations/):
  *   export const EVENTBRITE_ORGANIZATION_SOURCES: EventbriteSource[] = [
- *     { id: "12345678", label: "Smorgasburg", city: "Brooklyn" },
+ *     { id: "YOUR_ORG_ID", label: "Headhouse Farmers Market", city: "Philadelphia", category: "food_markets" },
  *   ];
+ *
+ * Sources with category "food_markets" power the Trending Near You farmers market card.
+ * Only those sources are queried for that card, keeping Eventbrite API calls minimal.
  */
 
 /**
@@ -93,4 +96,20 @@ export const EVENTBRITE_VENUE_SOURCES: EventbriteSource[] = [];
 
 export function hasEventbriteSources(): boolean {
   return EVENTBRITE_ORGANIZATION_SOURCES.length > 0 || EVENTBRITE_VENUE_SOURCES.length > 0;
+}
+
+/** Sources tagged for the Trending Near You farmers market card — limits Eventbrite API calls. */
+export function getEventbriteFoodMarketSources(): {
+  organizations: EventbriteSource[];
+  venues: EventbriteSource[];
+} {
+  return {
+    organizations: EVENTBRITE_ORGANIZATION_SOURCES.filter((source) => source.category === "food_markets"),
+    venues: EVENTBRITE_VENUE_SOURCES.filter((source) => source.category === "food_markets")
+  };
+}
+
+export function hasEventbriteFoodMarketSources(): boolean {
+  const { organizations, venues } = getEventbriteFoodMarketSources();
+  return organizations.length > 0 || venues.length > 0;
 }

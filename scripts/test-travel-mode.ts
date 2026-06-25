@@ -3,6 +3,7 @@ import {
   DEFAULT_TRAVEL_MODE,
   getSavedTravelMode,
   isTravelMode,
+  normalizeTravelMode,
   travelModeChipLabel
 } from "@/lib/travelMode";
 import {
@@ -57,6 +58,7 @@ function candidate(distanceMeters: number | null, durationMinutes = 10): VenueCa
 // --- type guard + helpers ---
 assert(DEFAULT_TRAVEL_MODE === "auto", "default travel mode is auto");
 assert(isTravelMode("ev") && isTravelMode("walk") && !isTravelMode("teleport"), "isTravelMode validates ids");
+assert(normalizeTravelMode("transit") === DEFAULT_TRAVEL_MODE, "legacy transit maps to auto");
 assert(travelModeChipLabel("drive") === "🚗 Drive", "drive chip label");
 assert(travelModeChipLabel("ev") === "⚡ EV Charging", "ev chip label");
 
@@ -66,8 +68,9 @@ assert(getExploreModeQueryHints("walk").includes("walkable"), "walk has walkable
 assert(getExploreModeQueryHints("bike").includes("rail trail"), "bike has rail-trail hint");
 assert(getExploreModeBoosts("walk").terms.includes("public art"), "walk boosts public art");
 assert(getExploreModeBoosts("bike").terms.includes("greenway"), "bike boosts greenways");
-assert(shouldFavorNearby("walk") && shouldFavorNearby("bike") && shouldFavorNearby("transit"), "nearby-favoring modes");
+assert(shouldFavorNearby("walk") && shouldFavorNearby("bike"), "nearby-favoring modes");
 assert(!shouldFavorNearby("drive"), "drive does not force nearby ranking");
+assert(!isTravelMode("transit"), "transit is no longer a travel mode");
 assert(shouldFavorOpenChargeMap("ev") && !shouldFavorOpenChargeMap("drive"), "EV favors Open Charge Map");
 assert(shouldFavorOutdoorDiscovery("walk") && shouldFavorOutdoorDiscovery("bike"), "walk/bike favor outdoor discovery");
 assert(getExploreModeRadiusMultiplier("auto") === 1, "auto radius unchanged");
@@ -92,12 +95,6 @@ const walkMid = getExploreModeDistanceAdjustment(candidate(4000), "walk");
 assert(bikeMid > walkMid, "bike is more lenient than walk at 4km");
 assert(getExploreModeDistanceAdjustment(candidate(3000), "bike") > 0, "short bike ride gets a small boost");
 assert(getExploreModeDistanceAdjustment(candidate(50_000), "drive") === 0, "drive never adjusts");
-
-// --- transit: graceful fallback, modestly favors dense nearby hubs without hard filtering ---
-const transitNear = baseScore + getExploreModeDistanceAdjustment(candidate(1500), "transit");
-const transitFar = baseScore + getExploreModeDistanceAdjustment(candidate(20_000), "transit");
-assert(transitNear > transitFar, "transit falls back to nearby dense-area ranking");
-assert(transitFar < baseScore, "transit can softly reduce far drive-first results");
 
 // --- missing distance data => neutral (no penalty) for walk/bike ---
 assert(getExploreModeDistanceAdjustment(candidate(null), "walk") === 0, "walk neutral without distance data");

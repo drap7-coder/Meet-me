@@ -25,18 +25,25 @@ export const TRAVEL_MODE_OPTIONS: TravelModeOption[] = [
   { id: "drive", label: "Drive", icon: "🚗", description: "Driving distances and times" },
   { id: "ev", label: "EV Charging", icon: EV_TRAVEL_ICON, description: "EV-friendly spots with nearby charging" },
   { id: "walk", label: "Walk", icon: "🚶", description: "Favor nearby, walkable spots" },
-  { id: "bike", label: "Bike", icon: "🚲", description: "Favor reasonable bike rides" },
-  { id: "transit", label: "Transit", icon: "🚆", description: "Public transit — ranking favors reachable stops" }
+  { id: "bike", label: "Bike", icon: "🚲", description: "Favor reasonable bike rides" }
 ];
 
 const TRAVEL_MODE_IDS = new Set<TravelMode>(TRAVEL_MODE_OPTIONS.map((option) => option.id));
+
+/** Maps persisted or legacy values to a supported travel mode. */
+export function normalizeTravelMode(value: unknown): TravelMode {
+  if (typeof value === "string" && value === "transit") return DEFAULT_TRAVEL_MODE;
+  if (isTravelMode(value)) return value;
+  return DEFAULT_TRAVEL_MODE;
+}
 
 export function isTravelMode(value: unknown): value is TravelMode {
   return typeof value === "string" && TRAVEL_MODE_IDS.has(value as TravelMode);
 }
 
 export function travelModeOption(mode: TravelMode | null | undefined): TravelModeOption {
-  return TRAVEL_MODE_OPTIONS.find((option) => option.id === mode) ?? TRAVEL_MODE_OPTIONS[0];
+  const normalized = normalizeTravelMode(mode);
+  return TRAVEL_MODE_OPTIONS.find((option) => option.id === normalized) ?? TRAVEL_MODE_OPTIONS[0];
 }
 
 /** Compact trigger label, e.g. "🚗 Drive". */
@@ -49,7 +56,9 @@ export function getSavedTravelMode(): TravelMode {
   if (typeof window === "undefined") return DEFAULT_TRAVEL_MODE;
   try {
     const raw = window.localStorage.getItem(TRAVEL_MODE_STORAGE_KEY);
-    if (isTravelMode(raw)) return raw;
+    const mode = normalizeTravelMode(raw);
+    if (raw === "transit") saveTravelMode(mode);
+    return mode;
   } catch {
     // Ignore storage access errors (private mode, disabled storage, etc.).
   }

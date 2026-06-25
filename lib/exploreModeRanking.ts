@@ -54,19 +54,6 @@ const BIKE_TERMS = [
   "boardwalk"
 ];
 
-const TRANSIT_TERMS = [
-  "downtown",
-  "main street",
-  "town center",
-  "station",
-  "transit",
-  "walkable",
-  "museum",
-  "restaurant",
-  "coffee",
-  "public market"
-];
-
 export function getExploreModeBoosts(mode: ExploreTravelMode | null | undefined): ExploreModeBoosts {
   switch (mode) {
     case "walk":
@@ -101,16 +88,6 @@ export function getExploreModeBoosts(mode: ExploreTravelMode | null | undefined)
         distanceBonus: 10,
         distancePenalty: -35,
         contentBoost: 10
-      };
-    case "transit":
-      return {
-        terms: TRANSIT_TERMS,
-        categories: ["downtowns", "walkable_main_streets", "museums", "restaurant", "coffee", "farmers_markets"],
-        closeDistanceMeters: 3000,
-        farDistanceMeters: 12000,
-        distanceBonus: 5,
-        distancePenalty: -10,
-        contentBoost: 6
       };
     case "drive":
     case "ev":
@@ -147,8 +124,6 @@ export function getExploreModeQueryHints(mode: ExploreTravelMode | null | undefi
       return ["walkable", "nearby", "main street", "scenic walk"];
     case "bike":
       return ["bike trail", "rail trail", "greenway", "scenic ride"];
-    case "transit":
-      return ["downtown", "main street", "town center", "near transit"];
     case "auto":
     default:
       return [];
@@ -156,7 +131,7 @@ export function getExploreModeQueryHints(mode: ExploreTravelMode | null | undefi
 }
 
 export function shouldFavorNearby(mode: ExploreTravelMode | null | undefined): boolean {
-  return mode === "walk" || mode === "bike" || mode === "transit";
+  return mode === "walk" || mode === "bike";
 }
 
 export function shouldFavorOpenChargeMap(mode: ExploreTravelMode | null | undefined): boolean {
@@ -176,8 +151,6 @@ export function getExploreModeRadiusMultiplier(mode: ExploreTravelMode | null | 
       return 0.45;
     case "bike":
       return 0.8;
-    case "transit":
-      return 0.75;
     case "auto":
     default:
       return 1;

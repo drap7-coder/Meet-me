@@ -98,9 +98,8 @@ export type SearchMode = "single" | "midpoint";
  *              extension point for future EV charging enrichment
  *   - walk:    prefer closer results / penalize long distances
  *   - bike:    prefer reasonable bike-distance results when distance data exists
- *   - transit: favor dense, walkable hubs when transit stop data is unavailable
  */
-export type ExploreTravelMode = "auto" | "drive" | "ev" | "walk" | "bike" | "transit";
+export type ExploreTravelMode = "auto" | "drive" | "ev" | "walk" | "bike";
 export type TravelMode = ExploreTravelMode;
 
 export type KoiBotMode = "places" | "watch" | "events";

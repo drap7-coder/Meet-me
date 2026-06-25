@@ -1,15 +1,13 @@
 import type { EventResult } from "@/lib/eventResult";
 import { isEventDiscoveryConfigured } from "@/lib/eventDiscovery";
 import { fetchNearbyChargers, hasOpenChargeMapApiKey } from "@/lib/providers/openChargeMap";
-import { openMeteoWeatherProvider } from "@/lib/providers/weatherProvider";
 import { fetchTrendingWeekendEvents } from "@/lib/weekendTrendingEvents";
-import { formatWeatherSummary, getWeatherSuggestion } from "@/lib/weatherDisplay";
 import { isTmdbConfigured, fetchTrendingMovies } from "@/lib/tmdb";
 import { logApiError } from "@/lib/serverLog";
 
 export type TrendingNearYouCard = {
   id: string;
-  kind: "event" | "weather" | "streaming" | "ev";
+  kind: "event" | "streaming" | "ev";
   title: string;
   subtitle: string;
   badge: string;
@@ -24,14 +22,13 @@ export type TrendingNearYouPayload = {
 };
 
 const MAX_CARDS = 6;
-const MAX_EVENT_CARDS = 3;
+const MAX_EVENT_CARDS = 4;
 
 export async function fetchTrendingNearYou(latitude: number, longitude: number): Promise<TrendingNearYouCard[]> {
   const cards: TrendingNearYouCard[] = [];
 
-  const [events, weather, streaming, evCount] = await Promise.all([
+  const [events, streaming, evCount] = await Promise.all([
     loadEvents(latitude, longitude),
-    loadWeather(latitude, longitude),
     loadStreamingPick(),
     loadEvSummary(latitude, longitude)
   ]);
@@ -40,7 +37,6 @@ export async function fetchTrendingNearYou(latitude: number, longitude: number):
     cards.push(eventCardToTrendingCard(event));
   }
 
-  if (weather) cards.push(weather);
   if (streaming) cards.push(streaming);
   if (evCount) cards.push(evCount);
 
@@ -72,23 +68,6 @@ function eventCardToTrendingCard(event: EventResult): TrendingNearYouCard {
     actionUrl: event.ticketUrl,
     searchQuery: "Events near me this weekend"
   };
-}
-
-async function loadWeather(latitude: number, longitude: number): Promise<TrendingNearYouCard | null> {
-  try {
-    const weather = await openMeteoWeatherProvider.getCurrentWeather({ lat: latitude, lng: longitude });
-    return {
-      id: "weather-local",
-      kind: "weather",
-      title: formatWeatherSummary(weather),
-      subtitle: getWeatherSuggestion(weather),
-      badge: "Weather",
-      searchQuery: "Things to do near me this weekend"
-    };
-  } catch (error) {
-    logApiError("trending-near-you-weather", error);
-    return null;
-  }
 }
 
 async function loadStreamingPick(): Promise<TrendingNearYouCard | null> {

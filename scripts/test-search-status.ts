@@ -24,6 +24,13 @@ const needsLocation = classifySearchError("Add your location to search nearby.")
 assert(needsLocation.kind === "NEEDS_LOCATION", "needs location maps correctly");
 assert(!shouldShowInlineSearchError(needsLocation), "needs location is not inline");
 
+const vagueQuery = classifySearchError("Where should Koi search? Try: coffee near Hoboken.");
+assert(vagueQuery.kind === "NEEDS_LOCATION", "vague query without saved location maps to NEEDS_LOCATION");
+
+const gibberish = classifySearchError("I couldn't understand that search. Try: coffee near Hoboken.");
+assert(gibberish.kind === "NO_RESULTS", "gibberish query stays inline on the hero");
+assert(gibberish.message.includes("couldn't understand"), "gibberish keeps the parser message");
+
 const network = classifySearchError(new TypeError("Failed to fetch"));
 assert(network.kind === "NETWORK_ERROR", "fetch failure maps to NETWORK_ERROR");
 
@@ -84,6 +91,41 @@ assert(
     preview: false
   }),
   "no watch recommendations is empty"
+);
+
+assert(
+  isEmptyWatchResults({
+    botMode: "watch",
+    query: "blah",
+    title: "Watch",
+    description: "",
+    message: "",
+    intent: "stream",
+    intentLabel: "Watch",
+    location: "",
+    timeframe: "",
+    topic: "",
+    contextSummary: "",
+    resultCount: 3,
+    recommendations: [{
+      id: "preview-1",
+      rank: 1,
+      title: "Preview",
+      subtitle: "",
+      kind: "stream",
+      badge: "Preview",
+      explanation: "",
+      tags: [],
+      meta: [],
+      actionLabel: "Preview",
+      actionUrl: "",
+      provider: "koi",
+      preview: true
+    }],
+    futureProviders: [],
+    preview: true
+  }),
+  "preview watch results stay off the results page"
 );
 
 console.log("PASS search status");

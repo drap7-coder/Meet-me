@@ -74,9 +74,14 @@ export function classifySearchError(input: unknown): SearchError {
     lower.includes("enter both locations") ||
     lower.includes("needs location") ||
     lower.includes("search near that kind of place") ||
-    lower.includes("turn on location")
+    lower.includes("turn on location") ||
+    lower.includes("where should koi search")
   ) {
     return searchError("NEEDS_LOCATION");
+  }
+
+  if (lower.includes("could not understand") || lower.includes("couldn't understand")) {
+    return searchError("NO_RESULTS", typeof raw === "string" ? raw : SEARCH_ERROR_MESSAGES.NO_RESULTS);
   }
 
   if (
@@ -118,6 +123,6 @@ export function isEmptyPlacesResults(data: SearchHalfwayResponse): boolean {
 }
 
 export function isEmptyWatchResults(data: WatchEventsResult): boolean {
-  if (data.preview) return false;
+  if (data.preview) return true;
   return data.recommendations.length === 0;
 }

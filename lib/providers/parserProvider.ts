@@ -1,5 +1,6 @@
 import { readRequestLocationContext } from "@/lib/apiLocationContext";
-import { resolveSearchCategoryFromQuery } from "@/lib/categories";
+import { hasRecognizablePlacesIntent, isUnsupportedGibberishQuery, resolveSearchCategoryFromQuery } from "@/lib/categories";
+import type { CurrentLocationContext } from "@/lib/currentLocation";
 import {
   isCurrentLocationReference,
   looksLikeCurrentLocationQuery,
@@ -20,7 +21,7 @@ import type {
   ParserProvider,
   PlacesParseResponse
 } from "@/lib/providers/types";
-import type { KoiBotMode, SearchHalfwayRequest } from "@/lib/types";
+import type { KoiBotMode, SearchHalfwayRequest, SearchMode } from "@/lib/types";
 import { resolveKoiBotMode } from "@/lib/watchEvents";
 import { resolveWatchPlaceSearchForm } from "@/lib/watchPlaceSearch";
 
@@ -90,17 +91,32 @@ export async function parseSearch(input: {
     parsed.category,
     readFormCategoryHint(input.form)
   );
-  const searchMode =
+  let searchMode: SearchMode =
     parsed.search_mode === "single" || (locationA && !locationB && !looksLikeMidpointQuery(query))
       ? "single"
       : "midpoint";
 
   if (!locationA || (searchMode === "midpoint" && !locationB)) {
-    const followUp =
-      locationA || locationB
-        ? "I found one place. Should Koi search near it, or are you meeting someone from another location?"
-        : "Where should Koi search?";
-    throw new ParseSearchError(`${followUp} Try: coffee near Hoboken, or coffee between Hoboken and Edison.`, 422);
+    if (
+      !locationB &&
+      !looksLikeMidpointQuery(query) &&
+      hasResolvableSavedLocation(locationContext)
+    ) {
+      if (isUnsupportedGibberishQuery(query, parsed.category)) {
+        throw new ParseSearchError(
+          "I couldn't understand that search. Try: coffee near Hoboken, or brunch near me.",
+          422
+        );
+      }
+      locationA = "me";
+      searchMode = "single";
+    } else {
+      const followUp =
+        locationA || locationB
+          ? "I found one place. Should Koi search near it, or are you meeting someone from another location?"
+          : "Where should Koi search?";
+      throw new ParseSearchError(`${followUp} Try: coffee near Hoboken, or coffee between Hoboken and Edison.`, 422);
+    }
   }
 
   const preferences = detectPreferencesFromQuery(query);
@@ -393,6 +409,10 @@ function readFormCategoryHint(form: unknown): SearchHalfwayRequest["category"] |
   if (!form || typeof form !== "object") return undefined;
   const category = (form as SearchHalfwayRequest).category;
   return typeof category === "string" && category.trim() ? category : undefined;
+}
+
+function hasResolvableSavedLocation(context?: CurrentLocationContext): boolean {
+  return Boolean(context?.locationACoordinates) || Boolean(context?.locationA?.trim());
 }
 
 function buildPlacesParseResponse(

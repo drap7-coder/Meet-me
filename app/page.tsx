@@ -147,6 +147,7 @@ export default function HomePage() {
   const [openedFromSharedHalfway, setOpenedFromSharedHalfway] = useState(false);
   const [shareDialog, setShareDialog] = useState<ShareDialogState | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const [everHadResults, setEverHadResults] = useState(false);
   const [showRoadDividerPreview, setShowRoadDividerPreview] = useState(false);
   const [builderExpanded, setBuilderExpanded] = useState(false);
   const [builderMode, setBuilderMode] = useState<SearchBuilderMode>("near_me");
@@ -235,6 +236,9 @@ export default function HomePage() {
     setResults(null);
     setWatchEventsResult(null);
     setSearchError(classified);
+    if (!everHadResults) {
+      setHasSearched(false);
+    }
   }
 
   function handleTravelModeChange(mode: TravelMode) {
@@ -562,6 +566,7 @@ export default function HomePage() {
 
     clearSearchError();
     setHasSearched(true);
+    setEverHadResults(true);
     setResults(data);
     setWatchEventsResult(null);
     setSearchKind("places");
@@ -593,6 +598,7 @@ export default function HomePage() {
 
     clearSearchError();
     setHasSearched(true);
+    setEverHadResults(true);
     setWatchEventsResult(data);
     setResults(null);
     if (data.streamingServiceIds?.length) {
@@ -822,14 +828,18 @@ export default function HomePage() {
           form?: SearchHalfwayRequest;
         };
         if (!response.ok) {
+          const apiError = readApiSearchError(data);
           if (
             response.status === 422 &&
-            (data.kind === "needs_location" || data.needsLocation)
+            (data.kind === "needs_location" ||
+              data.needsLocation ||
+              (apiError.kind === "NEEDS_LOCATION" && !shouldShowInlineSearchError(apiError)))
           ) {
-            handleFreeformNeedsLocation(query, data);
+            handleFreeformNeedsLocation(query, { ...data, error: apiError.message });
             return;
           }
-          throw readApiSearchError(data);
+          failSearch(apiError);
+          return;
         }
 
         if (data.kind === "places") {
@@ -851,6 +861,13 @@ export default function HomePage() {
         }
 
         if (data.kind === "watch") {
+          if (data.data.preview) {
+            setPendingRetry({ kind: "events", query });
+            setShowLocationActions(true);
+            setShowManualFallback(false);
+            setSearchError(createSearchError("NEEDS_LOCATION", data.data.message || SEARCH_ERROR_MESSAGES.NEEDS_LOCATION));
+            return;
+          }
           setSearchKind("watch");
           trackEvent("watch_events_opened", { queryLength: query.length });
           applyWatchEventsResults(data.data);
@@ -858,6 +875,13 @@ export default function HomePage() {
         }
 
         if (data.kind === "events") {
+          if (data.data.preview) {
+            setPendingRetry({ kind: "events", query });
+            setShowLocationActions(true);
+            setShowManualFallback(false);
+            setSearchError(createSearchError("NEEDS_LOCATION", data.data.message || SEARCH_ERROR_MESSAGES.NEEDS_LOCATION));
+            return;
+          }
           setSearchKind("events");
           trackEvent("watch_events_opened", { queryLength: query.length });
           applyWatchEventsResults(data.data);
@@ -908,6 +932,7 @@ export default function HomePage() {
     setCurrentShareUrl("");
     setOpenedFromSharedHalfway(false);
     setHasSearched(false);
+    setEverHadResults(false);
     setLastAskQuery("");
     setLocationSavedMessage("");
     setShowClassicFallback(false);
@@ -1254,7 +1279,10 @@ export default function HomePage() {
     }
   }
 
-  const showLandingHero = !hasSearched && !results && !watchEventsResult;
+  const hasResultView = Boolean(results || watchEventsResult);
+  const recoverOnHero = Boolean(searchError && !hasResultView && !everHadResults);
+  const showLandingHero = !hasResultView && (!hasSearched || recoverOnHero);
+  const showResultsChrome = hasResultView || (loading && hasSearched && !recoverOnHero);
   const showLocationOnboarding = showLandingHero && !hasHomeLocation;
 
   return (
@@ -1381,7 +1409,7 @@ export default function HomePage() {
 
       <div className="bg-mint">
         <div className={PAGE_CONTAINER}>
-          {hasSearched || results || watchEventsResult ? (
+          {showResultsChrome ? (
             <CompactResultsHeader
               loading={loading}
               searchKind={searchKind}
@@ -1403,11 +1431,11 @@ export default function HomePage() {
             />
           ) : null}
 
-          {hasSearched || results || watchEventsResult || showRoadDividerPreview ? (
+          {showResultsChrome || showRoadDividerPreview ? (
             <RoadDivider className="mt-5 w-full" />
           ) : null}
 
-          {hasSearched && !loading && !results && !watchEventsResult ? (
+          {hasSearched && !loading && !hasResultView && !showLandingHero ? (
           <section id="search" className="mt-5 grid w-full gap-5">
               <SearchContextStrip
                 locationLabel={activeLocationLabel}

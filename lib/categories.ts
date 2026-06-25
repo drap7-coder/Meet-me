@@ -1,5 +1,7 @@
-import type { MeetupMode, SearchMode, VenueCategory } from "@/lib/types";
+import { isCurrentLocationReference, looksLikeCurrentLocationQuery } from "@/lib/currentLocation";
 import { isEvChargingIntent, stripEvChargingPhrases } from "@/lib/evSearchIntent";
+import { parseNearFeatureQuery } from "@/lib/nearFeatureQuery";
+import type { MeetupMode, SearchMode, VenueCategory } from "@/lib/types";
 
 export type PrimaryCategoryId = "food" | "drinks" | "shopping" | "activities" | "family" | "explore" | "colleges" | "outdoors";
 
@@ -488,6 +490,37 @@ export function mapCategoryIntent(input: string | null | undefined): { category:
   return { category: "custom", customQuery: raw };
 }
 
+/** True when the query names a searchable activity or venue type — not gibberish like "blah". */
+export function hasRecognizablePlacesIntent(query: string, parsedCategory?: string): boolean {
+  const trimmed = query.trim();
+  if (!trimmed) return false;
+
+  if (parseNearFeatureQuery(trimmed)?.relatedFeature) return true;
+  if (matchCategoryInQuery(trimmed)) return true;
+  if (looksLikeFoodIntent(trimmed)) return true;
+  if (isEvChargingIntent(trimmed)) return true;
+  if (looksLikeCurrentLocationQuery(trimmed) || isCurrentLocationReference(trimmed)) return true;
+  if (/\b(?:meet|meeting|halfway|between|spot|place|fun|tonight|today|weekend)\b/i.test(trimmed)) return true;
+  if (/\b(?:near|around|in)\s+\S/i.test(trimmed)) return true;
+
+  const parsed = parsedCategory?.trim();
+  if (parsed) {
+    const fromParsed = mapCategoryIntent(parsed);
+    if (fromParsed.category !== "custom") return true;
+    const rematched = matchCategoryInQuery(fromParsed.customQuery ?? parsed);
+    if (rematched) return true;
+  }
+
+  return false;
+}
+
+/** Single-word nonsense like "blah" with no venue or activity signal. */
+export function isUnsupportedGibberishQuery(query: string, parsedCategory?: string): boolean {
+  if (hasRecognizablePlacesIntent(query, parsedCategory)) return false;
+  const tokens = query.trim().split(/\s+/).filter(Boolean);
+  return tokens.length === 1 && tokens[0].length <= 12;
+}
+
 export function resolveSearchCategoryFromQuery(
   query: string,
   parsedCategory?: string,
@@ -522,7 +555,7 @@ export function resolveSearchCategoryFromQuery(
   }
 
   const hint = hintedCategory ? normalizeCategory(hintedCategory) : null;
-  if (hint && hint !== "custom") {
+  if (hint && hint !== "custom" && !isUnsupportedGibberishQuery(query, parsedCategory)) {
     return { category: hint };
   }
 

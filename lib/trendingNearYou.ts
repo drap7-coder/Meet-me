@@ -1,32 +1,13 @@
 import type { EventResult } from "@/lib/eventResult";
 import { isEventDiscoveryConfigured } from "@/lib/eventDiscovery";
-import {
-  farmersMarketCardFromEvent,
-  pickFarmersMarketEvent
-} from "@/lib/eventbriteFarmersMarket";
-import {
-  fetchEventbriteFoodMarketEvents,
-  isEventbriteFoodMarketConfigured
-} from "@/lib/providers/eventbriteEventProvider";
+import { discoverFarmersMarketPick } from "@/lib/farmersMarketDiscovery";
 import { fetchNearbyChargers, hasOpenChargeMapApiKey } from "@/lib/providers/openChargeMap";
+import { openTripMapProvider } from "@/lib/providers/openTripMapProvider";
+import type { TrendingNearYouCard, TrendingNearYouPayload } from "@/lib/trendingNearYouTypes";
 import { fetchTrendingNearYouEvents } from "@/lib/weekendTrendingEvents";
 import { logApiError } from "@/lib/serverLog";
 
-export type TrendingNearYouCard = {
-  id: string;
-  kind: "event" | "farmers_market" | "ev";
-  title: string;
-  subtitle: string;
-  badge: string;
-  imageUrl?: string;
-  actionUrl?: string;
-  searchQuery?: string;
-};
-
-export type TrendingNearYouPayload = {
-  configured: boolean;
-  cards: TrendingNearYouCard[];
-};
+export type { TrendingNearYouCard, TrendingNearYouPayload } from "@/lib/trendingNearYouTypes";
 
 const MAX_CARDS = 6;
 const MAX_EVENT_CARDS = 4;
@@ -51,7 +32,12 @@ export async function fetchTrendingNearYou(latitude: number, longitude: number):
 }
 
 export function isTrendingNearYouConfigured() {
-  return isEventDiscoveryConfigured() || isEventbriteFoodMarketConfigured() || hasOpenChargeMapApiKey();
+  return (
+    isEventDiscoveryConfigured() ||
+    openTripMapProvider.isConfigured() ||
+    Boolean(process.env.GOOGLE_MAPS_API_KEY?.trim()) ||
+    hasOpenChargeMapApiKey()
+  );
 }
 
 async function loadEvents(latitude: number, longitude: number): Promise<EventResult[]> {
@@ -78,12 +64,9 @@ function eventCardToTrendingCard(event: EventResult): TrendingNearYouCard {
 }
 
 async function loadFarmersMarketPick(latitude: number, longitude: number): Promise<TrendingNearYouCard | null> {
-  if (!isEventbriteFoodMarketConfigured()) return null;
   try {
-    const events = await fetchEventbriteFoodMarketEvents(latitude, longitude);
-    const pick = pickFarmersMarketEvent(events);
-    if (!pick) return null;
-    return farmersMarketCardFromEvent(pick);
+    const result = await discoverFarmersMarketPick(latitude, longitude);
+    return result.card;
   } catch (error) {
     logApiError("trending-near-you-farmers-market", error);
     return null;

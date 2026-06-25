@@ -46,11 +46,9 @@ export type KoiSearchApiResponse =
     };
 
 export function shouldRouteFilterSearchToFreeform(query: string, options: PickQueryOptions): boolean {
-  if (options.exploreIntent) {
-    const intent = exploreIntentFromPayload(query, options.exploreIntent);
-    if (shouldRouteExploreToTicketmaster(intent)) return true;
-    if (intent.providers[0] === "opentripmap") return true;
-  }
+  const intent = exploreIntentFromPayload(query, options.exploreIntent);
+  if (intent.mode === "explore" && shouldRouteExploreToTicketmaster(intent)) return true;
+  if (intent.mode === "explore" && intent.preferOpenTripMap) return true;
   if (options.routeViaFreeform) return true;
   return resolveKoiBotMode(query.trim()) === "events";
 }

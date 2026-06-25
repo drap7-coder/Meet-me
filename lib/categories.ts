@@ -624,6 +624,10 @@ export function getCategorySearchTerms(
   if (category === "custom") return [customQuery?.trim() || "places to meet"];
   const config = getCategoryConfig(category);
   if (!config) return ["places to meet"];
+  const query = customQuery?.trim();
+  if (query) {
+    return [query, ...config.searchTerms.single.filter((term) => term.toLowerCase() !== query.toLowerCase())];
+  }
   return config.searchTerms.single;
 }
 

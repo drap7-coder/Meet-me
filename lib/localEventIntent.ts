@@ -10,6 +10,7 @@ import {
   sportsTeamStrongPattern,
   sportsTeamWeakPattern
 } from "@/lib/sportsTeams";
+import { isOpenTripMapFriendlyQuery } from "@/lib/exploreQueryClassification";
 import { isLocalHappeningsQuery } from "@/lib/localHappenings";
 import type { VenueCategory } from "@/lib/types";
 import { detectEventsIntent, hasStreamingWatchContext } from "@/lib/watchEvents";
@@ -193,6 +194,11 @@ export function shouldFetchTicketmasterEvents(query: string, category?: VenueCat
 
   // Farmers markets, flea markets, street fairs, etc. are Places-first — Ticketmaster
   // adds unrelated concerts when blended onto these results.
+  // OpenTripMap-friendly discovery (markets, museums, parks, etc.) stays Places-first.
+  if (isOpenTripMapFriendlyQuery(trimmed)) {
+    return false;
+  }
+
   if (isLocalHappeningsQuery(trimmed)) {
     return false;
   }

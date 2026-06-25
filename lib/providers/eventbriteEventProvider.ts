@@ -12,7 +12,7 @@ import {
   hasEventbriteSources,
   type EventbriteSource
 } from "@/src/config/eventbriteSources";
-import { upcomingWeekendWindow } from "@/lib/weekendTrendingEvents";
+import { upcomingWeekendWindow } from "@/lib/weekendWindow";
 
 export const EVENTBRITE_API_BASE = "https://www.eventbriteapi.com/v3";
 const API_BASE = EVENTBRITE_API_BASE;
@@ -214,7 +214,7 @@ async function collectAuthorizedEvents(
   return events;
 }
 
-/** One cached fetch for food_markets-tagged sources only — powers the trending farmers market card. */
+/** One cached fetch for food_markets-tagged sources only — optional farmers market enrichment. */
 export async function fetchEventbriteFoodMarketEvents(
   latitude: number,
   longitude: number

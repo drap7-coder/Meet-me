@@ -21,7 +21,9 @@
     "diagnose:eventbrite": "npx tsx scripts/eventbrite-diagnostic.ts",
     "test:seo-faq": "npx tsx scripts/test-seo-faq.ts",
     "test:popular-searches": "npx tsx scripts/test-popular-searches.ts",
-    "test:discovery-providers": "npx tsx scripts/test-discovery-providers.ts"
+    "test:discovery-providers": "npx tsx scripts/test-discovery-providers.ts",
+    "test:farmers-market": "npx tsx scripts/test-farmers-market-discovery.ts",
+    "test:basic-search-routing": "npx tsx scripts/test-basic-search-routing.ts"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",

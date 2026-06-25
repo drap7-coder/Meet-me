@@ -6,6 +6,8 @@ import type { LatLng, ScoredVenue, SearchHalfwayResponse, VenueCandidate } from 
 const OTM_CATEGORY_BY_SUBCATEGORY: Partial<Record<string, OpenTripMapCategory[]>> = {
   museums: ["museums", "cultural"],
   landmarks: ["historic", "architecture", "interesting_places"],
+  public_art: ["cultural", "architecture", "interesting_places"],
+  architecture: ["architecture", "historic", "interesting_places"],
   hiking: ["natural"],
   parks: ["natural"],
   gardens: ["natural"],
@@ -16,7 +18,8 @@ const OTM_CATEGORY_BY_SUBCATEGORY: Partial<Record<string, OpenTripMapCategory[]>
   bowling: ["sport"],
   scenic_drives: ["viewpoints", "natural"],
   overlooks: ["viewpoints"],
-  waterfront: ["natural", "interesting_places"]
+  waterfront: ["natural", "interesting_places"],
+  farmers_markets: ["interesting_places", "cultural", "natural"]
 };
 
 function otmCategoriesForIntent(intent: NormalizedExploreIntent): OpenTripMapCategory[] | undefined {

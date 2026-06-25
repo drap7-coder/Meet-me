@@ -1,6 +1,7 @@
 import {
   exploreCategoryConfig,
   inferExploreCategoryFromQuery,
+  inferExploreSubcategoryFromQuery,
   isTicketmasterExploreSubcategory,
   type ExploreCategory,
   type ExploreIntentPayload,
@@ -9,8 +10,9 @@ import {
   type ProviderKey,
   venueCategoryForExplore
 } from "@/lib/exploreIntent";
-import { detectLocalHappeningsSubcategory } from "@/lib/localHappenings";
+import { hasEventbriteApiKey } from "@/lib/providers/eventbriteEventProvider";
 import { logApiError } from "@/lib/serverLog";
+import { hasEventbriteFoodMarketSources, hasEventbriteSources } from "@/src/config/eventbriteSources";
 
 export type ExploreRoutingInput = {
   query: string;
@@ -38,10 +40,12 @@ export function logExploreRoutingDecision(intent: NormalizedExploreIntent, reaso
 
 function availableProviders(configured: ProviderKey[]): ProviderKey[] {
   const hasOtm = Boolean(process.env.OPENTRIPMAP_API_KEY?.trim());
+  const hasEventbrite = hasEventbriteApiKey() && hasEventbriteSources();
   return configured.filter((provider) => {
     if (provider === "opentripmap" || provider === "openstreetmap") return hasOtm;
     if (provider === "national_parks") return false; // reserved — not wired yet
     if (provider === "tmdb") return false;
+    if (provider === "eventbrite") return hasEventbrite;
     return true;
   });
 }
@@ -50,6 +54,15 @@ export function selectProvidersForExplore(
   category: ExploreCategory,
   subcategoryId: string | null
 ): ProviderKey[] {
+  if (subcategoryId === "farmers_markets") {
+    const farmersProviders: ProviderKey[] = ["opentripmap", "google_places"];
+    if (hasEventbriteApiKey() && hasEventbriteFoodMarketSources()) {
+      farmersProviders.push("eventbrite");
+    }
+    const available = availableProviders(farmersProviders);
+    return available.length ? available : ["google_places"];
+  }
+
   const config = exploreCategoryConfig(category);
   let providers = [...config.providers];
 
@@ -62,13 +75,7 @@ export function selectProvidersForExplore(
 }
 
 function inferSubcategoryFromQuery(category: ExploreCategory, query: string, subcategoryId: string | null): string | null {
-  if (subcategoryId) return subcategoryId;
-  if (category !== "outdoors") return null;
-
-  const local = detectLocalHappeningsSubcategory(query);
-  if (local === "farmers_markets") return "farmers_markets";
-
-  return null;
+  return inferExploreSubcategoryFromQuery(category, query, subcategoryId);
 }
 
 export function normalizeExploreIntent(input: ExploreRoutingInput): NormalizedExploreIntent {
@@ -149,8 +156,13 @@ export function shouldSupplementWithOpenTripMap(intent: NormalizedExploreIntent)
   return (
     intent.mode === "explore" &&
     intent.providers.includes("opentripmap") &&
-    (intent.category === "activities" || intent.category === "outdoors" || intent.preferOpenTripMap)
+    !intent.routeViaTicketmaster
   );
+}
+
+/** Typed or chip queries that should use Places + OpenTripMap instead of Ticketmaster-only. */
+export function shouldUseOpenTripMapExplorePath(intent: NormalizedExploreIntent): boolean {
+  return intent.mode === "explore" && intent.category !== null && shouldSupplementWithOpenTripMap(intent);
 }
 
 /** Prevent streaming and explore chip sets from appearing together in structured state. */

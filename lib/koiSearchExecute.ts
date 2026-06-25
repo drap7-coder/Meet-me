@@ -29,7 +29,8 @@ import { supplementExploreWithOpenTripMap } from "@/lib/exploreSearch";
 import {
   exploreIntentFromPayload,
   shouldRouteExploreToTicketmaster,
-  shouldSupplementWithOpenTripMap
+  shouldSupplementWithOpenTripMap,
+  shouldUseOpenTripMapExplorePath
 } from "@/lib/exploreRouting";
 import type { ExploreIntentPayload, NormalizedExploreIntent } from "@/lib/exploreIntent";
 
@@ -77,6 +78,71 @@ async function withExploreEnrichment(
 ): Promise<SearchHalfwayResponse> {
   if (!shouldSupplementWithOpenTripMap(intent)) return response;
   return supplementExploreWithOpenTripMap(response, intent, response.originA.location);
+}
+
+async function executeOpenTripMapExploreSearch(
+  query: string,
+  exploreIntent: NormalizedExploreIntent,
+  locationContext: SearchHalfwayRequest,
+  parseContext: CurrentLocationContext | undefined,
+  travelMode: SearchHalfwayRequest["travelMode"]
+): Promise<KoiSearchApiResponse | null> {
+  const localSubcategory = exploreIntent.subcategoryId === "farmers_markets" ? "farmers_markets" : null;
+  const localPlacesSearch = localSubcategory
+    ? resolveLocalHappeningsPlacesSearch(localSubcategory)
+    : null;
+
+  let searchForm: SearchHalfwayRequest = {
+    ...locationContext,
+    travelMode,
+    category: normalizeCategory(localPlacesSearch?.category ?? exploreIntent.venueCategory),
+    customQuery: localPlacesSearch?.customQuery ?? query,
+    searchMode: locationContext.searchMode ?? "single"
+  };
+
+  try {
+    const parsed = await parserProvider.parseSearch({
+      query,
+      context: parseContext,
+      form: locationContext
+    });
+    if (parsed.botMode !== "watch" && "form" in parsed && parsed.form) {
+      searchForm = {
+        ...parsed.form,
+        travelMode,
+        category: normalizeCategory(exploreIntent.venueCategory),
+        customQuery: query,
+        searchMode: parsed.form.searchMode ?? searchForm.searchMode
+      };
+    }
+  } catch {
+    // Parser optional — fall back to location context + inferred category.
+  }
+
+  const resolvedForm = resolveCurrentLocationInForm(searchForm, parseContext);
+  if (needsCurrentLocationResolution(resolvedForm)) {
+    return {
+      kind: "needs_location",
+      botMode: "places",
+      form: resolvedForm,
+      error: "Add your city, ZIP code, or address to search nearby."
+    };
+  }
+
+  const placesResponse = await googlePlacesProvider.searchHalfway({
+    ...resolvedForm,
+    travelMode,
+    insightQuery: query,
+    category: normalizeCategory(exploreIntent.venueCategory)
+  });
+
+  return {
+    kind: "places",
+    data: await withExploreEnrichment(
+      await enrichPlacesResponseWithEvents(placesResponse, query, resolvedForm),
+      exploreIntent
+    )
+  };
 }
 
 export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchApiResponse> {
@@ -134,6 +200,24 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
     }
   }
 
+  if (shouldUseOpenTripMapExplorePath(exploreIntent)) {
+    try {
+      const otmResponse = await executeOpenTripMapExploreSearch(
+        query,
+        exploreIntent,
+        locationContext,
+        parseContext,
+        travelMode
+      );
+      if (otmResponse) return otmResponse;
+    } catch (error) {
+      if (isLocationResolutionFailure(error)) {
+        return needsLocationResponse("places", error instanceof Error ? error.message : undefined);
+      }
+      logApiError("opentripmap-explore-search", error);
+    }
+  }
+
   const placeForm = resolveWatchPlaceSearchForm(query, locationContext);
   if (placeForm && !isMovieTheaterEventsQuery(query)) {
     const resolvedPlaceForm = resolveCurrentLocationInForm(placeForm, parseContext);
@@ -149,6 +233,7 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
     const placeResponse = await googlePlacesProvider.searchHalfway({
       ...resolvedPlaceForm,
       travelMode,
+      customQuery: exploreIntent.category ? query : resolvedPlaceForm.customQuery,
       insightQuery: query,
       category: normalizeCategory(
         exploreIntent.category ? exploreIntent.venueCategory : resolvedPlaceForm.category
@@ -234,6 +319,7 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
   const placesResponse = await googlePlacesProvider.searchHalfway({
     ...resolvedForm,
     travelMode,
+    customQuery: exploreIntent.category ? query : resolvedForm.customQuery,
     insightQuery: query,
     category: normalizeCategory(exploreIntent.category ? exploreIntent.venueCategory : resolvedForm.category)
   });

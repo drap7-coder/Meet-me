@@ -26,6 +26,8 @@ assert(
   "no Things to Do label"
 );
 
+process.env.OPENTRIPMAP_API_KEY = "test-key";
+
 const yankeesState: BuilderState = {
   selectedMode: "explore",
   exploreCategory: "sports",
@@ -85,6 +87,8 @@ const hikingIntent = normalizeExploreIntent({
   structured: false
 });
 assert(hikingIntent.category === "outdoors", "hiking query infers outdoors");
+assert(hikingIntent.subcategoryId === "hiking", "hiking query infers hiking subcategory");
+assert(hikingIntent.preferOpenTripMap, "hiking prefers OpenTripMap");
 assert(exploreCategoryConfig("outdoors").providers.includes("opentripmap"), "outdoors config includes OTM");
 
 const thriftIntent = normalizeExploreIntent({
@@ -101,6 +105,24 @@ assert(farmersIntent.category === "outdoors", "farmers market infers outdoors");
 assert(farmersIntent.subcategoryId === "farmers_markets", "farmers market infers subcategory");
 assert(farmersIntent.venueCategory === "farmers_markets", "farmers market venue category");
 assert(!farmersIntent.routeViaTicketmaster, "farmers market does not route to ticketmaster");
+assert(farmersIntent.providers[0] === "opentripmap", "farmers market primary is OpenTripMap");
+assert(farmersIntent.providers.includes("google_places"), "farmers market includes places fallback");
+assert(!farmersIntent.providers.includes("eventbrite"), "eventbrite omitted without food_market sources");
+
+const foodProviders = selectProvidersForExplore("food_drink", null);
+assert(foodProviders[0] === "google_places" && foodProviders.length === 1, "food & drink is places primary");
+
+const sportsProviders = selectProvidersForExplore("sports", "baseball");
+assert(sportsProviders.includes("ticketmaster") && sportsProviders.includes("google_places"), "sports is ticketmaster + places");
+assert(!sportsProviders.includes("opentripmap"), "sports does not default to OTM");
+
+const outdoorsProviders = selectProvidersForExplore("outdoors", "hiking");
+assert(outdoorsProviders[0] === "opentripmap", "outdoors primary is OpenTripMap");
+assert(outdoorsProviders.includes("google_places"), "outdoors includes places fallback");
+
+const activitiesProviders = selectProvidersForExplore("activities", null);
+assert(activitiesProviders[0] === "opentripmap", "activities primary is OpenTripMap");
+assert(activitiesProviders.includes("google_places"), "activities includes places fallback");
 
 assert(
   validateExploreBuilderIsolation({

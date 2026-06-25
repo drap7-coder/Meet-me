@@ -1,6 +1,6 @@
 import type { EventResult } from "@/lib/eventResult";
 import { formatEventDistanceChip } from "@/lib/eventDistance";
-import type { TrendingNearYouCard } from "@/lib/trendingNearYou";
+import type { TrendingNearYouCard } from "@/lib/trendingNearYouTypes";
 
 const FARMERS_MARKET_RE =
   /\b(?:farmers? markets?|farm market|produce market|public market|fresh market|market day)\b/i;

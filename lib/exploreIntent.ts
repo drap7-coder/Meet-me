@@ -16,6 +16,7 @@ export type ExploreCategory =
 export type ProviderKey =
   | "google_places"
   | "ticketmaster"
+  | "eventbrite"
   | "opentripmap"
   | "openstreetmap"
   | "national_parks"
@@ -89,6 +90,7 @@ const ACTIVITIES_REFINEMENTS: BuilderRefinement[] = [
   { id: "arcades", label: "Arcades", group: "type", noun: "arcades", category: "arcades" },
   { id: "axe_throwing", label: "Axe throwing", group: "type", noun: "axe throwing", category: "activities" },
   { id: "museums", label: "Museums", group: "type", noun: "museums", category: "museums" },
+  { id: "public_art", label: "Public art", group: "type", noun: "public art", category: "custom" },
   { id: "spas", label: "Spas", group: "type", noun: "spas", category: "activities" },
   { id: "landmarks", label: "Landmarks", group: "type", noun: "landmarks", category: "activities" },
   { id: "thrift_stores", label: "Thrift stores", group: "type", noun: "thrift stores", category: "thrifting" },
@@ -122,7 +124,7 @@ export const EXPLORE_CATEGORIES: ExploreCategoryConfig[] = [
     emoji: "🍽️",
     description: "Restaurants, coffee, brunch, bars, breweries, dessert",
     noun: "restaurants",
-    providers: ["google_places", "opentripmap"],
+    providers: ["google_places"],
     defaultVenueCategory: "restaurant",
     subtypeLabel: "Type",
     refinements: FOOD_DRINK_REFINEMENTS,
@@ -134,7 +136,7 @@ export const EXPLORE_CATEGORIES: ExploreCategoryConfig[] = [
     emoji: "🌙",
     description: "Cocktails, live music, dancing, lounges, late-night food",
     noun: "nightlife spots",
-    providers: ["google_places", "opentripmap"],
+    providers: ["google_places"],
     defaultVenueCategory: "cocktail_bars",
     subtypeLabel: "Type",
     refinements: NIGHTLIFE_REFINEMENTS
@@ -145,7 +147,7 @@ export const EXPLORE_CATEGORIES: ExploreCategoryConfig[] = [
     emoji: "🎟️",
     description: "Concerts, comedy, theater, festivals, family events",
     noun: "events and live shows",
-    providers: ["ticketmaster"],
+    providers: ["ticketmaster", "eventbrite"],
     defaultVenueCategory: "events",
     subtypeLabel: "Type",
     refinements: EVENTS_REFINEMENTS
@@ -156,7 +158,7 @@ export const EXPLORE_CATEGORIES: ExploreCategoryConfig[] = [
     emoji: "🏟️",
     description: "Live sports, sports bars, golf, pickleball, places to play",
     noun: "live sports",
-    providers: ["ticketmaster", "google_places", "opentripmap"],
+    providers: ["ticketmaster", "google_places"],
     defaultVenueCategory: "events",
     subtypeLabel: "Type",
     refinements: SPORTS_REFINEMENTS
@@ -178,7 +180,7 @@ export const EXPLORE_CATEGORIES: ExploreCategoryConfig[] = [
     emoji: "🌲",
     description: "Parks, hikes, gardens, waterfronts, scenic places",
     noun: "outdoor places",
-    providers: ["opentripmap", "national_parks", "openstreetmap"],
+    providers: ["opentripmap", "google_places"],
     defaultVenueCategory: "park",
     subtypeLabel: "Type",
     refinements: OUTDOORS_REFINEMENTS
@@ -229,30 +231,13 @@ export type ExploreIntentPayload = {
   providers?: ProviderKey[];
 };
 
-const THRIFT_PATTERN =
-  /\b(?:thrift|vintage|antique|record store|used book|architectural salvage|secondhand)\b/i;
-const OUTDOORS_PATTERN =
-  /\b(?:hike|hiking|trail|waterfall|park|garden|waterfront|overlook|scenic|nature preserve|farmers market)\b/i;
-const NIGHTLIFE_PATTERN = /\b(?:cocktail|nightlife|dance club|live music|lounge|rooftop bar|late[\s-]?night)\b/i;
-const EVENTS_PATTERN = /\b(?:concert|comedy|theater|theatre|festival|show tonight|tickets)\b/i;
-const SPORTS_LIVE_PATTERN = /\b(?:game tonight|vs\.| vs |yankees|mets|eagles|phillies|live sports)\b/i;
-const FOOD_PATTERN = /\b(?:restaurant|sushi|brunch|coffee|eat|dinner|lunch|food|brewery|pizza)\b/i;
-
-/** Infer explore category from natural language when the user did not pick a chip. */
-export function inferExploreCategoryFromQuery(query: string): ExploreCategory | null {
-  const value = query.trim().toLowerCase();
-  if (!value) return null;
-
-  if (THRIFT_PATTERN.test(value)) return "activities";
-  if (SPORTS_LIVE_PATTERN.test(value) && !/\bsports bar\b/i.test(value)) return "sports";
-  if (EVENTS_PATTERN.test(value)) return "events";
-  if (OUTDOORS_PATTERN.test(value)) return "outdoors";
-  if (NIGHTLIFE_PATTERN.test(value)) return "nightlife";
-  if (FOOD_PATTERN.test(value)) return "food_drink";
-  if (/\b(?:bowling|arcade|mini golf|museum|spa|axe throwing)\b/i.test(value)) return "activities";
-
-  return null;
-}
+export {
+  classifyExploreQuery,
+  inferExploreCategoryFromQuery,
+  inferExploreSubcategoryFromQuery,
+  isOpenTripMapFriendlyQuery,
+  type QueryClassification
+} from "@/lib/exploreQueryClassification";
 
 export function ticketmasterSubcategoryIds(): Set<string> {
   return new Set([

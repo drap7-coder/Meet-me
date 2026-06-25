@@ -67,8 +67,9 @@ export type EventbriteSource = {
  *     { id: "YOUR_ORG_ID", label: "Headhouse Farmers Market", city: "Philadelphia", category: "food_markets" },
  *   ];
  *
- * Sources with category "food_markets" power the Trending Near You farmers market card.
- * Only those sources are queried for that card, keeping Eventbrite API calls minimal.
+ * Sources with category "food_markets" optionally enrich the Trending Near You
+ * farmers market card (OpenTripMap is primary). Only those sources are queried
+ * for that enrichment, keeping Eventbrite API calls minimal.
  */
 
 /**
@@ -98,7 +99,7 @@ export function hasEventbriteSources(): boolean {
   return EVENTBRITE_ORGANIZATION_SOURCES.length > 0 || EVENTBRITE_VENUE_SOURCES.length > 0;
 }
 
-/** Sources tagged for the Trending Near You farmers market card — limits Eventbrite API calls. */
+/** Sources tagged for optional farmers market enrichment — limits Eventbrite API calls. */
 export function getEventbriteFoodMarketSources(): {
   organizations: EventbriteSource[];
   venues: EventbriteSource[];

@@ -83,10 +83,23 @@ export async function POST(request: Request) {
     });
 
     if (error instanceof ParseSearchError) {
+      const details = error.details ?? {};
+      if (details.needsLocation) {
+        return NextResponse.json(
+          {
+            kind: "needs_location",
+            botMode: "places",
+            error: error.message,
+            ...details
+          },
+          { status: error.status }
+        );
+      }
+
       return NextResponse.json(
         {
           error: error.message,
-          ...error.details
+          ...details
         },
         { status: error.status }
       );

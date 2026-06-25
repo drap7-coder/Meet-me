@@ -7,6 +7,7 @@ import { KOI_EXAMPLE } from "@/lib/koiExamples";
 import { KOI_ROTATING_PLACEHOLDERS } from "@/lib/koiCapabilityExamples";
 import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
 import { hasStreamingWatchContext } from "@/lib/watchEvents";
+import { AddressAutocompleteInput } from "@/app/components/AddressAutocompleteInput";
 import { useSearchPromptAssist } from "@/app/components/SearchPromptAssist";
 import { BRAND } from "@/src/config/branding";
 import { LocationPinIcon } from "@/app/components/SavedLocationBadge";
@@ -36,7 +37,7 @@ type Props = {
   onPersistUserAddress?: (address: string) => void;
   onUseLocation: () => void;
   onShowZipFallback: () => void;
-  onSubmitManualLocation: (input: string) => void;
+  onSubmitManualLocation: (input: string, placeId?: string) => void;
   showLocationActions?: boolean;
   locating?: boolean;
   resolvingManual?: boolean;
@@ -128,6 +129,8 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     manualLocationError,
     locationSavedMessage,
     submitError,
+    locationContext,
+    defaultUserAddress,
     onSubmitQuery,
     onNeedsLocation,
     onPrefetchQuery,
@@ -145,6 +148,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
   const [manualLocationInput, setManualLocationInput] = useState("");
+  const [manualLocationPlaceId, setManualLocationPlaceId] = useState<string | undefined>();
   const [watchActiveSubcategory, setWatchActiveSubcategory] = useState<WatchSubcategory>(DEFAULT_WATCH_SUBCATEGORY);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -160,6 +164,13 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     setQuery(transcript);
     if (error) setError("");
   });
+
+  useEffect(() => {
+    if (!showManualFallback) return;
+    const seed = defaultUserAddress?.trim() || locationContext?.locationA?.trim() || "";
+    setManualLocationInput(seed);
+    setManualLocationPlaceId(locationContext?.locationAPlaceId);
+  }, [defaultUserAddress, locationContext?.locationA, locationContext?.locationAPlaceId, showManualFallback]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -258,7 +269,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
 
   function handleManualLocationSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    onSubmitManualLocation(manualLocationInput);
+    onSubmitManualLocation(manualLocationInput, manualLocationPlaceId);
   }
 
   const busy = loading;
@@ -267,6 +278,11 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   const onHero = surface === "hero";
   const heroFieldClass = "koi-hero-field h-11 w-full px-4 text-base outline-none transition disabled:cursor-not-allowed disabled:opacity-60";
   const fieldClass = "koi-field h-11 w-full px-4 text-base outline-none transition placeholder:text-slate/60 disabled:cursor-not-allowed disabled:opacity-60";
+  const heroManualAddressClass = `${heroFieldClass} min-w-0 pl-10 pr-11`;
+  const pageManualAddressClass = `${fieldClass} min-w-0 pl-10 pr-11`;
+  const manualAddressLabelClass = onHero ? "sr-only" : "text-sm font-bold text-ink";
+  const manualAddressSelectedClass = onHero ? "text-xs font-semibold text-white/75" : "text-xs font-semibold text-clay";
+  const manualAddressStatusClass = onHero ? "text-xs font-semibold text-white/60" : "text-xs font-semibold text-slate";
   const rotatingPlaceholder = KOI_ROTATING_PLACEHOLDERS[placeholderIndex] ?? BRAND.searchPlaceholder;
   const combinedError = error.trim() || submitError?.trim() || "";
   const locationPromptMessage = combinedError || "Add your location so Koi can search nearby.";
@@ -440,19 +456,28 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
             <LocationPinIcon className="mt-0.5 h-4 w-4 shrink-0 text-koi" />
             <p className={`min-w-0 flex-1 text-sm font-semibold leading-6 ${promptTextClass}`}>{manualPromptMessage}</p>
           </div>
-          <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-start">
             <div className="relative min-w-0 flex-1">
               <LocationPinIcon
-                className={`pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${onHero ? "text-koi" : "text-watch"}`}
+                className={`pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 ${onHero ? "text-koi" : "text-watch"}`}
               />
-              <input
-                type="text"
+              <AddressAutocompleteInput
+                label=""
                 value={manualLocationInput}
-                onChange={(event) => setManualLocationInput(event.target.value)}
+                placeId={manualLocationPlaceId}
                 placeholder="City, ZIP code, or address"
-                autoComplete="postal-code"
-                disabled={locationBusy || busy}
-                className={`h-11 w-full min-w-0 pl-10 pr-4 text-base outline-none transition disabled:cursor-not-allowed disabled:opacity-60 ${onHero ? heroFieldClass : fieldClass}`}
+                inputClassName={onHero ? heroManualAddressClass : pageManualAddressClass}
+                labelClassName={manualAddressLabelClass}
+                selectedClassName={manualAddressSelectedClass}
+                statusClassName={manualAddressStatusClass}
+                onChange={(text, placeId) => {
+                  setManualLocationInput(text);
+                  setManualLocationPlaceId(placeId);
+                }}
+                onClear={() => {
+                  setManualLocationInput("");
+                  setManualLocationPlaceId(undefined);
+                }}
               />
             </div>
             <button

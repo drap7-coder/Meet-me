@@ -18,7 +18,9 @@ const yankeesState: BuilderState = {
   streamingType: null,
   streamingVibe: null,
   genre: null,
-  streamingServices: new Set()
+  streamingServices: new Set(),
+  eventWhen: null,
+  eventDate: null
 };
 
 const yankeesQuery = buildPlaceQuery(yankeesState);

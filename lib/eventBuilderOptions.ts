@@ -4,9 +4,7 @@ import { MAJOR_SPORTS, SPORTS_TEAMS } from "@/lib/sportsTeams";
 export const EVENT_TYPE_REFINEMENTS: BuilderRefinement[] = [
   { id: "concerts", label: "🎵 Concerts", group: "type", noun: "concerts" },
   { id: "comedy", label: "😂 Comedy", group: "type", noun: "comedy shows" },
-  { id: "festivals", label: "🎪 Festivals", group: "type", noun: "festivals" },
   { id: "theater", label: "🎭 Theater", group: "type", noun: "theater shows" },
-  { id: "date_night", label: "💕 Date Night", group: "type", noun: "date night events" },
   { id: "weekend", label: "🎉 This Weekend", group: "type", noun: "things to do this weekend" }
 ];
 

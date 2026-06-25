@@ -1,5 +1,6 @@
 "use client";
 
+import { AddressAutocompleteInput } from "@/app/components/AddressAutocompleteInput";
 import { SearchPromptWhereWhen, useSearchPromptAssist } from "@/app/components/SearchPromptAssist";
 import type { SearchSubmitOptions } from "@/lib/searchLocation";
 import type { SearchHalfwayRequest, WatchSubcategory } from "@/lib/types";
@@ -18,6 +19,11 @@ type Props = {
   surface?: "hero" | "page";
   onSearchPlaces: (form: SearchHalfwayRequest, options?: SearchSubmitOptions) => void;
   onSearchWatch: (query: string, subcategory: WatchSubcategory) => void;
+};
+
+type LocationDraft = {
+  text: string;
+  placeId?: string;
 };
 
 export function ClassicSearchControls({
@@ -49,23 +55,36 @@ export function ClassicSearchControls({
     : "grid gap-4 rounded-[16px] border border-white/10 bg-ink/35 p-3 sm:p-4";
   const helperTextClass = onPage ? "text-sm font-medium leading-6 text-slate/75" : "text-sm font-medium leading-6 text-white/60";
   const footerTextClass = onPage ? "text-xs font-semibold leading-5 text-slate/70" : "text-xs font-semibold leading-5 text-white/55";
-  const [destination, setDestination] = useState("");
-  const [halfwayLocationA, setHalfwayLocationA] = useState("");
-  const [halfwayLocationB, setHalfwayLocationB] = useState("");
+  const labelClassName = onPage
+    ? "text-xs font-black uppercase tracking-[0.14em] text-slate/70"
+    : "text-xs font-black uppercase tracking-[0.14em] text-white/55";
+  const selectedClassName = onPage ? "text-xs font-semibold text-koi" : "text-xs font-semibold text-koi";
+  const statusClassName = onPage ? "text-xs font-semibold text-slate/70" : "text-xs font-semibold text-white/50";
+  const addressInputClass = onPage ? pageAddressInputClass : heroAddressInputClass;
+  const [destination, setDestination] = useState<LocationDraft>({ text: "" });
+  const [halfwayLocationA, setHalfwayLocationA] = useState<LocationDraft>({ text: "" });
+  const [halfwayLocationB, setHalfwayLocationB] = useState<LocationDraft>({ text: "" });
   const watchSubcategory = form.watchSubcategory ?? DEFAULT_WATCH_SUBCATEGORY;
   const previousMode = useRef(mode);
 
   useEffect(() => {
     if (mode === "halfway" && previousMode.current !== "halfway") {
-      setHalfwayLocationA("");
-      setHalfwayLocationB("");
+      setHalfwayLocationA({ text: "" });
+      setHalfwayLocationB({ text: "" });
+    }
+    if (mode === "destination" && previousMode.current !== "destination") {
+      setDestination({ text: "" });
     }
     previousMode.current = mode;
   }, [mode]);
 
   function useSavedLocationForHalfwayA() {
     const saved = savedLocationLabel.trim() || form.locationA.trim();
-    if (saved) setHalfwayLocationA(saved);
+    if (!saved) return;
+    setHalfwayLocationA({
+      text: saved,
+      placeId: form.locationAPlaceId
+    });
   }
 
   function submitBuilderSearch() {
@@ -83,16 +102,16 @@ export function ClassicSearchControls({
     };
 
     if (mode === "halfway") {
-      searchForm.locationA = halfwayLocationA.trim();
-      searchForm.locationB = halfwayLocationB.trim();
-      searchForm.locationAPlaceId = undefined;
+      searchForm.locationA = halfwayLocationA.text.trim();
+      searchForm.locationB = halfwayLocationB.text.trim();
+      searchForm.locationAPlaceId = halfwayLocationA.placeId;
+      searchForm.locationBPlaceId = halfwayLocationB.placeId;
       searchForm.locationACoordinates = undefined;
-      searchForm.locationBPlaceId = undefined;
       searchForm.locationBCoordinates = undefined;
-    } else if (mode === "destination" && destination.trim()) {
-      searchForm.locationA = destination.trim();
+    } else if (mode === "destination" && destination.text.trim()) {
+      searchForm.locationA = destination.text.trim();
       searchForm.locationB = "";
-      searchForm.locationAPlaceId = undefined;
+      searchForm.locationAPlaceId = destination.placeId;
       searchForm.locationACoordinates = undefined;
     } else {
       searchForm.locationB = "";
@@ -144,45 +163,61 @@ export function ClassicSearchControls({
               <SearchPromptWhereWhen />
 
               {mode === "near_me" ? (
-                <Field label="Location">
+                <Field label="Location" labelClassName={labelClassName}>
                   <div
                     className={`flex h-11 items-center rounded-lg border px-3 text-sm ${
                       savedLocationLabel.trim()
-                        ? "border-koi/40 bg-koi/10 font-black text-koi drop-shadow-[0_0_10px_rgba(255,90,0,0.35)]"
-                        : "border-white/12 bg-white/[0.08] font-semibold text-white/85"
+                        ? onPage
+                          ? "border-koi/40 bg-koi/10 font-black text-koi"
+                          : "border-koi/40 bg-koi/10 font-black text-koi drop-shadow-[0_0_10px_rgba(255,90,0,0.35)]"
+                        : onPage
+                          ? "border-line bg-white font-semibold text-ink"
+                          : "border-white/12 bg-white/[0.08] font-semibold text-white/85"
                     }`}
                   >
                     {savedLocationLabel.trim() || "Set your location above"}
                   </div>
-                  <p className="text-xs font-medium text-white/45">Uses your saved location. Tap Change above to update.</p>
+                  <p className={statusClassName}>Uses your saved location. Tap Change above to update.</p>
                 </Field>
               ) : null}
 
               {mode === "halfway" ? (
                 <div className="grid gap-3">
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <Field label="Location A">
-                      <input
-                        value={halfwayLocationA}
-                        onChange={(event) => setHalfwayLocationA(event.target.value)}
-                        placeholder="Starting address or city"
-                        className={locationInputClass(halfwayLocationA)}
-                      />
-                    </Field>
-                    <Field label="Location B">
-                      <input
-                        value={halfwayLocationB}
-                        onChange={(event) => setHalfwayLocationB(event.target.value)}
-                        placeholder="Other address or city"
-                        className={locationInputClass(halfwayLocationB)}
-                      />
-                    </Field>
+                    <AddressAutocompleteInput
+                      label="Location A"
+                      value={halfwayLocationA.text}
+                      placeId={halfwayLocationA.placeId}
+                      placeholder="Starting address or city"
+                      inputClassName={addressInputClass(halfwayLocationA.text, halfwayLocationA.placeId)}
+                      labelClassName={labelClassName}
+                      selectedClassName={selectedClassName}
+                      statusClassName={statusClassName}
+                      onChange={(text, placeId) => setHalfwayLocationA({ text, placeId })}
+                      onClear={() => setHalfwayLocationA({ text: "" })}
+                    />
+                    <AddressAutocompleteInput
+                      label="Location B"
+                      value={halfwayLocationB.text}
+                      placeId={halfwayLocationB.placeId}
+                      placeholder="Other address or city"
+                      inputClassName={addressInputClass(halfwayLocationB.text, halfwayLocationB.placeId)}
+                      labelClassName={labelClassName}
+                      selectedClassName={selectedClassName}
+                      statusClassName={statusClassName}
+                      onChange={(text, placeId) => setHalfwayLocationB({ text, placeId })}
+                      onClear={() => setHalfwayLocationB({ text: "" })}
+                    />
                   </div>
                   {savedLocationLabel.trim() ? (
                     <button
                       type="button"
                       onClick={useSavedLocationForHalfwayA}
-                      className="justify-self-start text-xs font-bold text-white/55 underline decoration-white/25 underline-offset-2 transition hover:text-white/85"
+                      className={
+                        onPage
+                          ? "justify-self-start text-xs font-bold text-slate/70 underline decoration-line underline-offset-2 transition hover:text-ink"
+                          : "justify-self-start text-xs font-bold text-white/55 underline decoration-white/25 underline-offset-2 transition hover:text-white/85"
+                      }
                     >
                       Use saved location for Location A
                     </button>
@@ -191,14 +226,18 @@ export function ClassicSearchControls({
               ) : null}
 
               {mode === "destination" ? (
-                <Field label="Near">
-                  <input
-                    value={destination}
-                    onChange={(event) => setDestination(event.target.value)}
-                    placeholder="Citizens Bank Park"
-                    className={locationInputClass(destination)}
-                  />
-                </Field>
+                <AddressAutocompleteInput
+                  label="Near"
+                  value={destination.text}
+                  placeId={destination.placeId}
+                  placeholder="City, address, or landmark"
+                  inputClassName={addressInputClass(destination.text, destination.placeId)}
+                  labelClassName={labelClassName}
+                  selectedClassName={selectedClassName}
+                  statusClassName={statusClassName}
+                  onChange={(text, placeId) => setDestination({ text, placeId })}
+                  onClear={() => setDestination({ text: "" })}
+                />
               ) : null}
             </>
           )}
@@ -222,19 +261,37 @@ export function ClassicSearchControls({
   );
 }
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
+function Field({
+  label,
+  labelClassName,
+  children
+}: {
+  label: string;
+  labelClassName: string;
+  children: ReactNode;
+}) {
   return (
     <label className="grid gap-1.5">
-      <span className="text-xs font-black uppercase tracking-[0.14em] text-white/55">{label}</span>
+      <span className={labelClassName}>{label}</span>
       {children}
     </label>
   );
 }
 
-const inputClass =
-  "h-11 w-full rounded-lg border border-white/12 bg-white px-3 text-base text-ink outline-none transition focus:border-koi focus:ring-4 focus:ring-koi/15";
+const heroAddressInputBase =
+  "h-11 w-full rounded-lg border bg-white px-3 pr-11 text-base text-ink outline-none transition focus:border-koi focus:ring-4 focus:ring-koi/15";
 
-function locationInputClass(value: string) {
-  if (!value.trim()) return inputClass;
-  return `${inputClass} border-koi/40 font-black text-koi shadow-[0_0_12px_rgba(255,90,0,0.22)]`;
+const pageAddressInputBase =
+  "h-11 w-full rounded-lg border border-line bg-white px-3 pr-11 text-base text-ink outline-none transition focus:border-koi focus:ring-4 focus:ring-koi/15";
+
+function heroAddressInputClass(value: string, placeId?: string) {
+  if (!value.trim()) return `${heroAddressInputBase} border-white/12`;
+  if (placeId) return `${heroAddressInputBase} border-koi/40 font-black text-koi shadow-[0_0_12px_rgba(255,90,0,0.22)]`;
+  return `${heroAddressInputBase} border-white/12`;
+}
+
+function pageAddressInputClass(value: string, placeId?: string) {
+  if (!value.trim()) return pageAddressInputBase;
+  if (placeId) return `${pageAddressInputBase} border-koi/40 font-black text-koi`;
+  return pageAddressInputBase;
 }

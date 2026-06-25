@@ -1,4 +1,4 @@
-import { shouldFetchTicketmasterEvents, classifyLocalEventProfile, isMusicEventQuery, isSportsEventQuery, isTeamSpecificSportsQuery, hasNamedTeamInQuery, isPureEventQuery, eventTimeWindow } from "@/lib/localEventIntent";
+import { shouldFetchTicketmasterEvents, classifyLocalEventProfile, isMusicEventQuery, isSportsEventQuery, isTeamSpecificSportsQuery, hasNamedTeamInQuery, isPureEventQuery, eventTimeWindow, queryRequiresEventLocation } from "@/lib/localEventIntent";
 import { detectEventsIntent } from "@/lib/watchEvents";
 
 const SHOULD_TRIGGER = [
@@ -7,7 +7,6 @@ const SHOULD_TRIGGER = [
   { query: "live music near me", profile: "music" },
   { query: "jazz near me", profile: "music" },
   { query: "comedy shows tonight", profile: "tonight" },
-  { query: "date night", profile: "date_night" },
   { query: "Phillies game tonight", profile: "sports" },
   { query: "live sports near me", profile: "sports" },
   { query: "NBA games this weekend", profile: "sports" }
@@ -53,10 +52,9 @@ function run() {
     "concerts near me",
     "jazz near me",
     "comedy shows tonight",
-    "Phillies tickets Saturday",
-    "festivals this weekend"
+    "Phillies tickets Saturday"
   ];
-  const blendedEvents = ["date night Friday", "things to do this weekend", "fun saturday", "family activities"];
+  const blendedEvents = ["date night Friday", "festivals this weekend", "things to do this weekend", "fun saturday", "family activities"];
 
   const pureOk =
     pureEvents.every((query) => isPureEventQuery(query)) &&
@@ -97,6 +95,15 @@ function run() {
     !isMusicEventQuery("comedy shows tonight");
   console.log(`${musicOk ? "PASS" : "FAIL"}  music    detects concert/live music without catching comedy`);
   if (!musicOk) failed += 1;
+
+  const locationGateOk =
+    queryRequiresEventLocation("comedy shows tonight") &&
+    queryRequiresEventLocation("concerts near me") &&
+    queryRequiresEventLocation("events near me") &&
+    !queryRequiresEventLocation("Yankees games") &&
+    !queryRequiresEventLocation("coffee near me");
+  console.log(`${locationGateOk ? "PASS" : "FAIL"}  location event queries require location except nationwide teams`);
+  if (!locationGateOk) failed += 1;
 
   if (failed > 0) process.exitCode = 1;
 }

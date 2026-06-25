@@ -6,7 +6,10 @@ export type CurrentLocationContext = Pick<
 >;
 
 export function looksLikeCurrentLocationQuery(query: string) {
-  return /\b(?:near|around|by|close to)\s+(?:me|my location|current location|here)\b/i.test(query);
+  return (
+    /\b(?:near|around|by|close to)\s+(?:me|my location|current location|here)\b/i.test(query) ||
+    /\bnearby\b/i.test(query)
+  );
 }
 
 export function isCurrentLocationReference(value: string) {

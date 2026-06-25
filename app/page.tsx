@@ -5,7 +5,8 @@ import { KoiThinkingLoader } from "@/app/components/KoiThinkingLoader";
 import { EventResultCard } from "@/app/components/EventResultCard";
 import { TopPickCard } from "@/app/components/TopPickCard";
 import { AiSearchBox, type AiSearchBoxHandle } from "@/app/components/AiSearchBox";
-import { extractSportsSearchKeyword, hasNamedTeamInQuery, isTeamSpecificSportsQuery } from "@/lib/localEventIntent";
+import { extractSportsSearchKeyword, hasNamedTeamInQuery, isTeamSpecificSportsQuery, queryRequiresEventLocation } from "@/lib/localEventIntent";
+import { resolveEventSearchForm } from "@/lib/koiSearchExecute";
 import { CompactResultsHeader } from "@/app/components/home/CompactResultsHeader";
 import { MarketingHero } from "@/app/components/home/MarketingHero";
 import { HeroPopularSearches } from "@/app/components/home/HeroPopularSearches";
@@ -45,6 +46,7 @@ import { buildTopPick } from "@/lib/topPick";
 import { trackEvent } from "@/lib/analytics";
 import { DEFAULT_WATCH_SUBCATEGORY } from "@/lib/watchBrowse";
 import {
+  eventSearchLocationReady,
   looksLikeCurrentLocationQuery,
   needsCurrentLocationResolution,
   resolveCurrentLocationInForm,
@@ -329,14 +331,14 @@ export default function HomePage() {
     setError("");
   }
 
-  async function resolveManualLocation(input: string) {
+  async function resolveManualLocation(input: string, placeId?: string) {
     const trimmed = input.trim();
     if (!trimmed) {
       setManualLocationError("Enter a ZIP code or city.");
       setLocationUiState("manual_error");
       return;
     }
-    if (!isValidManualLocationInput(trimmed)) {
+    if (!placeId && !isValidManualLocationInput(trimmed)) {
       setManualLocationError("We couldn't find that location. Try a ZIP code or city/state.");
       setLocationUiState("manual_error");
       return;
@@ -346,7 +348,7 @@ export default function HomePage() {
     setManualLocationError("");
     setLocationUiState("manual_resolving");
     try {
-      const resolved = await geocodeManualLocation(trimmed);
+      const resolved = await geocodeManualLocation(trimmed, placeId);
       const nextForm: SearchHalfwayRequest = {
         ...form,
         locationA: resolved.locationA,
@@ -453,7 +455,7 @@ export default function HomePage() {
       eventCount: data.events?.length ?? 0,
       hasEvents: Boolean(data.events?.length),
       hasWeather: true,
-      hasPreferences: data.preferences.length > 0
+      hasPreferences: Boolean(data.preferences?.length)
     });
     if (data.events?.length) {
       trackEvent("event_search_completed", {
@@ -577,7 +579,8 @@ export default function HomePage() {
         if (!query) throw new Error("Tell Koi what events you want to find.");
         setLastAskQuery(query);
 
-        let eventLocationContext = resolveCurrentLocationInForm(
+        let eventLocationContext = resolveEventSearchForm(
+          query,
           intent.locationContext ?? form,
           getActiveLocationContext()
         );
@@ -607,21 +610,19 @@ export default function HomePage() {
         }
 
         if (
-          looksLikeCurrentLocationQuery(query) &&
-          needsCurrentLocationResolution({ ...eventLocationContext, locationA: "me", searchMode: "single" })
+          !isTeamSpecificSportsQuery(query) &&
+          !eventSearchLocationReady(eventLocationContext)
         ) {
+          setSearchKind("events");
+          setResults(null);
+          setWatchEventsResult(null);
           setPendingRetry({ kind: "events", query });
           setShowLocationActions(true);
           setShowManualFallback(false);
           setError("Add your location to search nearby.");
-          return;
-        }
-
-        if (!eventLocationContext.locationA.trim() || needsCurrentLocationResolution(eventLocationContext)) {
-          setSearchKind("events");
-          setResults(null);
-          setWatchEventsResult(null);
-          openLocationFallback({ kind: "events", query }, "Add your location to search nearby.");
+          window.requestAnimationFrame(() => {
+            document.getElementById("ask-koi")?.scrollIntoView({ behavior: "smooth", block: "center" });
+          });
           return;
         }
 
@@ -646,7 +647,7 @@ export default function HomePage() {
         const result = data as WatchEventsResult;
         if (result.preview) {
           openLocationFallback({ kind: "events", query }, "Add your location to search nearby.");
-          throw new Error("Add your location to search nearby.");
+          return;
         }
 
         setShowClassicFallback(false);
@@ -690,17 +691,17 @@ export default function HomePage() {
             streamingServiceIds: intent.streamingServiceIds
           })
         });
-        const data = (await response.json()) as KoiSearchApiResponse & { error?: string };
+        const data = (await response.json()) as KoiSearchApiResponse & {
+          error?: string;
+          needsLocation?: boolean;
+          form?: SearchHalfwayRequest;
+        };
         if (!response.ok) {
-          if (response.status === 422 && data.kind === "needs_location") {
-            if (data.botMode === "places" && data.form) {
-              handleNeedsLocation(data.form);
-            } else {
-              setPendingRetry({ kind: "events", query });
-              setShowLocationActions(true);
-              setShowManualFallback(false);
-            }
-            setError(data.error ?? "Add your location to search nearby.");
+          if (
+            response.status === 422 &&
+            (data.kind === "needs_location" || data.needsLocation)
+          ) {
+            handleFreeformNeedsLocation(query, data);
             return;
           }
           throw new Error(data.error ?? "Search failed.");
@@ -802,6 +803,48 @@ export default function HomePage() {
     void executeSearch({ kind: "places", form: nextForm });
   }
 
+  function promptForEventLocation(query: string): boolean {
+    if (!queryRequiresEventLocation(query)) return false;
+
+    const context = getActiveLocationContext();
+    const eventForm = resolveEventSearchForm(query, form, context);
+    if (eventSearchLocationReady(eventForm)) return false;
+
+    setPendingRetry({ kind: "events", query });
+    setShowLocationActions(true);
+    setShowManualFallback(false);
+    setShowClassicFallback(false);
+    setFallbackKind("none");
+    setError("Add your location to search nearby.");
+    window.requestAnimationFrame(() => {
+      document.getElementById("ask-koi")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    return true;
+  }
+
+  function handleFreeformNeedsLocation(
+    query: string,
+    data: {
+      error?: string;
+      needsLocation?: boolean;
+      kind?: string;
+      botMode?: "places" | "events";
+      form?: SearchHalfwayRequest;
+    }
+  ) {
+    if (data.botMode === "places" && data.form) {
+      handleNeedsLocation(data.form);
+    } else {
+      setPendingRetry({ kind: "events", query });
+      setShowLocationActions(true);
+      setShowManualFallback(false);
+    }
+    setError(data.error ?? "Add your location to search nearby.");
+    window.requestAnimationFrame(() => {
+      document.getElementById("ask-koi")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }
+
   function handleNeedsLocation(pendingForm: SearchHalfwayRequest) {
     setPendingRetry({ kind: "places", form: pendingForm });
     setShowLocationActions(true);
@@ -825,6 +868,8 @@ export default function HomePage() {
       });
       return;
     }
+
+    if (promptForEventLocation(query)) return;
 
     void executeSearch({
       kind: "freeform",
@@ -920,6 +965,8 @@ export default function HomePage() {
     // Sports/events chip picks ("Yankees games", "Concerts near me") belong on the
     // koi-search events path — not search-halfway, which would call Google Places first.
     if (shouldRouteFilterSearchToFreeform(query, options)) {
+      if (promptForEventLocation(query)) return;
+
       const location = getActiveLocationContext();
       void executeSearch({
         kind: "freeform",
@@ -1136,7 +1183,17 @@ export default function HomePage() {
                   onPersistUserAddress={persistUserAddress}
                   onUseLocation={() => void requestUserLocation()}
                   onShowZipFallback={showZipFallback}
-                  onSubmitManualLocation={(input) => void resolveManualLocation(input)}
+                  onSubmitManualLocation={(input, placeId) => void resolveManualLocation(input, placeId)}
+                />
+                <ClassicSearchControls
+                  form={form}
+                  loading={loading}
+                  savedLocationLabel={activeLocationLabel}
+                  expanded={builderExpanded}
+                  onExpandedChange={handleBuilderExpanded}
+                  mode={builderMode}
+                  onSearchPlaces={runPlacesSearchFromBuilder}
+                  onSearchWatch={runWatchSearch}
                 />
                 <HeroPopularSearches busy={loading || locating || resolvingManual} onSelect={applyPopularSearch} />
                 <div className="h-px bg-white/10" aria-hidden="true" />
@@ -1150,16 +1207,6 @@ export default function HomePage() {
                   label={activeLocationLabel}
                   busy={loading || locating || resolvingManual}
                   onChange={openLocationChange}
-                />
-                <ClassicSearchControls
-                  form={form}
-                  loading={loading}
-                  savedLocationLabel={activeLocationLabel}
-                  expanded={builderExpanded}
-                  onExpandedChange={handleBuilderExpanded}
-                  mode={builderMode}
-                  onSearchPlaces={runPlacesSearchFromBuilder}
-                  onSearchWatch={runWatchSearch}
                 />
               </SearchPromptAssistProvider>
               <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
@@ -1249,7 +1296,18 @@ export default function HomePage() {
                   onPersistUserAddress={persistUserAddress}
                   onUseLocation={() => void requestUserLocation()}
                   onShowZipFallback={showZipFallback}
-                  onSubmitManualLocation={(input) => void resolveManualLocation(input)}
+                  onSubmitManualLocation={(input, placeId) => void resolveManualLocation(input, placeId)}
+                />
+                <ClassicSearchControls
+                  form={form}
+                  loading={loading}
+                  savedLocationLabel={activeLocationLabel}
+                  expanded={builderExpanded}
+                  onExpandedChange={handleBuilderExpanded}
+                  mode={builderMode}
+                  onSearchPlaces={runPlacesSearchFromBuilder}
+                  onSearchWatch={runWatchSearch}
+                  surface="page"
                 />
                 <HeroPopularSearches busy={loading || locating || resolvingManual} onSelect={applyPopularSearch} />
                 <SearchPromptModePicker />
@@ -1262,17 +1320,6 @@ export default function HomePage() {
                   label={activeLocationLabel}
                   busy={loading || locating || resolvingManual}
                   onChange={openLocationChange}
-                />
-                <ClassicSearchControls
-                  form={form}
-                  loading={loading}
-                  savedLocationLabel={activeLocationLabel}
-                  expanded={builderExpanded}
-                  onExpandedChange={handleBuilderExpanded}
-                  mode={builderMode}
-                  onSearchPlaces={runPlacesSearchFromBuilder}
-                  onSearchWatch={runWatchSearch}
-                  surface="page"
                 />
               </SearchPromptAssistProvider>
               <LocationFallbackPanel

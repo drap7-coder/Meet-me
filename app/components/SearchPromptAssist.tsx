@@ -11,6 +11,7 @@ import {
   vibeRefinementsFor,
   type LocalChipCategoryId
 } from "@/lib/searchBuilderOptions";
+import { EVENT_WHEN_OPTIONS, eventWhenChipLabel, eventWhenPhrase, minSelectableEventDate, type EventWhen } from "@/lib/eventDates";
 import { resolveEventTypeRefinement, sportsTeamChipLabel } from "@/lib/eventBuilderOptions";
 import { MUSIC_GENRES, musicGenreById, musicGenreChipLabel } from "@/lib/musicGenres";
 import { MUSIC_ARTISTS, musicArtistById, musicArtistChipLabel } from "@/lib/musicArtists";
@@ -60,6 +61,8 @@ export type BuilderState = {
   streamingVibe: WatchStreamVibe | null;
   genre: string | null;
   streamingServices: Set<string>;
+  eventWhen?: EventWhen | null;
+  eventDate?: string | null;
 };
 
 export type FilterPill = {
@@ -97,6 +100,8 @@ type AssistContextValue = {
   toggleGenre: (genre: string) => void;
   toggleStreamingVibe: (vibe: WatchStreamVibe) => void;
   toggleStreamingService: (id: string) => void;
+  toggleEventWhen: (when: EventWhen) => void;
+  setEventDate: (value: string) => void;
   removeFilterPill: (pillId: string) => void;
   applyPopularPreset: (preset: HeroPopularSearch) => void;
 };
@@ -128,7 +133,9 @@ function initialBuilderState(seed?: Pick<PickQueryOptions, "category" | "watchSu
       streamingType: seededTrending ? "movies" : normalizeStreamType(seed.watchSubcategory),
       streamingVibe: seededTrending ? "trending" : null,
       genre: null,
-      streamingServices: new Set<string>()
+      streamingServices: new Set<string>(),
+      eventWhen: null,
+      eventDate: null
     };
   }
 
@@ -143,7 +150,9 @@ function initialBuilderState(seed?: Pick<PickQueryOptions, "category" | "watchSu
     streamingType: null,
     streamingVibe: null,
     genre: null,
-    streamingServices: new Set<string>()
+    streamingServices: new Set<string>(),
+    eventWhen: null,
+    eventDate: null
   };
 }
 
@@ -194,7 +203,9 @@ export function SearchPromptAssistProvider({
           streamingType: null,
           streamingVibe: null,
           genre: null,
-          streamingServices: new Set<string>()
+          streamingServices: new Set<string>(),
+          eventWhen: null,
+          eventDate: null
         };
       }
 
@@ -210,7 +221,9 @@ export function SearchPromptAssistProvider({
           streamingType: null,
           streamingVibe: null,
           genre: null,
-          streamingServices: new Set<string>()
+          streamingServices: new Set<string>(),
+          eventWhen: null,
+          eventDate: null
         };
       }
 
@@ -225,7 +238,9 @@ export function SearchPromptAssistProvider({
         streamingType: null,
         streamingVibe: null,
         genre: null,
-        streamingServices: new Set<string>()
+        streamingServices: new Set<string>(),
+        eventWhen: null,
+        eventDate: null
       };
     });
   }
@@ -262,7 +277,9 @@ export function SearchPromptAssistProvider({
         streamingType: null,
         streamingVibe: null,
         genre: null,
-        streamingServices: new Set<string>()
+        streamingServices: new Set<string>(),
+        eventWhen: null,
+        eventDate: null
       };
     });
   }
@@ -286,7 +303,9 @@ export function SearchPromptAssistProvider({
         streamingType: null,
         streamingVibe: null,
         genre: null,
-        streamingServices: new Set<string>()
+        streamingServices: new Set<string>(),
+        eventWhen: null,
+        eventDate: null
       };
     });
   }
@@ -294,7 +313,16 @@ export function SearchPromptAssistProvider({
   function pickLocalWhat(id: LocalChipCategoryId) {
     commit((prev) => {
       if (prev.selectedMode === "local" && prev.localWhat === id) {
-        return { ...prev, localWhat: null, typeId: null, sportsTeamId: null, musicArtistId: null, extras: new Set<string>() };
+        return {
+          ...prev,
+          localWhat: null,
+          typeId: null,
+          sportsTeamId: null,
+          musicArtistId: null,
+          extras: new Set<string>(),
+          eventWhen: null,
+          eventDate: null
+        };
       }
       return {
         ...prev,
@@ -307,7 +335,9 @@ export function SearchPromptAssistProvider({
         streamingType: null,
         streamingVibe: null,
         genre: null,
-        streamingServices: new Set<string>()
+        streamingServices: new Set<string>(),
+        eventWhen: id === "events" ? prev.eventWhen : null,
+        eventDate: id === "events" ? prev.eventDate : null
       };
     });
   }
@@ -335,12 +365,20 @@ export function SearchPromptAssistProvider({
       const nextTypeId = prev.typeId === id ? null : id;
       const keepGenre =
         nextTypeId === "concerts" && prev.genre && musicGenreById(prev.genre) ? prev.genre : null;
+      let eventWhen = prev.eventWhen;
+      let eventDate = prev.eventDate;
+      if (nextTypeId === "weekend" && eventWhen === "weekend") {
+        eventWhen = null;
+        eventDate = null;
+      }
       return {
         ...prev,
         typeId: nextTypeId,
         sportsTeamId: null,
         musicArtistId: nextTypeId === "concerts" ? prev.musicArtistId : null,
-        genre: keepGenre
+        genre: keepGenre,
+        eventWhen,
+        eventDate
       };
     });
   }
@@ -387,7 +425,9 @@ export function SearchPromptAssistProvider({
       streamingType: null,
       streamingVibe: null,
       genre: null,
-      streamingServices: new Set<string>()
+      streamingServices: new Set<string>(),
+      eventWhen: null,
+      eventDate: null
     }));
   }
 
@@ -422,6 +462,30 @@ export function SearchPromptAssistProvider({
       else streamingServices.add(id);
       return { ...prev, streamingServices };
     });
+  }
+
+  function toggleEventWhen(when: EventWhen) {
+    commit((prev) => {
+      if (prev.eventWhen === when) {
+        return { ...prev, eventWhen: null, eventDate: null };
+      }
+      if (when === "date") {
+        return {
+          ...prev,
+          eventWhen: "date",
+          eventDate: prev.eventDate ?? minSelectableEventDate()
+        };
+      }
+      return { ...prev, eventWhen: when, eventDate: null };
+    });
+  }
+
+  function setEventDate(value: string) {
+    commit((prev) => ({
+      ...prev,
+      eventWhen: "date",
+      eventDate: value
+    }));
   }
 
   function removeFilterPill(pillId: string) {
@@ -466,6 +530,8 @@ export function SearchPromptAssistProvider({
         toggleGenre,
         toggleStreamingVibe,
         toggleStreamingService,
+        toggleEventWhen,
+        setEventDate,
         removeFilterPill,
         applyPopularPreset
       }}
@@ -557,6 +623,7 @@ export function SearchPromptDetailChips() {
   const streamGenres = streamType ? getWatchGenresForSubcategory(streamType) : [];
 
   const showSportsTeams = state.localWhat === "sports" && Boolean(state.typeId);
+  const showEventDates = state.localWhat === "events" && state.typeId !== "weekend";
   const showMusicGenres = state.localWhat === "events" && state.typeId === "concerts";
   const showMusicArtists = showMusicGenres;
   const localSportsTeams = showSportsTeams ? localTeamsForSport(state.typeId, userCoordinates) : [];
@@ -682,6 +749,13 @@ export function SearchPromptDetailChips() {
                   ))}
                 </ChipGroup>
 
+                {showEventDates ? (
+                  <>
+                    <div className={`h-px ${onPage ? "bg-line/60" : "bg-white/10"}`} aria-hidden="true" />
+                    <SearchPromptEventWhen onPage={onPage} />
+                  </>
+                ) : null}
+
                 {vibeRefinements.length ? (
                   <ChipGroup label="✨ Vibe" onPage={onPage}>
                     {vibeRefinements.map((refinement) => (
@@ -776,6 +850,50 @@ export function SearchPromptChips() {
   );
 }
 
+/** Event date chips — also shown in Advanced Search for event queries. */
+export function SearchPromptEventWhen({ onPage = false }: { onPage?: boolean }) {
+  const { busy, state, toggleEventWhen, setEventDate } = useAssistContext();
+  if (state.localWhat !== "events" || state.typeId === "weekend") return null;
+
+  const dateInputClass = onPage
+    ? "h-9 rounded-lg border border-line bg-white px-2.5 text-sm text-ink outline-none transition focus:border-koi focus:ring-2 focus:ring-koi/15"
+    : "h-9 rounded-lg border border-white/12 bg-white/[0.08] px-2.5 text-sm text-white/90 outline-none transition focus:border-koi focus:ring-2 focus:ring-koi/15";
+
+  return (
+    <ChipGroup label="📅 When" onPage={onPage}>
+      {EVENT_WHEN_OPTIONS.map((option) => {
+        const selected = state.eventWhen === option.id;
+        const label =
+          option.id === "date" && selected && state.eventDate
+            ? eventWhenChipLabel("date", state.eventDate)
+            : option.label;
+        return (
+          <AssistChip
+            key={option.id}
+            label={label}
+            busy={busy}
+            variant={selected ? "primary" : "accent"}
+            selected={selected}
+            emphasis={selected}
+            onPick={() => toggleEventWhen(option.id)}
+            onPage={onPage}
+          />
+        );
+      })}
+      {state.eventWhen === "date" ? (
+        <input
+          type="date"
+          min={minSelectableEventDate()}
+          value={state.eventDate ?? minSelectableEventDate()}
+          onChange={(event) => setEventDate(event.target.value)}
+          className={dateInputClass}
+          aria-label="Event date"
+        />
+      ) : null}
+    </ChipGroup>
+  );
+}
+
 /** Where — rendered inside Advanced Search only. */
 export function SearchPromptWhereWhen() {
   const { busy, state, setWhere } = useAssistContext();
@@ -797,6 +915,7 @@ export function SearchPromptWhereWhen() {
           onPick={() => setWhere("halfway")}
         />
       </ChipGroup>
+      <SearchPromptEventWhen />
     </div>
   );
 }
@@ -917,11 +1036,12 @@ export function buildPlaceQuery(state: BuilderState): string {
 
   if (state.localWhat === "events") {
     const suffix = eventLocationSuffix(state.where);
+    const when = eventWhenPhrase(state);
 
     if (state.typeId === "concerts" && state.musicArtistId) {
       const artist = musicArtistById(state.musicArtistId);
       if (artist) {
-        const phrase = `${artist.searchTerm} concerts ${suffix}`;
+        const phrase = [artist.searchTerm, "concerts", when, suffix].filter(Boolean).join(" ");
         return phrase.charAt(0).toUpperCase() + phrase.slice(1);
       }
     }
@@ -930,11 +1050,12 @@ export function buildPlaceQuery(state: BuilderState): string {
     if (eventType?.noun) {
       const musicGenre = state.typeId === "concerts" ? musicGenreById(state.genre) : null;
       const noun = musicGenre ? `${musicGenre.queryWord} concerts` : eventType.noun;
-      const phrase = `${noun} ${suffix}`;
+      const phrase = [noun, when, suffix].filter(Boolean).join(" ");
       return phrase.charAt(0).toUpperCase() + phrase.slice(1);
     }
 
-    const phrase = `Things to do ${suffix} this weekend`;
+    const defaultWhen = when || "this weekend";
+    const phrase = ["Things to do", suffix, defaultWhen].filter(Boolean).join(" ");
     return phrase.charAt(0).toUpperCase() + phrase.slice(1);
   }
 
@@ -1080,6 +1201,13 @@ function buildFilterPills(state: BuilderState): FilterPill[] {
     pills.push({ id: `music-artist-${state.musicArtistId}`, label: musicArtistChipLabel(state.musicArtistId) });
   }
 
+  if (state.localWhat === "events" && state.eventWhen && state.typeId !== "weekend") {
+    pills.push({
+      id: `event-when-${state.eventWhen}`,
+      label: eventWhenChipLabel(state.eventWhen, state.eventDate)
+    });
+  }
+
   if (state.localWhat) {
     const categoryLabel = LOCAL_CHIP_CATEGORIES.find((item) => item.id === state.localWhat)?.label ?? state.localWhat;
     pills.push({ id: `local-${state.localWhat}`, label: categoryLabel });
@@ -1141,6 +1269,10 @@ function removeFilterFromState(state: BuilderState, pillId: string): BuilderStat
     return { ...state, musicArtistId: null };
   }
 
+  if (pillId.startsWith("event-when-")) {
+    return { ...state, eventWhen: null, eventDate: null };
+  }
+
   if (pillId.startsWith("local-")) {
     return {
       ...state,
@@ -1149,7 +1281,9 @@ function removeFilterFromState(state: BuilderState, pillId: string): BuilderStat
       sportsTeamId: null,
       musicArtistId: null,
       extras: new Set<string>(),
-      genre: null
+      genre: null,
+      eventWhen: null,
+      eventDate: null
     };
   }
 
@@ -1190,7 +1324,9 @@ function builderStateFromPopularPreset(preset: HeroPopularSearch): BuilderState 
       streamingType: normalizeStreamType(opts.watchSubcategory) ?? "movies",
       streamingVibe: null,
       genre: null,
-      streamingServices: new Set(opts.streamingServiceIds ?? [])
+      streamingServices: new Set(opts.streamingServiceIds ?? []),
+      eventWhen: null,
+      eventDate: null
     };
   }
 
@@ -1206,7 +1342,9 @@ function builderStateFromPopularPreset(preset: HeroPopularSearch): BuilderState 
       streamingType: null,
       streamingVibe: null,
       genre: null,
-      streamingServices: new Set<string>()
+      streamingServices: new Set<string>(),
+      eventWhen: null,
+      eventDate: null
     };
   }
 
@@ -1222,7 +1360,9 @@ function builderStateFromPopularPreset(preset: HeroPopularSearch): BuilderState 
       streamingType: null,
       streamingVibe: null,
       genre: null,
-      streamingServices: new Set<string>()
+      streamingServices: new Set<string>(),
+      eventWhen: null,
+      eventDate: null
     };
   }
 
@@ -1238,7 +1378,9 @@ function builderStateFromPopularPreset(preset: HeroPopularSearch): BuilderState 
       streamingType: null,
       streamingVibe: null,
       genre: null,
-      streamingServices: new Set<string>()
+      streamingServices: new Set<string>(),
+      eventWhen: null,
+      eventDate: null
     };
   }
 
@@ -1253,6 +1395,8 @@ function builderStateFromPopularPreset(preset: HeroPopularSearch): BuilderState 
     streamingType: null,
     streamingVibe: null,
     genre: null,
-    streamingServices: new Set<string>()
+    streamingServices: new Set<string>(),
+    eventWhen: null,
+    eventDate: null
   };
 }

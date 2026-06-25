@@ -12,7 +12,8 @@ export async function POST(request: Request) {
     }
 
     const address = typeof body.address === "string" ? body.address : "";
-    const result = await googlePlacesProvider.geocodeAddress(address);
+    const placeId = typeof body.placeId === "string" ? body.placeId : undefined;
+    const result = await googlePlacesProvider.geocodeAddress(address, placeId);
     return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json(

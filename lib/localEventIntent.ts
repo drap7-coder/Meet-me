@@ -1,4 +1,5 @@
 import type { LocalEventProfile } from "@/lib/eventResult";
+import { parseEventDateWindowFromQuery } from "@/lib/eventDates";
 import { extractMusicGenreFromQuery } from "@/lib/musicGenres";
 import { hasNamedMusicArtistInQuery } from "@/lib/musicArtists";
 import { hasNamedTeamInQuery, resolveNamedSportsTeam } from "@/lib/sportsEventFilter";
@@ -10,7 +11,7 @@ import {
   sportsTeamWeakPattern
 } from "@/lib/sportsTeams";
 import type { VenueCategory } from "@/lib/types";
-import { detectEventsIntent } from "@/lib/watchEvents";
+import { detectEventsIntent, hasStreamingWatchContext } from "@/lib/watchEvents";
 
 const PLACE_ONLY_CATEGORIES = new Set<VenueCategory>([
   "restaurant",
@@ -127,6 +128,15 @@ export function isMusicEventQuery(query: string): boolean {
   return MUSIC_EVENT_PATTERN.test(query) || Boolean(extractMusicGenreFromQuery(query)) || hasNamedMusicArtistInQuery(query);
 }
 
+/** Local event/sports/concert asks that require a resolved origin before searching. */
+export function queryRequiresEventLocation(query: string): boolean {
+  const value = query.trim();
+  if (!value) return false;
+  if (isTeamSpecificSportsQuery(value)) return false;
+  if (hasStreamingWatchContext(value)) return false;
+  return isPureEventQuery(value) || detectEventsIntent(value) || shouldFetchTicketmasterEvents(value);
+}
+
 /**
  * True for pure event/sports/concert/team queries that should be answered by the
  * event provider alone. Generic discovery asks ("date night", "things to do",
@@ -136,6 +146,7 @@ export function isMusicEventQuery(query: string): boolean {
 export function isPureEventQuery(query: string): boolean {
   const value = query.trim();
   if (!value) return false;
+  if (/\b(?:date night|festivals?)\b/i.test(value)) return false;
   if (isSportsEventQuery(value) || hasNamedTeamInQuery(value)) return true;
   if (isMusicEventQuery(value)) return true;
   return CONCRETE_EVENT_TYPE_PATTERN.test(value);
@@ -218,6 +229,9 @@ export function classifyLocalEventProfile(query: string): LocalEventProfile {
 }
 
 export function eventTimeWindow(profile: LocalEventProfile, query = ""): { start: Date; end: Date } {
+  const specificDay = parseEventDateWindowFromQuery(query);
+  if (specificDay) return specificDay;
+
   const now = new Date();
   const start = new Date(now);
   start.setHours(0, 0, 0, 0);

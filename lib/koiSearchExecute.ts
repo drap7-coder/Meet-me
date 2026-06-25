@@ -21,6 +21,33 @@ import { hasStreamingWatchContext, isMovieTheaterEventsQuery } from "@/lib/watch
 import { resolveWatchPlaceSearchForm } from "@/lib/watchPlaceSearch";
 import type { KoiSearchApiResponse } from "@/lib/searchIntent";
 
+export class EventLocationRequiredError extends Error {
+  constructor(message = "Add your location to search nearby.") {
+    super(message);
+    this.name = "EventLocationRequiredError";
+  }
+}
+
+function isLocationResolutionFailure(error: unknown): boolean {
+  if (error instanceof EventLocationRequiredError) return true;
+  if (!(error instanceof Error)) return false;
+  const message = error.message.toLowerCase();
+  return (
+    message.includes("geocod") ||
+    message.includes("location") ||
+    message.includes("address") ||
+    message.includes("enter a location")
+  );
+}
+
+function needsLocationResponse(botMode: "places" | "events" = "events", error?: string): KoiSearchApiResponse {
+  return {
+    kind: "needs_location",
+    botMode,
+    error: error ?? "Add your location to search nearby."
+  };
+}
+
 type ExecuteInput = {
   query: string;
   context?: unknown;
@@ -65,17 +92,20 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
     const eventForm = resolveEventSearchForm(query, locationContext, parseContext);
 
     if (!teamNationwide && !eventSearchLocationReady(eventForm)) {
-      return {
-        kind: "needs_location",
-        botMode: "events",
-        error: "Add your location to search nearby."
-      };
+      return needsLocationResponse("events");
     }
 
-    return {
-      kind: "places",
-      data: await buildEventsOnlyResponse(query, eventForm)
-    };
+    try {
+      return {
+        kind: "places",
+        data: await buildEventsOnlyResponse(query, eventForm, teamNationwide)
+      };
+    } catch (error) {
+      if (isLocationResolutionFailure(error)) {
+        return needsLocationResponse("events", error instanceof Error ? error.message : undefined);
+      }
+      throw error;
+    }
   }
 
   const placeForm = resolveWatchPlaceSearchForm(query, locationContext);
@@ -122,11 +152,7 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
 
     // Named-team picks ("Yankees games") are nationwide — never block on location.
     if (!teamNationwide && !eventSearchLocationReady(eventForm)) {
-      return {
-        kind: "needs_location",
-        botMode: "events",
-        error: "Add your location to search nearby."
-      };
+      return needsLocationResponse("events");
     }
 
     const blendedForm: SearchHalfwayRequest = {
@@ -136,17 +162,24 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
       searchMode: eventForm.searchMode ?? "single"
     };
 
-    return {
-      kind: "places",
-      data: await enrichPlacesResponseWithEvents(
-        await googlePlacesProvider.searchHalfway({
-          ...blendedForm,
-          category: normalizeCategory("activities")
-        }),
-        query,
-        blendedForm
-      )
-    };
+    try {
+      return {
+        kind: "places",
+        data: await enrichPlacesResponseWithEvents(
+          await googlePlacesProvider.searchHalfway({
+            ...blendedForm,
+            category: normalizeCategory("activities")
+          }),
+          query,
+          blendedForm
+        )
+      };
+    } catch (error) {
+      if (isLocationResolutionFailure(error)) {
+        return needsLocationResponse("events", error instanceof Error ? error.message : undefined);
+      }
+      throw error;
+    }
   }
 
   if (!parsed.form) {
@@ -181,39 +214,24 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
  * Exported for search-halfway fast-path when chip queries still hit that route.
  */
 export async function searchEventsOnly(query: string, form: SearchHalfwayRequest): Promise<SearchHalfwayResponse> {
-  return buildEventsOnlyResponse(query, form);
+  return buildEventsOnlyResponse(query, form, isTeamSpecificSportsQuery(query));
 }
 
-/**
- * Build an event-only response without calling Google Places or Google Routes.
- * Origin coordinates are taken from known/saved coordinates when available, and
- * otherwise resolved with a single (cheap) geocode call as a fallback.
- */
 async function buildEventsOnlyResponse(
   query: string,
-  form: SearchHalfwayRequest
+  form: SearchHalfwayRequest,
+  allowGenericOriginFallback = false
 ): Promise<SearchHalfwayResponse> {
   const profile = classifyLocalEventProfile(query);
   let origin: GeocodedLocation;
 
   try {
-    origin = await resolveEventOrigin(form);
+    origin = await resolveEventOrigin(form, allowGenericOriginFallback);
   } catch (error) {
     logApiError("events-origin-resolve", error);
-    const label = form.locationA.trim() || "Current location";
-    const unresolved = { input: label, formattedAddress: label, location: { lat: 0, lng: 0 } };
-    return {
-      originA: unresolved,
-      originB: unresolved,
-      midpoint: { lat: 0, lng: 0 },
-      category: "events",
-      searchMode: "single",
-      meetupMode: "single",
-      preferences: form.preferences ?? [],
-      query,
-      venues: [],
-      eventProfile: profile
-    };
+    throw error instanceof EventLocationRequiredError
+      ? error
+      : new EventLocationRequiredError("Add your location to search nearby.");
   }
 
   let events: Awaited<ReturnType<typeof searchLocalEvents>> = [];
@@ -287,7 +305,10 @@ export function resolveEventSearchForm(
   return resolveCurrentLocationInForm(eventForm, parseContext);
 }
 
-async function resolveEventOrigin(form: SearchHalfwayRequest): Promise<GeocodedLocation> {
+async function resolveEventOrigin(
+  form: SearchHalfwayRequest,
+  allowGenericOriginFallback = false
+): Promise<GeocodedLocation> {
   // Cheapest path first: use coordinates we already have (current location / saved origin).
   if (form.locationACoordinates) {
     const label = form.locationA.trim() || "Current location";
@@ -305,13 +326,16 @@ async function resolveEventOrigin(form: SearchHalfwayRequest): Promise<GeocodedL
     return googlePlacesProvider.geocodeAddress(address, form.locationAPlaceId);
   }
 
-  // Nationwide team/event searches don't need a real origin for Ticketmaster. Use a
-  // neutral US centroid so distance math still works when venue coords are present.
-  return {
-    input: "United States",
-    formattedAddress: "United States",
-    location: { lat: 39.8283, lng: -98.5795 }
-  };
+  // Nationwide team/event searches don't need a real origin for Ticketmaster.
+  if (allowGenericOriginFallback) {
+    return {
+      input: "United States",
+      formattedAddress: "United States",
+      location: { lat: 39.8283, lng: -98.5795 }
+    };
+  }
+
+  throw new EventLocationRequiredError();
 }
 
 function parseSubcategory(value: unknown): WatchSubcategory | undefined {

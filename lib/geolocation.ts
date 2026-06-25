@@ -46,12 +46,12 @@ export async function reverseGeocodeCoordinates(coordinates: LatLng) {
   return { locationA: fallbackLabel, locationAPlaceId: undefined };
 }
 
-export async function geocodeManualLocation(input: string) {
+export async function geocodeManualLocation(input: string, placeId?: string) {
   const trimmed = input.trim();
   const response = await fetch("/api/geocode", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ address: trimmed })
+    body: JSON.stringify(placeId?.trim() ? { address: trimmed, placeId: placeId.trim() } : { address: trimmed })
   });
   const data = (await response.json()) as {
     formattedAddress?: string;

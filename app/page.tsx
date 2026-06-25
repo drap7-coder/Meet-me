@@ -1251,13 +1251,17 @@ export default function HomePage() {
                   onSearchPlaces={runPlacesSearchFromBuilder}
                   onSearchWatch={runWatchSearch}
                 />
-                <HeroPopularSearches busy={loading || locating || resolvingManual} onSelect={applyPopularSearch} />
                 <div className="h-px bg-white/10" aria-hidden="true" />
                 <SearchPromptModePicker />
                 <SearchPromptDetailChips />
                 <SelectedFiltersPanel
                   busy={loading || locating || resolvingManual}
                   onSearch={runFilterSearch}
+                />
+                <HeroPopularSearches
+                  compact
+                  busy={loading || locating || resolvingManual}
+                  onSelect={applyPopularSearch}
                 />
               </SearchPromptAssistProvider>
               <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
@@ -1369,12 +1373,16 @@ export default function HomePage() {
                   onSearchWatch={runWatchSearch}
                   surface="page"
                 />
-                <HeroPopularSearches busy={loading || locating || resolvingManual} onSelect={applyPopularSearch} />
                 <SearchPromptModePicker />
                 <SearchPromptDetailChips />
                 <SelectedFiltersPanel
                   busy={loading || locating || resolvingManual}
                   onSearch={runFilterSearch}
+                />
+                <HeroPopularSearches
+                  compact
+                  busy={loading || locating || resolvingManual}
+                  onSelect={applyPopularSearch}
                 />
               </SearchPromptAssistProvider>
               <LocationFallbackPanel

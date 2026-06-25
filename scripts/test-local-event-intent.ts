@@ -12,7 +12,15 @@ const SHOULD_TRIGGER = [
   { query: "NBA games this weekend", profile: "sports" }
 ] as const;
 
-const SHOULD_NOT_TRIGGER = ["coffee near me", "sushi near me", "pizza near me"];
+const SHOULD_NOT_TRIGGER = [
+  "coffee near me",
+  "sushi near me",
+  "pizza near me",
+  "farmers market near me",
+  "Farmers markets in Philadelphia today",
+  "flea markets open this Saturday",
+  "street fairs near me this weekend"
+];
 
 function run() {
   let failed = 0;
@@ -28,10 +36,16 @@ function run() {
 
   for (const query of SHOULD_NOT_TRIGGER) {
     const shouldFetch = shouldFetchTicketmasterEvents(query);
-    const ok = !shouldFetch && !detectEventsIntent(query);
+    const ok = !shouldFetch;
     console.log(`${ok ? "PASS" : "FAIL"}  skip     ${query} -> shouldFetch=${shouldFetch}`);
     if (!ok) failed += 1;
   }
+
+  const farmersStillEventsIntent = detectEventsIntent("farmers market near me");
+  console.log(
+    `${farmersStillEventsIntent ? "PASS" : "FAIL"}  farmers  parser can still classify happenings as events`
+  );
+  if (!farmersStillEventsIntent) failed += 1;
 
   const sportsOnly = isSportsEventQuery("Yankees tickets near me") && !isSportsEventQuery("comedy shows tonight");
   console.log(`${sportsOnly ? "PASS" : "FAIL"}  sports   detects team queries without catching comedy`);

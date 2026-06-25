@@ -13,6 +13,10 @@ import { ParseSearchError, parserProvider } from "@/lib/providers/parserProvider
 import { googlePlacesProvider } from "@/lib/providers/googlePlacesProvider";
 import { watchProvider } from "@/lib/providers/watchProvider";
 import { searchLocalEvents } from "@/lib/eventDiscovery";
+import {
+  detectLocalHappeningsSubcategory,
+  resolveLocalHappeningsPlacesSearch
+} from "@/lib/localHappenings";
 import { classifyLocalEventProfile, isPureEventQuery, isTeamSpecificSportsQuery } from "@/lib/localEventIntent";
 import { logApiError } from "@/lib/serverLog";
 import { isStreamingServiceId } from "@/lib/streamingServices";
@@ -181,11 +185,15 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
       return needsLocationResponse("events");
     }
 
+    const localSubcategory = detectLocalHappeningsSubcategory(query);
+    const localPlacesSearch = localSubcategory
+      ? resolveLocalHappeningsPlacesSearch(localSubcategory)
+      : null;
     const blendedForm: SearchHalfwayRequest = {
       ...eventForm,
       travelMode,
-      category: "activities",
-      customQuery: query,
+      category: localPlacesSearch?.category ?? "activities",
+      customQuery: localPlacesSearch?.customQuery ?? query,
       searchMode: eventForm.searchMode ?? "single"
     };
 
@@ -195,7 +203,7 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
         data: await enrichPlacesResponseWithEvents(
           await googlePlacesProvider.searchHalfway({
             ...blendedForm,
-            category: normalizeCategory("activities")
+            category: normalizeCategory(blendedForm.category)
           }),
           query,
           blendedForm

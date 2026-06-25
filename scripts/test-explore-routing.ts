@@ -93,6 +93,15 @@ const thriftIntent = normalizeExploreIntent({
 });
 assert(thriftIntent.category === "activities", "thrift infers activities not shopping");
 
+const farmersIntent = normalizeExploreIntent({
+  query: "farmers market near me this weekend",
+  structured: false
+});
+assert(farmersIntent.category === "outdoors", "farmers market infers outdoors");
+assert(farmersIntent.subcategoryId === "farmers_markets", "farmers market infers subcategory");
+assert(farmersIntent.venueCategory === "farmers_markets", "farmers market venue category");
+assert(!farmersIntent.routeViaTicketmaster, "farmers market does not route to ticketmaster");
+
 assert(
   validateExploreBuilderIsolation({
     selectedMode: "streaming",

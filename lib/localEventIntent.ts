@@ -10,6 +10,7 @@ import {
   sportsTeamStrongPattern,
   sportsTeamWeakPattern
 } from "@/lib/sportsTeams";
+import { isLocalHappeningsQuery } from "@/lib/localHappenings";
 import type { VenueCategory } from "@/lib/types";
 import { detectEventsIntent, hasStreamingWatchContext } from "@/lib/watchEvents";
 
@@ -35,7 +36,20 @@ const PLACE_ONLY_CATEGORIES = new Set<VenueCategory>([
   "dessert",
   "thrifting",
   "vintage",
-  "bookstore"
+  "bookstore",
+  "farmers_markets",
+  "park",
+  "hiking",
+  "gardens",
+  "waterfronts",
+  "scenic_spots",
+  "nature_preserves",
+  "museums",
+  "bowling",
+  "arcades",
+  "escape_rooms",
+  "pickleball",
+  "driving_range"
 ]);
 
 const PLACE_ONLY_QUERY =
@@ -177,7 +191,13 @@ export function shouldFetchTicketmasterEvents(query: string, category?: VenueCat
   const trimmed = query.trim();
   if (!trimmed) return false;
 
-  if (category && PLACE_ONLY_CATEGORIES.has(category) && !detectEventsIntent(trimmed)) {
+  // Farmers markets, flea markets, street fairs, etc. are Places-first — Ticketmaster
+  // adds unrelated concerts when blended onto these results.
+  if (isLocalHappeningsQuery(trimmed)) {
+    return false;
+  }
+
+  if (category && PLACE_ONLY_CATEGORIES.has(category)) {
     return false;
   }
 

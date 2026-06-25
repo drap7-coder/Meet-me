@@ -9,6 +9,7 @@ import {
   type ProviderKey,
   venueCategoryForExplore
 } from "@/lib/exploreIntent";
+import { detectLocalHappeningsSubcategory } from "@/lib/localHappenings";
 import { logApiError } from "@/lib/serverLog";
 
 export type ExploreRoutingInput = {
@@ -60,6 +61,16 @@ export function selectProvidersForExplore(
   return available.length ? available : ["google_places"];
 }
 
+function inferSubcategoryFromQuery(category: ExploreCategory, query: string, subcategoryId: string | null): string | null {
+  if (subcategoryId) return subcategoryId;
+  if (category !== "outdoors") return null;
+
+  const local = detectLocalHappeningsSubcategory(query);
+  if (local === "farmers_markets") return "farmers_markets";
+
+  return null;
+}
+
 export function normalizeExploreIntent(input: ExploreRoutingInput): NormalizedExploreIntent {
   const query = input.query.trim();
   const mode: ExploreMode = input.mode === "streaming" ? "streaming" : "explore";
@@ -70,7 +81,10 @@ export function normalizeExploreIntent(input: ExploreRoutingInput): NormalizedEx
       : input.category ?? inferExploreCategoryFromQuery(query);
 
   const category = mode === "explore" ? inferredCategory : null;
-  const subcategoryId = input.subcategoryId ?? null;
+  const subcategoryId =
+    category && mode === "explore"
+      ? inferSubcategoryFromQuery(category, query, input.subcategoryId ?? null)
+      : input.subcategoryId ?? null;
 
   if (!category || mode !== "explore") {
     return {

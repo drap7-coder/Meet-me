@@ -7,6 +7,12 @@ import {
   resolveCurrentLocationInForm
 } from "@/lib/currentLocation";
 import { detectPreferencesFromQuery } from "@/lib/preferences";
+import {
+  customQueryForNearRelation,
+  isGenericNearTarget,
+  parseNearFeatureQuery,
+  sanitizeLocationForNearRelation
+} from "@/lib/nearFeatureQuery";
 import { fetchWithTimeout } from "@/lib/providers/fetchWithTimeout";
 import { recordLlmUsed, recordProviderCall } from "@/lib/searchTelemetryRuntime";
 import type {
@@ -66,17 +72,21 @@ export async function parseSearch(input: {
   }
 
   const parsed = await parseSearchQuery(query);
+  const nearRelation = parseNearFeatureQuery(query);
   const locationContext = readRequestLocationContext({
     context: input.context,
     form: input.form
   });
-  let locationA = parsed.location_a.trim();
+  let locationA = sanitizeLocationForNearRelation(parsed.location_a.trim(), query);
   const locationB = parsed.location_b.trim();
   if ((!locationA && looksLikeCurrentLocationQuery(query)) || isCurrentLocationReference(locationA)) {
     locationA = "me";
   }
+  if (nearRelation?.relatedFeature && !locationA) {
+    locationA = "me";
+  }
   const categoryIntent = resolveSearchCategoryFromQuery(
-    query,
+    nearRelation?.primaryQuery || query,
     parsed.category,
     readFormCategoryHint(input.form)
   );
@@ -100,8 +110,9 @@ export async function parseSearch(input: {
     category: categoryIntent.category,
     searchMode,
     meetupMode: "single",
-    customQuery: categoryIntent.customQuery ?? "",
-    ...(preferences.length ? { preferences } : {})
+    customQuery: customQueryForNearRelation(query, categoryIntent.customQuery ?? "") || categoryIntent.customQuery || "",
+    ...(preferences.length ? { preferences } : {}),
+    ...(nearRelation ? { nearRelation } : {})
   };
   const resolvedForm = resolveCurrentLocationInForm(form, locationContext);
 
@@ -191,6 +202,7 @@ async function parseWithOllama(query: string): Promise<ParsedSearchIntent> {
             "Use search_mode midpoint when the user wants a place between two locations.",
             "Use search_mode single when the user wants places near, in, or around one location. For single searches, put the place in location_a and leave location_b empty.",
             "When the user says near me, around me, or my location, set location_a to me and search_mode to single.",
+            "When the user asks for coffee near a trail, park, museum, EV charger, or other generic feature, set location_a to me and keep the venue type in category. Do not put trail, park, charger, or museum in location_a.",
             "If a value is missing, return an empty string for that key.",
             "Example: Meet for coffee halfway between Hoboken and Edison -> {\"location_a\":\"Hoboken, NJ\",\"location_b\":\"Edison, NJ\",\"category\":\"coffee\",\"search_mode\":\"midpoint\"}.",
             "Example: Find coffee near Hoboken -> {\"location_a\":\"Hoboken, NJ\",\"location_b\":\"\",\"category\":\"coffee\",\"search_mode\":\"single\"}.",
@@ -278,6 +290,7 @@ function buildParserPrompt(query: string) {
     "Use search_mode midpoint when the user wants a place between two locations.",
     "Use search_mode single when the user wants places near, in, or around one location. For single searches, put the place in location_a and leave location_b empty.",
     "When the user says near me, around me, or my location, set location_a to me and search_mode to single.",
+    "When the user asks for coffee near a trail, park, museum, EV charger, or other generic feature, set location_a to me and keep the venue type in category. Do not put trail, park, charger, or museum in location_a.",
     "If a value is missing, return an empty string for that key.",
     "Example: Meet for coffee halfway between Hoboken and Edison -> {\"location_a\":\"Hoboken, NJ\",\"location_b\":\"Edison, NJ\",\"category\":\"coffee\",\"search_mode\":\"midpoint\"}.",
     "Example: Find coffee near Hoboken -> {\"location_a\":\"Hoboken, NJ\",\"location_b\":\"\",\"category\":\"coffee\",\"search_mode\":\"single\"}.",
@@ -288,10 +301,36 @@ function buildParserPrompt(query: string) {
 }
 
 function parseWithFallback(query: string): ParsedSearchIntent {
+  const nearRelation = parseNearFeatureQuery(query);
+  if (nearRelation?.relatedFeature) {
+    return {
+      location_a: nearRelation.locationQuery ?? "me",
+      location_b: "",
+      category: guessCategory(nearRelation.primaryQuery || query),
+      search_mode: "single"
+    };
+  }
+
   const match = query.match(/\bbetween\s+(.+?)\s+(?:and|&)\s+(.+?)(?:\s+(?:with|for|near|that|where|$).*)?$/i);
   if (!match) {
     const singleMatch = query.match(/\b(?:near|around|in)\s+(.+?)(?:\s+(?:with|that|where|open|$).*)?$/i);
     const captured = singleMatch ? cleanupLocation(singleMatch[1]) : "";
+    if (nearRelation?.locationQuery) {
+      return {
+        location_a: nearRelation.locationQuery,
+        location_b: "",
+        category: guessCategory(nearRelation.primaryQuery || query),
+        search_mode: "single"
+      };
+    }
+    if (isGenericNearTarget(captured)) {
+      return {
+        location_a: "me",
+        location_b: "",
+        category: guessCategory(query),
+        search_mode: "single"
+      };
+    }
     const useCurrentLocation = looksLikeCurrentLocationQuery(query) || isCurrentLocationReference(captured);
     return {
       location_a: useCurrentLocation ? "me" : captured,

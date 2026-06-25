@@ -189,6 +189,10 @@ export function shouldRouteExploreToTicketmaster(intent: NormalizedExploreIntent
   return intent.mode === "explore" && intent.routeViaTicketmaster;
 }
 
+export function filterAvailableProviders(configured: ProviderKey[]): ProviderKey[] {
+  return availableProviders(configured);
+}
+
 export function shouldSupplementWithOpenTripMap(intent: NormalizedExploreIntent): boolean {
   return (
     intent.mode === "explore" &&

@@ -1,4 +1,10 @@
 import { effectiveTravelModeForQuery } from "@/lib/evSearchIntent";
+import {
+  exploreIntentFromNearRelation,
+  mergeProvidersForNearRelation,
+  parseNearFeatureQuery,
+  shouldUseEvEnrichmentForNearRelation
+} from "@/lib/nearFeatureQuery";
 import { normalizeCategory } from "@/lib/categories";
 import { readRequestLocationContext, readRequestSearchForm } from "@/lib/apiLocationContext";
 import {
@@ -28,6 +34,7 @@ import type { KoiSearchApiResponse } from "@/lib/searchIntent";
 import { discoverOpenTripMapExploreVenues, supplementExploreWithOpenTripMap } from "@/lib/exploreSearch";
 import {
   exploreIntentFromPayload,
+  filterAvailableProviders,
   shouldRouteExploreToTicketmaster,
   shouldSupplementWithOpenTripMap,
   shouldUseTimeAwareExplorePath,
@@ -44,6 +51,24 @@ import {
 import { shouldApplyDiversityRanking } from "@/lib/resultDiversityRanking";
 import { composeTrendingPicks } from "@/lib/trendingComposition";
 
+function applyNearRelationToExploreIntent(
+  query: string,
+  base: NormalizedExploreIntent,
+  payload?: ExploreIntentPayload | null
+): NormalizedExploreIntent {
+  const nearRelation = parseNearFeatureQuery(query);
+  if (!nearRelation?.relatedFeature) return base;
+
+  const featureIntent = exploreIntentFromNearRelation(nearRelation, query);
+  const providers = filterAvailableProviders(mergeProvidersForNearRelation(base.providers, nearRelation));
+
+  return {
+    ...base,
+    providers,
+    preferOpenTripMap: featureIntent?.preferOpenTripMap ?? base.preferOpenTripMap
+  };
+}
+
 export class EventLocationRequiredError extends Error {
   constructor(message = "Add your location to search nearby.") {
     super(message);
@@ -59,7 +84,8 @@ function isLocationResolutionFailure(error: unknown): boolean {
     message.includes("geocod") ||
     message.includes("location") ||
     message.includes("address") ||
-    message.includes("enter a location")
+    message.includes("enter a location") ||
+    message.includes("search near that kind of place")
   );
 }
 
@@ -287,9 +313,17 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
   const streamingServiceIds = parseStreamingServiceIds(input.streamingServiceIds);
   // "Getting Around" context — applied to every Places form so ranking + EV
   // enrichment stay consistent regardless of which path resolves the search.
-  const exploreIntent = exploreIntentFromPayload(query, input.exploreIntent);
+  const exploreIntent = applyNearRelationToExploreIntent(
+    query,
+    exploreIntentFromPayload(query, input.exploreIntent),
+    input.exploreIntent
+  );
+  const nearRelation = parseNearFeatureQuery(query);
   const baseTravelMode = locationContext.travelMode ?? parseContext?.travelMode ?? "auto";
-  const travelMode = effectiveTravelModeForQuery(baseTravelMode, query);
+  const travelMode = effectiveTravelModeForQuery(
+    shouldUseEvEnrichmentForNearRelation(nearRelation) ? "ev" : baseTravelMode,
+    query
+  );
 
   if (hasStreamingWatchContext(query)) {
     return {
@@ -455,21 +489,32 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
     };
   }
 
-  const placesResponse = await googlePlacesProvider.searchHalfway({
-    ...resolvedForm,
-    travelMode,
-    customQuery: exploreIntent.category ? query : resolvedForm.customQuery,
-    insightQuery: query,
-    category: normalizeCategory(exploreIntent.category ? exploreIntent.venueCategory : resolvedForm.category)
-  });
+  try {
+    const placesResponse = await googlePlacesProvider.searchHalfway({
+      ...resolvedForm,
+      travelMode,
+      customQuery: nearRelation?.relatedFeature
+        ? resolvedForm.customQuery || nearRelation.primaryQuery
+        : exploreIntent.category
+          ? query
+          : resolvedForm.customQuery,
+      insightQuery: query,
+      category: normalizeCategory(exploreIntent.category ? exploreIntent.venueCategory : resolvedForm.category)
+    });
 
-  return {
-    kind: "places",
-    data: await withExploreEnrichment(
-      await enrichPlacesResponseWithEvents(placesResponse, query, resolvedForm),
-      exploreIntent
-    )
-  };
+    return {
+      kind: "places",
+      data: await withExploreEnrichment(
+        await enrichPlacesResponseWithEvents(placesResponse, query, resolvedForm),
+        exploreIntent
+      )
+    };
+  } catch (error) {
+    if (isLocationResolutionFailure(error)) {
+      return needsLocationResponse("places", error instanceof Error ? error.message : undefined);
+    }
+    throw error;
+  }
 }
 
 /**

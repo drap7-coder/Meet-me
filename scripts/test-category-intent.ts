@@ -1,4 +1,4 @@
-import { getCategorySearchTerm, resolveSearchCategoryFromQuery } from "@/lib/categories";
+import { getCategorySearchTerm, isUnsupportedGibberishQuery, resolveSearchCategoryFromQuery } from "@/lib/categories";
 
 function assert(condition: boolean, message: string) {
   if (!condition) throw new Error(message);
@@ -32,5 +32,9 @@ assert(hinted.category === "restaurant", "restaurant hint should apply when quer
 
 const shopping = resolveSearchCategoryFromQuery("where should we go shopping near me");
 assert(shopping.category === "shopping", "shopping query should stay shopping");
+
+assert(isUnsupportedGibberishQuery("blah"), "blah is unsupported gibberish");
+assert(!isUnsupportedGibberishQuery("somewhere fun tonight"), "multi-word vague ask is allowed");
+assert(!isUnsupportedGibberishQuery("coffee near me"), "coffee near me is supported");
 
 console.log("PASS category intent");

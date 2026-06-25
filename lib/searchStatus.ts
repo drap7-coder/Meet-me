@@ -1,3 +1,5 @@
+import type { SearchHalfwayResponse, WatchEventsResult } from "@/lib/types";
+
 export type SearchErrorKind =
   | "INVALID_LOCATION"
   | "NO_RESULTS"
@@ -10,18 +12,13 @@ export type SearchError = {
   message: string;
 };
 
-export type SearchPhase = "idle" | "loading" | "results" | "error" | "empty";
-
-export type SearchStatus = {
-  phase: SearchPhase;
-  error?: SearchError;
-};
+export type SearchStatus = "idle" | "loading" | "success" | "empty" | "error" | "invalid";
 
 export const SEARCH_ERROR_MESSAGES: Record<SearchErrorKind, string> = {
   INVALID_LOCATION: "I couldn't find that place. Try a city, address, or nearby landmark.",
-  NO_RESULTS: "No matches yet. Try a broader ask or a nearby area.",
-  PROVIDER_ERROR: "Something went wrong on our end. Try again in a moment.",
-  NETWORK_ERROR: "Connection issue. Check your network and try again.",
+  NO_RESULTS: "I couldn't find anything useful for that. Try a place, activity, show, or event.",
+  PROVIDER_ERROR: "I couldn't find anything useful for that. Try a place, activity, show, or event.",
+  NETWORK_ERROR: "I couldn't find anything useful for that. Try a place, activity, show, or event.",
   NEEDS_LOCATION: "Add your location to search nearby."
 };
 
@@ -72,9 +69,14 @@ export function classifySearchError(input: unknown): SearchError {
     lower.includes("enter both locations") ||
     lower.includes("needs location") ||
     lower.includes("search near that kind of place") ||
-    lower.includes("turn on location")
+    lower.includes("turn on location") ||
+    lower.includes("where should koi search")
   ) {
     return searchError("NEEDS_LOCATION");
+  }
+
+  if (lower.includes("could not understand") || lower.includes("couldn't understand")) {
+    return searchError("NO_RESULTS");
   }
 
   if (
@@ -109,4 +111,19 @@ export function shouldShowInlineSearchError(error: SearchError | null | undefine
 /** Recoverable ask failures that should keep the search box in place with a retry message. */
 export function isRecoverableSearchError(error: SearchError | null | undefined): boolean {
   return shouldShowInlineSearchError(error);
+}
+
+export function statusForSearchError(error: SearchError): SearchStatus {
+  if (error.kind === "NO_RESULTS") return "invalid";
+  if (error.kind === "NEEDS_LOCATION" || error.kind === "INVALID_LOCATION") return "invalid";
+  return "error";
+}
+
+export function isEmptyPlacesResults(data: SearchHalfwayResponse): boolean {
+  return data.venues.length === 0 && !(data.events?.length ?? 0);
+}
+
+export function isEmptyWatchResults(data: WatchEventsResult): boolean {
+  if (data.preview) return true;
+  return data.recommendations.length === 0;
 }

@@ -51,6 +51,13 @@ import {
 import { readStoredLocationSnapshot, resolveLocationChipLabel, restoreStoredLocation, hasHomeLocationSaved } from "@/lib/homeLocation";
 import { mergeSavedUserLocation, getSavedUserLocation } from "@/lib/savedUserLocation";
 import { getSearchAccent } from "@/lib/searchAccent";
+import {
+  classifySearchError,
+  isSearchError,
+  searchError as createSearchError,
+  SEARCH_ERROR_MESSAGES,
+  type SearchError
+} from "@/lib/searchStatus";
 import { getSavedTravelMode, saveTravelMode } from "@/lib/travelMode";
 import { isEvChargingIntent } from "@/lib/evSearchIntent";
 import { extractStreamingProviders, mergeStreamingServiceIds } from "@/lib/streamingServices";
@@ -131,7 +138,7 @@ export default function HomePage() {
   const [locating, setLocating] = useState(false);
   const [resolvingManual, setResolvingManual] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [searchError, setSearchError] = useState<SearchError | null>(null);
   const [shareMessage, setShareMessage] = useState("");
   const [currentShareUrl, setCurrentShareUrl] = useState("");
   const [openedFromSharedHalfway, setOpenedFromSharedHalfway] = useState(false);
@@ -202,7 +209,33 @@ export default function HomePage() {
     };
   }
 
+  function clearSearchError() {
+    setSearchError(null);
+  }
+
+  function readApiSearchError(data: { error?: unknown }): SearchError {
+    return isSearchError(data.error) ? data.error : classifySearchError(data.error);
+  }
+
+  function promptNeedsLocation(message = SEARCH_ERROR_MESSAGES.NEEDS_LOCATION) {
+    setShowLocationActions(true);
+    setShowManualFallback(false);
+    setSearchError(createSearchError("NEEDS_LOCATION", message));
+  }
+
+  function failSearch(input: unknown) {
+    const classified = classifySearchError(input);
+    if (classified.kind === "NEEDS_LOCATION") {
+      setShowLocationActions(true);
+      setShowManualFallback(false);
+    }
+    setResults(null);
+    setWatchEventsResult(null);
+    setSearchError(classified);
+  }
+
   function handleTravelModeChange(mode: TravelMode) {
+    clearSearchError();
     setTravelMode(mode);
     saveTravelMode(mode);
     trackEvent("travel_mode_changed", { travelMode: mode });
@@ -216,6 +249,11 @@ export default function HomePage() {
     saveTravelMode("ev");
     trackEvent("travel_mode_changed", { travelMode: "ev" });
     return "ev";
+  }
+
+  function handleBuilderModeChange(mode: SearchBuilderMode) {
+    clearSearchError();
+    setBuilderMode(mode);
   }
 
   const locationContext = useMemo(() => getActiveLocationContext(), [
@@ -368,19 +406,19 @@ export default function HomePage() {
     setPendingRetry(retry);
     setFallbackKind("location");
     setShowClassicFallback(true);
-    setError(message);
+    setSearchError(createSearchError("NEEDS_LOCATION", message));
     scrollToFallback();
   }
 
   function openFullFallback(message?: string) {
     if (searchKind === "watch") {
-      if (message) setError(message);
+      if (message) setSearchError(createSearchError("NEEDS_LOCATION", message));
       return;
     }
     setPendingRetry(null);
     setFallbackKind("full");
     setShowClassicFallback(true);
-    if (message) setError(message);
+    if (message) setSearchError(createSearchError("NEEDS_LOCATION", message));
     scrollToFallback();
   }
 
@@ -395,7 +433,7 @@ export default function HomePage() {
     setShowLocationActions(false);
     setManualLocationError("");
     setLocationSavedMessage("You're all set — ask Koi anything.");
-    setError("");
+    clearSearchError();
   }
 
   async function resolveManualLocation(input: string, placeId?: string) {
@@ -446,7 +484,7 @@ export default function HomePage() {
       setShowLocationActions(false);
       setLocationStatus("");
       if (retry ?? pendingRetry) {
-        setError("Location blocked? Enter a ZIP code instead.");
+        setSearchError(createSearchError("NEEDS_LOCATION", "Location blocked? Enter a ZIP code instead."));
       }
       return;
     }
@@ -477,7 +515,7 @@ export default function HomePage() {
       setShowManualFallback(false);
       setShowLocationActions(false);
       if (retry ?? pendingRetry) {
-        setError("Location blocked? Enter a ZIP code instead.");
+        setSearchError(createSearchError("NEEDS_LOCATION", "Location blocked? Enter a ZIP code instead."));
       }
     } finally {
       setLocating(false);
@@ -509,6 +547,7 @@ export default function HomePage() {
     existingShareUrl?: string,
     submitOptions?: SearchSubmitOptions
   ) {
+    clearSearchError();
     setResults(data);
     setWatchEventsResult(null);
     setSearchKind("places");
@@ -533,6 +572,7 @@ export default function HomePage() {
   }
 
   function applyWatchEventsResults(data: WatchEventsResult) {
+    clearSearchError();
     setWatchEventsResult(data);
     setResults(null);
     if (data.streamingServiceIds?.length) {
@@ -556,7 +596,7 @@ export default function HomePage() {
       setPendingRetry({ kind: "places", form: resolvedForm });
       setShowLocationActions(true);
       setShowManualFallback(false);
-      setError("Add your location to search nearby.");
+      promptNeedsLocation();
       return null;
     }
 
@@ -578,7 +618,7 @@ export default function HomePage() {
       body: JSON.stringify({ query, subcategory, streamingServiceIds })
     });
     const data = (await response.json()) as WatchEventsResult & { error?: string };
-    if (!response.ok) throw new Error(data.error ?? "Watch search failed.");
+    if (!response.ok) throw readApiSearchError(data);
     return data;
   }
 
@@ -590,7 +630,7 @@ export default function HomePage() {
     const shouldPlayMotion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setHasSearched(true);
     setLoading(true);
-    setError("");
+    setSearchError(null);
     setShareMessage("");
     setLocationSavedMessage("");
 
@@ -613,7 +653,7 @@ export default function HomePage() {
           body: JSON.stringify({ ...prepared.form, travelMode })
         });
         const data = (await response.json()) as SearchHalfwayResponse & { error?: string };
-        if (!response.ok) throw new Error(data.error ?? "Search failed.");
+        if (!response.ok) throw readApiSearchError(data);
         applyPlacesResults(prepared.form, data, intent.existingShareUrl, intent.submitOptions);
         return;
       }
@@ -671,7 +711,7 @@ export default function HomePage() {
             body: JSON.stringify({ ...placesIntent.form, travelMode })
           });
           const data = (await response.json()) as SearchHalfwayResponse & { error?: string };
-          if (!response.ok) throw new Error(data.error ?? "Search failed.");
+          if (!response.ok) throw readApiSearchError(data);
           applyPlacesResults(placesIntent.form, data);
           return;
         }
@@ -686,10 +726,7 @@ export default function HomePage() {
           setPendingRetry({ kind: "events", query });
           setShowLocationActions(true);
           setShowManualFallback(false);
-          setError("Add your location to search nearby.");
-          window.requestAnimationFrame(() => {
-            document.getElementById("ask-koi")?.scrollIntoView({ behavior: "smooth", block: "center" });
-          });
+          promptNeedsLocation();
           return;
         }
 
@@ -705,7 +742,7 @@ export default function HomePage() {
           body: JSON.stringify({ query, form: { ...eventLocationContext, travelMode } })
         });
         const data = (await response.json()) as WatchEventsApiResponse & { error?: string };
-        if (!response.ok) throw new Error(data.error ?? "Search failed.");
+        if (!response.ok) throw readApiSearchError(data);
 
         if ("append" in data && data.append) {
           throw new Error("Unexpected load-more response.");
@@ -773,7 +810,7 @@ export default function HomePage() {
             handleFreeformNeedsLocation(query, data);
             return;
           }
-          throw new Error(data.error ?? "Search failed.");
+          throw readApiSearchError(data);
         }
 
         if (data.kind === "places") {
@@ -807,13 +844,8 @@ export default function HomePage() {
           applyWatchEventsResults(data.data);
         }
       }
-    } catch (searchError) {
-      setResults(null);
-      setWatchEventsResult(null);
-      setError(searchError instanceof Error ? searchError.message : "Search failed.");
-      if (intent.kind === "events" || intent.kind === "freeform") {
-        scrollToFallback();
-      }
+    } catch (failure) {
+      failSearch(failure);
     } finally {
       searchInFlightRef.current = false;
       const motionMs = intent.kind === "places" ? 950 : 650;
@@ -838,6 +870,10 @@ export default function HomePage() {
       });
     }
 
+    if (locationChanged) {
+      clearSearchError();
+    }
+
     setForm(nextForm);
   }
 
@@ -848,7 +884,7 @@ export default function HomePage() {
     setResults(null);
     setWatchEventsResult(null);
     setSearchKind(null);
-    setError("");
+    clearSearchError();
     setShareMessage("");
     setCurrentShareUrl("");
     setOpenedFromSharedHalfway(false);
@@ -878,10 +914,7 @@ export default function HomePage() {
     setShowManualFallback(false);
     setShowClassicFallback(false);
     setFallbackKind("none");
-    setError("Add your location to search nearby.");
-    window.requestAnimationFrame(() => {
-      document.getElementById("ask-koi")?.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
+    promptNeedsLocation();
     return true;
   }
 
@@ -902,10 +935,7 @@ export default function HomePage() {
       setShowLocationActions(true);
       setShowManualFallback(false);
     }
-    setError(data.error ?? "Add your location to search nearby.");
-    window.requestAnimationFrame(() => {
-      document.getElementById("ask-koi")?.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
+    setSearchError(classifySearchError(data.error ?? SEARCH_ERROR_MESSAGES.NEEDS_LOCATION));
   }
 
   function handleNeedsLocation(pendingForm: SearchHalfwayRequest) {
@@ -993,6 +1023,7 @@ export default function HomePage() {
   }
 
   function openLocationChange() {
+    clearSearchError();
     if (activeLocationLabel.trim()) {
       setShowManualFallback(true);
       setShowLocationActions(false);
@@ -1012,7 +1043,7 @@ export default function HomePage() {
   }
 
   function runFilterSearch(query: string, options: PickQueryOptions, isStreaming: boolean) {
-    applyPickOptionsToSession(options, setBuilderMode, setActiveWatchSubcategory, setActiveStreamingServiceIds);
+    applyPickOptionsToSession(options, handleBuilderModeChange, setActiveWatchSubcategory, setActiveStreamingServiceIds);
 
     if (isStreaming || options.watchSubcategory) {
       void executeSearch({
@@ -1059,20 +1090,22 @@ export default function HomePage() {
 
   function submitLocationFallback() {
     if (!form.locationA.trim()) {
-      setError("Add where you are, or tap Use my location below the search box.");
+      setSearchError(
+        createSearchError("NEEDS_LOCATION", "Add where you are, or tap Use my location below the search box.")
+      );
       scrollToFallback();
       return;
     }
 
     const searchMode = form.searchMode ?? "midpoint";
     if (searchMode === "midpoint" && !form.locationB.trim() && pendingRetry?.kind === "places") {
-      setError("Add a second location for a fair midpoint search.");
+      setSearchError(createSearchError("NEEDS_LOCATION", "Add a second location for a fair midpoint search."));
       scrollToFallback();
       return;
     }
 
     if (!pendingRetry) {
-      setError("Ask Koi what you want up above, then try again.");
+      setSearchError(createSearchError("NEEDS_LOCATION", "Ask Koi what you want up above, then try again."));
       return;
     }
 
@@ -1080,7 +1113,7 @@ export default function HomePage() {
     setFallbackKind("none");
     const retry = pendingRetry;
     setPendingRetry(null);
-    setError("");
+    clearSearchError();
     persistSavedLocation(form);
 
     if (retry.kind === "events") {
@@ -1248,7 +1281,7 @@ export default function HomePage() {
               <SearchPromptAssistProvider
                 busy={loading || locating || resolvingManual}
                 builderMode={builderMode}
-                onBuilderModeChange={setBuilderMode}
+                onBuilderModeChange={handleBuilderModeChange}
                 userCoordinates={locationContext.locationACoordinates}
               >
                 <AiSearchBox
@@ -1265,7 +1298,8 @@ export default function HomePage() {
                   locating={locating}
                   resolvingManual={resolvingManual}
                   locationSavedMessage={locationSavedMessage}
-                  submitError={error}
+                  searchError={searchError}
+                  onClearSearchError={clearSearchError}
                   onSubmitQuery={handleAiSubmitQuery}
                   onPrefetchQuery={prefetchAskQuery}
                   onNeedsLocation={handleNeedsLocation}
@@ -1349,15 +1383,7 @@ export default function HomePage() {
             <RoadDivider className="mt-5 w-full" />
           ) : null}
 
-          {error ? (
-            <div
-              className={`mt-5 rounded-lg border p-4 text-sm font-semibold ${activeAccent.borderMuted} ${activeAccent.bgMuted} ${activeAccent.text}`}
-            >
-              {error}
-            </div>
-          ) : null}
-
-          {error && !loading && !results && !watchEventsResult ? (
+          {hasSearched && !loading && !results && !watchEventsResult ? (
           <section id="search" className="mt-5 grid w-full gap-5">
               <SearchContextStrip
                 locationLabel={activeLocationLabel}
@@ -1370,7 +1396,7 @@ export default function HomePage() {
               <SearchPromptAssistProvider
                 busy={loading || locating || resolvingManual}
                 builderMode={builderMode}
-                onBuilderModeChange={setBuilderMode}
+                onBuilderModeChange={handleBuilderModeChange}
                 surface="page"
                 userCoordinates={locationContext.locationACoordinates}
               >
@@ -1388,7 +1414,8 @@ export default function HomePage() {
                   locating={locating}
                   resolvingManual={resolvingManual}
                   locationSavedMessage={locationSavedMessage}
-                  submitError={error}
+                  searchError={searchError}
+                  onClearSearchError={clearSearchError}
                   onSubmitQuery={handleAiSubmitQuery}
                   onPrefetchQuery={prefetchAskQuery}
                   onNeedsLocation={handleNeedsLocation}

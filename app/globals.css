@@ -371,6 +371,48 @@ select {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
 }
 
+/* Primary Ask Koi search — taller, brighter border, stronger lift */
+.koi-search-box {
+  border-radius: 20px;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+.koi-search-box--hero {
+  border: 1.5px solid rgba(255, 130, 60, 0.52);
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.4),
+    0 6px 20px rgba(255, 90, 0, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.koi-search-box--hero:focus-within {
+  border-color: rgba(255, 90, 0, 0.78);
+  background: rgba(255, 255, 255, 0.09);
+  box-shadow:
+    0 20px 56px rgba(0, 0, 0, 0.44),
+    0 0 0 4px rgba(255, 90, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.koi-search-box--page {
+  border: 2px solid rgba(255, 90, 0, 0.38);
+  background: #fff;
+  box-shadow:
+    0 10px 36px rgba(10, 19, 35, 0.13),
+    0 4px 14px rgba(255, 90, 0, 0.1);
+}
+
+.koi-search-box--page:focus-within {
+  border-color: rgba(255, 90, 0, 0.58);
+  box-shadow:
+    0 14px 44px rgba(10, 19, 35, 0.16),
+    0 0 0 4px rgba(255, 90, 0, 0.14);
+}
+
 .koi-hero-field {
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;

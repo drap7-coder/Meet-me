@@ -23,20 +23,25 @@ export function rankTemporalEvents(events: EventResult[]): EventResult[] {
   return [...events].sort((left, right) => temporalEventScore(right) - temporalEventScore(left));
 }
 
-export function temporalVenueScore(venue: ScoredVenue, source: "opentripmap" | "google_places"): number {
+export function temporalVenueScore(
+  venue: ScoredVenue,
+  source: "national_parks" | "opentripmap" | "google_places"
+): number {
   let score = venue.fairnessScore;
   const haystack = `${venue.name} ${venue.category} ${venue.address} ${(venue.types ?? []).join(" ")}`;
 
+  if (source === "national_parks") score += 105;
   if (source === "opentripmap") score += 90;
   if (source === "google_places") score -= 25;
   if (TEMPORAL_EVENT_BOOST.test(haystack)) score += 35;
   if (isGenericPermanentVenue(venue)) score -= 120;
+  if (venue.notices?.some((notice) => notice.severity === "closure")) score -= 15;
 
   return Math.round(score * 10) / 10;
 }
 
 export function rankTemporalVenues(
-  venues: Array<{ venue: ScoredVenue; source: "opentripmap" | "google_places" }>
+  venues: Array<{ venue: ScoredVenue; source: "national_parks" | "opentripmap" | "google_places" }>
 ): ScoredVenue[] {
   return dedupeTemporalVenues(venues)
     .sort((left, right) => temporalVenueScore(right.venue, right.source) - temporalVenueScore(left.venue, left.source))
@@ -66,10 +71,10 @@ export function withTemporalExploreResults(
 }
 
 function dedupeTemporalVenues(
-  venues: Array<{ venue: ScoredVenue; source: "opentripmap" | "google_places" }>
+  venues: Array<{ venue: ScoredVenue; source: "national_parks" | "opentripmap" | "google_places" }>
 ) {
   const seen = new Set<string>();
-  const out: Array<{ venue: ScoredVenue; source: "opentripmap" | "google_places" }> = [];
+  const out: Array<{ venue: ScoredVenue; source: "national_parks" | "opentripmap" | "google_places" }> = [];
 
   for (const entry of venues) {
     const venue = entry.venue;

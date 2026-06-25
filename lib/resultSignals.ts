@@ -1,4 +1,4 @@
-import type { EventResult, ScoredVenue, SearchMode } from "@/lib/types";
+import type { EventResult, ScoredVenue, SearchMode, VenueNotice } from "@/lib/types";
 import { EV_TRAVEL_ICON } from "@/lib/travelMode";
 import { formatEventDistanceChip } from "@/lib/eventDistance";
 
@@ -33,7 +33,17 @@ export function venueSignalChips(venue: ScoredVenue, searchMode: SearchMode): st
   const ev = evChargingChip(venue);
   if (ev) chips.push(ev);
 
+  const notice = noticeChip(venue.notices?.[0]);
+  if (notice) chips.push(notice);
+
   return chips.slice(0, 4);
+}
+
+function noticeChip(notice?: VenueNotice): string | null {
+  if (!notice) return null;
+  if (notice.severity === "closure") return "Closure notice";
+  if (notice.severity === "caution") return "Check conditions";
+  return "Park update";
 }
 
 function driveChip(venue: ScoredVenue, searchMode: SearchMode): string | null {

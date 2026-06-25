@@ -198,6 +198,15 @@ export function VenueCard({
         </div>
       ) : null}
 
+      {venue.notices?.length ? (
+        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="text-sm font-black text-ink">
+            {venue.notices[0]?.severity === "closure" ? "Closure notice" : "Conditions update"}
+          </p>
+          <p className="mt-1 text-sm leading-6 text-slate">{venue.notices[0]?.message}</p>
+        </div>
+      ) : null}
+
       {reviewSnippet ? (
         <figure className="mt-4 rounded-lg border border-line bg-white px-4 py-3">
           <blockquote className="text-sm font-semibold leading-6 text-ink">“{reviewSnippet}”</blockquote>

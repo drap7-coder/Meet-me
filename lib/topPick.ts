@@ -153,6 +153,16 @@ function placeSummary(venue: ScoredVenue, results: SearchHalfwayResponse, profil
     return `${joinList(items)}. Closed right now.`;
   }
 
+  const activeNotice = venue.notices?.find((notice) => notice.severity === "closure") ?? venue.notices?.[0];
+  if (activeNotice) {
+    const items = [lead, ...body];
+    const suffix =
+      activeNotice.severity === "closure"
+        ? `${activeNotice.title}.`
+        : `${activeNotice.title} — check conditions before you go.`;
+    return `${joinList(items)}. ${suffix}`;
+  }
+
   return `${joinList([lead, ...body])}.`;
 }
 

@@ -41,6 +41,8 @@ export type TrendingCompositionContext = {
   cap?: number;
   query?: string;
   sportsFocused?: boolean;
+  /** Trending feeds should fill to cap even when scores spread beyond the default gap. */
+  relaxedFill?: boolean;
 };
 
 export type TrendingPick = EventResult | ScoredVenue;
@@ -291,7 +293,8 @@ function canAddPick(
   inSeasonSports: Set<SportId>,
   bestScore: number
 ): boolean {
-  if (item.score < bestScore - 36 && !item.seasonalSpecial) return false;
+  const relaxedFill = context.relaxedFill ?? false;
+  if (!relaxedFill && item.score < bestScore - 36 && !item.seasonalSpecial) return false;
   if (isSportType(item.type) && !item.qualityFloor) return false;
 
   const sportCounts = countSportSubtypes(selected);

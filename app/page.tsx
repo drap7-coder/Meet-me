@@ -13,6 +13,7 @@ import { WeekendTrendingStrip } from "@/app/components/home/WeekendTrendingStrip
 import { SelectedFiltersPanel } from "@/app/components/home/SelectedFiltersPanel";
 import { ShareDialog, type ShareDialogState } from "@/app/components/home/ShareDialog";
 import { Footer, SiteHeader } from "@/app/components/home/SiteChrome";
+import { HomeFaqSection } from "@/app/components/home/HomeFaqSection";
 import { ClassicSearchControls } from "@/app/components/ClassicSearchControls";
 import { SearchContextStrip } from "@/app/components/SearchContextStrip";
 import { KoiExampleSearchCard } from "@/app/components/KoiExampleSearchCard";
@@ -1265,6 +1266,7 @@ export default function HomePage() {
                 />
               </SearchPromptAssistProvider>
               <RecentSearchesSection meetups={recentMeetups} onSelect={rerunRecentMeetup} onClear={clearRecent} />
+              <HomeFaqSection />
               <LocationFallbackPanel
                 form={form}
                 loading={loading}

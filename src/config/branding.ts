@@ -11,7 +11,7 @@ export const BRAND = {
   heroSubheadline: "Find the spot. Pick the show. Split the distance.",
   seoTitle: "Koi — One search for tonight's plans",
   description:
-    "Ask one question and get a great recommendation for restaurants, activities, events, and streaming picks.",
+    "Ask one question and get a great recommendation for restaurants, live events, activities, explore plans, and streaming picks.",
   footerDescription: "Ask one question. Get one great answer — places, events, streaming, and fair meetups.",
   searchPlaceholder: "Ask Koi anything…",
   searchPlaceholderSpot: "Sports bar near Hoboken, Italian in Edison…",

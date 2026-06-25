@@ -245,9 +245,11 @@ function scoreTrendingPick(
   if (seasonalSpecial) score += 42;
   if (type === "live_music") score += 6;
 
+  const relaxedFill = context.relaxedFill ?? false;
   const qualityFloor =
     !SPORT_SUBTYPES.has(type) ||
     type === "seasonal_special" ||
+    (relaxedFill && isSportType(type)) ||
     (isEventResult(result) && Boolean(result.imageUrl?.trim()));
 
   return {
@@ -399,4 +401,260 @@ export function composeTrendingPicks<T extends TrendingPick>(
 
 export function inSeasonSportIds(date: Date, location?: LatLng | null): Set<SportId> {
   return new Set(getSeasonalSportsPriorities(date, location).filter((entry) => entry.inSeason).map((entry) => entry.sport));
+}
+
+export type TrendingSkipReason =
+  | "no_image"
+  | "too_far"
+  | "duplicate"
+  | "low_score"
+  | "outside_date_window"
+  | "wrong_classification"
+  | "missing_local_relevance"
+  | "capped_by_sports_limit"
+  | "out_of_season"
+  | "subtype_cap";
+
+export type TrendingCompositionSlotKey =
+  | "concert"
+  | "baseball"
+  | "football"
+  | "soccer"
+  | "seasonal_special"
+  | "market_festival"
+  | "outdoors"
+  | "culture"
+  | "family";
+
+const SLOT_TARGET_MAP: Array<{ slot: TrendingCompositionSlotKey; types: TrendingPickType[]; sport?: SportId }> = [
+  { slot: "concert", types: ["live_music"] },
+  { slot: "baseball", types: ["baseball"], sport: "baseball" },
+  { slot: "football", types: ["football"], sport: "football" },
+  { slot: "soccer", types: ["soccer"], sport: "soccer" },
+  { slot: "seasonal_special", types: ["seasonal_special"] },
+  { slot: "market_festival", types: ["comedy", "performing_arts", "festival", "farmers_market"] },
+  { slot: "outdoors", types: ["outdoors"] },
+  { slot: "culture", types: ["culture"] },
+  { slot: "family", types: ["family"] }
+];
+
+const SLOT_FOR_TARGET: TrendingCompositionSlotKey[] = [
+  "concert",
+  "baseball",
+  "football",
+  "soccer",
+  "seasonal_special",
+  "market_festival",
+  "market_festival",
+  "outdoors",
+  "culture",
+  "family",
+  "market_festival"
+];
+
+function pickKey(item: ScoredTrendingPick): string {
+  return isEventResult(item.result)
+    ? `${item.result.source}:${item.result.id}`
+    : `place:${item.result.id}`;
+}
+
+function explainCanAddPick(
+  item: ScoredTrendingPick,
+  selected: ScoredTrendingPick[],
+  context: TrendingCompositionContext,
+  inSeasonSports: Set<SportId>,
+  bestScore: number
+): { allowed: boolean; reasons: TrendingSkipReason[] } {
+  const reasons: TrendingSkipReason[] = [];
+  const relaxedFill = context.relaxedFill ?? false;
+
+  if (!relaxedFill && item.score < bestScore - 36 && !item.seasonalSpecial) {
+    reasons.push("low_score");
+  }
+  if (isSportType(item.type) && !item.qualityFloor) {
+    reasons.push("no_image");
+  }
+
+  const sportCounts = countSportSubtypes(selected);
+  const sportsFocused = context.sportsFocused ?? false;
+  const maxSports = sportsFocused ? context.cap ?? DEFAULT_TRENDING_COMPOSITION_CAP : item.seasonalSpecial ? 4 : 2;
+
+  if (isSportType(item.type) && !sportsFocused) {
+    if (sportCounts.total >= maxSports && !item.seasonalSpecial) {
+      reasons.push("capped_by_sports_limit");
+    }
+
+    const sportId = sportIdForPickType(item.type);
+    if (sportId && !inSeasonSports.has(sportId) && !item.seasonalSpecial) {
+      reasons.push("out_of_season");
+    }
+
+    if (item.type === "baseball" && sportCounts.baseball >= 1 && !item.seasonalSpecial) {
+      reasons.push("subtype_cap");
+    }
+    if (item.type === "football" && sportCounts.football >= 1 && !item.seasonalSpecial) {
+      reasons.push("subtype_cap");
+    }
+    if (item.type === "soccer" && sportCounts.soccer >= 1 && !item.seasonalSpecial) {
+      reasons.push("subtype_cap");
+    }
+  }
+
+  if (isEventResult(item.result) && item.result.distance != null && item.result.distance > 45) {
+    reasons.push("too_far");
+  }
+
+  return { allowed: reasons.length === 0, reasons };
+}
+
+export type TrendingCompositionReport = {
+  composeTrendingPicksRan: boolean;
+  relaxedFill: boolean;
+  inSeasonSports: SportId[];
+  poolSize: number;
+  slots: Record<
+    TrendingCompositionSlotKey,
+    {
+      filled: boolean;
+      title?: string;
+      type?: TrendingPickType;
+      missedReason?: string;
+    }
+  >;
+  sportsSkips: Array<{
+    id: string;
+    title: string;
+    type: TrendingPickType;
+    hasImage: boolean;
+    reasons: TrendingSkipReason[];
+  }>;
+  finalByType: Record<string, number>;
+};
+
+export function composeTrendingPicksWithReport<T extends TrendingPick>(
+  results: T[],
+  context: TrendingCompositionContext = {}
+): { picks: T[]; report: TrendingCompositionReport } {
+  const cap = context.cap ?? DEFAULT_TRENDING_COMPOSITION_CAP;
+  const date = context.date ?? new Date();
+  const origin = originFromContext(context);
+  const relaxedFill = context.relaxedFill ?? false;
+  const inSeasonSports = inSeasonSportIds(date, origin);
+  const emptySlots = Object.fromEntries(
+    SLOT_TARGET_MAP.map(({ slot }) => [slot, { filled: false }])
+  ) as TrendingCompositionReport["slots"];
+
+  if (!results.length) {
+    return {
+      picks: [],
+      report: {
+        composeTrendingPicksRan: true,
+        relaxedFill,
+        inSeasonSports: [...inSeasonSports],
+        poolSize: 0,
+        slots: emptySlots,
+        sportsSkips: [],
+        finalByType: {}
+      }
+    };
+  }
+
+  const pool = dedupePicks(results.map((result, index) => scoreTrendingPick(result, index, context, origin))).sort(
+    (left, right) => right.score - left.score
+  );
+  const bestScore = pool[0]?.score ?? 0;
+  const selected: ScoredTrendingPick[] = [];
+  const sportsSkips: TrendingCompositionReport["sportsSkips"] = [];
+
+  function add(item: ScoredTrendingPick | undefined) {
+    if (!item || selected.length >= cap) return;
+    selected.push(item);
+  }
+
+  for (let index = 0; index < COMPOSITION_TARGETS.length; index += 1) {
+    const target = COMPOSITION_TARGETS[index];
+    if (selected.length >= cap) break;
+    const slotKey = SLOT_FOR_TARGET[index];
+    if (target.sport && !inSeasonSports.has(target.sport)) {
+      if (!emptySlots[slotKey].filled && !emptySlots[slotKey].missedReason) {
+        emptySlots[slotKey].missedReason = "out_of_season";
+      }
+      continue;
+    }
+
+    const picked = pickBestMatching(pool, selected, target.types, context, inSeasonSports, bestScore, Boolean(target.sport));
+    if (picked) {
+      add(picked);
+      if (!emptySlots[slotKey].filled) {
+        emptySlots[slotKey] = {
+          filled: true,
+          title: isEventResult(picked.result) ? picked.result.title : picked.result.name,
+          type: picked.type
+        };
+      }
+      continue;
+    }
+
+    if (!emptySlots[slotKey].filled && !emptySlots[slotKey].missedReason) {
+      const candidates = pool.filter((item) => target.types.includes(item.type));
+      if (!candidates.length) {
+        emptySlots[slotKey].missedReason = "wrong_classification";
+      } else {
+        const blocked = candidates.map((item) => explainCanAddPick(item, selected, context, inSeasonSports, bestScore));
+        const reason = blocked.flatMap((entry) => entry.reasons)[0] ?? "low_score";
+        emptySlots[slotKey].missedReason = reason;
+      }
+    }
+  }
+
+  for (const item of pool) {
+    if (selected.length >= cap) break;
+    if (selected.some((entry) => pickKey(entry) === pickKey(item))) {
+      if (SPORT_SUBTYPES.has(item.type)) {
+        sportsSkips.push({
+          id: isEventResult(item.result) ? item.result.id : item.result.id,
+          title: isEventResult(item.result) ? item.result.title : item.result.name,
+          type: item.type,
+          hasImage: isEventResult(item.result) ? Boolean(item.result.imageUrl?.trim()) : false,
+          reasons: ["duplicate"]
+        });
+      }
+      continue;
+    }
+
+    const verdict = explainCanAddPick(item, selected, context, inSeasonSports, bestScore);
+    if (verdict.allowed) {
+      selected.push(item);
+      continue;
+    }
+
+    if (SPORT_SUBTYPES.has(item.type) || item.type === "seasonal_special") {
+      sportsSkips.push({
+        id: isEventResult(item.result) ? item.result.id : item.result.id,
+        title: isEventResult(item.result) ? item.result.title : item.result.name,
+        type: item.type,
+        hasImage: isEventResult(item.result) ? Boolean(item.result.imageUrl?.trim()) : false,
+        reasons: verdict.reasons
+      });
+    }
+  }
+
+  const picks = selected.map((item) => item.result as T);
+  const finalByType: Record<string, number> = {};
+  for (const item of selected) {
+    finalByType[item.type] = (finalByType[item.type] ?? 0) + 1;
+  }
+
+  return {
+    picks,
+    report: {
+      composeTrendingPicksRan: true,
+      relaxedFill,
+      inSeasonSports: [...inSeasonSports],
+      poolSize: pool.length,
+      slots: emptySlots,
+      sportsSkips,
+      finalByType
+    }
+  };
 }

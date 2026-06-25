@@ -2,10 +2,12 @@ import type { EventResult } from "../lib/eventResult";
 import {
   classifyTrendingPickType,
   composeTrendingPicks,
+  composeTrendingPicksWithReport,
   getSeasonalSportsPriorities,
   isWorldCupWindow,
   shouldIncludeSeasonalSpecial
 } from "../lib/trendingComposition";
+import { finalizeTrendingEvents } from "../lib/weekendTrendingEvents";
 import type { ScoredVenue } from "../lib/types";
 
 function assert(condition: boolean, message: string) {
@@ -158,5 +160,37 @@ assert(
   "shouldIncludeSeasonalSpecial detects World Cup"
 );
 assert(classifyTrendingPickType(event("p", "Philadelphia Phillies vs Mets", "Baseball")) === "baseball", "classifies baseball");
+
+const relaxedSportsReport = composeTrendingPicksWithReport(
+  [
+    event("concert-1", "Summer Concert", "Music"),
+    event("concert-2", "Night Show", "Music"),
+    event("concert-3", "Live Band", "Music"),
+    event("phillies-no-img", "Philadelphia Phillies vs Mets", "Baseball", { imageUrl: undefined }),
+    event("comedy-1", "Stand-up Saturday", "Comedy")
+  ],
+  { ...phillyContext, cap: 6, relaxedFill: true }
+);
+assert(
+  relaxedSportsReport.picks.some((item) => "title" in item && /phillies|baseball/i.test(item.title)),
+  "relaxedFill allows in-season baseball without image into composition"
+);
+assert(relaxedSportsReport.report.composeTrendingPicksRan, "composition report marks composeTrendingPicks as ran");
+assert(relaxedSportsReport.report.slots.baseball.filled, "baseball slot filled when candidate available");
+
+const legacySeedWouldBlock = finalizeTrendingEvents(
+  [
+    event("concert-1", "Summer Concert", "Music"),
+    event("concert-2", "Night Show", "Music"),
+    event("concert-3", "Live Band", "Music"),
+    event("phillies-no-img", "Philadelphia Phillies vs Mets", "Baseball", { imageUrl: undefined }),
+    event("comedy-1", "Stand-up Saturday", "Comedy")
+  ],
+  { ...phillyContext, cap: 6 }
+);
+assert(
+  legacySeedWouldBlock.some((item) => "title" in item && /phillies|baseball/i.test(item.title)),
+  "finalizeTrendingEvents passes full ranked pool so sports are not dropped by image seed gate"
+);
 
 console.log("PASS trending composition");

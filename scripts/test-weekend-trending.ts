@@ -76,4 +76,33 @@ const sparseImages = finalizeTrendingEvents(
 );
 assert(sparseImages.length === 4, "trending fills to cap when only one event has an image");
 
+function baseballEvent(id: string, withImage: boolean): EventResult {
+  return {
+    id,
+    title: "Philadelphia Phillies vs New York Mets",
+    category: "Baseball",
+    venue: "Citizens Bank Park",
+    startTime: "2026-06-28T19:00:00Z",
+    city: "Philadelphia",
+    state: "PA",
+    source: "ticketmaster",
+    imageUrl: withImage ? "https://img.example/phillies.jpg" : undefined
+  };
+}
+
+const imageHeavyMusic = [
+  stubEvent("img-m1", "Music"),
+  stubEvent("img-m2", "Music"),
+  stubEvent("img-m3", "Music")
+];
+
+const sportsWithoutImageRecovery = finalizeTrendingEvents(
+  [...imageHeavyMusic, baseballEvent("phillies-no-img", false), stubEvent("img-c1", "Comedy")],
+  { cap: 6, latitude: 39.9526, longitude: -75.1652, date: new Date(2026, 5, 28) }
+);
+assert(
+  sportsWithoutImageRecovery.some((event) => /phillies|baseball/i.test(event.title)),
+  "in-season baseball without image is included when ranked pool reaches composition"
+);
+
 console.log("PASS weekend trending");

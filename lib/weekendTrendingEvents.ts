@@ -98,9 +98,7 @@ export function finalizeTrendingEvents(
     .sort((left, right) => right.score - left.score)
     .map((entry) => entry.event);
 
-  const withImages = withEventImages(ranked);
-  const seedPool = withImages.length >= Math.min(cap, 3) ? withImages : ranked;
-  const composed = composeTrendingPicks(seedPool, { ...context, relaxedFill: true });
+  const composed = composeTrendingPicks(ranked, { ...context, relaxedFill: true });
   if (composed.length >= cap) return composed.slice(0, cap);
 
   const seen = new Set(composed.map((event) => `${event.source}:${event.id}`));
@@ -116,10 +114,15 @@ export function finalizeTrendingEvents(
   return filled.slice(0, cap);
 }
 
-export async function fetchTrendingNearYouEvents(
+async function fetchTrendingNearYouCandidateBatches(
   latitude: number,
   longitude: number
-): Promise<EventResult[]> {
+): Promise<{
+  sports: EventResult[];
+  comedy: EventResult[];
+  music: EventResult[];
+  window: ReturnType<typeof upcomingWeekendWindow>;
+}> {
   const window = upcomingWeekendWindow();
   const base = {
     latitude,
@@ -141,7 +144,15 @@ export async function fetchTrendingNearYouEvents(
     searchTicketmasterEvents({ ...base, query: "concerts this weekend", profile: "music", segmentName: "Music" })
   ]);
 
-  const candidates = dedupeEvents([...sports, ...music, ...comedyRaw]);
+  return { sports, comedy: comedyRaw, music, window };
+}
+
+export async function fetchTrendingNearYouEvents(
+  latitude: number,
+  longitude: number
+): Promise<EventResult[]> {
+  const { sports, comedy, music } = await fetchTrendingNearYouCandidateBatches(latitude, longitude);
+  const candidates = dedupeEvents([...sports, ...music, ...comedy]);
 
   return finalizeTrendingEvents(candidates, {
     latitude,
@@ -149,6 +160,8 @@ export async function fetchTrendingNearYouEvents(
     cap: TRENDING_NEAR_YOU_EVENT_CAP
   });
 }
+
+export { fetchTrendingNearYouCandidateBatches, dedupeEvents, withEventImages };
 
 export async function fetchTrendingWeekendEvents(
   latitude: number,

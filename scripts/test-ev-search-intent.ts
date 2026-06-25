@@ -1,5 +1,6 @@
 import {
   effectiveTravelModeForQuery,
+  isDirectEvChargerSearch,
   isEvChargingIntent,
   placesSearchQuery,
   stripEvChargingPhrases
@@ -31,6 +32,12 @@ async function run() {
   assert(
     placesSearchQuery("restaurant", evRestaurant)?.toLowerCase() === "restaurant",
     "restaurant category strips charging from customQuery"
+  );
+  assert(isDirectEvChargerSearch("EV chargers near me"), "detects direct charger searches");
+  assert(!isDirectEvChargerSearch(evRestaurant), "destination searches are not direct charger searches");
+  assert(
+    placesSearchQuery("custom", "EV chargers near me")?.toLowerCase() === "ev chargers near me",
+    "direct charger queries keep charger wording"
   );
 
   let enrichCalled = false;

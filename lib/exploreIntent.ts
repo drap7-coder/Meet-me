@@ -102,6 +102,7 @@ const ACTIVITIES_REFINEMENTS: BuilderRefinement[] = [
 const OUTDOORS_REFINEMENTS: BuilderRefinement[] = [
   { id: "parks", label: "Parks", group: "type", noun: "parks", category: "park" },
   { id: "hiking", label: "Hiking", group: "type", noun: "hiking trails", category: "hiking" },
+  { id: "trails", label: "Trails", group: "type", noun: "trails and greenways", category: "trails" },
   { id: "gardens", label: "Gardens", group: "type", noun: "gardens", category: "gardens" },
   { id: "waterfront", label: "Waterfront", group: "type", noun: "waterfront spots", category: "waterfronts" },
   { id: "farmers_markets", label: "Farmers markets", group: "type", noun: "farmers markets", category: "farmers_markets" },

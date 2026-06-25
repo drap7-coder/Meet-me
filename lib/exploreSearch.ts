@@ -1,4 +1,5 @@
 import { logExploreRoutingDecision } from "@/lib/exploreRouting";
+import { applyExploreTravelModeRanking, getExploreModeRadiusMultiplier } from "@/lib/exploreModeRanking";
 import type { NormalizedExploreIntent } from "@/lib/exploreIntent";
 import { openTripMapProvider, type OpenTripMapCategory } from "@/lib/providers/openTripMapProvider";
 import type { LatLng, ScoredVenue, SearchHalfwayResponse, VenueCandidate } from "@/lib/types";
@@ -9,6 +10,7 @@ const OTM_CATEGORY_BY_SUBCATEGORY: Partial<Record<string, OpenTripMapCategory[]>
   public_art: ["cultural", "architecture", "interesting_places"],
   architecture: ["architecture", "historic", "interesting_places"],
   hiking: ["natural"],
+  trails: ["natural", "sport", "interesting_places"],
   parks: ["natural"],
   gardens: ["natural"],
   nature_preserves: ["natural"],
@@ -78,6 +80,7 @@ export async function supplementExploreWithOpenTripMap(
   const places = await openTripMapProvider.discoverNearby({
     origin,
     categories,
+    radiusMeters: Math.round(5000 * getExploreModeRadiusMultiplier(response.travelMode)),
     limit: 12
   });
 
@@ -105,8 +108,14 @@ export async function supplementExploreWithOpenTripMap(
     };
   });
 
-  const merged = dedupeVenues([...response.venues, ...supplemental])
-    .sort((a, b) => b.fairnessScore - a.fairnessScore)
+  const merged = applyExploreTravelModeRanking(
+    dedupeVenues([...response.venues, ...supplemental]),
+    response.travelMode,
+    {
+      query: response.query,
+      category: response.category
+    }
+  )
     .slice(0, 18);
 
   logExploreRoutingDecision(intent, `opentripmap_merged_${supplemental.length}_places`);

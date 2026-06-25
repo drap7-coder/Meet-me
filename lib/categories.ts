@@ -571,6 +571,8 @@ function matchCategoryInQuery(query: string): VenueCategory | null {
     { pattern: /\bshopping\b|\bretail\b|\bstores?\b|\bmall\b|\bmalls\b/, category: "shopping" },
     { pattern: /\bgolf courses?\b|\bgolf\b/, category: "golf" },
     { pattern: /\bdog parks?\b/, category: "dog_parks" },
+    { pattern: /\bbike rides?\b|\bbike trails?\b|\bbike paths?\b|\brail trails?\b|\bgreenways?\b|\bcycling\b|\bgravel\b|\bboardwalk rides?\b/, category: "trails" },
+    { pattern: /\bscenic walks?\b|\bwaterfront walks?\b|\bnature walks?\b|\bwalking trails?\b/, category: "scenic_walks" },
     { pattern: /\bhiking trails?\b|\bhiking\b|\btrails?\b/, category: "hiking" },
     { pattern: /\bnational parks?\b|\bpicnic areas?\b|\bparks?\b/, category: "park" },
     { pattern: /\bmuseums?\b/, category: "museums" },

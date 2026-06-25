@@ -105,8 +105,18 @@ const CLASSIFICATION_RULES: ClassificationRule[] = [
   },
   {
     category: "outdoors",
+    subcategoryId: "trails",
+    pattern: /\b(?:bike ride|bike rides|bike trails?|bike paths?|rail trails?|greenways?|cycling|gravel|boardwalk ride)\b/i
+  },
+  {
+    category: "outdoors",
+    subcategoryId: "scenic_drives",
+    pattern: /\b(?:scenic walks?|waterfront walks?|nature walks?|scenic strolls?)\b/i
+  },
+  {
+    category: "outdoors",
     subcategoryId: "hiking",
-    pattern: /\b(?:hike|hiking|trail|waterfall|nature walk)\b/i
+    pattern: /\b(?:hike|hiking|hiking trails?|walking trails?|trailheads?|waterfall)\b/i
   },
   {
     category: "outdoors",
@@ -131,7 +141,7 @@ const CLASSIFICATION_RULES: ClassificationRule[] = [
   {
     category: "outdoors",
     subcategoryId: "waterfront",
-    pattern: /\b(?:waterfront|riverwalk|boardwalk|harbor walk)\b/i
+    pattern: /\b(?:waterfront|waterfront walks?|riverwalk|boardwalks?|harbor walks?)\b/i
   },
   {
     category: "outdoors",
@@ -178,7 +188,7 @@ const CLASSIFICATION_RULES: ClassificationRule[] = [
   {
     category: "outdoors",
     subcategoryId: null,
-    pattern: /\b(?:hike|hiking|trail|waterfall|garden|waterfront|overlook|scenic|nature preserve)\b/i
+    pattern: /\b(?:hike|hiking|trails?|rail trails?|greenways?|bike trails?|cycling|gravel|waterfall|garden|waterfront|overlook|scenic|nature preserve|boardwalks?)\b/i
   },
   {
     category: "activities",
@@ -198,7 +208,7 @@ const CLASSIFICATION_RULES: ClassificationRule[] = [
 ];
 
 const OPEN_TRIPMAP_FRIENDLY_PATTERN =
-  /\b(?:farmers? markets?|scenic|overlook|viewpoint|hike|hiking|trail|waterfall|park|garden|botanical|waterfront|nature preserve|historic (?:sites?|places?)|public art|street art|murals?|landmarks?|monuments?|architecture|museums?|attractions?|family activit(?:y|ies)|outdoor activit(?:y|ies)|things to do outside|things to do near)\b/i;
+  /\b(?:farmers? markets?|scenic|overlook|viewpoint|hike|hiking|trails?|bike trails?|rail trails?|greenways?|cycling|gravel|boardwalks?|waterfall|park|garden|botanical|waterfront|nature preserve|historic (?:sites?|places?)|public art|street art|murals?|landmarks?|monuments?|architecture|museums?|attractions?|family activit(?:y|ies)|outdoor activit(?:y|ies)|things to do outside|things to do near)\b/i;
 
 export function classifyExploreQuery(query: string): QueryClassification | null {
   const value = query.trim();

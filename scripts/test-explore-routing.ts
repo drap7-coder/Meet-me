@@ -91,6 +91,22 @@ assert(hikingIntent.subcategoryId === "hiking", "hiking query infers hiking subc
 assert(hikingIntent.preferOpenTripMap, "hiking prefers OpenTripMap");
 assert(exploreCategoryConfig("outdoors").providers.includes("opentripmap"), "outdoors config includes OTM");
 
+const bikeTrailIntent = normalizeExploreIntent({
+  query: "rail trail bike ride near me",
+  structured: false
+});
+assert(bikeTrailIntent.category === "outdoors", "bike ride infers outdoors");
+assert(bikeTrailIntent.subcategoryId === "trails", "bike ride infers trails subcategory");
+assert(bikeTrailIntent.venueCategory === "trails", "bike ride venue category is trails");
+assert(bikeTrailIntent.preferOpenTripMap, "bike ride prefers OpenTripMap");
+
+const waterfrontWalkIntent = normalizeExploreIntent({
+  query: "waterfront walk nearby",
+  structured: false
+});
+assert(waterfrontWalkIntent.category === "outdoors", "waterfront walk infers outdoors");
+assert(waterfrontWalkIntent.subcategoryId === "scenic_drives", "waterfront walk infers scenic walk bucket");
+
 const thriftIntent = normalizeExploreIntent({
   query: "thrift stores nearby",
   structured: false

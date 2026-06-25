@@ -6,6 +6,11 @@ import {
 } from "@/lib/geocodeCache";
 import { calculateMidpoint, estimateSearchRadiusMeters } from "@/lib/geo";
 import { effectiveTravelModeForQuery, placesSearchQuery, sortVenuesForEvIntent } from "@/lib/evSearchIntent";
+import {
+  applyExploreTravelModeRanking,
+  getExploreModeQueryHints,
+  getExploreModeRadiusMultiplier
+} from "@/lib/exploreModeRanking";
 import { applyPlaceInsight } from "@/lib/placeInsight";
 import { applyEvEnrichment, setEvEnrichmentProvider } from "@/lib/providers/evEnrichment";
 import { openChargeMapEnrichmentProvider } from "@/lib/providers/openChargeMapEnrichment";
@@ -154,9 +159,10 @@ export async function searchPlacesNearMidpoint(params: {
   meetupMode?: SearchHalfwayRequest["meetupMode"];
   customQuery?: string;
   radiusMeters: number;
+  travelMode?: SearchHalfwayRequest["travelMode"];
 }): Promise<VenueCandidate[]> {
   const meetupMode = params.meetupMode ?? DEFAULT_MEETUP_MODE;
-  const queries = getCategorySearchTerms(params.category, params.customQuery, meetupMode).slice(0, 4);
+  const queries = searchQueriesForTravelMode(params.category, params.customQuery, meetupMode, params.travelMode);
   const includedTypes = getIncludedPlaceTypes(params.category);
   const placesById = new Map<string, VenueCandidate>();
 
@@ -176,6 +182,41 @@ export async function searchPlacesNearMidpoint(params: {
   );
 
   return Array.from(placesById.values()).slice(0, 18);
+}
+
+function searchQueriesForTravelMode(
+  category: SearchHalfwayRequest["category"],
+  customQuery: string | undefined,
+  meetupMode: SearchHalfwayRequest["meetupMode"],
+  travelMode: SearchHalfwayRequest["travelMode"]
+) {
+  const base = getCategorySearchTerms(category, customQuery, meetupMode);
+  if (!travelMode || travelMode === "auto") return base.slice(0, 4);
+
+  const maxQueries = base.slice(0, 4).length;
+  const primary = base[0] ?? "places to meet";
+  const hinted = getExploreModeQueryHints(travelMode)
+    .map((hint) => `${primary} ${hint}`)
+    .filter((query) => query.toLowerCase() !== primary.toLowerCase());
+
+  return uniqueQueries([primary, ...hinted, ...base.slice(1)]).slice(0, maxQueries);
+}
+
+function uniqueQueries(queries: string[]) {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const query of queries) {
+    const trimmed = query.trim();
+    const key = trimmed.toLowerCase();
+    if (!trimmed || seen.has(key)) continue;
+    seen.add(key);
+    out.push(trimmed);
+  }
+  return out;
+}
+
+function radiusForTravelMode(radiusMeters: number, travelMode: SearchHalfwayRequest["travelMode"]) {
+  return Math.max(1200, Math.round(radiusMeters * getExploreModeRadiusMultiplier(travelMode)));
 }
 
 async function searchPlacesForQuery(params: {
@@ -347,7 +388,8 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
       category: request.category,
       meetupMode: request.meetupMode,
       customQuery: placesQuery,
-      radiusMeters: 24_000
+      radiusMeters: radiusForTravelMode(24_000, travelMode),
+      travelMode
     });
 
     const routeMatrix = await computeRouteMatrix({
@@ -362,7 +404,7 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
           ...venue,
           travelFromA,
           travelFromB: travelFromA
-        }, preferences, travelMode);
+        }, preferences);
       })
       .sort((a, b) => b.fairnessScore - a.fairnessScore);
 
@@ -376,7 +418,11 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
       evQuery,
       travelMode
     );
-    const finalVenues = await applyPlaceInsight(enrichedVenues, {
+    const rankedVenues = applyExploreTravelModeRanking(enrichedVenues, travelMode, {
+      query: evQuery,
+      category: request.category
+    });
+    const finalVenues = await applyPlaceInsight(rankedVenues, {
       query: evQuery
     });
 
@@ -400,13 +446,14 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
   ]);
 
   const midpoint = calculateMidpoint(originA.location, originB.location);
-  const radiusMeters = estimateSearchRadiusMeters(originA.location, originB.location);
+  const radiusMeters = radiusForTravelMode(estimateSearchRadiusMeters(originA.location, originB.location), travelMode);
   const venues = await searchPlacesNearMidpoint({
     midpoint,
     category: request.category,
     meetupMode: request.meetupMode,
     customQuery: placesQuery,
-    radiusMeters
+    radiusMeters,
+    travelMode
   });
 
   if (venues.length === 0) {
@@ -435,7 +482,7 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
         ...venue,
         travelFromA: routeMatrix[0]?.[index] ?? unavailableLeg(),
         travelFromB: routeMatrix[1]?.[index] ?? unavailableLeg()
-      }, preferences, travelMode)
+      }, preferences)
     )
     .sort((a, b) => b.fairnessScore - a.fairnessScore);
 
@@ -449,7 +496,11 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
     evQuery,
     travelMode
   );
-  const finalVenues = await applyPlaceInsight(enrichedVenues, {
+  const rankedVenues = applyExploreTravelModeRanking(enrichedVenues, travelMode, {
+    query: evQuery,
+    category: request.category
+  });
+  const finalVenues = await applyPlaceInsight(rankedVenues, {
     query: evQuery
   });
 

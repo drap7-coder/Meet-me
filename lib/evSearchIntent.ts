@@ -16,6 +16,13 @@ export function isEvChargingIntent(query: string | null | undefined): boolean {
   );
 }
 
+/** True when the charger itself is the destination, not enrichment for dinner/coffee/etc. */
+export function isDirectEvChargerSearch(query: string | null | undefined): boolean {
+  const value = query?.trim().toLowerCase();
+  if (!value || !isEvChargingIntent(value)) return false;
+  return !/\b(?:restaurants?|food|dinner|lunch|brunch|eat|cafes?|coffee|bars?|brewery|shopping|movies?|theater|museum|park)\b/.test(value);
+}
+
 /** Remove EV/charging phrasing so Google Places searches the venue type, not chargers. */
 export function stripEvChargingPhrases(query: string): string {
   return query
@@ -41,6 +48,7 @@ export function effectiveTravelModeForQuery(travelMode: TravelMode | null | unde
 export function placesSearchQuery(category: string, customQuery?: string): string | undefined {
   const raw = customQuery?.trim();
   if (!raw) return raw;
+  if (isDirectEvChargerSearch(raw)) return raw;
   if (category !== "custom" && !isEvChargingIntent(raw)) return raw;
   const stripped = stripEvChargingPhrases(raw);
   return stripped || raw;

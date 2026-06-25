@@ -45,29 +45,6 @@ export function travelModeChipLabel(mode: TravelMode | null | undefined): string
   return `${option.icon} ${option.label}`;
 }
 
-/**
- * Collapse user-facing modes into the ranking strategy that actually changes
- * scoring. `auto`/`drive`/`ev` share drive behavior today; `transit` is a no-op.
- */
-export type TravelRankingStrategy = "drive" | "walk" | "bike";
-
-export function travelRankingStrategy(mode: TravelMode | null | undefined): TravelRankingStrategy {
-  switch (mode) {
-    case "walk":
-      return "walk";
-    case "bike":
-      return "bike";
-    case "transit":
-      // Transit-specific routing not wired yet — neutral ranking for now (selectable in UI).
-      return "drive";
-    case "auto":
-    case "drive":
-    case "ev":
-    default:
-      return "drive";
-  }
-}
-
 export function getSavedTravelMode(): TravelMode {
   if (typeof window === "undefined") return DEFAULT_TRAVEL_MODE;
   try {

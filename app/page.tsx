@@ -144,6 +144,7 @@ export default function HomePage() {
   const searchBoxRef = useRef<AiSearchBoxHandle>(null);
   const searchInFlightRef = useRef(false);
   const prefetchedAskRef = useRef("");
+  const trendingGeocodeAttemptRef = useRef("");
   const loadingPhaseLabel =
     THINKING_PROGRESS_LABELS[searchKind ?? "places"][loadingPhase] ??
     THINKING_PROGRESS_LABELS.places[loadingPhase] ??
@@ -216,6 +217,7 @@ export default function HomePage() {
 
   const locationContext = useMemo(() => getActiveLocationContext(), [
     savedLocation,
+    savedUserAddress,
     travelMode,
     form.locationA,
     form.locationAPlaceId,
@@ -283,6 +285,47 @@ export default function HomePage() {
   useEffect(() => {
     syncUserLocationFromStorage();
   }, []);
+
+  // Saved city/ZIP labels often lack coordinates on mobile — geocode once so Trending can load.
+  useEffect(() => {
+    if (locationContext.locationACoordinates) return;
+
+    const address = savedUserAddress.trim() || savedLocation.locationA?.trim() || form.locationA.trim();
+    if (!address) return;
+
+    const placeId = savedLocation.locationAPlaceId ?? form.locationAPlaceId;
+    const attemptKey = `${address}|${placeId ?? ""}`;
+    if (trendingGeocodeAttemptRef.current === attemptKey) return;
+    trendingGeocodeAttemptRef.current = attemptKey;
+
+    let cancelled = false;
+    void geocodeManualLocation(address, placeId)
+      .then((resolved) => {
+        if (cancelled) return;
+        persistSavedLocation(resolved);
+        setForm((current) => ({
+          ...current,
+          locationA: resolved.locationA,
+          locationAPlaceId: resolved.locationAPlaceId,
+          locationACoordinates: resolved.locationACoordinates,
+          searchMode: current.searchMode ?? "single"
+        }));
+      })
+      .catch(() => {
+        // Trending stays hidden until the user sets a resolvable location.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    form.locationA,
+    form.locationAPlaceId,
+    locationContext.locationACoordinates,
+    savedLocation.locationA,
+    savedLocation.locationAPlaceId,
+    savedUserAddress
+  ]);
 
   useEffect(() => {
     if (!loading) {
@@ -1148,7 +1191,7 @@ export default function HomePage() {
 
       {showLandingHero ? (
         <>
-          <section id="search" className="relative isolate overflow-x-clip bg-ink pb-8 pt-2 sm:pb-10">
+          <section id="search" className="relative isolate overflow-x-hidden bg-ink pb-8 pt-2 sm:pb-10">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_50%_-15%,rgba(255,90,0,0.14),transparent_58%),radial-gradient(circle_at_88%_8%,rgba(10,132,255,0.08),transparent_32%),linear-gradient(180deg,#0A1323_0%,#0c1729_50%,#0A1323_100%)]" />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#0A1323] via-[#0A1323]/70 to-transparent sm:h-24" />
             <div className={`relative z-10 grid w-full gap-4 py-2 sm:gap-5 sm:py-4 ${PAGE_CONTAINER}`}>

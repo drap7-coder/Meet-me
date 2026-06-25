@@ -18,6 +18,7 @@
     "test:result-diversity": "npx tsx scripts/test-result-diversity-ranking.ts",
     "test:explore-routing": "npx tsx scripts/test-explore-routing.ts",
     "test:weekend-trending": "npx tsx scripts/test-weekend-trending.ts",
+    "test:trending-composition": "npx tsx scripts/test-trending-composition.ts",
     "test:eventbrite": "npx tsx scripts/test-eventbrite-provider.ts",
     "diagnose:eventbrite": "npx tsx scripts/eventbrite-diagnostic.ts",
     "test:seo-faq": "npx tsx scripts/test-seo-faq.ts",

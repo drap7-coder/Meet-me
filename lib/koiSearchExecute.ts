@@ -41,7 +41,8 @@ import {
   temporalEventScore,
   withTemporalExploreResults
 } from "@/lib/timeAwareExplore";
-import { diversifyExploreResults, shouldApplyDiversityRanking } from "@/lib/resultDiversityRanking";
+import { shouldApplyDiversityRanking } from "@/lib/resultDiversityRanking";
+import { composeTrendingPicks } from "@/lib/trendingComposition";
 
 export class EventLocationRequiredError extends Error {
   constructor(message = "Add your location to search nearby.") {
@@ -216,29 +217,34 @@ async function executeTimeAwareExploreSearch(
   }
 
   const fallbackVenues = fallbackResponse?.venues ?? [];
-  const venues = rankTemporalVenues([
+  const applyDiversity = shouldApplyDiversityRanking(query, exploreIntent);
+  const rankedEvents = rankTemporalEvents(events);
+  const rankedVenues = rankTemporalVenues([
     ...otmVenues.map((venue) => ({ venue, source: "opentripmap" as const })),
     ...fallbackVenues.map((venue) => ({ venue, source: "google_places" as const }))
   ]);
-  const applyDiversity = shouldApplyDiversityRanking(query, exploreIntent);
-  const rankedEvents = rankTemporalEvents(events);
-  const diversifiedEvents = applyDiversity
-    ? diversifyExploreResults(rankedEvents, {
-        query,
-        intent: exploreIntent,
-        getProvider: (event) => event.source,
-        getScore: (event) => temporalEventScore(event),
-        maxRelevanceGap: 24
-      })
-    : rankedEvents;
-  const diversifiedVenues = applyDiversity
-    ? diversifyExploreResults(venues, {
-        query,
-        intent: exploreIntent,
-        getScore: (_venue, index) => 100 - index * 4,
-        maxRelevanceGap: 12
-      })
-    : venues;
+
+  let diversifiedEvents = rankedEvents;
+  let diversifiedVenues = rankedVenues;
+
+  if (applyDiversity) {
+    const combined = [
+      ...rankedEvents.map((event) => ({ item: event, score: temporalEventScore(event) })),
+      ...rankedVenues.map((venue) => ({ item: venue, score: venue.fairnessScore }))
+    ]
+      .sort((left, right) => right.score - left.score)
+      .map((entry) => entry.item);
+
+    const composed = composeTrendingPicks(combined, {
+      query,
+      latitude: origin.location.lat,
+      longitude: origin.location.lng,
+      cap: Math.min(12, combined.length)
+    });
+
+    diversifiedEvents = composed.filter((item): item is (typeof rankedEvents)[number] => "source" in item);
+    diversifiedVenues = composed.filter((item): item is (typeof rankedVenues)[number] => !("source" in item));
+  }
 
   const response: SearchHalfwayResponse = fallbackResponse ?? {
     originA: origin,

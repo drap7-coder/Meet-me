@@ -165,6 +165,12 @@ function toEventbriteTimestamp(value: string) {
   return date.toISOString().replace(/\.\d{3}Z$/, "Z").replace("Z", "");
 }
 
+/**
+ * Eventbrite is an OWNED/AUTHORIZED-SOURCE-ONLY provider. There is no public geo
+ * search API, and public /o/ page IDs are not fetchable (404/403). It only returns
+ * events for organization/venue IDs this token owns or is authorized for, listed in
+ * src/config/eventbriteSources.ts. It is deprioritized behind Ticketmaster.
+ */
 export const eventbriteEventProvider: EventProvider = {
   name: "eventbrite",
 

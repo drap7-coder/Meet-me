@@ -36,14 +36,19 @@ assert(
 );
 assert(normalizeEventbriteEvent({ id: "z", name: { text: "No date" } }) === null, "events without start dropped");
 
-// Without a token the provider is a safe no-op regardless of configured sources.
+// Without a token the provider is a safe no-op.
+delete process.env.Eventbrite_API_Key;
 delete process.env.EVENTBRITE_API_KEY;
 delete process.env.EVENTBRITE_PRIVATE_TOKEN;
 delete process.env.EVENTBRITE_OAUTH_TOKEN;
 assert(eventbriteEventProvider.isConfigured() === false, "no-op without a token");
 
-// With a token AND curated sources present, the provider activates.
+// Eventbrite is owned/authorized-source-only: with a token but no configured
+// (authorized) org/venue sources, it stays a no-op rather than calling unfetchable IDs.
 process.env.EVENTBRITE_API_KEY = "test-token";
-assert(eventbriteEventProvider.isConfigured() === true, "configured with token + curated sources");
+assert(
+  eventbriteEventProvider.isConfigured() === false,
+  "no-op until authorized org/venue IDs are configured"
+);
 
 console.log("PASS eventbrite provider");

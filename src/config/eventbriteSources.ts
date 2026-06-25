@@ -19,6 +19,15 @@
  * Events from these sources are still distance-filtered against the searcher's
  * location at request time, so listing organizers from many cities is safe —
  * only nearby events are shown.
+ *
+ * VALIDATED LIMITATION (live test against the production token, 2026-06):
+ *   Eventbrite only works for organizers/venues AUTHORIZED to this token.
+ *   Public /o/<id> page IDs are NOT guaranteed to be fetchable — the API
+ *   returned 404 ("organization_id does not exist") or 403 ("not authorized")
+ *   for every curated public Philadelphia organizer. Treat Eventbrite as an
+ *   OWNED/AUTHORIZED SOURCE ONLY: list IDs of organizations or venues that this
+ *   account owns or has been granted access to. Eventbrite is intentionally
+ *   deprioritized behind Ticketmaster in the event pipeline.
  */
 
 export type EventbriteSourceCategory =
@@ -62,24 +71,24 @@ export type EventbriteSource = {
 /**
  * Organizations whose upcoming public events we surface. Empty = Eventbrite shows nothing.
  *
- * Starter set: Philadelphia / Wyndmoor metro. IDs were curated from public Eventbrite
- * organizer pages. Because Eventbrite has no geo search, every event is still
- * distance-filtered to the searcher, so quiet weeks simply yield fewer cards.
- * Validate which IDs actually return events with the dev diagnostic.
+ * Add ONLY organization IDs that this Eventbrite token owns or is authorized for
+ * (find your org IDs via GET /v3/users/me/organizations/). Public /o/ page IDs do
+ * NOT work — see the VALIDATED LIMITATION note above.
+ *
+ * The curated Philadelphia/Wyndmoor public organizers we tried (all returned
+ * 404/403 and were removed): Comic Cure (8458421368), Wagner Free Institute
+ * (3279885602), Philadelphia Vendor Collective (121434036349), Studio 16 @ Cherry
+ * St Pier (73776162233), Elise Mark (55227403493), Girard College / Kathy Haas
+ * (30844233775), JJ Tiziou (2329870725), Alyssa Reynoso-Morris (52253118223),
+ * Bread & Roses / Charity Tooze (98586833661). Kept here only as a record of what
+ * is NOT fetchable without authorization.
  */
-export const EVENTBRITE_ORGANIZATION_SOURCES: EventbriteSource[] = [
-  { id: "8458421368", label: "Comic Cure", city: "Philadelphia", category: "comedy" },
-  { id: "3279885602", label: "Wagner Free Institute of Science", city: "Philadelphia", category: "museums" },
-  { id: "121434036349", label: "Philadelphia Vendor Collective", city: "Philadelphia", category: "food_markets" },
-  { id: "73776162233", label: "Studio 16 @ Cherry St Pier (Bonnie MacAllister)", city: "Philadelphia", category: "arts_culture" },
-  { id: "55227403493", label: "Elise Mark — The Community Stage Open Mic", city: "Philadelphia", category: "music" },
-  { id: "30844233775", label: "Girard College Historical Resources (Kathy Haas)", city: "Philadelphia", category: "arts_culture" },
-  { id: "2329870725", label: "JJ Tiziou — public art & community", city: "Philadelphia", category: "community" },
-  { id: "52253118223", label: "Alyssa Reynoso-Morris — author & community", city: "Philadelphia", category: "family" },
-  { id: "98586833661", label: "Bread & Roses Consultant (Charity Tooze)", city: "Philadelphia", category: "community" }
-];
+export const EVENTBRITE_ORGANIZATION_SOURCES: EventbriteSource[] = [];
 
-/** Venues whose upcoming public events we surface. Empty = Eventbrite shows nothing. */
+/**
+ * Venues whose upcoming public events we surface. Empty = Eventbrite shows nothing.
+ * Same rule as organizations: only venues this token is authorized to read.
+ */
 export const EVENTBRITE_VENUE_SOURCES: EventbriteSource[] = [];
 
 export function hasEventbriteSources(): boolean {

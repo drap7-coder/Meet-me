@@ -8,6 +8,9 @@ import { eventbriteEventProvider } from "@/lib/providers/eventbriteEventProvider
 import { recordProviderError } from "@/lib/searchTelemetryRuntime";
 import { logApiError } from "@/lib/serverLog";
 
+// Order matters: Ticketmaster is the primary source. Eventbrite is intentionally
+// last (deprioritized) and only contributes events from organizations/venues this
+// token is authorized to read; on conflicts, dedupe keeps the Ticketmaster entry.
 const providers: EventProvider[] = [ticketmasterEventProvider, eventbriteEventProvider];
 
 const DEFAULT_RADIUS_MILES = 25;

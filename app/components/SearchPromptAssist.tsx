@@ -23,6 +23,7 @@ import { STREAMING_SERVICES, streamingServiceQueryPhrase } from "@/lib/streaming
 import type { HeroPopularSearch } from "@/app/components/home/HeroPopularSearches";
 import { HeroSectionLabel } from "@/app/components/home/HeroSectionLabel";
 import { ModePickChip } from "@/app/components/ModePickChip";
+import { useExploreTypeRefinements } from "@/app/components/useExploreTypeRefinements";
 import { StreamingServiceChip } from "@/app/components/StreamingServiceChip";
 import type { LatLng, SearchHalfwayRequest, VenueCategory, WatchSubcategory } from "@/lib/types";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
@@ -505,7 +506,7 @@ export function SearchPromptAssistProvider({
   const filterPills = buildFilterPills(state);
   const isStreaming = Boolean(filterPreview?.isStreaming);
   const exploreCategory = state.selectedMode === "explore" ? state.exploreCategory : null;
-  const typeRefinements = exploreCategory ? exploreRefinementsFor(exploreCategory) : [];
+  const typeRefinements = useExploreTypeRefinements(exploreCategory);
   const vibeRefinements =
     exploreCategory && exploreHasVibes(exploreCategory) ? exploreVibesFor(exploreCategory) : [];
 

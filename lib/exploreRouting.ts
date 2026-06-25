@@ -52,10 +52,11 @@ export function logExploreRoutingDecision(intent: NormalizedExploreIntent, reaso
 
 function availableProviders(configured: ProviderKey[]): ProviderKey[] {
   const hasOtm = Boolean(process.env.OPENTRIPMAP_API_KEY?.trim());
+  const hasNps = Boolean(process.env.NPS_API_KEY?.trim());
   const hasEventbrite = hasEventbriteApiKey() && hasEventbriteSources();
   return configured.filter((provider) => {
     if (provider === "opentripmap" || provider === "openstreetmap") return hasOtm;
-    if (provider === "national_parks") return false; // reserved — not wired yet
+    if (provider === "national_parks") return hasNps;
     if (provider === "tmdb") return false;
     if (provider === "eventbrite") return hasEventbrite;
     return true;
@@ -100,10 +101,11 @@ export function selectProvidersForTimeAwareExplore(category: ExploreCategory | n
   const providers: ProviderKey[] = ["ticketmaster"];
   if (hasEventbriteApiKey() && hasEventbriteSources()) providers.push("eventbrite");
   if (category === "activities" || category === "outdoors" || category === "events" || category === "sports") {
+    providers.push("national_parks");
     providers.push("opentripmap");
   }
   providers.push("google_places");
-  return providers;
+  return availableProviders(providers);
 }
 
 function inferSubcategoryFromQuery(category: ExploreCategory, query: string, subcategoryId: string | null): string | null {
@@ -187,6 +189,10 @@ export function exploreIntentFromPayload(
 
 export function shouldRouteExploreToTicketmaster(intent: NormalizedExploreIntent): boolean {
   return intent.mode === "explore" && intent.routeViaTicketmaster;
+}
+
+export function shouldSupplementWithNationalParks(intent: NormalizedExploreIntent): boolean {
+  return intent.mode === "explore" && intent.providers.includes("national_parks") && !intent.routeViaTicketmaster;
 }
 
 export function shouldSupplementWithOpenTripMap(intent: NormalizedExploreIntent): boolean {

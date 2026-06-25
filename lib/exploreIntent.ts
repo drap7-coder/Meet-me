@@ -182,7 +182,7 @@ export const EXPLORE_CATEGORIES: ExploreCategoryConfig[] = [
     emoji: "🌲",
     description: "Parks, hikes, gardens, waterfronts, scenic places",
     noun: "outdoor places",
-    providers: ["opentripmap", "google_places"],
+    providers: ["national_parks", "opentripmap", "google_places"],
     defaultVenueCategory: "park",
     subtypeLabel: "Type",
     refinements: OUTDOORS_REFINEMENTS

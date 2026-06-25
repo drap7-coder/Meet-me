@@ -254,6 +254,14 @@ export type PlaceInsight = {
   source: "wikipedia";
 };
 
+/** Closure, caution, or safety notice attached to an outdoor destination. */
+export type VenueNotice = {
+  title: string;
+  message: string;
+  severity: "info" | "caution" | "closure";
+  url?: string;
+};
+
 export type ScoredVenue = VenueCandidate & {
   travelFromA: RouteLeg;
   travelFromB: RouteLeg;
@@ -264,6 +272,7 @@ export type ScoredVenue = VenueCandidate & {
   preferenceMatches: Preference[];
   evCharging?: EvChargingInfo;
   insight?: PlaceInsight;
+  notices?: VenueNotice[];
 };
 
 export type SearchHalfwayRequest = {

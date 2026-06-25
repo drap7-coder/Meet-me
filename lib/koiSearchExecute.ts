@@ -27,8 +27,13 @@ import { resolveWatchPlaceSearchForm } from "@/lib/watchPlaceSearch";
 import type { KoiSearchApiResponse } from "@/lib/searchIntent";
 import { discoverOpenTripMapExploreVenues, supplementExploreWithOpenTripMap } from "@/lib/exploreSearch";
 import {
+  discoverNationalParkExploreVenues,
+  supplementExploreWithNationalParks
+} from "@/lib/npsExplore";
+import {
   exploreIntentFromPayload,
   shouldRouteExploreToTicketmaster,
+  shouldSupplementWithNationalParks,
   shouldSupplementWithOpenTripMap,
   shouldUseTimeAwareExplorePath,
   shouldUseOpenTripMapExplorePath
@@ -86,8 +91,14 @@ async function withExploreEnrichment(
   response: SearchHalfwayResponse,
   intent: NormalizedExploreIntent
 ): Promise<SearchHalfwayResponse> {
-  if (!shouldSupplementWithOpenTripMap(intent)) return response;
-  return supplementExploreWithOpenTripMap(response, intent, response.originA.location);
+  let enriched = response;
+  if (shouldSupplementWithNationalParks(intent)) {
+    enriched = await supplementExploreWithNationalParks(enriched, intent, enriched.originA.location);
+  }
+  if (shouldSupplementWithOpenTripMap(intent)) {
+    enriched = await supplementExploreWithOpenTripMap(enriched, intent, enriched.originA.location);
+  }
+  return enriched;
 }
 
 async function executeOpenTripMapExploreSearch(
@@ -196,9 +207,14 @@ async function executeTimeAwareExploreSearch(
     limit: 12,
     radiusMeters: 12_000
   });
+  const npsVenues = await discoverNationalParkExploreVenues(exploreIntent, origin.location, travelMode, {
+    limit: 12,
+    radiusMeters: 120_000,
+    formattedAddress: origin.formattedAddress
+  });
 
   let fallbackResponse: SearchHalfwayResponse | null = null;
-  if (!enoughTimeAwareCoverage(events, otmVenues)) {
+  if (!enoughTimeAwareCoverage(events, [...npsVenues, ...otmVenues])) {
     const fallbackForm: SearchHalfwayRequest = {
       ...eventForm,
       travelMode,
@@ -220,6 +236,7 @@ async function executeTimeAwareExploreSearch(
   const applyDiversity = shouldApplyDiversityRanking(query, exploreIntent);
   const rankedEvents = rankTemporalEvents(events);
   const rankedVenues = rankTemporalVenues([
+    ...npsVenues.map((venue) => ({ venue, source: "national_parks" as const })),
     ...otmVenues.map((venue) => ({ venue, source: "opentripmap" as const })),
     ...fallbackVenues.map((venue) => ({ venue, source: "google_places" as const }))
   ]);

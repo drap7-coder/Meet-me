@@ -10,6 +10,8 @@ import { CompactResultsHeader } from "@/app/components/home/CompactResultsHeader
 import { MarketingHero } from "@/app/components/home/MarketingHero";
 import { HeroPopularSearches } from "@/app/components/home/HeroPopularSearches";
 import { TrendingNearYouStrip } from "@/app/components/home/TrendingNearYouStrip";
+import { LocationOnboardingCard } from "@/app/components/home/LocationOnboardingCard";
+import { OnboardingCapabilityPreview } from "@/app/components/home/OnboardingCapabilityPreview";
 import { SelectedFiltersPanel } from "@/app/components/home/SelectedFiltersPanel";
 import { ShareDialog, type ShareDialogState } from "@/app/components/home/ShareDialog";
 import { Footer, SiteHeader } from "@/app/components/home/SiteChrome";
@@ -46,7 +48,7 @@ import {
   isValidManualLocationInput,
   type LocationUiState
 } from "@/lib/locationInput";
-import { readStoredLocationSnapshot, resolveLocationChipLabel, restoreStoredLocation } from "@/lib/homeLocation";
+import { readStoredLocationSnapshot, resolveLocationChipLabel, restoreStoredLocation, hasHomeLocationSaved } from "@/lib/homeLocation";
 import { mergeSavedUserLocation, getSavedUserLocation } from "@/lib/savedUserLocation";
 import { getSearchAccent } from "@/lib/searchAccent";
 import { getSavedTravelMode, saveTravelMode } from "@/lib/travelMode";
@@ -232,6 +234,11 @@ export default function HomePage() {
     locationUiState
   ]);
 
+  const hasHomeLocation = useMemo(
+    () => hasHomeLocationSaved(locationContext, savedUserAddress, savedLocation, form.locationA),
+    [locationContext, savedUserAddress, savedLocation, form.locationA]
+  );
+
   const activeAccent = useMemo(() => getSearchAccent(searchKind), [searchKind]);
 
   useEffect(() => {
@@ -387,7 +394,7 @@ export default function HomePage() {
     setShowManualFallback(false);
     setShowLocationActions(false);
     setManualLocationError("");
-    setLocationSavedMessage("Location saved — tap Search to continue.");
+    setLocationSavedMessage("You're all set — ask Koi anything.");
     setError("");
   }
 
@@ -466,7 +473,8 @@ export default function HomePage() {
     } catch {
       syncUserLocationFromStorage();
       setLocationUiState("browser_failed");
-      setShowManualFallback(true);
+      setManualLocationError("We couldn't access your location. Try entering a city or ZIP.");
+      setShowManualFallback(false);
       setShowLocationActions(false);
       if (retry ?? pendingRetry) {
         setError("Location blocked? Enter a ZIP code instead.");
@@ -1195,6 +1203,7 @@ export default function HomePage() {
   }
 
   const showLandingHero = !hasSearched && !results && !watchEventsResult && !loading;
+  const showLocationOnboarding = showLandingHero && !hasHomeLocation;
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-mint text-ink">
@@ -1206,6 +1215,20 @@ export default function HomePage() {
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_50%_-15%,rgba(255,90,0,0.14),transparent_58%),radial-gradient(circle_at_88%_8%,rgba(10,132,255,0.08),transparent_32%),linear-gradient(180deg,#0A1323_0%,#0c1729_50%,#0A1323_100%)]" />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#0A1323] via-[#0A1323]/70 to-transparent sm:h-24" />
             <div className={`relative z-10 grid w-full gap-4 py-2 sm:gap-5 sm:py-4 ${PAGE_CONTAINER}`}>
+              {showLocationOnboarding ? (
+                <>
+                  <MarketingHero />
+                  <LocationOnboardingCard
+                    locating={locating}
+                    resolvingManual={resolvingManual}
+                    manualLocationError={manualLocationError}
+                    onUseCurrentLocation={() => void requestUserLocation()}
+                    onSubmitManualLocation={(input, placeId) => void resolveManualLocation(input, placeId)}
+                  />
+                  <OnboardingCapabilityPreview />
+                </>
+              ) : (
+                <>
               <MarketingHero />
               <SearchContextStrip
                 locationLabel={activeLocationLabel}
@@ -1291,6 +1314,8 @@ export default function HomePage() {
                 onSubmit={submitClassicSearch}
                 hidden={!showClassicFallback || fallbackKind !== "full" || searchKind === "watch"}
               />
+                </>
+              )}
             </div>
           </section>
         </>

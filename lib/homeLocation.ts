@@ -73,3 +73,18 @@ export function resolveLocationChipLabel(
 
   return "";
 }
+
+export function hasHomeLocationSaved(
+  locationContext: CurrentLocationContext,
+  savedUserAddress: string,
+  savedLocation: CurrentLocationContext,
+  formLocationA: string
+) {
+  if (locationContext.locationACoordinates) return true;
+
+  return Boolean(
+    savedUserAddress.trim() ||
+      savedLocation.locationA?.trim() ||
+      formLocationA.trim()
+  );
+}

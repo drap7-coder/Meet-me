@@ -192,6 +192,10 @@ export function shouldFetchTicketmasterEvents(query: string, category?: VenueCat
   const trimmed = query.trim();
   if (!trimmed) return false;
 
+  if (/\b(?:things to do|fun|plans?|what(?:'s| is) happening)\b.*\b(?:this weekend|weekend|tonight|today|tomorrow|saturday|sunday|this afternoon|this evening)\b/i.test(trimmed)) {
+    return true;
+  }
+
   // Farmers markets, flea markets, street fairs, etc. are Places-first — Ticketmaster
   // adds unrelated concerts when blended onto these results.
   // OpenTripMap-friendly discovery (markets, museums, parks, etc.) stays Places-first.

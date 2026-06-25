@@ -8,6 +8,7 @@ import {
 import {
   normalizeExploreIntent,
   selectProvidersForExplore,
+  shouldUseTimeAwareExplorePath,
   validateExploreBuilderIsolation
 } from "../lib/exploreRouting";
 import { shouldRouteFilterSearchToFreeform } from "../lib/searchIntent";
@@ -121,9 +122,12 @@ assert(farmersIntent.category === "outdoors", "farmers market infers outdoors");
 assert(farmersIntent.subcategoryId === "farmers_markets", "farmers market infers subcategory");
 assert(farmersIntent.venueCategory === "farmers_markets", "farmers market venue category");
 assert(!farmersIntent.routeViaTicketmaster, "farmers market does not route to ticketmaster");
-assert(farmersIntent.providers[0] === "opentripmap", "farmers market primary is OpenTripMap");
+assert(farmersIntent.timeAwareExplore, "farmers market weekend is time-aware");
+assert(farmersIntent.providers[0] === "ticketmaster", "farmers market weekend checks event providers first");
 assert(farmersIntent.providers.includes("google_places"), "farmers market includes places fallback");
+assert(farmersIntent.providers.includes("opentripmap"), "farmers market includes OpenTripMap");
 assert(!farmersIntent.providers.includes("eventbrite"), "eventbrite omitted without food_market sources");
+assert(shouldUseTimeAwareExplorePath(farmersIntent), "farmers market weekend uses time-aware path");
 
 const foodProviders = selectProvidersForExplore("food_drink", null);
 assert(foodProviders[0] === "google_places" && foodProviders.length === 1, "food & drink is places primary");

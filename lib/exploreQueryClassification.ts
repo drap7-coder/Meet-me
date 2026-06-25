@@ -42,6 +42,21 @@ const CLASSIFICATION_RULES: ClassificationRule[] = [
     subcategoryId: "comedy",
     pattern: /\b(?:comedy|stand[- ]?up|theater|theatre|festival|show tonight|tickets)\b/i
   },
+  {
+    category: "events",
+    subcategoryId: null,
+    pattern: /\bevents?\b.*\b(?:this weekend|weekend|tonight|today|tomorrow|saturday|sunday|this afternoon|this evening)\b/i
+  },
+  {
+    category: "activities",
+    subcategoryId: null,
+    pattern: /\b(?:things to do|fun|plans?|what(?:'s| is) happening)\b.*\b(?:this weekend|weekend|tonight|today|tomorrow|saturday|sunday|this afternoon|this evening)\b/i
+  },
+  {
+    category: "activities",
+    subcategoryId: null,
+    pattern: /^(?:tonight|today|tomorrow|saturday|sunday|this afternoon|this evening)$/i
+  },
 
   // Places-first food & drink
   {

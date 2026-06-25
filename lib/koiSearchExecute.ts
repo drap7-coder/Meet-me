@@ -25,14 +25,20 @@ import type { GeocodedLocation, SearchHalfwayRequest, SearchHalfwayResponse, Wat
 import { hasStreamingWatchContext, isMovieTheaterEventsQuery } from "@/lib/watchEvents";
 import { resolveWatchPlaceSearchForm } from "@/lib/watchPlaceSearch";
 import type { KoiSearchApiResponse } from "@/lib/searchIntent";
-import { supplementExploreWithOpenTripMap } from "@/lib/exploreSearch";
+import { discoverOpenTripMapExploreVenues, supplementExploreWithOpenTripMap } from "@/lib/exploreSearch";
 import {
   exploreIntentFromPayload,
   shouldRouteExploreToTicketmaster,
   shouldSupplementWithOpenTripMap,
+  shouldUseTimeAwareExplorePath,
   shouldUseOpenTripMapExplorePath
 } from "@/lib/exploreRouting";
 import type { ExploreIntentPayload, NormalizedExploreIntent } from "@/lib/exploreIntent";
+import {
+  enoughTimeAwareCoverage,
+  rankTemporalVenues,
+  withTemporalExploreResults
+} from "@/lib/timeAwareExplore";
 
 export class EventLocationRequiredError extends Error {
   constructor(message = "Add your location to search nearby.") {
@@ -145,6 +151,93 @@ async function executeOpenTripMapExploreSearch(
   };
 }
 
+async function executeTimeAwareExploreSearch(
+  query: string,
+  exploreIntent: NormalizedExploreIntent,
+  locationContext: SearchHalfwayRequest,
+  parseContext: CurrentLocationContext | undefined,
+  travelMode: SearchHalfwayRequest["travelMode"]
+): Promise<KoiSearchApiResponse | null> {
+  const eventForm = resolveEventSearchForm(query, locationContext, parseContext);
+  if (!eventSearchLocationReady(eventForm)) {
+    return needsLocationResponse("events");
+  }
+
+  let origin: GeocodedLocation;
+  try {
+    origin = await resolveEventOrigin(eventForm);
+  } catch (error) {
+    logApiError("time-aware-origin-resolve", error);
+    throw error instanceof EventLocationRequiredError
+      ? error
+      : new EventLocationRequiredError("Add your location to search nearby.");
+  }
+
+  const profile = classifyLocalEventProfile(query);
+  let events: Awaited<ReturnType<typeof searchLocalEvents>> = [];
+  try {
+    events = await searchLocalEvents({
+      query,
+      latitude: origin.location.lat,
+      longitude: origin.location.lng,
+      profile,
+      resultCap: 12
+    });
+  } catch (error) {
+    logApiError("time-aware-events-search", error);
+    events = [];
+  }
+
+  const otmVenues = await discoverOpenTripMapExploreVenues(exploreIntent, origin.location, travelMode, {
+    limit: 12,
+    radiusMeters: 12_000
+  });
+
+  let fallbackResponse: SearchHalfwayResponse | null = null;
+  if (!enoughTimeAwareCoverage(events, otmVenues)) {
+    const fallbackForm: SearchHalfwayRequest = {
+      ...eventForm,
+      travelMode,
+      category: normalizeCategory(exploreIntent.venueCategory),
+      customQuery: query,
+      searchMode: eventForm.searchMode ?? "single"
+    };
+    try {
+      fallbackResponse = await googlePlacesProvider.searchHalfway({
+        ...fallbackForm,
+        insightQuery: query
+      });
+    } catch (error) {
+      logApiError("time-aware-places-fallback", error);
+    }
+  }
+
+  const fallbackVenues = fallbackResponse?.venues ?? [];
+  const venues = rankTemporalVenues([
+    ...otmVenues.map((venue) => ({ venue, source: "opentripmap" as const })),
+    ...fallbackVenues.map((venue) => ({ venue, source: "google_places" as const }))
+  ]);
+
+  const response: SearchHalfwayResponse = fallbackResponse ?? {
+    originA: origin,
+    originB: origin,
+    midpoint: origin.location,
+    category: normalizeCategory(exploreIntent.venueCategory),
+    searchMode: "single",
+    meetupMode: "single",
+    preferences: eventForm.preferences ?? [],
+    travelMode,
+    query,
+    venues: [],
+    eventProfile: profile
+  };
+
+  return {
+    kind: "places",
+    data: withTemporalExploreResults({ ...response, eventProfile: profile }, events, venues)
+  };
+}
+
 export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchApiResponse> {
   const query = input.query.trim();
   if (!query) {
@@ -192,6 +285,24 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
         kind: "places",
         data: await buildEventsOnlyResponse(query, eventForm, teamNationwide)
       };
+    } catch (error) {
+      if (isLocationResolutionFailure(error)) {
+        return needsLocationResponse("events", error instanceof Error ? error.message : undefined);
+      }
+      throw error;
+    }
+  }
+
+  if (shouldUseTimeAwareExplorePath(exploreIntent)) {
+    try {
+      const temporalResponse = await executeTimeAwareExploreSearch(
+        query,
+        exploreIntent,
+        locationContext,
+        parseContext,
+        travelMode
+      );
+      if (temporalResponse) return temporalResponse;
     } catch (error) {
       if (isLocationResolutionFailure(error)) {
         return needsLocationResponse("events", error instanceof Error ? error.message : undefined);

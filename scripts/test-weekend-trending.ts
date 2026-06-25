@@ -1,6 +1,7 @@
 import {
   blendTrendingNearYouMix,
   blendWeekendTrendingMix,
+  finalizeTrendingEvents,
   upcomingWeekendWindow,
   weekendTrendingWeekKey
 } from "../lib/weekendTrendingEvents";
@@ -62,5 +63,17 @@ const nearYou = blendTrendingNearYouMix(sports, comedy, music, 4);
 assert(nearYou.some((item) => item.id === "s1"), "near-you composition can include sports");
 assert(nearYou.some((item) => item.id === "m1" || item.id === "c1"), "near-you composition includes music or comedy");
 assert(nearYou.length === 4, "near-you composition fills to cap");
+
+const sparseImages = finalizeTrendingEvents(
+  [
+    stubEvent("img-1", "Music"),
+    { ...stubEvent("no-img-1", "Music"), imageUrl: undefined },
+    { ...stubEvent("no-img-2", "Comedy"), imageUrl: undefined },
+    { ...stubEvent("no-img-3", "Sports"), imageUrl: undefined },
+    { ...stubEvent("no-img-4", "Arts"), imageUrl: undefined }
+  ],
+  { cap: 4 }
+);
+assert(sparseImages.length === 4, "trending fills to cap when only one event has an image");
 
 console.log("PASS weekend trending");

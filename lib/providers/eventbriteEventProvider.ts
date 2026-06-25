@@ -62,6 +62,9 @@ type EventbriteEventsResponse = {
 
 export function getEventbriteToken() {
   return (
+    // Note: env var names are case-sensitive. "Eventbrite_API_Key" matches the
+    // name provisioned in Vercel; the others are accepted as conventional aliases.
+    process.env.Eventbrite_API_Key?.trim() ||
     process.env.EVENTBRITE_API_KEY?.trim() ||
     process.env.EVENTBRITE_PRIVATE_TOKEN?.trim() ||
     process.env.EVENTBRITE_OAUTH_TOKEN?.trim() ||

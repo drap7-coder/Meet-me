@@ -74,16 +74,14 @@ export function SearchContextStrip({
         </div>
       </div>
 
-      <div className={`flex shrink-0 flex-col gap-1 sm:min-w-[10.5rem] ${dividerClass}`}>
+      <div className={`ml-auto flex shrink-0 flex-col items-end gap-1 text-right sm:min-w-[10.5rem] ${dividerClass}`}>
         <p className={sectionLabelClass}>Getting around</p>
-        <div className="flex items-center">
-          <TravelModeSelector
-            value={travelMode}
-            onChange={onTravelModeChange}
-            busy={busy}
-            surface={surface}
-          />
-        </div>
+        <TravelModeSelector
+          value={travelMode}
+          onChange={onTravelModeChange}
+          busy={busy}
+          surface={surface}
+        />
       </div>
     </div>
   );

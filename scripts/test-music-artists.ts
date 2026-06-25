@@ -7,8 +7,8 @@ function assert(condition: boolean, message: string) {
 }
 
 const concertsBase = {
-  selectedMode: "local" as const,
-  localWhat: "events" as const,
+  selectedMode: "explore" as const,
+  exploreCategory: "events" as const,
   typeId: "concerts",
   sportsTeamId: null,
   musicArtistId: null,

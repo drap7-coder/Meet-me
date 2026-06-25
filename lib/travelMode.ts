@@ -23,7 +23,7 @@ export const EV_TRAVEL_ICON = "⚡";
 export const TRAVEL_MODE_OPTIONS: TravelModeOption[] = [
   { id: "auto", label: "Auto", icon: "✨", description: "Let Koi pick the best ranking" },
   { id: "drive", label: "Drive", icon: "🚗", description: "Driving distances and times" },
-  { id: "ev", label: "EV", icon: EV_TRAVEL_ICON, description: "EV-friendly spots with nearby charging" },
+  { id: "ev", label: "EV Charging", icon: EV_TRAVEL_ICON, description: "EV-friendly spots with nearby charging" },
   { id: "walk", label: "Walk", icon: "🚶", description: "Favor nearby, walkable spots" },
   { id: "bike", label: "Bike", icon: "🚲", description: "Favor reasonable bike rides" },
   { id: "transit", label: "Transit", icon: "🚆", description: "Public transit — ranking favors reachable stops" }

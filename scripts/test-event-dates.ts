@@ -12,8 +12,8 @@ function assert(condition: boolean, message: string) {
 }
 
 const eventsBase: BuilderState = {
-  selectedMode: "local",
-  localWhat: "events",
+  selectedMode: "explore",
+  exploreCategory: "events",
   typeId: "concerts",
   sportsTeamId: null,
   musicArtistId: null,

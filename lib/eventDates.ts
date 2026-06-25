@@ -10,12 +10,15 @@ const ISO_DATE_IN_QUERY = /\bon\s+(\d{4}-\d{2}-\d{2})\b/i;
 
 /** Natural-language timing phrase for event chip queries (before the location suffix). */
 export function eventWhenPhrase(input: {
-  localWhat: string | null;
+  exploreCategory?: string | null;
+  /** @deprecated use exploreCategory */
+  localWhat?: string | null;
   typeId: string | null;
   eventWhen?: EventWhen | null;
   eventDate?: string | null;
 }): string {
-  if (input.localWhat !== "events") return "";
+  const category = input.exploreCategory ?? input.localWhat;
+  if (category !== "events") return "";
   if (input.typeId === "weekend") return "";
 
   if (input.eventWhen === "tonight") return "tonight";

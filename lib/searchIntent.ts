@@ -1,4 +1,5 @@
 import type { PickQueryOptions } from "@/app/components/SearchPromptAssist";
+import { exploreIntentFromPayload, shouldRouteExploreToTicketmaster } from "@/lib/exploreRouting";
 import type { CurrentLocationContext } from "@/lib/currentLocation";
 import type { SearchSubmitOptions } from "@/lib/searchLocation";
 import { resolveKoiBotMode } from "@/lib/watchEvents";
@@ -30,6 +31,7 @@ export type SearchIntent =
       form?: SearchHalfwayRequest;
       watchSubcategory?: WatchSubcategory;
       streamingServiceIds?: string[];
+      exploreIntent?: PickQueryOptions["exploreIntent"];
     };
 
 export type KoiSearchApiResponse =
@@ -44,6 +46,11 @@ export type KoiSearchApiResponse =
     };
 
 export function shouldRouteFilterSearchToFreeform(query: string, options: PickQueryOptions): boolean {
+  if (options.exploreIntent) {
+    const intent = exploreIntentFromPayload(query, options.exploreIntent);
+    if (shouldRouteExploreToTicketmaster(intent)) return true;
+    if (intent.providers[0] === "opentripmap") return true;
+  }
   if (options.routeViaFreeform) return true;
   return resolveKoiBotMode(query.trim()) === "events";
 }

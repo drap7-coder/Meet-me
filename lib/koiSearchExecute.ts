@@ -21,6 +21,13 @@ import type { GeocodedLocation, SearchHalfwayRequest, SearchHalfwayResponse, Wat
 import { hasStreamingWatchContext, isMovieTheaterEventsQuery } from "@/lib/watchEvents";
 import { resolveWatchPlaceSearchForm } from "@/lib/watchPlaceSearch";
 import type { KoiSearchApiResponse } from "@/lib/searchIntent";
+import { supplementExploreWithOpenTripMap } from "@/lib/exploreSearch";
+import {
+  exploreIntentFromPayload,
+  shouldRouteExploreToTicketmaster,
+  shouldSupplementWithOpenTripMap
+} from "@/lib/exploreRouting";
+import type { ExploreIntentPayload, NormalizedExploreIntent } from "@/lib/exploreIntent";
 
 export class EventLocationRequiredError extends Error {
   constructor(message = "Add your location to search nearby.") {
@@ -55,9 +62,18 @@ type ExecuteInput = {
   form?: unknown;
   watchSubcategory?: WatchSubcategory;
   streamingServiceIds?: string[];
+  exploreIntent?: ExploreIntentPayload;
 };
 
 export type { ExecuteInput };
+
+async function withExploreEnrichment(
+  response: SearchHalfwayResponse,
+  intent: NormalizedExploreIntent
+): Promise<SearchHalfwayResponse> {
+  if (!shouldSupplementWithOpenTripMap(intent)) return response;
+  return supplementExploreWithOpenTripMap(response, intent, response.originA.location);
+}
 
 export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchApiResponse> {
   const query = input.query.trim();
@@ -80,6 +96,7 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
   const streamingServiceIds = parseStreamingServiceIds(input.streamingServiceIds);
   // "Getting Around" context — applied to every Places form so ranking + EV
   // enrichment stay consistent regardless of which path resolves the search.
+  const exploreIntent = exploreIntentFromPayload(query, input.exploreIntent);
   const baseTravelMode = locationContext.travelMode ?? parseContext?.travelMode ?? "auto";
   const travelMode = effectiveTravelModeForQuery(baseTravelMode, query);
 
@@ -92,7 +109,7 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
 
   // Chip picks like "Concerts near me" must hit Ticketmaster directly — before the
   // parser or watch-place heuristics can send them through Google Places.
-  if (isPureEventQuery(query)) {
+  if (isPureEventQuery(query) || shouldRouteExploreToTicketmaster(exploreIntent)) {
     const teamNationwide = isTeamSpecificSportsQuery(query);
     const eventForm = resolveEventSearchForm(query, locationContext, parseContext);
 
@@ -125,17 +142,19 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
       };
     }
 
+    const placeResponse = await googlePlacesProvider.searchHalfway({
+      ...resolvedPlaceForm,
+      travelMode,
+      insightQuery: query,
+      category: normalizeCategory(
+        exploreIntent.category ? exploreIntent.venueCategory : resolvedPlaceForm.category
+      )
+    });
     return {
       kind: "places",
-      data: await enrichPlacesResponseWithEvents(
-        await googlePlacesProvider.searchHalfway({
-          ...resolvedPlaceForm,
-          travelMode,
-          insightQuery: query,
-          category: normalizeCategory(resolvedPlaceForm.category)
-        }),
-        query,
-        resolvedPlaceForm
+      data: await withExploreEnrichment(
+        await enrichPlacesResponseWithEvents(placeResponse, query, resolvedPlaceForm),
+        exploreIntent
       )
     };
   }
@@ -204,17 +223,18 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
     };
   }
 
+  const placesResponse = await googlePlacesProvider.searchHalfway({
+    ...resolvedForm,
+    travelMode,
+    insightQuery: query,
+    category: normalizeCategory(exploreIntent.category ? exploreIntent.venueCategory : resolvedForm.category)
+  });
+
   return {
     kind: "places",
-    data: await enrichPlacesResponseWithEvents(
-      await googlePlacesProvider.searchHalfway({
-        ...resolvedForm,
-        travelMode,
-        insightQuery: query,
-        category: normalizeCategory(resolvedForm.category)
-      }),
-      query,
-      resolvedForm
+    data: await withExploreEnrichment(
+      await enrichPlacesResponseWithEvents(placesResponse, query, resolvedForm),
+      exploreIntent
     )
   };
 }

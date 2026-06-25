@@ -9,8 +9,8 @@ function includesPhrase(query: string, phrase: string) {
 }
 
 const stacked = {
-  selectedMode: "local" as const,
-  localWhat: "food" as const,
+  selectedMode: "explore" as const,
+  exploreCategory: "food_drink" as const,
   typeId: "sushi",
   sportsTeamId: null,
   musicArtistId: null,
@@ -31,8 +31,8 @@ assert(!includesPhrase(query, "tonight"), "excludes timeframe wording");
 assert(!includesPhrase(query, "open now"), "excludes timeframe wording");
 
 const minimal = {
-  selectedMode: "local" as const,
-  localWhat: "food" as const,
+  selectedMode: "explore" as const,
+  exploreCategory: "food_drink" as const,
   typeId: null,
   sportsTeamId: null,
   musicArtistId: null,
@@ -47,12 +47,12 @@ const minimal = {
 assert(buildPlaceQuery(minimal) === "Restaurants near me", "minimal query has no implicit tonight");
 
 const drinksStacked = {
-  selectedMode: "local" as const,
-  localWhat: "drinks" as const,
-  typeId: "wine",
+  selectedMode: "explore" as const,
+  exploreCategory: "nightlife" as const,
+  typeId: "wine_bars",
   sportsTeamId: null,
   musicArtistId: null,
-  extras: new Set(["upscale"]),
+  extras: new Set<string>(),
   where: "near" as const,
   streamingType: null,
   streamingVibe: null,
@@ -61,13 +61,12 @@ const drinksStacked = {
 };
 
 const drinksQuery = buildPlaceQuery(drinksStacked);
-assert(includesPhrase(drinksQuery, "upscale"), `includes upscale: ${drinksQuery}`);
-assert(includesPhrase(drinksQuery, "wine"), `includes wine: ${drinksQuery}`);
+assert(includesPhrase(drinksQuery, "wine bars"), `includes wine bars: ${drinksQuery}`);
 assert(!includesPhrase(drinksQuery, "open now"), "excludes timeframe wording");
 
 const moviesBase = {
   selectedMode: "streaming" as const,
-  localWhat: "food" as const,
+  exploreCategory: null,
   typeId: null,
   sportsTeamId: null,
   musicArtistId: null,
@@ -101,8 +100,8 @@ assert(
 );
 
 const yankeesSports = {
-  selectedMode: "local" as const,
-  localWhat: "sports" as const,
+  selectedMode: "explore" as const,
+  exploreCategory: "sports" as const,
   typeId: "baseball",
   sportsTeamId: "yankees",
   musicArtistId: null,
@@ -125,8 +124,8 @@ assert(
 );
 
 const rockConcerts = {
-  selectedMode: "local" as const,
-  localWhat: "events" as const,
+  selectedMode: "explore" as const,
+  exploreCategory: "events" as const,
   typeId: "concerts",
   sportsTeamId: null,
   musicArtistId: null,

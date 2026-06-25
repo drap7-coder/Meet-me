@@ -8,8 +8,8 @@ function assert(condition: boolean, message: string) {
 }
 
 const yankeesState: BuilderState = {
-  selectedMode: "local",
-  localWhat: "sports",
+  selectedMode: "explore",
+  exploreCategory: "sports",
   typeId: "baseball",
   sportsTeamId: "yankees",
   musicArtistId: null,
@@ -42,7 +42,7 @@ assert(
 
 const concertsState: BuilderState = {
   ...yankeesState,
-  localWhat: "events",
+  exploreCategory: "events",
   typeId: "concerts",
   sportsTeamId: null
 };

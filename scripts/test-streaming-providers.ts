@@ -91,7 +91,7 @@ assert(filtered.map((item) => item.id).join(",") === "a,b", "filters with OR log
 
 const streamQuery = buildStreamQuery({
   selectedMode: "streaming",
-  localWhat: null,
+  exploreCategory: null,
   typeId: null,
   sportsTeamId: null,
   musicArtistId: null,

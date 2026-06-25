@@ -15,6 +15,7 @@
     "test:sports-event-filter": "npx tsx scripts/test-sports-event-filter.ts",
     "test:travel-mode": "npx tsx scripts/test-travel-mode.ts",
     "test:ev-search-intent": "npx tsx scripts/test-ev-search-intent.ts",
+    "test:explore-routing": "npx tsx scripts/test-explore-routing.ts",
     "test:discovery-providers": "npx tsx scripts/test-discovery-providers.ts"
   },
   "dependencies": {

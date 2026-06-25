@@ -708,7 +708,8 @@ export default function HomePage() {
             context: { ...(intent.context ?? getActiveLocationContext()), travelMode: activeTravelMode },
             form: { ...(intent.form ?? form), travelMode: activeTravelMode },
             watchSubcategory: intent.watchSubcategory,
-            streamingServiceIds: intent.streamingServiceIds
+            streamingServiceIds: intent.streamingServiceIds,
+            exploreIntent: intent.exploreIntent
           })
         });
         const data = (await response.json()) as KoiSearchApiResponse & {
@@ -999,7 +1000,8 @@ export default function HomePage() {
           searchMode: "single"
         },
         watchSubcategory: options.watchSubcategory,
-        streamingServiceIds: options.streamingServiceIds
+        streamingServiceIds: options.streamingServiceIds,
+        exploreIntent: options.exploreIntent
       });
       return;
     }

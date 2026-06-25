@@ -2,15 +2,18 @@
 
 import { getWatchGenresForSubcategory, getWatchGenreGroupLabel, resolveWatchGenreQueryWord, WATCH_TYPE_OPTIONS, WATCH_VIBE_OPTIONS, type WatchStreamVibe } from "@/lib/watchBrowse";
 import {
-  LOCAL_CHIP_CATEGORIES,
-  VISIBLE_LOCAL_CHIP_CATEGORIES,
-  groupHasVibeOptions,
-  localChipCategoryById,
-  typeRefinementsFor,
-  venueCategoryForChip,
-  vibeRefinementsFor,
-  type LocalChipCategoryId
-} from "@/lib/searchBuilderOptions";
+  EXPLORE_CATEGORIES,
+  exploreCategoryConfig,
+  exploreHasVibes,
+  exploreRefinementsFor,
+  exploreVibesFor,
+  isTicketmasterExploreSubcategory,
+  venueCategoryForExplore,
+  type ExploreCategory,
+  type ExploreIntentPayload
+} from "@/lib/exploreIntent";
+import { normalizeExploreIntent, selectProvidersForExplore } from "@/lib/exploreRouting";
+import { builderModeForWhere, type SearchBuilderMode } from "@/lib/searchBuilderOptions";
 import { EVENT_WHEN_OPTIONS, eventWhenChipLabel, eventWhenPhrase, minSelectableEventDate, type EventWhen } from "@/lib/eventDates";
 import { resolveEventTypeRefinement, sportsTeamChipLabel } from "@/lib/eventBuilderOptions";
 import { MUSIC_GENRES, musicGenreById, musicGenreChipLabel } from "@/lib/musicGenres";
@@ -22,7 +25,6 @@ import { HeroSectionLabel } from "@/app/components/home/HeroSectionLabel";
 import { ModePickChip } from "@/app/components/ModePickChip";
 import { StreamingServiceChip } from "@/app/components/StreamingServiceChip";
 import type { LatLng, SearchHalfwayRequest, VenueCategory, WatchSubcategory } from "@/lib/types";
-import { builderModeForWhere, type SearchBuilderMode } from "@/lib/searchBuilderOptions";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 export type PickQueryOptions = {
@@ -31,6 +33,8 @@ export type PickQueryOptions = {
   searchMode?: SearchHalfwayRequest["searchMode"];
   builderMode?: SearchBuilderMode;
   streamingServiceIds?: string[];
+  /** Structured explore routing — category/subcategory/provider stack. */
+  exploreIntent?: ExploreIntentPayload;
   /** Sports/events chip picks should go through koi-search, not search-halfway. */
   routeViaFreeform?: boolean;
 };
@@ -46,13 +50,13 @@ type ProviderProps = {
 };
 
 type WhereId = "near" | "choose" | "halfway";
-type SelectedMode = "streaming" | "local" | null;
+type SelectedMode = "streaming" | "explore" | null;
 
-const CONCIERGE_TAGLINE = "Not sure? Try one of these";
+const CONCIERGE_TAGLINE = "What are you in the mood for?";
 
 export type BuilderState = {
   selectedMode: SelectedMode;
-  localWhat: LocalChipCategoryId | null;
+  exploreCategory: ExploreCategory | null;
   typeId: string | null;
   sportsTeamId: string | null;
   musicArtistId: string | null;
@@ -85,13 +89,13 @@ type AssistContextValue = {
   filterPreview: FilterPreview | null;
   isStreaming: boolean;
   userCoordinates?: LatLng;
-  typeRefinements: ReturnType<typeof typeRefinementsFor>;
-  vibeRefinements: ReturnType<typeof vibeRefinementsFor>;
+  typeRefinements: ReturnType<typeof exploreRefinementsFor>;
+  vibeRefinements: ReturnType<typeof exploreVibesFor>;
   surface: "hero" | "page";
   pickMode: (mode: Exclude<SelectedMode, null>) => void;
   pickExplore: () => void;
   pickMeetHalfway: () => void;
-  pickLocalWhat: (id: LocalChipCategoryId) => void;
+  pickExploreCategory: (id: ExploreCategory) => void;
   pickStreamingType: (id: "movies" | "tv_shows") => void;
   toggleType: (id: string) => void;
   toggleSportsTeam: (id: string) => void;
@@ -125,7 +129,7 @@ function initialBuilderState(seed?: Pick<PickQueryOptions, "category" | "watchSu
     const seededTrending = seed.watchSubcategory === "trending";
     return {
       selectedMode: "streaming",
-      localWhat: null,
+      exploreCategory: null,
       typeId: null,
       sportsTeamId: null,
       musicArtistId: null,
@@ -142,7 +146,7 @@ function initialBuilderState(seed?: Pick<PickQueryOptions, "category" | "watchSu
 
   return {
     selectedMode: null,
-    localWhat: null,
+    exploreCategory: null,
     typeId: null,
     sportsTeamId: null,
     musicArtistId: null,
@@ -197,7 +201,7 @@ export function SearchPromptAssistProvider({
         return {
           ...prev,
           selectedMode: null,
-          localWhat: null,
+          exploreCategory: null,
           typeId: null,
           sportsTeamId: null,
           musicArtistId: null,
@@ -215,7 +219,7 @@ export function SearchPromptAssistProvider({
         return {
           ...prev,
           selectedMode: "streaming",
-          localWhat: null,
+          exploreCategory: null,
           typeId: null,
           sportsTeamId: null,
           musicArtistId: null,
@@ -231,8 +235,8 @@ export function SearchPromptAssistProvider({
 
       return {
         ...prev,
-        selectedMode: "local",
-        localWhat: null,
+        selectedMode: "explore",
+        exploreCategory: null,
         typeId: null,
         sportsTeamId: null,
         musicArtistId: null,
@@ -257,20 +261,18 @@ export function SearchPromptAssistProvider({
       updatePreview(next);
       return next;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [builderMode]);
 
   function pickExplore() {
     commit((prev) => {
-      const active = prev.selectedMode === "local" && prev.where !== "halfway";
-      if (active) {
+      if (prev.selectedMode === "explore") {
         return initialBuilderState();
       }
 
       return {
         ...prev,
-        selectedMode: "local",
-        localWhat: null,
+        selectedMode: "explore",
+        exploreCategory: null,
         typeId: null,
         sportsTeamId: null,
         musicArtistId: null,
@@ -288,15 +290,15 @@ export function SearchPromptAssistProvider({
 
   function pickMeetHalfway() {
     commit((prev) => {
-      const active = prev.selectedMode === "local" && prev.where === "halfway";
+      const active = prev.selectedMode === "explore" && prev.where === "halfway";
       if (active) {
         return initialBuilderState();
       }
 
       return {
         ...prev,
-        selectedMode: "local",
-        localWhat: "food",
+        selectedMode: "explore",
+        exploreCategory: "food_drink",
         typeId: null,
         sportsTeamId: null,
         musicArtistId: null,
@@ -312,12 +314,12 @@ export function SearchPromptAssistProvider({
     });
   }
 
-  function pickLocalWhat(id: LocalChipCategoryId) {
+  function pickExploreCategory(id: ExploreCategory) {
     commit((prev) => {
-      if (prev.selectedMode === "local" && prev.localWhat === id) {
+      if (prev.selectedMode === "explore" && prev.exploreCategory === id) {
         return {
           ...prev,
-          localWhat: null,
+          exploreCategory: null,
           typeId: null,
           sportsTeamId: null,
           musicArtistId: null,
@@ -328,8 +330,8 @@ export function SearchPromptAssistProvider({
       }
       return {
         ...prev,
-        selectedMode: "local",
-        localWhat: id,
+        selectedMode: "explore",
+        exploreCategory: id,
         typeId: null,
         sportsTeamId: null,
         musicArtistId: null,
@@ -390,8 +392,8 @@ export function SearchPromptAssistProvider({
       const sportId = sportIdForTeam(id) ?? prev.typeId;
       return {
         ...prev,
-        selectedMode: "local",
-        localWhat: "sports",
+        selectedMode: "explore",
+        exploreCategory: "sports",
         typeId: sportId,
         sportsTeamId: prev.sportsTeamId === id ? null : id
       };
@@ -401,8 +403,8 @@ export function SearchPromptAssistProvider({
   function toggleMusicArtist(id: string) {
     commit((prev) => ({
       ...prev,
-      selectedMode: "local",
-      localWhat: "events",
+      selectedMode: "explore",
+      exploreCategory: "events",
       typeId: "concerts",
       musicArtistId: prev.musicArtistId === id ? null : id,
       genre: null
@@ -421,8 +423,8 @@ export function SearchPromptAssistProvider({
   function setWhere(id: WhereId) {
     commit((prev) => ({
       ...prev,
-      selectedMode: "local",
-      localWhat: prev.selectedMode === "local" ? prev.localWhat : null,
+      selectedMode: "explore",
+      exploreCategory: prev.selectedMode === "explore" ? prev.exploreCategory : null,
       where: id,
       streamingType: null,
       streamingVibe: null,
@@ -439,7 +441,7 @@ export function SearchPromptAssistProvider({
       if (prev.selectedMode === "streaming" && normalizeStreamType(prev.streamingType)) {
         return { ...prev, genre: prev.genre === genreId ? null : genreId };
       }
-      if (prev.localWhat === "events" && prev.typeId === "concerts") {
+      if (prev.exploreCategory === "events" && prev.typeId === "concerts") {
         return {
           ...prev,
           genre: prev.genre === genreId ? null : genreId,
@@ -502,10 +504,10 @@ export function SearchPromptAssistProvider({
   const filterPreview = resolveFilterPreview(state);
   const filterPills = buildFilterPills(state);
   const isStreaming = Boolean(filterPreview?.isStreaming);
-  const exploreCategory = state.selectedMode === "local" ? state.localWhat : null;
-  const typeRefinements = exploreCategory ? typeRefinementsFor(exploreCategory) : [];
+  const exploreCategory = state.selectedMode === "explore" ? state.exploreCategory : null;
+  const typeRefinements = exploreCategory ? exploreRefinementsFor(exploreCategory) : [];
   const vibeRefinements =
-    exploreCategory && groupHasVibeOptions(exploreCategory) ? vibeRefinementsFor(exploreCategory) : [];
+    exploreCategory && exploreHasVibes(exploreCategory) ? exploreVibesFor(exploreCategory) : [];
 
   return (
     <AssistContext.Provider
@@ -523,7 +525,7 @@ export function SearchPromptAssistProvider({
         pickMode,
         pickExplore,
         pickMeetHalfway,
-        pickLocalWhat,
+        pickExploreCategory,
         pickStreamingType,
         toggleType,
         toggleSportsTeam,
@@ -546,16 +548,14 @@ export function SearchPromptAssistProvider({
 
 /** Premium Streaming / Explore cards — render above the ask input. */
 export function SearchPromptModePicker() {
-  const { busy, state, pickMode, pickExplore, pickMeetHalfway, surface } = useAssistContext();
+  const { busy, state, pickMode, pickExplore, surface } = useAssistContext();
   const onPage = surface === "page";
-  const exploreSelected = state.selectedMode === "local" && state.where !== "halfway";
-  const halfwaySelected = state.selectedMode === "local" && state.where === "halfway";
 
   return (
     <section className="grid gap-2.5" aria-label="Choose a path">
       <HeroSectionLabel onPage={onPage}>{CONCIERGE_TAGLINE}</HeroSectionLabel>
 
-      <div className="-mx-0.5 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-0.5 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
+      <div className="-mx-0.5 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-0.5 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
         <ModePickChip
           emoji="🍿"
           title="Streaming"
@@ -570,23 +570,12 @@ export function SearchPromptModePicker() {
         <ModePickChip
           emoji="🧭"
           title="Explore"
-          subtitle="Food, drinks & local spots"
+          subtitle="Food, events & things to do"
           busy={busy}
-          selected={exploreSelected}
+          selected={state.selectedMode === "explore"}
           onPick={pickExplore}
           onPage={onPage}
           tone="explore"
-          className="snap-start min-w-[9.5rem] flex-1 sm:min-w-0"
-        />
-        <ModePickChip
-          emoji="📍"
-          title="Meet Halfway"
-          subtitle="Fairest spot for the group"
-          busy={busy}
-          selected={halfwaySelected}
-          onPick={pickMeetHalfway}
-          onPage={onPage}
-          tone="halfway"
           className="snap-start min-w-[9.5rem] flex-1 sm:min-w-0"
         />
       </div>
@@ -601,7 +590,7 @@ export function SearchPromptDetailChips() {
     state,
     typeRefinements,
     vibeRefinements,
-    pickLocalWhat,
+    pickExploreCategory,
     pickStreamingType,
     toggleType,
     toggleSportsTeam,
@@ -621,13 +610,13 @@ export function SearchPromptDetailChips() {
   const showStreamingType = state.selectedMode === "streaming";
   const streamType = state.streamingType === "movies" || state.streamingType === "tv_shows" ? state.streamingType : null;
   const showStreamingRefinements = showStreamingType && Boolean(streamType);
-  const showExploreCategories = state.selectedMode === "local";
-  const showExploreDetails = showExploreCategories && Boolean(state.localWhat);
+  const showExploreCategories = state.selectedMode === "explore";
+  const showExploreDetails = showExploreCategories && Boolean(state.exploreCategory);
   const streamGenres = streamType ? getWatchGenresForSubcategory(streamType) : [];
 
-  const showSportsTeams = state.localWhat === "sports" && Boolean(state.typeId);
-  const showEventDates = state.localWhat === "events" && state.typeId !== "weekend";
-  const showMusicGenres = state.localWhat === "events" && state.typeId === "concerts";
+  const showSportsTeams = state.exploreCategory === "sports" && Boolean(state.typeId);
+  const showEventDates = state.exploreCategory === "events" && state.typeId !== "weekend";
+  const showMusicGenres = state.exploreCategory === "events" && state.typeId === "concerts";
   const showMusicArtists = showMusicGenres;
   const localSportsTeams = showSportsTeams ? localTeamsForSport(state.typeId, userCoordinates) : [];
   const otherSportsTeams = showSportsTeams ? otherTeamsForSport(state.typeId, userCoordinates) : [];
@@ -723,23 +712,23 @@ export function SearchPromptDetailChips() {
         {showExploreCategories ? (
           <>
             <ChipGroup label="Category" onPage={onPage}>
-              {VISIBLE_LOCAL_CHIP_CATEGORIES.map((def) => (
+              {EXPLORE_CATEGORIES.map((def) => (
                 <AssistChip
-                  key={def.id}
+                  key={def.key}
                   label={def.label}
                   busy={busy}
                   variant="primary"
-                  selected={state.localWhat === def.id}
-                  onPick={() => pickLocalWhat(def.id)}
+                  selected={state.exploreCategory === def.key}
+                  onPick={() => pickExploreCategory(def.key)}
                   onPage={onPage}
                 />
               ))}
             </ChipGroup>
 
-            {showExploreDetails && state.localWhat ? (
+            {showExploreDetails && state.exploreCategory ? (
               <>
                 <div className={`h-px ${onPage ? "bg-line/60" : "bg-white/10"}`} aria-hidden="true" />
-                <ChipGroup label={localChipCategoryById(state.localWhat).subtypeLabel} onPage={onPage}>
+                <ChipGroup label={exploreCategoryConfig(state.exploreCategory).subtypeLabel} onPage={onPage}>
                   {typeRefinements.map((refinement) => (
                     <AssistChip
                       key={refinement.id}
@@ -856,7 +845,7 @@ export function SearchPromptChips() {
 /** Event date chips — also shown in Advanced Search for event queries. */
 export function SearchPromptEventWhen({ onPage = false }: { onPage?: boolean }) {
   const { busy, state, toggleEventWhen, setEventDate } = useAssistContext();
-  if (state.localWhat !== "events" || state.typeId === "weekend") return null;
+  if (state.exploreCategory !== "events" || state.typeId === "weekend") return null;
 
   const dateInputClass = onPage
     ? "h-9 rounded-lg border border-line bg-white px-2.5 text-sm text-ink outline-none transition focus:border-koi focus:ring-2 focus:ring-koi/15"
@@ -999,8 +988,8 @@ function AssistChip({
 
 function categoryFor(state: BuilderState): VenueCategory {
   if (state.selectedMode === "streaming") return "custom";
-  if (!state.localWhat) return "restaurant";
-  return venueCategoryForChip(state.localWhat, state.typeId);
+  if (!state.exploreCategory) return "restaurant";
+  return venueCategoryForExplore(state.exploreCategory, state.typeId);
 }
 
 function eventLocationSuffix(where: WhereId) {
@@ -1010,7 +999,7 @@ function eventLocationSuffix(where: WhereId) {
 }
 
 export function buildPlaceQuery(state: BuilderState): string {
-  if (state.localWhat === "sports") {
+  if (state.exploreCategory === "sports") {
     const suffix = eventLocationSuffix(state.where);
 
     if (state.sportsTeamId) {
@@ -1021,17 +1010,19 @@ export function buildPlaceQuery(state: BuilderState): string {
       }
     }
 
-    const sport = majorSportById(state.typeId);
-    if (sport) {
-      const phrase = `${sport.label} games ${suffix}`;
+    if (state.typeId && isTicketmasterExploreSubcategory("sports", state.typeId)) {
+      const sport = majorSportById(state.typeId);
+      if (sport) {
+        const phrase = `${sport.label} games ${suffix}`;
+        return phrase.charAt(0).toUpperCase() + phrase.slice(1);
+      }
+
+      const phrase = `Live sports ${suffix}`;
       return phrase.charAt(0).toUpperCase() + phrase.slice(1);
     }
-
-    const phrase = `Live sports ${suffix}`;
-    return phrase.charAt(0).toUpperCase() + phrase.slice(1);
   }
 
-  if (state.localWhat === "events") {
+  if (state.exploreCategory === "events") {
     const suffix = eventLocationSuffix(state.where);
     const when = eventWhenPhrase(state);
 
@@ -1056,12 +1047,12 @@ export function buildPlaceQuery(state: BuilderState): string {
     return phrase.charAt(0).toUpperCase() + phrase.slice(1);
   }
 
-  if (!state.localWhat) return "";
+  if (!state.exploreCategory) return "";
 
-  const def = localChipCategoryById(state.localWhat);
+  const def = exploreCategoryConfig(state.exploreCategory);
   const refs = [
-    ...typeRefinementsFor(state.localWhat),
-    ...vibeRefinementsFor(state.localWhat)
+    ...exploreRefinementsFor(state.exploreCategory),
+    ...exploreVibesFor(state.exploreCategory)
   ];
   const type = refs.find((item) => item.group === "type" && item.id === state.typeId);
 
@@ -1136,12 +1127,34 @@ function resolveFilterPreview(state: BuilderState): FilterPreview | null {
   const isStreaming =
     state.selectedMode === "streaming" &&
     (Boolean(streamType) || state.streamingServices.size > 0 || Boolean(state.streamingVibe));
-  const isExplore = state.selectedMode === "local" && Boolean(state.localWhat);
+  const isExplore = state.selectedMode === "explore" && Boolean(state.exploreCategory);
 
   if (!isStreaming && !isExplore) return null;
 
   const query = isStreaming ? buildStreamQuery(state) : buildPlaceQuery(state);
   if (!query.trim()) return null;
+
+  const exploreIntentPayload: ExploreIntentPayload | undefined =
+    !isStreaming && state.exploreCategory
+      ? {
+          mode: "explore",
+          category: state.exploreCategory,
+          subcategoryId: state.typeId,
+          providers: selectProvidersForExplore(state.exploreCategory, state.typeId)
+        }
+      : isStreaming
+        ? { mode: "streaming" }
+        : undefined;
+
+  const normalizedExplore = exploreIntentPayload
+    ? normalizeExploreIntent({
+        query,
+        mode: exploreIntentPayload.mode,
+        category: exploreIntentPayload.category,
+        subcategoryId: exploreIntentPayload.subcategoryId ?? null,
+        structured: Boolean(exploreIntentPayload.category)
+      })
+    : null;
 
   return {
     query,
@@ -1152,7 +1165,8 @@ function resolveFilterPreview(state: BuilderState): FilterPreview | null {
       streamingServiceIds: isStreaming ? [...state.streamingServices] : undefined,
       searchMode: !isStreaming && state.where === "halfway" ? "midpoint" : "single",
       builderMode: builderModeForWhere(state.where),
-      routeViaFreeform: state.localWhat === "sports" || state.localWhat === "events"
+      exploreIntent: exploreIntentPayload,
+      routeViaFreeform: normalizedExplore?.routeViaTicketmaster ?? false
     }
   };
 }
@@ -1162,9 +1176,9 @@ function buildFilterPills(state: BuilderState): FilterPill[] {
 
   if (state.selectedMode === "streaming") {
     pills.push({ id: "mode-streaming", label: "Streaming" });
-  } else if (state.selectedMode === "local" && state.where === "halfway") {
+  } else if (state.selectedMode === "explore" && state.where === "halfway") {
     pills.push({ id: "mode-halfway", label: "Meet Halfway" });
-  } else if (state.selectedMode === "local") {
+  } else if (state.selectedMode === "explore") {
     pills.push({ id: "mode-explore", label: "Explore" });
   }
 
@@ -1190,44 +1204,45 @@ function buildFilterPills(state: BuilderState): FilterPill[] {
     pills.push({ id: `stream-genre-${state.genre}`, label: genreLabel });
   }
 
-  if (state.genre && state.localWhat === "events" && state.typeId === "concerts") {
+  if (state.genre && state.exploreCategory === "events" && state.typeId === "concerts") {
     pills.push({ id: `music-genre-${state.genre}`, label: musicGenreChipLabel(state.genre) });
   }
 
-  if (state.musicArtistId && state.localWhat === "events" && state.typeId === "concerts") {
+  if (state.musicArtistId && state.exploreCategory === "events" && state.typeId === "concerts") {
     pills.push({ id: `music-artist-${state.musicArtistId}`, label: musicArtistChipLabel(state.musicArtistId) });
   }
 
-  if (state.localWhat === "events" && state.eventWhen && state.typeId !== "weekend") {
+  if (state.exploreCategory === "events" && state.eventWhen && state.typeId !== "weekend") {
     pills.push({
       id: `event-when-${state.eventWhen}`,
       label: eventWhenChipLabel(state.eventWhen, state.eventDate ?? null)
     });
   }
 
-  if (state.localWhat) {
-    const categoryLabel = LOCAL_CHIP_CATEGORIES.find((item) => item.id === state.localWhat)?.label ?? state.localWhat;
-    pills.push({ id: `local-${state.localWhat}`, label: categoryLabel });
+  if (state.exploreCategory) {
+    const categoryLabel =
+      EXPLORE_CATEGORIES.find((item) => item.key === state.exploreCategory)?.label ?? state.exploreCategory;
+    pills.push({ id: `local-${state.exploreCategory}`, label: categoryLabel });
   }
 
-  if (state.localWhat && state.typeId) {
+  if (state.exploreCategory && state.typeId) {
     const typeLabel =
-      typeRefinementsFor(state.localWhat).find((item) => item.id === state.typeId)?.label ?? state.typeId;
+      exploreRefinementsFor(state.exploreCategory).find((item) => item.id === state.typeId)?.label ?? state.typeId;
     pills.push({ id: `type-${state.typeId}`, label: typeLabel });
   }
 
-  if (state.localWhat === "sports" && state.sportsTeamId) {
+  if (state.exploreCategory === "sports" && state.sportsTeamId) {
     pills.push({ id: `sports-team-${state.sportsTeamId}`, label: sportsTeamChipLabel(state.sportsTeamId) });
   }
 
   for (const extraId of state.extras) {
-    if (!state.localWhat) continue;
+    if (!state.exploreCategory) continue;
     const extraLabel =
-      vibeRefinementsFor(state.localWhat).find((item) => item.id === extraId)?.label ?? extraId;
+      exploreVibesFor(state.exploreCategory).find((item) => item.id === extraId)?.label ?? extraId;
     pills.push({ id: `extra-${extraId}`, label: extraLabel });
   }
 
-  if (state.selectedMode === "local" && state.where === "choose") {
+  if (state.selectedMode === "explore" && state.where === "choose") {
     pills.push({ id: "where-choose", label: "Choose location" });
   }
 
@@ -1273,7 +1288,7 @@ function removeFilterFromState(state: BuilderState, pillId: string): BuilderStat
   if (pillId.startsWith("local-")) {
     return {
       ...state,
-      localWhat: null,
+      exploreCategory: null,
       typeId: null,
       sportsTeamId: null,
       musicArtistId: null,
@@ -1312,7 +1327,7 @@ function builderStateFromPopularPreset(preset: HeroPopularSearch): BuilderState 
   if (opts?.watchSubcategory || (opts?.category === "custom" && opts.streamingServiceIds?.length)) {
     return {
       selectedMode: "streaming",
-      localWhat: null,
+      exploreCategory: null,
       typeId: null,
       sportsTeamId: null,
       musicArtistId: null,
@@ -1329,9 +1344,9 @@ function builderStateFromPopularPreset(preset: HeroPopularSearch): BuilderState 
 
   if (opts?.category === "shopping") {
     return {
-      selectedMode: "local",
-      localWhat: "shopping",
-      typeId: null,
+      selectedMode: "explore",
+      exploreCategory: "activities",
+      typeId: "thrift_stores",
       sportsTeamId: null,
       musicArtistId: null,
       extras: new Set<string>(),
@@ -1347,8 +1362,8 @@ function builderStateFromPopularPreset(preset: HeroPopularSearch): BuilderState 
 
   if (opts?.category === "activities") {
     return {
-      selectedMode: "local",
-      localWhat: "activities",
+      selectedMode: "explore",
+      exploreCategory: "activities",
       typeId: null,
       sportsTeamId: null,
       musicArtistId: null,
@@ -1365,8 +1380,8 @@ function builderStateFromPopularPreset(preset: HeroPopularSearch): BuilderState 
 
   if (opts?.category === "events") {
     return {
-      selectedMode: "local",
-      localWhat: "events",
+      selectedMode: "explore",
+      exploreCategory: "events",
       typeId: null,
       sportsTeamId: null,
       musicArtistId: null,
@@ -1382,8 +1397,8 @@ function builderStateFromPopularPreset(preset: HeroPopularSearch): BuilderState 
   }
 
   return {
-    selectedMode: "local",
-    localWhat: "food",
+    selectedMode: "explore",
+    exploreCategory: "food_drink",
     typeId: null,
     sportsTeamId: null,
     musicArtistId: null,

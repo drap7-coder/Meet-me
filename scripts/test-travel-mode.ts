@@ -49,7 +49,7 @@ function candidate(distanceMeters: number | null, durationMinutes = 10): VenueCa
 assert(DEFAULT_TRAVEL_MODE === "auto", "default travel mode is auto");
 assert(isTravelMode("ev") && isTravelMode("walk") && !isTravelMode("teleport"), "isTravelMode validates ids");
 assert(travelModeChipLabel("drive") === "🚗 Drive", "drive chip label");
-assert(travelModeChipLabel("ev") === "⚡ EV", "ev chip label");
+assert(travelModeChipLabel("ev") === "⚡ EV Charging", "ev chip label");
 
 // --- strategy mapping: auto/drive/ev/transit -> drive; walk/bike distinct ---
 const driveLike: TravelMode[] = ["auto", "drive", "ev", "transit"];

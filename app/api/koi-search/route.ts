@@ -8,6 +8,7 @@ import {
   finalizeSearchTelemetry
 } from "@/lib/searchTelemetry.server";
 import { logApiError } from "@/lib/serverLog";
+import { classifySearchError } from "@/lib/searchStatus";
 import { NextResponse } from "next/server";
 
 const ENDPOINT = "/api/koi-search";
@@ -106,6 +107,7 @@ export async function POST(request: Request) {
     }
 
     const message = error instanceof Error ? error.message : "Search failed.";
-    return NextResponse.json({ error: message }, { status });
+    const classified = classifySearchError(error);
+    return NextResponse.json({ error: classified }, { status });
   }
 }

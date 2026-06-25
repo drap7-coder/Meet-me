@@ -12,6 +12,9 @@ import { KOI_SEARCH_PLACEHOLDER, useTypewriterPlaceholder } from "@/app/componen
 import { BRAND } from "@/src/config/branding";
 import { LocationPinIcon } from "@/app/components/SavedLocationBadge";
 import { useSpeechRecognition } from "@/app/components/useSpeechRecognition";
+import { SearchInlineMessage } from "@/app/components/SearchInlineMessage";
+import type { SearchError } from "@/lib/searchStatus";
+import { shouldShowInlineSearchError } from "@/lib/searchStatus";
 import { FormEvent, forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 
 type Props = {
@@ -23,7 +26,8 @@ type Props = {
   locationContext?: CurrentLocationContext;
   defaultUserAddress?: string;
   locationSavedMessage?: string;
-  submitError?: string;
+  searchError?: SearchError | null;
+  onClearSearchError?: () => void;
   onSubmitQuery: (
     query: string,
     options?: {
@@ -128,7 +132,8 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     showManualFallback = false,
     manualLocationError,
     locationSavedMessage,
-    submitError,
+    searchError,
+    onClearSearchError,
     locationContext,
     defaultUserAddress,
     onSubmitQuery,
@@ -280,10 +285,10 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
   const manualAddressLabelClass = onHero ? "sr-only" : "text-sm font-bold text-ink";
   const manualAddressSelectedClass = onHero ? "text-xs font-semibold text-white/75" : "text-xs font-semibold text-clay";
   const manualAddressStatusClass = onHero ? "text-xs font-semibold text-white/60" : "text-xs font-semibold text-slate";
-  const combinedError = error.trim() || submitError?.trim() || "";
+  const combinedError = error.trim() || (searchError?.kind === "NEEDS_LOCATION" ? searchError.message : "");
   const locationPromptMessage = combinedError || "Add your location so Koi can search nearby.";
   const manualPromptMessage = combinedError || "Enter a city, ZIP code, or address to search nearby.";
-  const showStandaloneError = Boolean(combinedError) && !showLocationActions && !showManualFallback;
+  const showInlineSearchError = shouldShowInlineSearchError(searchError);
   const showSpeechMessage = Boolean(speechMessage) && !showLocationActions && !showManualFallback;
   const promptPanelClass = onHero
     ? "rounded-[14px] border border-koi/35 bg-koi/20 p-3 shadow-[0_8px_24px_rgba(255,90,0,0.14)]"
@@ -324,6 +329,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
                   onChange={(event) => {
                     setQuery(event.target.value);
                     if (error) setError("");
+                    if (searchError) onClearSearchError?.();
                     if (speechMessage) clearSpeechMessage();
                   }}
                   onKeyDown={(event) => {
@@ -402,7 +408,7 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
         </form>
       </section>
 
-      {!showLocationActions && !showManualFallback && !showStandaloneError && locationSavedMessage ? (
+      {!showLocationActions && !showManualFallback && !showInlineSearchError && !error.trim() && locationSavedMessage ? (
         <p className={`mt-2 px-1 text-xs font-semibold ${onHero ? "text-koi" : "text-koi"}`}>{locationSavedMessage}</p>
       ) : null}
 
@@ -507,11 +513,12 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
         </form>
       ) : null}
 
-      {showStandaloneError ? (
-        <div className={`mt-3 flex items-start gap-2 ${promptPanelClass}`} role="status">
-          <LocationPinIcon className="mt-0.5 h-4 w-4 shrink-0 text-koi" />
-          <p className={`min-w-0 flex-1 text-sm font-semibold leading-6 ${promptTextClass}`}>{combinedError}</p>
-        </div>
+      {showInlineSearchError && searchError ? (
+        <SearchInlineMessage message={searchError.message} surface={surface} />
+      ) : null}
+
+      {!showLocationActions && !showManualFallback && !showInlineSearchError && error.trim() ? (
+        <SearchInlineMessage message={error.trim()} surface={surface} />
       ) : null}
     </div>
   );

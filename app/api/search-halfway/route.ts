@@ -11,6 +11,7 @@ import {
 } from "@/lib/searchTelemetry.server";
 import { logApiError } from "@/lib/serverLog";
 import type { SearchHalfwayRequest } from "@/lib/types";
+import { classifySearchError } from "@/lib/searchStatus";
 import { NextResponse } from "next/server";
 
 const ENDPOINT = "/api/search-halfway";
@@ -109,18 +110,18 @@ export async function POST(request: Request) {
     return NextResponse.json(result);
   } catch (error) {
     logApiError(ENDPOINT, error);
+    const classified = classifySearchError(error);
+    const status =
+      classified.kind === "INVALID_LOCATION" || classified.kind === "NEEDS_LOCATION" ? 422 : 500;
     finalizeSearchTelemetry({
       endpoint: ENDPOINT,
       searchKind: "places",
       categoryHint,
-      status: 500,
+      status,
       resultCount: null,
       startedAt,
-      errorMessage: error instanceof Error ? error.message : String(error)
+      errorMessage: classified.kind
     });
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Koi search failed." },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: classified }, { status });
   }
 }

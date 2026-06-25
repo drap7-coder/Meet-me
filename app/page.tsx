@@ -9,6 +9,7 @@ import { resolveEventSearchForm } from "@/lib/koiSearchExecute";
 import { CompactResultsHeader } from "@/app/components/home/CompactResultsHeader";
 import { MarketingHero } from "@/app/components/home/MarketingHero";
 import { HeroPopularSearches } from "@/app/components/home/HeroPopularSearches";
+import { WeekendTrendingStrip } from "@/app/components/home/WeekendTrendingStrip";
 import { SelectedFiltersPanel } from "@/app/components/home/SelectedFiltersPanel";
 import { ShareDialog, type ShareDialogState } from "@/app/components/home/ShareDialog";
 import { Footer, SiteHeader } from "@/app/components/home/SiteChrome";
@@ -969,6 +970,26 @@ export default function HomePage() {
     searchBoxRef.current?.fillQuery(query);
   }
 
+  function browseWeekendEvents() {
+    const query = "Events near me this weekend";
+    if (promptForEventLocation(query)) return;
+
+    const location = getActiveLocationContext();
+    void executeSearch({
+      kind: "freeform",
+      query,
+      context: location,
+      form: {
+        ...form,
+        locationA: location.locationA?.trim() || form.locationA,
+        locationAPlaceId: location.locationAPlaceId ?? form.locationAPlaceId,
+        locationACoordinates: location.locationACoordinates ?? form.locationACoordinates,
+        searchMode: "single"
+      },
+      exploreIntent: { mode: "explore", category: "events", subcategoryId: "weekend" }
+    });
+  }
+
   function runFilterSearch(query: string, options: PickQueryOptions, isStreaming: boolean) {
     applyPickOptionsToSession(options, setBuilderMode, setActiveWatchSubcategory, setActiveStreamingServiceIds);
 
@@ -1184,6 +1205,12 @@ export default function HomePage() {
                 travelMode={travelMode}
                 onTravelModeChange={handleTravelModeChange}
                 busy={loading || locating || resolvingManual}
+              />
+              <WeekendTrendingStrip
+                latitude={locationContext.locationACoordinates?.lat}
+                longitude={locationContext.locationACoordinates?.lng}
+                busy={loading || locating || resolvingManual}
+                onBrowseAll={browseWeekendEvents}
               />
               <SearchPromptAssistProvider
                 busy={loading || locating || resolvingManual}

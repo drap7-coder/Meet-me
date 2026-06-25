@@ -20,7 +20,10 @@ export function isEventDiscoveryConfigured() {
 
 export async function searchLocalEvents(request: EventSearchRequest): Promise<EventResult[]> {
   const profile = request.profile ?? classifyLocalEventProfile(request.query);
-  const window = eventTimeWindow(profile, request.query);
+  const window =
+    request.startDateTime && request.endDateTime
+      ? { start: new Date(request.startDateTime), end: new Date(request.endDateTime) }
+      : eventTimeWindow(profile, request.query);
   const isMusic = profile === "music" || isMusicEventQuery(request.query);
   const merged: EventResult[] = [];
 
@@ -45,7 +48,7 @@ export async function searchLocalEvents(request: EventSearchRequest): Promise<Ev
     withEventStraightLineDistance(event, request.latitude, request.longitude)
   );
   const deduped = dedupeEvents(withDistance);
-  const resultCap = isMusic ? MUSIC_RESULT_CAP : DEFAULT_RESULT_CAP;
+  const resultCap = request.resultCap ?? (isMusic ? MUSIC_RESULT_CAP : DEFAULT_RESULT_CAP);
   return rankEventResults(deduped, profile, new Date(), request.query).slice(0, resultCap);
 }
 

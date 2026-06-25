@@ -30,4 +30,9 @@ export type EventSearchRequest = {
   longitude: number;
   radiusMiles?: number;
   profile?: LocalEventProfile;
+  /** Override the default profile time window (ISO strings). */
+  startDateTime?: string;
+  endDateTime?: string;
+  /** Cap ranked results — defaults to search-local-events limits. */
+  resultCap?: number;
 };

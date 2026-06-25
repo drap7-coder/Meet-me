@@ -53,6 +53,8 @@ import { mergeSavedUserLocation, getSavedUserLocation } from "@/lib/savedUserLoc
 import { getSearchAccent } from "@/lib/searchAccent";
 import {
   classifySearchError,
+  isEmptyPlacesResults,
+  isEmptyWatchResults,
   isSearchError,
   searchError as createSearchError,
   SEARCH_ERROR_MESSAGES,
@@ -553,6 +555,11 @@ export default function HomePage() {
     existingShareUrl?: string,
     submitOptions?: SearchSubmitOptions
   ) {
+    if (isEmptyPlacesResults(data)) {
+      failSearch(createSearchError("NO_RESULTS"));
+      return;
+    }
+
     clearSearchError();
     setHasSearched(true);
     setResults(data);
@@ -579,6 +586,11 @@ export default function HomePage() {
   }
 
   function applyWatchEventsResults(data: WatchEventsResult) {
+    if (isEmptyWatchResults(data)) {
+      failSearch(createSearchError("NO_RESULTS"));
+      return;
+    }
+
     clearSearchError();
     setHasSearched(true);
     setWatchEventsResult(data);

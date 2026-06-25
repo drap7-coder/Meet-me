@@ -1,3 +1,5 @@
+import type { SearchHalfwayResponse, WatchEventsResult } from "@/lib/types";
+
 export type SearchErrorKind =
   | "INVALID_LOCATION"
   | "NO_RESULTS"
@@ -109,4 +111,13 @@ export function shouldShowInlineSearchError(error: SearchError | null | undefine
 /** Recoverable ask failures that should keep the search box in place with a retry message. */
 export function isRecoverableSearchError(error: SearchError | null | undefined): boolean {
   return shouldShowInlineSearchError(error);
+}
+
+export function isEmptyPlacesResults(data: SearchHalfwayResponse): boolean {
+  return data.venues.length === 0 && !(data.events?.length ?? 0);
+}
+
+export function isEmptyWatchResults(data: WatchEventsResult): boolean {
+  if (data.preview) return false;
+  return data.recommendations.length === 0;
 }

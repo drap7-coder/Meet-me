@@ -1,6 +1,6 @@
 import { isEventDiscoveryConfigured, searchLocalEvents, searchTicketmasterEvents } from "@/lib/eventDiscovery";
 import type { EventResult } from "@/lib/eventResult";
-import { composeTrendingPicks, inSeasonSportIds } from "@/lib/trendingComposition";
+import { composeTrendingPicks, inSeasonSportIds, type TrendingCompositionContext } from "@/lib/trendingComposition";
 import { upcomingWeekendWindow, weekendTrendingWeekKey } from "@/lib/weekendWindow";
 
 export { upcomingWeekendWindow, weekendTrendingWeekKey } from "@/lib/weekendWindow";
@@ -9,7 +9,7 @@ export const WEEKEND_TRENDING_CAP = 5;
 export const WEEKEND_TRENDING_RADIUS_MILES = 30;
 export const TRENDING_NEAR_YOU_EVENT_CAP = 6;
 
-const SEGMENT_FETCH_CAP = 12;
+const SEGMENT_FETCH_CAP = 20;
 
 function withEventImages(events: EventResult[]) {
   return events.filter((event) => Boolean(event.imageUrl?.trim()));
@@ -77,6 +77,45 @@ async function fetchSeasonalSportsEvents(
   return dedupeEvents(batches.flat());
 }
 
+function trendingEventScore(event: EventResult, index: number): number {
+  let score = 1000 - index;
+  if (event.imageUrl?.trim()) score += 14;
+  if (event.ticketUrl) score += 4;
+  if (event.distance != null) score += Math.max(0, 12 - event.distance);
+  return score;
+}
+
+export function finalizeTrendingEvents(
+  events: EventResult[],
+  context: TrendingCompositionContext
+): EventResult[] {
+  const cap = context.cap ?? TRENDING_NEAR_YOU_EVENT_CAP;
+  const deduped = dedupeEvents(events);
+  if (!deduped.length) return [];
+
+  const ranked = deduped
+    .map((event, index) => ({ event, score: trendingEventScore(event, index) }))
+    .sort((left, right) => right.score - left.score)
+    .map((entry) => entry.event);
+
+  const withImages = withEventImages(ranked);
+  const seedPool = withImages.length >= Math.min(cap, 3) ? withImages : ranked;
+  const composed = composeTrendingPicks(seedPool, { ...context, relaxedFill: true });
+  if (composed.length >= cap) return composed.slice(0, cap);
+
+  const seen = new Set(composed.map((event) => `${event.source}:${event.id}`));
+  const filled = [...composed];
+  for (const event of ranked) {
+    if (filled.length >= cap) break;
+    const key = `${event.source}:${event.id}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    filled.push(event);
+  }
+
+  return filled.slice(0, cap);
+}
+
 export async function fetchTrendingNearYouEvents(
   latitude: number,
   longitude: number
@@ -102,13 +141,9 @@ export async function fetchTrendingNearYouEvents(
     searchTicketmasterEvents({ ...base, query: "concerts this weekend", profile: "music", segmentName: "Music" })
   ]);
 
-  const candidates = dedupeEvents([
-    ...withEventImages(sports),
-    ...withEventImages(music),
-    ...withEventImages(comedyRaw)
-  ]);
+  const candidates = dedupeEvents([...sports, ...music, ...comedyRaw]);
 
-  return composeTrendingPicks(candidates, {
+  return finalizeTrendingEvents(candidates, {
     latitude,
     longitude,
     cap: TRENDING_NEAR_YOU_EVENT_CAP
@@ -137,7 +172,7 @@ export async function fetchTrendingWeekendEvents(
     searchLocalEvents({ ...base, query: "events this weekend", profile: "weekend", segmentName: "Arts & Theatre" })
   ]);
 
-  return composeTrendingPicks(withEventImages(dedupeEvents([...sports, ...music, ...arts])), {
+  return finalizeTrendingEvents(dedupeEvents([...sports, ...music, ...arts]), {
     latitude,
     longitude,
     cap: WEEKEND_TRENDING_CAP

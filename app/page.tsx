@@ -1308,11 +1308,11 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-mint text-ink">
-      <CompactHeader variant={showLandingHero ? "dark" : "light"} />
+      {showLandingHero ? null : <CompactHeader variant="light" />}
 
       {showLandingHero ? (
         <>
-          <section id="search" className="relative isolate overflow-x-hidden bg-ink pb-8 pt-2 sm:pb-10">
+          <section id="search" className="relative isolate overflow-x-hidden bg-ink pb-8 pt-[calc(env(safe-area-inset-top)+0.75rem)] sm:pb-10 sm:pt-[calc(env(safe-area-inset-top)+1rem)]">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_50%_-15%,rgba(255,90,0,0.14),transparent_58%),radial-gradient(circle_at_88%_8%,rgba(10,132,255,0.08),transparent_32%),linear-gradient(180deg,#0A1323_0%,#0c1729_50%,#0A1323_100%)]" />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#0A1323] via-[#0A1323]/70 to-transparent sm:h-24" />
             <div className={`relative z-10 grid w-full gap-5 py-2 sm:gap-6 sm:py-4 ${PAGE_CONTAINER}`}>

@@ -33,6 +33,7 @@ import { resolveWatchPlaceSearchForm } from "@/lib/watchPlaceSearch";
 import type { KoiSearchApiResponse } from "@/lib/searchIntent";
 import { discoverOpenTripMapExploreVenues, supplementExploreWithOpenTripMap } from "@/lib/exploreSearch";
 import { filterActivitySearchVenues } from "@/lib/activityVenueFilter";
+import { finalizeSearchVenues } from "@/lib/strictIntentFilters";
 import {
   filterLocalHappeningVenues,
   localHappeningsSubcategoryForVenueFilter
@@ -128,8 +129,16 @@ function withActivityVenueFilter(
   query: string,
   intent: NormalizedExploreIntent
 ): SearchHalfwayResponse {
-  const venues = filterActivitySearchVenues(query, intent, response.venues);
-  return venues.length === response.venues.length ? response : { ...response, venues };
+  const civicFiltered = filterActivitySearchVenues(query, intent, response.venues);
+  const { venues, strictIntentApplied } = finalizeSearchVenues(query, civicFiltered, intent.subcategoryId);
+  if (venues.length === response.venues.length && !strictIntentApplied && !response.strictIntentApplied) {
+    return response;
+  }
+  return {
+    ...response,
+    venues,
+    strictIntentApplied: strictIntentApplied ?? response.strictIntentApplied
+  };
 }
 
 async function executeOpenTripMapExploreSearch(
@@ -267,14 +276,19 @@ async function executeTimeAwareExploreSearch(
     : fallbackResponse?.venues ?? [];
   const applyDiversity = shouldApplyDiversityRanking(query, exploreIntent);
   const rankedEvents = rankTemporalEvents(events);
-  const rankedVenues = filterActivitySearchVenues(
+  const finalizedVenues = finalizeSearchVenues(
     query,
-    exploreIntent,
-    rankTemporalVenues([
-      ...otmVenues.map((venue) => ({ venue, source: "opentripmap" as const })),
-      ...fallbackVenues.map((venue) => ({ venue, source: "google_places" as const }))
-    ])
+    filterActivitySearchVenues(
+      query,
+      exploreIntent,
+      rankTemporalVenues([
+        ...otmVenues.map((venue) => ({ venue, source: "opentripmap" as const })),
+        ...fallbackVenues.map((venue) => ({ venue, source: "google_places" as const }))
+      ])
+    ),
+    exploreIntent.subcategoryId
   );
+  const rankedVenues = finalizedVenues.venues;
 
   let diversifiedEvents = rankedEvents;
   let diversifiedVenues = rankedVenues;
@@ -314,7 +328,15 @@ async function executeTimeAwareExploreSearch(
 
   return {
     kind: "places",
-    data: withTemporalExploreResults({ ...response, eventProfile: profile }, diversifiedEvents, diversifiedVenues)
+    data: withTemporalExploreResults(
+      {
+        ...response,
+        eventProfile: profile,
+        strictIntentApplied: finalizedVenues.strictIntentApplied ?? response.strictIntentApplied
+      },
+      diversifiedEvents,
+      diversifiedVenues
+    )
   };
 }
 
@@ -491,10 +513,14 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
         : placesResponse;
       return {
         kind: "places",
-        data: await enrichPlacesResponseWithEvents(
-          withActivityVenueFilter(filteredPlacesResponse, query, exploreIntent),
+        data: withActivityVenueFilter(
+          await enrichPlacesResponseWithEvents(
+            filteredPlacesResponse,
+            query,
+            blendedForm
+          ),
           query,
-          blendedForm
+          exploreIntent
         )
       };
     } catch (error) {

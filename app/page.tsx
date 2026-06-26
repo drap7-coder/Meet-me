@@ -62,6 +62,7 @@ import {
   type SearchError,
   type SearchStatus
 } from "@/lib/searchStatus";
+import { STRICT_INTENT_NO_RESULTS_MESSAGE } from "@/lib/strictIntentFilters";
 import { getSavedTravelMode, saveTravelMode } from "@/lib/travelMode";
 import { isEvChargingIntent } from "@/lib/evSearchIntent";
 import { extractStreamingProviders, mergeStreamingServiceIds } from "@/lib/streamingServices";
@@ -240,10 +241,10 @@ export default function HomePage() {
     setSearchStatus("idle");
   }
 
-  function emptySearch() {
+  function emptySearch(message?: string) {
     setResults(null);
     setWatchEventsResult(null);
-    setSearchError(createSearchError("NO_RESULTS"));
+    setSearchError(createSearchError("NO_RESULTS", message ?? SEARCH_ERROR_MESSAGES.NO_RESULTS));
     setSearchStatus("idle");
   }
 
@@ -575,7 +576,7 @@ export default function HomePage() {
     submitOptions?: SearchSubmitOptions
   ) {
     if (isEmptyPlacesResults(data)) {
-      emptySearch();
+      emptySearch(data.strictIntentApplied ? STRICT_INTENT_NO_RESULTS_MESSAGE : undefined);
       return;
     }
 

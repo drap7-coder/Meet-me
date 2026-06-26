@@ -1,8 +1,7 @@
 import {
   filterActivitySearchVenues,
   filterGenericCivicRecreationVenues,
-  isGenericCivicRecreationVenue,
-  shouldFilterGenericCivicRecreationVenues
+  isGenericCivicRecreationVenue
 } from "../lib/activityVenueFilter";
 
 function assert(condition: boolean, message: string) {
@@ -33,30 +32,37 @@ const miniGolf = {
   types: ["amusement_center"]
 };
 
+const coffeeShop = {
+  id: "4",
+  name: "Corner Coffee",
+  category: "coffee",
+  address: "12 Bean St",
+  types: ["cafe"]
+};
+
 assert(isGenericCivicRecreationVenue(communityCenter), "community center is generic civic recreation");
 assert(isGenericCivicRecreationVenue(sportsActivityCenter), "sports activity center is generic civic recreation");
 assert(!isGenericCivicRecreationVenue(miniGolf), "mini golf venue is not generic civic recreation");
+assert(!isGenericCivicRecreationVenue(coffeeShop), "coffee shop is not generic civic recreation");
 
-assert(
-  shouldFilterGenericCivicRecreationVenues("mini golf near me"),
-  "mini golf query enables civic recreation filtering"
-);
-assert(
-  !shouldFilterGenericCivicRecreationVenues("coffee near me"),
-  "coffee query does not enable civic recreation filtering"
-);
-
-const filtered = filterActivitySearchVenues("mini golf near me", { category: "activities", subcategoryId: "mini_golf" }, [
+const filteredMiniGolf = filterActivitySearchVenues("mini golf near me", { category: "activities", subcategoryId: "mini_golf" }, [
   communityCenter,
   sportsActivityCenter,
   miniGolf
 ]);
 
-assert(filtered.length === 1 && filtered[0]?.id === "3", "mini golf search drops civic recreation venues");
+assert(filteredMiniGolf.length === 1 && filteredMiniGolf[0]?.id === "3", "mini golf search drops civic recreation venues");
+
+const filteredCoffee = filterActivitySearchVenues("coffee near me", { category: "food_drink", subcategoryId: "coffee" }, [
+  communityCenter,
+  coffeeShop
+]);
+
+assert(filteredCoffee.length === 1 && filteredCoffee[0]?.id === "4", "coffee search also drops civic recreation venues");
 
 assert(
-  filterGenericCivicRecreationVenues([communityCenter, sportsActivityCenter, miniGolf]).length === 1,
-  "generic civic filter keeps only real activity venues"
+  filterGenericCivicRecreationVenues([communityCenter, sportsActivityCenter, miniGolf, coffeeShop]).length === 2,
+  "global civic recreation filter keeps non-civic venues only"
 );
 
 console.log("PASS activity venue filter");

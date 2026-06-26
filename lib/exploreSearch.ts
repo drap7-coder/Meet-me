@@ -1,4 +1,4 @@
-import { filterActivitySearchVenues } from "@/lib/activityVenueFilter";
+import { finalizeSearchVenues } from "@/lib/strictIntentFilters";
 import { logExploreRoutingDecision } from "@/lib/exploreRouting";
 import { applyExploreTravelModeRanking, getExploreModeRadiusMultiplier } from "@/lib/exploreModeRanking";
 import { filterOpenTripMapFarmersMarkets } from "@/lib/farmersMarketDiscovery";
@@ -87,7 +87,7 @@ export async function discoverOpenTripMapExploreVenues(
     ? filterOpenTripMapFarmersMarkets(places)
     : places;
 
-  return filteredPlaces.map((place) => {
+  const mapped = filteredPlaces.map((place) => {
     const candidate = openTripMapPlaceToCandidate(place, intent);
     const travelFromA = {
       distanceMeters: place.distanceMeters,
@@ -105,6 +105,8 @@ export async function discoverOpenTripMapExploreVenues(
       totalTravelMinutes: null
     };
   });
+
+  return finalizeSearchVenues(intent.query, mapped, intent.subcategoryId).venues;
 }
 
 /**
@@ -139,8 +141,11 @@ export async function supplementExploreWithOpenTripMap(
 
   logExploreRoutingDecision(intent, `opentripmap_merged_${supplemental.length}_places`);
 
+  const { venues, strictIntentApplied } = finalizeSearchVenues(response.query, merged, intent.subcategoryId);
+
   return {
     ...response,
-    venues: filterActivitySearchVenues(response.query, intent, merged)
+    venues,
+    ...(strictIntentApplied ? { strictIntentApplied } : {})
   };
 }

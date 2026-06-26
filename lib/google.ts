@@ -1,3 +1,5 @@
+import { filterGenericCivicRecreationVenues } from "@/lib/activityVenueFilter";
+import { finalizeSearchVenues } from "@/lib/strictIntentFilters";
 import { DEFAULT_MEETUP_MODE, DEFAULT_SEARCH_MODE, getCategorySearchTerm, getCategorySearchTerms } from "@/lib/categories";
 import {
   geocodeCacheKeyForAddress,
@@ -427,9 +429,15 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
       query: evQuery,
       category: request.category
     });
-    const finalVenues = await applyPlaceInsight(rankedVenues, {
-      query: evQuery
-    });
+    const intentQuery = evQuery || request.customQuery?.trim() || placesQuery || "";
+    const { venues: finalVenues, strictIntentApplied } = finalizeSearchVenues(
+      intentQuery,
+      filterGenericCivicRecreationVenues(
+        await applyPlaceInsight(rankedVenues, {
+          query: evQuery
+        })
+      )
+    );
 
     return {
       originA,
@@ -441,7 +449,8 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
       preferences,
       travelMode,
       query: getCategorySearchTerm(request.category, request.customQuery, request.meetupMode),
-      venues: finalVenues
+      venues: finalVenues,
+      ...(strictIntentApplied ? { strictIntentApplied } : {})
     };
   }
 
@@ -505,9 +514,15 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
     query: evQuery,
     category: request.category
   });
-  const finalVenues = await applyPlaceInsight(rankedVenues, {
-    query: evQuery
-  });
+  const intentQuery = evQuery || request.customQuery?.trim() || placesQuery || "";
+  const { venues: finalVenues, strictIntentApplied } = finalizeSearchVenues(
+    intentQuery,
+    filterGenericCivicRecreationVenues(
+      await applyPlaceInsight(rankedVenues, {
+        query: evQuery
+      })
+    )
+  );
 
   return {
     originA,
@@ -519,7 +534,8 @@ export async function searchHalfway(request: SearchHalfwayRequest): Promise<Sear
     preferences,
     travelMode,
     query: getCategorySearchTerm(request.category, request.customQuery, request.meetupMode),
-    venues: finalVenues
+    venues: finalVenues,
+    ...(strictIntentApplied ? { strictIntentApplied } : {})
   };
 }
 

@@ -1,6 +1,8 @@
 import type { EventResult, LocalEventProfile } from "@/lib/eventResult";
+import type { StrictIntentKey } from "@/lib/strictIntentFilters";
 
 export type { EventResult, LocalEventProfile } from "@/lib/eventResult";
+export type { StrictIntentKey } from "@/lib/strictIntentFilters";
 
 export type LatLng = {
   lat: number;
@@ -302,4 +304,6 @@ export type SearchHalfwayResponse = {
   events?: EventResult[];
   eventProfile?: LocalEventProfile;
   travelMode?: TravelMode;
+  /** Set when strict-intent filtering removed weak substitutes for a specific ask. */
+  strictIntentApplied?: StrictIntentKey;
 };

@@ -62,8 +62,8 @@ const FEATURE_EXPLORE: Record<
   },
   landmark: { category: "activities", subcategoryId: "landmarks", providers: ["opentripmap", "google_places"] },
   historic_site: {
-    category: "outdoors",
-    subcategoryId: "historic_sites",
+    category: "activities",
+    subcategoryId: "landmarks",
     providers: ["opentripmap", "google_places"]
   },
   ev_charger: { category: "food_drink", subcategoryId: null, providers: ["google_places"] }

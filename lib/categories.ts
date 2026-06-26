@@ -161,17 +161,20 @@ export const CATEGORY_GROUPS: PrimaryCategoryConfig[] = [
   {
     id: "activities",
     label: "Activities",
-    description: "Golf, pickleball, bowling, games, and plans with something to do.",
+    description: "Bowling, golf, arcades, escape rooms, and places to play.",
     accent: "from-[#EEFDF5] to-white",
     subcategories: [
+      category("bowling", "Bowling", "Classic indoor activity with food and flexible timing.", "Best Activity Match", "A bowling match near the midpoint that gives the plan an easy built-in activity.", {
+        single: ["bowling alley", "bowling lounge", "bowling center", "duckpin bowling"],
+      }),
+      category("arcades", "Arcades", "Games, drinks, and playful indoor energy.", "Best Activity Match", "An arcade match that keeps the drive practical while giving you something fun to do.", {
+        single: ["arcade", "bar arcade", "family arcade", "game center"],
+      }),
+      category("escape_rooms", "Escape Rooms", "Structured group plans with a clear start and finish.", "Best Activity Match", "An escape room match near the midpoint for a more intentional activity plan.", {
+        single: ["escape room", "escape game", "escape room center", "adventure escape room"],
+      }),
       category("golf", "Golf", "Courses and golf-forward outings.", "Best Activity Match", "A golf-focused match near the midpoint with workable travel times for both people.", {
         single: ["golf course", "public golf course", "golf club", "golf simulator"],
-      }),
-      category("events", "Events", "Shows, performances, markets, and calendar-driven plans.", "Best Activity Match", "An event-friendly match near the midpoint with a clear plan attached.", {
-        single: ["events", "live events", "things to do", "local events"],
-      }),
-      category("sports", "Sports", "Sports venues, athletic centers, courts, fields, and active plans.", "Best Activity Match", "A sports-focused match near the midpoint with workable travel times for both people.", {
-        single: ["sports complex", "sports venue", "athletic center", "recreation center"],
       }),
       category("driving_range", "Driving Range", "Low-pressure swings without a full round.", "Best Activity Match", "A driving range match near the midpoint for an easy activity-focused meet-up.", {
         single: ["driving range", "golf driving range", "topgolf", "golf range"],
@@ -179,14 +182,11 @@ export const CATEGORY_GROUPS: PrimaryCategoryConfig[] = [
       category("pickleball", "Pickleball", "Courts and active plans with a social feel.", "Best Activity Match", "A pickleball-focused match with fair drive times and an easy activity built in.", {
         single: ["pickleball court", "pickleball club", "indoor pickleball", "public pickleball courts"],
       }),
-      category("bowling", "Bowling", "Classic indoor activity with food and flexible timing.", "Best Activity Match", "A bowling match near the midpoint that gives the plan an easy built-in activity.", {
-        single: ["bowling alley", "bowling lounge", "bowling center", "duckpin bowling"],
+      category("sports", "Sports Venues", "Courts, fields, rec centers, and active play spots.", "Best Activity Match", "A sports venue match near the midpoint with workable travel times for both people.", {
+        single: ["sports complex", "sports venue", "athletic center", "recreation center"],
       }),
-      category("escape_rooms", "Escape Rooms", "Structured group plans with a clear start and finish.", "Best Activity Match", "An escape room match near the midpoint for a more intentional activity plan.", {
-        single: ["escape room", "escape game", "escape room center", "adventure escape room"],
-      }),
-      category("arcades", "Arcades", "Games, drinks, and playful indoor energy.", "Best Activity Match", "An arcade match that keeps the drive practical while giving you something fun to do.", {
-        single: ["arcade", "bar arcade", "family arcade", "game center"],
+      category("events", "Events", "Shows, performances, markets, and calendar-driven plans.", "Best Activity Match", "An event-friendly match near the midpoint with a clear plan attached.", {
+        single: ["events", "live events", "things to do", "local events"],
       })
     ]
   },
@@ -279,6 +279,9 @@ export const CATEGORY_GROUPS: PrimaryCategoryConfig[] = [
       }),
       category("scenic_walks", "Scenic Walks", "Memorable walks, overlooks, and low-pressure outdoor plans.", "Best Outdoors Match", "A scenic walk match near the midpoint with a more memorable setting.", {
         single: ["scenic walk", "scenic overlook", "viewpoint", "walking path"],
+      }),
+      category("scenic_spots", "Scenic Spots", "Overlooks, scenic drives, and photo-worthy views.", "Best Outdoors Match", "A scenic spot match near the midpoint with a memorable setting.", {
+        single: ["scenic overlook", "scenic drive", "viewpoint", "vista"],
       }),
       category("dog_parks", "Dog Parks", "Dog-friendly parks and easy outdoor meetups.", "Best Outdoors Match", "A dog park match near the midpoint with an easy outdoor plan.", {
         single: ["dog park", "off leash dog park", "dog friendly park", "pet friendly park"],

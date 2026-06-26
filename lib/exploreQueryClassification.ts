@@ -19,6 +19,12 @@ type ClassificationRule = {
 
 /** Ordered rules — first match wins. More specific patterns appear before broad ones. */
 const CLASSIFICATION_RULES: ClassificationRule[] = [
+  {
+    category: "nightlife",
+    subcategoryId: "sports_bars",
+    pattern: /\bsports bars?\b|\bgame day bars?\b/i
+  },
+
   // Live sports → Ticketmaster
   {
     category: "sports",
@@ -71,6 +77,11 @@ const CLASSIFICATION_RULES: ClassificationRule[] = [
   // Places-first food & drink
   {
     category: "food_drink",
+    subcategoryId: "farmers_markets",
+    pattern: /\b(?:farmers? markets?|farm market|produce market|public market)\b/i
+  },
+  {
+    category: "food_drink",
     subcategoryId: "sushi",
     pattern: /\bsushi\b/i
   },
@@ -110,11 +121,6 @@ const CLASSIFICATION_RULES: ClassificationRule[] = [
   // OpenTripMap-friendly — specific subcategories
   {
     category: "outdoors",
-    subcategoryId: "farmers_markets",
-    pattern: /\b(?:farmers? markets?|farm market|produce market|public market)\b/i
-  },
-  {
-    category: "outdoors",
     subcategoryId: "gardens",
     pattern: /\b(?:botanical gardens?|arboretum|flower garden)\b/i
   },
@@ -135,7 +141,7 @@ const CLASSIFICATION_RULES: ClassificationRule[] = [
   },
   {
     category: "outdoors",
-    subcategoryId: "scenic_drives",
+    subcategoryId: "scenic_walks",
     pattern: /\b(?:scenic walks?|waterfront walks?|nature walks?|scenic strolls?)\b/i
   },
   {
@@ -159,8 +165,8 @@ const CLASSIFICATION_RULES: ClassificationRule[] = [
     pattern: /\b(?:nature preserves?|wildlife refuge|nature sanctuary)\b/i
   },
   {
-    category: "outdoors",
-    subcategoryId: "historic_sites",
+    category: "activities",
+    subcategoryId: "landmarks",
     pattern: /\b(?:historic sites?|historic places?|heritage sites?|historical landmarks?)\b/i
   },
   {
@@ -172,6 +178,11 @@ const CLASSIFICATION_RULES: ClassificationRule[] = [
     category: "outdoors",
     subcategoryId: "scenic_drives",
     pattern: /\b(?:scenic (?:walk|drive|route|stroll)|best scenic walk)\b/i
+  },
+  {
+    category: "activities",
+    subcategoryId: "golf",
+    pattern: /\b(?:golf courses?|driving ranges?|pickleball courts?|batting cages?)\b/i
   },
   {
     category: "activities",
@@ -223,12 +234,7 @@ const CLASSIFICATION_RULES: ClassificationRule[] = [
   {
     category: "activities",
     subcategoryId: null,
-    pattern: /\b(?:bowling|arcade|mini golf|museum|spa|axe throwing)\b/i
-  },
-  {
-    category: "activities",
-    subcategoryId: null,
-    pattern: /\b(?:thrift|vintage|antique|record store|used book|architectural salvage|secondhand)\b/i
+    pattern: /\b(?:bowling|arcade|mini golf|museum|spa|axe throwing|thrift|vintage|antique|record store|used book|architectural salvage|secondhand)\b/i
   }
 ];
 
@@ -253,6 +259,7 @@ export function classifyExploreQuery(query: string): QueryClassification | null 
 export function isOpenTripMapFriendlyQuery(query: string): boolean {
   const classified = classifyExploreQuery(query);
   if (!classified) return false;
+  if (classified.subcategoryId === "farmers_markets") return true;
   if (classified.category === "events" || classified.category === "sports") return false;
   if (classified.category === "food_drink" || classified.category === "nightlife") return false;
   if (classified.category === "outdoors" || classified.category === "activities") return true;

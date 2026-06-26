@@ -17,6 +17,7 @@ export type LocalChipCategoryId =
   | "food"
   | "drinks"
   | "coffee"
+  | "outdoors"
   | "activities"
   | "events"
   | "sports"
@@ -65,6 +66,13 @@ export const LOCAL_CHIP_CATEGORIES: LocalChipCategory[] = [
     noun: "coffee shops",
     defaultVenueCategory: "coffee",
     subtypeLabel: "☕ Style"
+  },
+  {
+    id: "outdoors",
+    label: "🌲 Outdoors",
+    noun: "outdoor places",
+    defaultVenueCategory: "park",
+    subtypeLabel: "🌲 Type"
   },
   {
     id: "activities",
@@ -126,7 +134,10 @@ const COFFEE_CUISINES: BuilderRefinement[] = [
 ];
 
 const ACTIVITY_SUBTYPES: BuilderRefinement[] = [
-  { id: "parks", label: "🌳 Parks", group: "type", noun: "parks", category: "park" },
+  { id: "bowling", label: "🎳 Bowling", group: "type", noun: "bowling alleys", category: "bowling" },
+  { id: "mini_golf", label: "⛳ Mini Golf", group: "type", noun: "mini golf", category: "activities" },
+  { id: "arcades", label: "🕹️ Arcades", group: "type", noun: "arcades", category: "arcades" },
+  { id: "escape_rooms", label: "🔐 Escape Rooms", group: "type", noun: "escape rooms", category: "escape_rooms" },
   { id: "museums", label: "🏛️ Museums", group: "type", noun: "museums", category: "museums" },
   { id: "zoos_aquariums", label: "🐘 Zoos & Aquariums", group: "type", noun: "zoos and aquariums", category: "zoos" },
   {
@@ -136,12 +147,20 @@ const ACTIVITY_SUBTYPES: BuilderRefinement[] = [
     noun: "family friendly activities",
     category: "family"
   },
+  { id: "golf", label: "⛳ Golf", group: "type", noun: "golf courses", category: "golf" },
+  { id: "driving_ranges", label: "🏌️ Driving Ranges", group: "type", noun: "driving ranges", category: "driving_range" },
+  { id: "pickleball", label: "🏓 Pickleball", group: "type", noun: "pickleball courts", category: "pickleball" }
+];
+
+const OUTDOOR_SUBTYPES: BuilderRefinement[] = [
+  { id: "parks", label: "🌳 Parks", group: "type", noun: "parks", category: "park" },
   { id: "hiking", label: "🥾 Hiking", group: "type", noun: "hiking trails", category: "hiking" },
-  { id: "mini_golf", label: "⛳ Mini Golf", group: "type", noun: "mini golf", category: "activities" },
-  { id: "arcades", label: "🕹️ Arcades", group: "type", noun: "arcades", category: "arcades" },
-  { id: "bowling", label: "🎳 Bowling", group: "type", noun: "bowling alleys", category: "bowling" },
+  { id: "trails", label: "🚴 Trails", group: "type", noun: "trails and greenways", category: "trails" },
   { id: "gardens", label: "🌸 Gardens", group: "type", noun: "gardens", category: "gardens" },
-  { id: "driving_ranges", label: "🏌️ Driving Ranges", group: "type", noun: "driving ranges", category: "driving_range" }
+  { id: "waterfront", label: "🌊 Waterfront", group: "type", noun: "waterfront spots", category: "waterfronts" },
+  { id: "scenic_walks", label: "🌄 Scenic Walks", group: "type", noun: "scenic walks", category: "scenic_walks" },
+  { id: "dog_parks", label: "🐕 Dog Parks", group: "type", noun: "dog parks", category: "dog_parks" },
+  { id: "nature_preserves", label: "🦌 Nature Preserves", group: "type", noun: "nature preserves", category: "nature_preserves" }
 ];
 
 const THRIFT_SUBTYPES: BuilderRefinement[] = [
@@ -184,6 +203,7 @@ export const BUILDER_TYPE_REFINEMENTS: Partial<Record<LocalChipCategoryId, Build
   food: FOOD_CUISINES,
   drinks: DRINKS_CUISINES,
   coffee: COFFEE_CUISINES,
+  outdoors: OUTDOOR_SUBTYPES,
   activities: ACTIVITY_SUBTYPES,
   events: EVENT_TYPE_REFINEMENTS,
   sports: SPORT_TYPE_REFINEMENTS,
@@ -222,26 +242,33 @@ const DRINKS_VENUE_CATEGORIES = new Set<VenueCategory>([
   "distilleries"
 ]);
 
+const OUTDOOR_VENUE_CATEGORIES = new Set<VenueCategory>([
+  "park",
+  "hiking",
+  "trails",
+  "gardens",
+  "waterfronts",
+  "scenic_walks",
+  "scenic_spots",
+  "dog_parks",
+  "playgrounds",
+  "nature_preserves",
+  "picnic_areas"
+]);
+
 const ACTIVITY_VENUE_CATEGORIES = new Set<VenueCategory>([
   "activities",
-  "park",
   "museums",
   "childrens_museums",
   "zoos",
   "aquariums",
   "family",
-  "hiking",
-  "trails",
   "arcades",
   "bowling",
-  "gardens",
-  "driving_range",
   "escape_rooms",
   "pickleball",
-  "playgrounds",
-  "dog_parks",
-  "nature_preserves",
-  "scenic_spots",
+  "golf",
+  "driving_range",
   "sports"
 ]);
 
@@ -292,6 +319,7 @@ export function groupHasVibeOptions(group: LocalChipCategoryId): boolean {
 export function categoryGroupFor(category: VenueCategory): LocalChipCategoryId {
   if (category === "coffee") return "coffee";
   if (category === "events") return "events";
+  if (OUTDOOR_VENUE_CATEGORIES.has(category)) return "outdoors";
   if (ACTIVITY_VENUE_CATEGORIES.has(category)) return "activities";
   if (THRIFT_VENUE_CATEGORIES.has(category)) return "thrift_vintage";
   if (SHOPPING_VENUE_CATEGORIES.has(category)) return "shopping";

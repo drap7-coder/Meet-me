@@ -66,7 +66,7 @@ export function getExploreModeBoosts(mode: ExploreTravelMode | null | undefined)
           "coffee",
           "museums",
           "public_art",
-          "historic_sites",
+          "landmarks",
           "waterfronts",
           "gardens",
           "farmers_markets",

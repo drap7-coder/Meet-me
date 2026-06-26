@@ -11,10 +11,10 @@ function assert(condition: boolean, message: string) {
 process.env.OPENTRIPMAP_API_KEY = "test-key";
 
 const OTM_QUERIES: Array<{ query: string; category: string; subcategory?: string }> = [
-  { query: "farmers markets near me", category: "outdoors", subcategory: "farmers_markets" },
-  { query: "best scenic walk nearby", category: "outdoors", subcategory: "scenic_drives" },
+  { query: "farmers markets near me", category: "food_drink", subcategory: "farmers_markets" },
+  { query: "best scenic walk nearby", category: "outdoors", subcategory: "scenic_walks" },
   { query: "public art in Philadelphia", category: "activities", subcategory: "public_art" },
-  { query: "historic places near Chestnut Hill", category: "outdoors", subcategory: "historic_sites" },
+  { query: "historic places near Chestnut Hill", category: "activities", subcategory: "landmarks" },
   { query: "gardens near me", category: "outdoors", subcategory: "gardens" },
   { query: "museums near Wyndmoor", category: "activities", subcategory: "museums" },
   { query: "landmarks nearby", category: "activities", subcategory: "landmarks" },
@@ -38,8 +38,7 @@ const TEMPORAL_EXPLORE_QUERIES = [
   "fun this weekend",
   "events this weekend",
   "tonight",
-  "outdoor activities this weekend",
-  "farmers market near me this weekend"
+  "outdoor activities this weekend"
 ];
 
 const STREAMING_QUERIES = ["movie to stream tonight", "what should I watch on Netflix"];
@@ -75,6 +74,16 @@ for (const query of TEMPORAL_EXPLORE_QUERIES) {
   assert(intent.providers.at(-1) === "google_places", `${query} keeps Places as final fallback`);
   assert(!shouldUseOpenTripMapExplorePath(intent), `${query} does not use Places-first OTM path`);
 }
+
+const farmersWeekendIntent = normalizeExploreIntent({
+  query: "farmers market near me this weekend",
+  structured: false
+});
+assert(farmersWeekendIntent.category === "food_drink", "weekend farmers market stays food & drink");
+assert(farmersWeekendIntent.subcategoryId === "farmers_markets", "weekend farmers market keeps subtype");
+assert(!farmersWeekendIntent.timeAwareExplore, "weekend farmers market stays place-first");
+assert(farmersWeekendIntent.providers[0] === "opentripmap", "weekend farmers market uses OTM primary");
+assert(shouldUseOpenTripMapExplorePath(farmersWeekendIntent), "weekend farmers market uses OTM explore path");
 
 for (const query of EVENT_QUERIES) {
   const intent = normalizeExploreIntent({ query, structured: false });

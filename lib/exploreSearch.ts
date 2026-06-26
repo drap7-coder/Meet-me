@@ -19,6 +19,7 @@ const OTM_CATEGORY_BY_SUBCATEGORY: Partial<Record<string, OpenTripMapCategory[]>
   arcades: ["amusement"],
   mini_golf: ["sport", "amusement"],
   bowling: ["sport"],
+  scenic_walks: ["viewpoints", "natural", "interesting_places"],
   scenic_drives: ["viewpoints", "natural"],
   overlooks: ["viewpoints"],
   waterfront: ["natural", "interesting_places"],

@@ -659,7 +659,8 @@ export function SearchPromptDetailChips() {
 
             <div className={`h-px ${onPage ? "bg-line/60" : "bg-white/10"}`} aria-hidden="true" />
 
-            <ChipGroup label="Type" onPage={onPage}>
+            <div className="grid gap-2.5">
+            <ChipGroup label="Type" onPage={onPage} variant="section">
               {WATCH_TYPE_OPTIONS.map((option) => (
                 <AssistChip
                   key={option.id}
@@ -675,9 +676,7 @@ export function SearchPromptDetailChips() {
 
             {showStreamingRefinements ? (
               <>
-                <div className={`h-px ${onPage ? "bg-line/60" : "bg-white/10"}`} aria-hidden="true" />
-
-                <ChipGroup label="✨ Vibe" onPage={onPage}>
+                <ChipGroup label="✨ Vibe" onPage={onPage} variant="vibe">
                   {WATCH_VIBE_OPTIONS.map((option) => (
                     <AssistChip
                       key={option.id}
@@ -690,7 +689,7 @@ export function SearchPromptDetailChips() {
                   ))}
                 </ChipGroup>
 
-                <ChipGroup label={getWatchGenreGroupLabel(streamType)} onPage={onPage}>
+                <ChipGroup label={getWatchGenreGroupLabel(streamType)} onPage={onPage} variant="section">
                   {streamGenres.map((genre) => (
                     <AssistChip
                       key={genre.id}
@@ -706,6 +705,7 @@ export function SearchPromptDetailChips() {
                 </ChipGroup>
               </>
             ) : null}
+            </div>
           </>
         ) : null}
 
@@ -726,9 +726,9 @@ export function SearchPromptDetailChips() {
             </ChipGroup>
 
             {showExploreDetails && state.exploreCategory ? (
-              <>
+              <div className="grid gap-2.5">
                 <div className={`h-px ${onPage ? "bg-line/60" : "bg-white/10"}`} aria-hidden="true" />
-                <ChipGroup label={exploreCategoryConfig(state.exploreCategory).subtypeLabel} onPage={onPage}>
+                <ChipGroup label={exploreCategoryConfig(state.exploreCategory).subtypeLabel} onPage={onPage} variant="section">
                   {typeRefinements.map((refinement) => (
                     <AssistChip
                       key={refinement.id}
@@ -742,14 +742,11 @@ export function SearchPromptDetailChips() {
                 </ChipGroup>
 
                 {showEventDates ? (
-                  <>
-                    <div className={`h-px ${onPage ? "bg-line/60" : "bg-white/10"}`} aria-hidden="true" />
-                    <SearchPromptEventWhen onPage={onPage} />
-                  </>
+                  <SearchPromptEventWhen onPage={onPage} variant="section" />
                 ) : null}
 
                 {vibeRefinements.length ? (
-                  <ChipGroup label="✨ Vibe" onPage={onPage}>
+                  <ChipGroup label="✨ Vibe" onPage={onPage} variant="vibe">
                     {vibeRefinements.map((refinement) => (
                       <AssistChip
                         key={refinement.id}
@@ -764,9 +761,7 @@ export function SearchPromptDetailChips() {
                 ) : null}
 
                 {showMusicArtists ? (
-                  <>
-                    <div className={`h-px ${onPage ? "bg-line/60" : "bg-white/10"}`} aria-hidden="true" />
-                    <ChipGroup label="🎤 Artists" onPage={onPage}>
+                  <ChipGroup label="🎤 Artists" onPage={onPage} variant="section">
                       {MUSIC_ARTISTS.map((artist) => (
                         <AssistChip
                           key={artist.id}
@@ -778,15 +773,12 @@ export function SearchPromptDetailChips() {
                           onPick={() => toggleMusicArtist(artist.id)}
                           onPage={onPage}
                         />
-                      ))}
-                    </ChipGroup>
-                  </>
+                    ))}
+                  </ChipGroup>
                 ) : null}
 
                 {showMusicGenres ? (
-                  <>
-                    <div className={`h-px ${onPage ? "bg-line/60" : "bg-white/10"}`} aria-hidden="true" />
-                    <ChipGroup label="🎵 Genre" onPage={onPage}>
+                  <ChipGroup label="🎵 Genre" onPage={onPage} variant="section">
                       {MUSIC_GENRES.map((genre) => (
                         <AssistChip
                           key={genre.id}
@@ -798,32 +790,25 @@ export function SearchPromptDetailChips() {
                           onPick={() => toggleGenre(genre.id)}
                           onPage={onPage}
                         />
-                      ))}
-                    </ChipGroup>
-                  </>
+                    ))}
+                  </ChipGroup>
                 ) : null}
 
                 {showSportsTeams && (hasLocalSportsTeams || otherSportsTeams.length) ? (
                   <>
-                    <div className={`h-px ${onPage ? "bg-line/60" : "bg-white/10"}`} aria-hidden="true" />
                     {hasLocalSportsTeams ? (
-                      <ChipGroup label="📍 Near you" onPage={onPage}>
+                      <ChipGroup label="📍 Near you" onPage={onPage} variant="section">
                         {localSportsTeams.map(renderSportsTeamChip)}
                       </ChipGroup>
                     ) : null}
                     {otherSportsTeams.length ? (
-                      <>
-                        {hasLocalSportsTeams ? (
-                          <div className={`h-px ${onPage ? "bg-line/60" : "bg-white/10"}`} aria-hidden="true" />
-                        ) : null}
-                        <ChipGroup label={hasLocalSportsTeams ? "🌎 All teams" : "🏟️ Teams"} onPage={onPage}>
+                      <ChipGroup label={hasLocalSportsTeams ? "🌎 All teams" : "🏟️ Teams"} onPage={onPage} variant="section">
                           {otherSportsTeams.map(renderSportsTeamChip)}
-                        </ChipGroup>
-                      </>
+                      </ChipGroup>
                     ) : null}
                   </>
                 ) : null}
-              </>
+              </div>
             ) : null}
           </>
         ) : null}
@@ -842,8 +827,16 @@ export function SearchPromptChips() {
   );
 }
 
+type ChipGroupVariant = "inline" | "section" | "vibe";
+
 /** Event date chips — also shown in Advanced Search for event queries. */
-export function SearchPromptEventWhen({ onPage = false }: { onPage?: boolean }) {
+export function SearchPromptEventWhen({
+  onPage = false,
+  variant = "inline"
+}: {
+  onPage?: boolean;
+  variant?: ChipGroupVariant;
+}) {
   const { busy, state, toggleEventWhen, setEventDate } = useAssistContext();
   if (state.exploreCategory !== "events" || state.typeId === "weekend") return null;
 
@@ -852,7 +845,7 @@ export function SearchPromptEventWhen({ onPage = false }: { onPage?: boolean }) 
     : "h-9 rounded-lg border border-white/12 bg-white/[0.08] px-2.5 text-sm text-white/90 outline-none transition focus:border-koi focus:ring-2 focus:ring-koi/15";
 
   return (
-    <ChipGroup label="📅 When" onPage={onPage}>
+    <ChipGroup label="📅 When" onPage={onPage} variant={variant}>
       {EVENT_WHEN_OPTIONS.map((option) => {
         const selected = state.eventWhen === option.id;
         const label =
@@ -925,7 +918,43 @@ export function SearchPromptAssist(props: Omit<ProviderProps, "children">) {
   );
 }
 
-function ChipGroup({ label, onPage = false, children }: { label: string; onPage?: boolean; children: ReactNode }) {
+function ChipGroup({
+  label,
+  onPage = false,
+  variant = "inline",
+  children
+}: {
+  label: string;
+  onPage?: boolean;
+  variant?: ChipGroupVariant;
+  children: ReactNode;
+}) {
+  if (variant === "section" || variant === "vibe") {
+    const panelClass =
+      variant === "vibe"
+        ? onPage
+          ? "border-koi/25 bg-[#FFF8F3] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
+          : "border-koi/20 bg-koi/[0.07] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+        : onPage
+          ? "border-line/80 bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]"
+          : "border-white/12 bg-white/[0.03] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]";
+    const labelClass =
+      variant === "vibe"
+        ? onPage
+          ? "text-koi"
+          : "text-[#FFB07A]"
+        : onPage
+          ? "text-slate"
+          : "text-white/55";
+
+    return (
+      <div className={`rounded-[14px] border p-3 sm:p-3.5 ${panelClass}`}>
+        <p className={`mb-2.5 text-[0.6875rem] font-bold uppercase tracking-[0.16em] ${labelClass}`}>{label}</p>
+        <div className="flex flex-wrap gap-2">{children}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       <span

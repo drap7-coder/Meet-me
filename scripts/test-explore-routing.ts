@@ -1,6 +1,7 @@
 import { buildPlaceQuery, type BuilderState } from "../app/components/SearchPromptAssist";
 import {
   EXPLORE_CATEGORIES,
+  classifyExploreQuery,
   exploreCategoryConfig,
   inferExploreCategoryFromQuery,
   isExploreCategory
@@ -8,7 +9,7 @@ import {
 import {
   normalizeExploreIntent,
   selectProvidersForExplore,
-  shouldUseTimeAwareExplorePath,
+  shouldUseOpenTripMapExplorePath,
   validateExploreBuilderIsolation
 } from "../lib/exploreRouting";
 import { shouldRouteFilterSearchToFreeform } from "../lib/searchIntent";
@@ -67,12 +68,17 @@ assert(
 const sportsBarIntent = normalizeExploreIntent({
   query: "Sports bars near me",
   mode: "explore",
-  category: "sports",
+  category: "nightlife",
   subcategoryId: "sports_bars",
   structured: true
 });
 assert(!sportsBarIntent.routeViaTicketmaster, "sports bars use places not ticketmaster");
 assert(sportsBarIntent.providers[0] === "google_places", "sports bars primary google");
+assert(sportsBarIntent.category === "nightlife", "sports bars belong under nightlife");
+
+const sportsBarClassified = classifyExploreQuery("sports bar near me");
+assert(sportsBarClassified?.category === "nightlife", "sports bar query infers nightlife");
+assert(sportsBarClassified?.subcategoryId === "sports_bars", "sports bar query infers sports_bars subtype");
 
 const concertsState: BuilderState = {
   ...yankeesState,
@@ -106,28 +112,28 @@ const waterfrontWalkIntent = normalizeExploreIntent({
   structured: false
 });
 assert(waterfrontWalkIntent.category === "outdoors", "waterfront walk infers outdoors");
-assert(waterfrontWalkIntent.subcategoryId === "scenic_drives", "waterfront walk infers scenic walk bucket");
+assert(waterfrontWalkIntent.subcategoryId === "scenic_walks", "waterfront walk infers scenic walks");
 
 const thriftIntent = normalizeExploreIntent({
   query: "thrift stores nearby",
   structured: false
 });
-assert(thriftIntent.category === "activities", "thrift infers activities not shopping");
+assert(thriftIntent.category === "activities", "thrift infers activities");
 
 const farmersIntent = normalizeExploreIntent({
   query: "farmers market near me this weekend",
   structured: false
 });
-assert(farmersIntent.category === "outdoors", "farmers market infers outdoors");
+assert(farmersIntent.category === "food_drink", "farmers market infers food & drink");
 assert(farmersIntent.subcategoryId === "farmers_markets", "farmers market infers subcategory");
 assert(farmersIntent.venueCategory === "farmers_markets", "farmers market venue category");
 assert(!farmersIntent.routeViaTicketmaster, "farmers market does not route to ticketmaster");
-assert(farmersIntent.timeAwareExplore, "farmers market weekend is time-aware");
-assert(farmersIntent.providers[0] === "ticketmaster", "farmers market weekend checks event providers first");
+assert(!farmersIntent.timeAwareExplore, "food & drink farmers markets stay place-first even on weekends");
+assert(farmersIntent.providers[0] === "opentripmap", "farmers market uses OpenTripMap primary");
 assert(farmersIntent.providers.includes("google_places"), "farmers market includes places fallback");
-assert(farmersIntent.providers.includes("opentripmap"), "farmers market includes OpenTripMap");
+assert(farmersIntent.preferOpenTripMap, "farmers market prefers OpenTripMap");
 assert(!farmersIntent.providers.includes("eventbrite"), "eventbrite omitted without food_market sources");
-assert(shouldUseTimeAwareExplorePath(farmersIntent), "farmers market weekend uses time-aware path");
+assert(shouldUseOpenTripMapExplorePath(farmersIntent), "farmers market uses OTM explore path");
 
 const foodProviders = selectProvidersForExplore("food_drink", null);
 assert(foodProviders[0] === "google_places" && foodProviders.length === 1, "food & drink is places primary");

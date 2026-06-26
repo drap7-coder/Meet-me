@@ -51,9 +51,9 @@ const FOOD_DRINK_REFINEMENTS: BuilderRefinement[] = [
   { id: "restaurants", label: "Restaurants", group: "type", noun: "restaurants", category: "restaurant" },
   { id: "coffee", label: "Coffee", group: "type", noun: "coffee shops", category: "coffee" },
   { id: "brunch", label: "Brunch", group: "type", noun: "brunch spots", category: "brunch" },
-  { id: "bars", label: "Bars", group: "type", noun: "bars", category: "bar" },
   { id: "breweries", label: "Breweries", group: "type", noun: "breweries", category: "breweries" },
   { id: "dessert", label: "Dessert", group: "type", noun: "dessert spots", category: "dessert" },
+  { id: "farmers_markets", label: "Farmers markets", group: "type", noun: "farmers markets", category: "farmers_markets" },
   { id: "italian", label: "Italian", group: "type", prefix: "Italian", category: "italian" },
   { id: "sushi", label: "Sushi", group: "type", noun: "sushi restaurants", category: "sushi" },
   { id: "pizza", label: "Pizza", group: "type", noun: "pizza places", category: "pizza" },
@@ -62,12 +62,14 @@ const FOOD_DRINK_REFINEMENTS: BuilderRefinement[] = [
 
 const NIGHTLIFE_REFINEMENTS: BuilderRefinement[] = [
   { id: "cocktail_bars", label: "Cocktail bars", group: "type", noun: "cocktail bars", category: "cocktail_bars" },
+  { id: "sports_bars", label: "Sports bars", group: "type", noun: "sports bars", category: "sports_bars" },
+  { id: "wine_bars", label: "Wine bars", group: "type", noun: "wine bars", category: "wine_bars" },
+  { id: "rooftop", label: "Rooftop bars", group: "type", noun: "rooftop bars", category: "rooftop_bars" },
+  { id: "lounges", label: "Lounges", group: "type", noun: "lounges", category: "lounges" },
+  { id: "pubs", label: "Pubs", group: "type", noun: "pubs", category: "pubs" },
   { id: "live_music", label: "Live music", group: "type", noun: "live music venues", category: "events" },
   { id: "dancing", label: "Dancing", group: "type", noun: "dance clubs", category: "activities" },
-  { id: "lounges", label: "Lounges", group: "type", noun: "lounges", category: "lounges" },
-  { id: "late_night_food", label: "Late-night food", group: "type", noun: "late night food", category: "restaurant" },
-  { id: "rooftop", label: "Rooftop bars", group: "type", noun: "rooftop bars", category: "rooftop_bars" },
-  { id: "wine_bars", label: "Wine bars", group: "type", noun: "wine bars", category: "wine_bars" }
+  { id: "late_night_food", label: "Late-night food", group: "type", noun: "late night food", category: "restaurant" }
 ];
 
 const EVENTS_REFINEMENTS: BuilderRefinement[] = [
@@ -78,26 +80,23 @@ const EVENTS_REFINEMENTS: BuilderRefinement[] = [
 
 const SPORTS_REFINEMENTS: BuilderRefinement[] = [
   { id: "live_sports", label: "Live sports", group: "type", noun: "live sports games" },
-  ...SPORT_TYPE_REFINEMENTS.map((item) => ({ ...item, label: item.label.replace(/^[^\s]+\s/, "") })),
-  { id: "sports_bars", label: "Sports bars", group: "type", noun: "sports bars", category: "sports_bars" },
-  { id: "golf", label: "Golf", group: "type", noun: "golf courses", category: "driving_range" },
-  { id: "pickleball", label: "Pickleball", group: "type", noun: "pickleball courts", category: "pickleball" },
-  { id: "batting_cages", label: "Batting cages", group: "type", noun: "batting cages", category: "activities" }
+  ...SPORT_TYPE_REFINEMENTS.map((item) => ({ ...item, label: item.label.replace(/^[^\s]+\s/, "") }))
 ];
 
 const ACTIVITIES_REFINEMENTS: BuilderRefinement[] = [
   { id: "bowling", label: "Bowling", group: "type", noun: "bowling alleys", category: "bowling" },
   { id: "mini_golf", label: "Mini golf", group: "type", noun: "mini golf", category: "activities" },
   { id: "arcades", label: "Arcades", group: "type", noun: "arcades", category: "arcades" },
+  { id: "escape_rooms", label: "Escape rooms", group: "type", noun: "escape rooms", category: "escape_rooms" },
   { id: "axe_throwing", label: "Axe throwing", group: "type", noun: "axe throwing", category: "activities" },
+  { id: "golf", label: "Golf", group: "type", noun: "golf courses", category: "golf" },
+  { id: "driving_range", label: "Driving ranges", group: "type", noun: "driving ranges", category: "driving_range" },
+  { id: "pickleball", label: "Pickleball", group: "type", noun: "pickleball courts", category: "pickleball" },
+  { id: "batting_cages", label: "Batting cages", group: "type", noun: "batting cages", category: "activities" },
   { id: "museums", label: "Museums", group: "type", noun: "museums", category: "museums" },
-  { id: "public_art", label: "Public art", group: "type", noun: "public art", category: "custom" },
-  { id: "spas", label: "Spas", group: "type", noun: "spas", category: "activities" },
   { id: "landmarks", label: "Landmarks", group: "type", noun: "landmarks", category: "activities" },
-  { id: "thrift_stores", label: "Thrift stores", group: "type", noun: "thrift stores", category: "thrifting" },
-  { id: "vintage", label: "Vintage shops", group: "type", noun: "vintage clothing shops", category: "vintage" },
-  { id: "record_stores", label: "Record stores", group: "type", noun: "record stores", category: "bookstore" },
-  { id: "escape_rooms", label: "Escape rooms", group: "type", noun: "escape rooms", category: "escape_rooms" }
+  { id: "public_art", label: "Public art", group: "type", noun: "public art", category: "custom" },
+  { id: "spas", label: "Spas", group: "type", noun: "spas", category: "activities" }
 ];
 
 const OUTDOORS_REFINEMENTS: BuilderRefinement[] = [
@@ -106,11 +105,13 @@ const OUTDOORS_REFINEMENTS: BuilderRefinement[] = [
   { id: "trails", label: "Trails", group: "type", noun: "trails and greenways", category: "trails" },
   { id: "gardens", label: "Gardens", group: "type", noun: "gardens", category: "gardens" },
   { id: "waterfront", label: "Waterfront", group: "type", noun: "waterfront spots", category: "waterfronts" },
-  { id: "farmers_markets", label: "Farmers markets", group: "type", noun: "farmers markets", category: "farmers_markets" },
-  { id: "scenic_drives", label: "Scenic drives", group: "type", noun: "scenic drives", category: "scenic_spots" },
+  { id: "scenic_walks", label: "Scenic walks", group: "type", noun: "scenic walks", category: "scenic_walks" },
   { id: "overlooks", label: "Overlooks", group: "type", noun: "scenic overlooks", category: "scenic_spots" },
+  { id: "scenic_drives", label: "Scenic drives", group: "type", noun: "scenic drives", category: "scenic_spots" },
   { id: "nature_preserves", label: "Nature preserves", group: "type", noun: "nature preserves", category: "nature_preserves" },
-  { id: "historic_sites", label: "Historic sites", group: "type", noun: "historic sites", category: "activities" }
+  { id: "dog_parks", label: "Dog parks", group: "type", noun: "dog parks", category: "dog_parks" },
+  { id: "playgrounds", label: "Playgrounds", group: "type", noun: "playgrounds", category: "playgrounds" },
+  { id: "picnic_areas", label: "Picnic spots", group: "type", noun: "picnic areas", category: "picnic_areas" }
 ];
 
 const FOOD_VIBES: BuilderRefinement[] = [
@@ -124,7 +125,7 @@ export const EXPLORE_CATEGORIES: ExploreCategoryConfig[] = [
     key: "food_drink",
     label: "Food & Drink",
     emoji: "🍽️",
-    description: "Restaurants, coffee, brunch, bars, breweries, dessert",
+    description: "Restaurants, coffee, brunch, breweries, markets, dessert",
     noun: "restaurants",
     providers: ["google_places"],
     defaultVenueCategory: "restaurant",
@@ -136,7 +137,7 @@ export const EXPLORE_CATEGORIES: ExploreCategoryConfig[] = [
     key: "nightlife",
     label: "Nightlife",
     emoji: "🌙",
-    description: "Cocktails, live music, dancing, lounges, late-night food",
+    description: "Cocktails, sports bars, wine bars, rooftops, lounges",
     noun: "nightlife spots",
     providers: ["google_places"],
     defaultVenueCategory: "cocktail_bars",
@@ -158,7 +159,7 @@ export const EXPLORE_CATEGORIES: ExploreCategoryConfig[] = [
     key: "sports",
     label: "Sports",
     emoji: "🏟️",
-    description: "Live sports, sports bars, golf, pickleball, places to play",
+    description: "Live games, tickets, and team matchups",
     noun: "live sports",
     providers: ["ticketmaster", "google_places"],
     defaultVenueCategory: "events",
@@ -169,7 +170,7 @@ export const EXPLORE_CATEGORIES: ExploreCategoryConfig[] = [
     key: "activities",
     label: "Activities",
     emoji: "🎯",
-    description: "Bowling, mini golf, arcades, thrift stores, spas, museums",
+    description: "Bowling, golf, arcades, museums, spas, places to play",
     noun: "things to do",
     providers: ["opentripmap", "google_places"],
     defaultVenueCategory: "activities",
@@ -180,7 +181,7 @@ export const EXPLORE_CATEGORIES: ExploreCategoryConfig[] = [
     key: "outdoors",
     label: "Outdoors",
     emoji: "🌲",
-    description: "Parks, hikes, gardens, waterfronts, scenic places",
+    description: "Parks, hikes, gardens, waterfronts, scenic views",
     noun: "outdoor places",
     providers: ["opentripmap", "google_places"],
     defaultVenueCategory: "park",
@@ -258,7 +259,12 @@ export function isTicketmasterExploreSubcategory(category: ExploreCategory, subc
   if (category === "events") return true;
   if (category !== "sports") return false;
   if (!subcategoryId) return true;
-  if (subcategoryId === "sports_bars" || subcategoryId === "golf" || subcategoryId === "pickleball" || subcategoryId === "batting_cages") {
+  if (
+    subcategoryId === "golf" ||
+    subcategoryId === "driving_range" ||
+    subcategoryId === "pickleball" ||
+    subcategoryId === "batting_cages"
+  ) {
     return false;
   }
   return true;

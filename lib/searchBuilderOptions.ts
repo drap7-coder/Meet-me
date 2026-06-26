@@ -38,7 +38,7 @@ export type LocalChipCategory = {
 export type BuilderRefinement = {
   id: string;
   label: string;
-  group: "type" | "extra";
+  group: "type" | "subtype" | "extra";
   prefix?: string;
   noun?: string;
   suffix?: string;

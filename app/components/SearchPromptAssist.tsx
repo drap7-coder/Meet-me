@@ -4,10 +4,13 @@ import { getWatchGenresForSubcategory, getWatchGenreGroupLabel, resolveWatchGenr
 import {
   EXPLORE_CATEGORIES,
   exploreCategoryConfig,
+  exploreEffectiveSubcategoryId,
   exploreHasVibes,
   exploreRefinementsFor,
+  exploreStyleRefinementsFor,
   exploreVibesFor,
   isTicketmasterExploreSubcategory,
+  resolveExploreRefinement,
   venueCategoryForExplore,
   type ExploreCategory,
   type ExploreIntentPayload
@@ -58,6 +61,8 @@ export type BuilderState = {
   selectedMode: SelectedMode;
   exploreCategory: ExploreCategory | null;
   typeId: string | null;
+  /** Nested style/cuisine under the selected parent type (e.g. sushi under restaurants). */
+  subtypeId?: string | null;
   sportsTeamId: string | null;
   musicArtistId: string | null;
   extras: Set<string>;
@@ -90,6 +95,7 @@ type AssistContextValue = {
   isStreaming: boolean;
   userCoordinates?: LatLng;
   typeRefinements: ReturnType<typeof exploreRefinementsFor>;
+  styleRefinements: ReturnType<typeof exploreStyleRefinementsFor>;
   vibeRefinements: ReturnType<typeof exploreVibesFor>;
   surface: "hero" | "page";
   pickMode: (mode: Exclude<SelectedMode, null>) => void;
@@ -98,6 +104,7 @@ type AssistContextValue = {
   pickExploreCategory: (id: ExploreCategory) => void;
   pickStreamingType: (id: "movies" | "tv_shows") => void;
   toggleType: (id: string) => void;
+  toggleSubtype: (id: string) => void;
   toggleSportsTeam: (id: string) => void;
   toggleMusicArtist: (id: string) => void;
   toggleExtra: (id: string) => void;
@@ -131,6 +138,7 @@ function initialBuilderState(seed?: Pick<PickQueryOptions, "category" | "watchSu
       selectedMode: "streaming",
       exploreCategory: null,
       typeId: null,
+      subtypeId: null,
       sportsTeamId: null,
       musicArtistId: null,
       extras: new Set<string>(),
@@ -148,6 +156,7 @@ function initialBuilderState(seed?: Pick<PickQueryOptions, "category" | "watchSu
     selectedMode: null,
     exploreCategory: null,
     typeId: null,
+    subtypeId: null,
     sportsTeamId: null,
     musicArtistId: null,
     extras: new Set<string>(),
@@ -203,6 +212,7 @@ export function SearchPromptAssistProvider({
           selectedMode: null,
           exploreCategory: null,
           typeId: null,
+      subtypeId: null,
           sportsTeamId: null,
           musicArtistId: null,
           extras: new Set<string>(),
@@ -221,6 +231,7 @@ export function SearchPromptAssistProvider({
           selectedMode: "streaming",
           exploreCategory: null,
           typeId: null,
+      subtypeId: null,
           sportsTeamId: null,
           musicArtistId: null,
           extras: new Set<string>(),
@@ -238,6 +249,7 @@ export function SearchPromptAssistProvider({
         selectedMode: "explore",
         exploreCategory: null,
         typeId: null,
+      subtypeId: null,
         sportsTeamId: null,
         musicArtistId: null,
         extras: new Set<string>(),
@@ -274,6 +286,7 @@ export function SearchPromptAssistProvider({
         selectedMode: "explore",
         exploreCategory: null,
         typeId: null,
+      subtypeId: null,
         sportsTeamId: null,
         musicArtistId: null,
         extras: new Set<string>(),
@@ -300,6 +313,7 @@ export function SearchPromptAssistProvider({
         selectedMode: "explore",
         exploreCategory: "food_drink",
         typeId: null,
+      subtypeId: null,
         sportsTeamId: null,
         musicArtistId: null,
         extras: new Set<string>(),
@@ -321,6 +335,7 @@ export function SearchPromptAssistProvider({
           ...prev,
           exploreCategory: null,
           typeId: null,
+      subtypeId: null,
           sportsTeamId: null,
           musicArtistId: null,
           extras: new Set<string>(),
@@ -333,6 +348,7 @@ export function SearchPromptAssistProvider({
         selectedMode: "explore",
         exploreCategory: id,
         typeId: null,
+      subtypeId: null,
         sportsTeamId: null,
         musicArtistId: null,
         extras: new Set<string>(),
@@ -359,6 +375,7 @@ export function SearchPromptAssistProvider({
         streamingType: id,
         genre: nextGenre,
         typeId: null,
+        subtypeId: null,
         extras: new Set<string>()
       };
     });
@@ -378,6 +395,7 @@ export function SearchPromptAssistProvider({
       return {
         ...prev,
         typeId: nextTypeId,
+        subtypeId: null,
         sportsTeamId: null,
         musicArtistId: nextTypeId === "concerts" ? prev.musicArtistId : null,
         genre: keepGenre,
@@ -385,6 +403,10 @@ export function SearchPromptAssistProvider({
         eventDate
       };
     });
+  }
+
+  function toggleSubtype(id: string) {
+    commit((prev) => ({ ...prev, subtypeId: prev.subtypeId === id ? null : id }));
   }
 
   function toggleSportsTeam(id: string) {
@@ -506,6 +528,8 @@ export function SearchPromptAssistProvider({
   const isStreaming = Boolean(filterPreview?.isStreaming);
   const exploreCategory = state.selectedMode === "explore" ? state.exploreCategory : null;
   const typeRefinements = exploreCategory ? exploreRefinementsFor(exploreCategory) : [];
+  const styleRefinements =
+    exploreCategory && state.typeId ? exploreStyleRefinementsFor(exploreCategory, state.typeId) : [];
   const vibeRefinements =
     exploreCategory && exploreHasVibes(exploreCategory) ? exploreVibesFor(exploreCategory) : [];
 
@@ -520,6 +544,7 @@ export function SearchPromptAssistProvider({
         isStreaming,
         userCoordinates,
         typeRefinements,
+        styleRefinements,
         vibeRefinements,
         surface,
         pickMode,
@@ -528,6 +553,7 @@ export function SearchPromptAssistProvider({
         pickExploreCategory,
         pickStreamingType,
         toggleType,
+        toggleSubtype,
         toggleSportsTeam,
         toggleMusicArtist,
         toggleExtra,
@@ -587,10 +613,12 @@ export function SearchPromptDetailChips() {
     busy,
     state,
     typeRefinements,
+    styleRefinements,
     vibeRefinements,
     pickExploreCategory,
     pickStreamingType,
     toggleType,
+    toggleSubtype,
     toggleSportsTeam,
     toggleMusicArtist,
     toggleExtra,
@@ -739,8 +767,28 @@ export function SearchPromptDetailChips() {
                   ))}
                 </ChipGroup>
 
-                {showEventDates ? (
-                  <SearchPromptEventWhen onPage={onPage} variant="section" />
+                {styleRefinements.length ? (
+                  <ChipGroup
+                    label={exploreCategoryConfig(state.exploreCategory).styleLabel ?? "Style"}
+                    onPage={onPage}
+                    variant="section"
+                  >
+                    {styleRefinements.map((refinement) => {
+                      const selected = state.subtypeId === refinement.id;
+                      return (
+                        <AssistChip
+                          key={refinement.id}
+                          label={refinement.label}
+                          busy={busy}
+                          variant={selected ? "primary" : "accent"}
+                          selected={selected}
+                          emphasis={selected}
+                          onPick={() => toggleSubtype(refinement.id)}
+                          onPage={onPage}
+                        />
+                      );
+                    })}
+                  </ChipGroup>
                 ) : null}
 
                 {vibeRefinements.length ? (
@@ -756,6 +804,10 @@ export function SearchPromptDetailChips() {
                       />
                     ))}
                   </ChipGroup>
+                ) : null}
+
+                {showEventDates ? (
+                  <SearchPromptEventWhen onPage={onPage} variant="section" />
                 ) : null}
 
                 {showMusicArtists ? (
@@ -1016,7 +1068,8 @@ function AssistChip({
 function categoryFor(state: BuilderState): VenueCategory {
   if (state.selectedMode === "streaming") return "custom";
   if (!state.exploreCategory) return "restaurant";
-  return venueCategoryForExplore(state.exploreCategory, state.typeId);
+  const effectiveSubcategory = exploreEffectiveSubcategoryId(state.typeId, state.subtypeId);
+  return venueCategoryForExplore(state.exploreCategory, effectiveSubcategory);
 }
 
 function eventLocationSuffix(where: WhereId) {
@@ -1079,19 +1132,34 @@ export function buildPlaceQuery(state: BuilderState): string {
   const def = exploreCategoryConfig(state.exploreCategory);
   const refs = [
     ...exploreRefinementsFor(state.exploreCategory),
+    ...exploreStyleRefinementsFor(state.exploreCategory, state.typeId),
     ...exploreVibesFor(state.exploreCategory)
   ];
-  const type = refs.find((item) => item.group === "type" && item.id === state.typeId);
+  const type = state.typeId ? resolveExploreRefinement(state.exploreCategory, state.typeId) : null;
+  const subtype = state.subtypeId ? resolveExploreRefinement(state.exploreCategory, state.subtypeId) : null;
+  const primary = subtype ?? type;
 
-  const noun = type?.noun ?? def.noun;
+  let noun = primary?.noun ?? type?.noun ?? def.noun;
+  if (subtype?.prefix && !subtype.noun) {
+    noun = `${subtype.prefix} restaurants`;
+  }
 
   const prefixes: string[] = [];
   const suffixes: string[] = [];
 
   for (const ref of refs) {
-    const selected = ref.group === "type" ? ref.id === state.typeId : state.extras.has(ref.id);
+    let selected = false;
+    if (ref.group === "type") {
+      selected = ref.id === state.typeId && !state.subtypeId;
+    } else if (ref.group === "subtype") {
+      selected = ref.id === state.subtypeId;
+    } else if (ref.group === "extra") {
+      selected = state.extras.has(ref.id);
+    }
     if (!selected) continue;
-    if (ref.prefix) prefixes.push(ref.prefix);
+    if (ref.prefix && !(ref.group === "subtype" && ref.id === state.subtypeId && !ref.noun)) {
+      prefixes.push(ref.prefix);
+    }
     if (ref.suffix) suffixes.push(ref.suffix);
   }
 
@@ -1166,8 +1234,13 @@ function resolveFilterPreview(state: BuilderState): FilterPreview | null {
       ? {
           mode: "explore",
           category: state.exploreCategory,
-          subcategoryId: state.typeId,
-          providers: selectProvidersForExplore(state.exploreCategory, state.typeId)
+          typeId: state.typeId,
+          subtypeId: state.subtypeId,
+          subcategoryId: exploreEffectiveSubcategoryId(state.typeId, state.subtypeId),
+          providers: selectProvidersForExplore(
+            state.exploreCategory,
+            exploreEffectiveSubcategoryId(state.typeId, state.subtypeId)
+          )
         }
       : isStreaming
         ? { mode: "streaming" }
@@ -1258,6 +1331,12 @@ function buildFilterPills(state: BuilderState): FilterPill[] {
     pills.push({ id: `type-${state.typeId}`, label: typeLabel });
   }
 
+  if (state.exploreCategory && state.subtypeId) {
+    const subtypeLabel =
+      resolveExploreRefinement(state.exploreCategory, state.subtypeId)?.label ?? state.subtypeId;
+    pills.push({ id: `subtype-${state.subtypeId}`, label: subtypeLabel });
+  }
+
   if (state.exploreCategory === "sports" && state.sportsTeamId) {
     pills.push({ id: `sports-team-${state.sportsTeamId}`, label: sportsTeamChipLabel(state.sportsTeamId) });
   }
@@ -1317,6 +1396,7 @@ function removeFilterFromState(state: BuilderState, pillId: string): BuilderStat
       ...state,
       exploreCategory: null,
       typeId: null,
+      subtypeId: null,
       sportsTeamId: null,
       musicArtistId: null,
       extras: new Set<string>(),
@@ -1327,7 +1407,11 @@ function removeFilterFromState(state: BuilderState, pillId: string): BuilderStat
   }
 
   if (pillId.startsWith("type-")) {
-    return { ...state, typeId: null, sportsTeamId: null, musicArtistId: null, genre: null };
+    return { ...state, typeId: null, subtypeId: null, sportsTeamId: null, musicArtistId: null, genre: null };
+  }
+
+  if (pillId.startsWith("subtype-")) {
+    return { ...state, subtypeId: null };
   }
 
   if (pillId.startsWith("sports-team-")) {
@@ -1356,6 +1440,7 @@ function builderStateFromPopularPreset(preset: HeroPopularSearch): BuilderState 
       selectedMode: "streaming",
       exploreCategory: null,
       typeId: null,
+      subtypeId: null,
       sportsTeamId: null,
       musicArtistId: null,
       extras: new Set<string>(),
@@ -1374,6 +1459,7 @@ function builderStateFromPopularPreset(preset: HeroPopularSearch): BuilderState 
       selectedMode: "explore",
       exploreCategory: "activities",
       typeId: "thrift_stores",
+      subtypeId: null,
       sportsTeamId: null,
       musicArtistId: null,
       extras: new Set<string>(),
@@ -1392,6 +1478,7 @@ function builderStateFromPopularPreset(preset: HeroPopularSearch): BuilderState 
       selectedMode: "explore",
       exploreCategory: "activities",
       typeId: null,
+      subtypeId: null,
       sportsTeamId: null,
       musicArtistId: null,
       extras: new Set<string>(),
@@ -1410,6 +1497,7 @@ function builderStateFromPopularPreset(preset: HeroPopularSearch): BuilderState 
       selectedMode: "explore",
       exploreCategory: "events",
       typeId: null,
+      subtypeId: null,
       sportsTeamId: null,
       musicArtistId: null,
       extras: new Set<string>(),
@@ -1427,6 +1515,7 @@ function builderStateFromPopularPreset(preset: HeroPopularSearch): BuilderState 
     selectedMode: "explore",
     exploreCategory: "food_drink",
     typeId: null,
+    subtypeId: null,
     sportsTeamId: null,
     musicArtistId: null,
     extras: new Set<string>(),

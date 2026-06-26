@@ -32,6 +32,10 @@ export type ExploreCategoryConfig = {
   defaultVenueCategory: VenueCategory;
   subtypeLabel: string;
   refinements: BuilderRefinement[];
+  /** Nested chips shown when a parent type is selected (e.g. Restaurants → cuisine/style). */
+  styleRefinements?: BuilderRefinement[];
+  styleParentTypeId?: string;
+  styleLabel?: string;
   vibeRefinements?: BuilderRefinement[];
 };
 
@@ -47,17 +51,36 @@ export type NormalizedExploreIntent = {
   timeAwareExplore: boolean;
 };
 
-const FOOD_DRINK_REFINEMENTS: BuilderRefinement[] = [
+const FOOD_DRINK_TYPE_REFINEMENTS: BuilderRefinement[] = [
   { id: "restaurants", label: "Restaurants", group: "type", noun: "restaurants", category: "restaurant" },
   { id: "coffee", label: "Coffee", group: "type", noun: "coffee shops", category: "coffee" },
-  { id: "brunch", label: "Brunch", group: "type", noun: "brunch spots", category: "brunch" },
+  { id: "bars", label: "Bars", group: "type", noun: "bars", category: "bar" },
   { id: "breweries", label: "Breweries", group: "type", noun: "breweries", category: "breweries" },
   { id: "dessert", label: "Dessert", group: "type", noun: "dessert spots", category: "dessert" },
-  { id: "farmers_markets", label: "Farmers markets", group: "type", noun: "farmers markets", category: "farmers_markets" },
-  { id: "italian", label: "Italian", group: "type", prefix: "Italian", category: "italian" },
-  { id: "sushi", label: "Sushi", group: "type", noun: "sushi restaurants", category: "sushi" },
-  { id: "pizza", label: "Pizza", group: "type", noun: "pizza places", category: "pizza" },
-  { id: "mexican", label: "Mexican", group: "type", prefix: "Mexican", category: "mexican" }
+  { id: "farmers_markets", label: "Farmers markets", group: "type", noun: "farmers markets", category: "farmers_markets" }
+];
+
+/** Cuisine chips revealed only after the Restaurants parent type is selected. */
+const RESTAURANT_CUISINE_REFINEMENTS: BuilderRefinement[] = [
+  { id: "italian", label: "Italian", group: "subtype", prefix: "Italian", category: "italian" },
+  { id: "mexican", label: "Mexican", group: "subtype", prefix: "Mexican", category: "mexican" },
+  { id: "sushi", label: "Sushi", group: "subtype", noun: "sushi restaurants", category: "sushi" },
+  { id: "pizza", label: "Pizza", group: "subtype", noun: "pizza places", category: "pizza" },
+  { id: "bbq", label: "BBQ", group: "subtype", noun: "BBQ restaurants", category: "bbq" },
+  { id: "indian", label: "Indian", group: "subtype", prefix: "Indian", category: "indian" },
+  { id: "thai", label: "Thai", group: "subtype", prefix: "Thai", category: "thai" },
+  { id: "mediterranean", label: "Mediterranean", group: "subtype", prefix: "Mediterranean", category: "mediterranean" },
+  { id: "seafood", label: "Seafood", group: "subtype", noun: "seafood restaurants", category: "seafood" },
+  { id: "steakhouse", label: "Steakhouse", group: "subtype", noun: "steakhouses", category: "steakhouse" }
+];
+
+const FOOD_VIBES: BuilderRefinement[] = [
+  { id: "upscale", label: "Upscale", group: "extra", prefix: "upscale" },
+  { id: "date_night", label: "Date night", group: "extra", prefix: "date night" },
+  { id: "casual", label: "Casual", group: "extra", prefix: "casual" },
+  { id: "cozy", label: "Cozy", group: "extra", prefix: "cozy" },
+  { id: "outdoor", label: "Outdoor seating", group: "extra", suffix: "with outdoor seating" },
+  { id: "kid_friendly", label: "Kid friendly", group: "extra", prefix: "family friendly" }
 ];
 
 const NIGHTLIFE_REFINEMENTS: BuilderRefinement[] = [
@@ -114,23 +137,20 @@ const OUTDOORS_REFINEMENTS: BuilderRefinement[] = [
   { id: "picnic_areas", label: "Picnic spots", group: "type", noun: "picnic areas", category: "picnic_areas" }
 ];
 
-const FOOD_VIBES: BuilderRefinement[] = [
-  { id: "upscale", label: "Upscale", group: "extra", prefix: "upscale" },
-  { id: "date_night", label: "Date night", group: "extra", prefix: "date night" },
-  { id: "outdoor", label: "Outdoor seating", group: "extra", suffix: "with outdoor seating" }
-];
-
 export const EXPLORE_CATEGORIES: ExploreCategoryConfig[] = [
   {
     key: "food_drink",
     label: "Food & Drink",
     emoji: "🍽️",
-    description: "Restaurants, coffee, brunch, breweries, markets, dessert",
+    description: "Restaurants, coffee, bars, breweries, markets, dessert",
     noun: "restaurants",
     providers: ["google_places"],
     defaultVenueCategory: "restaurant",
     subtypeLabel: "Type",
-    refinements: FOOD_DRINK_REFINEMENTS,
+    refinements: FOOD_DRINK_TYPE_REFINEMENTS,
+    styleRefinements: RESTAURANT_CUISINE_REFINEMENTS,
+    styleParentTypeId: "restaurants",
+    styleLabel: "Cuisine",
     vibeRefinements: FOOD_VIBES
   },
   {
@@ -204,6 +224,27 @@ export function exploreRefinementsFor(category: ExploreCategory): BuilderRefinem
   return exploreCategoryConfig(category).refinements;
 }
 
+export function exploreStyleRefinementsFor(
+  category: ExploreCategory,
+  parentTypeId: string | null
+): BuilderRefinement[] {
+  const config = exploreCategoryConfig(category);
+  if (!parentTypeId || config.styleParentTypeId !== parentTypeId) return [];
+  return config.styleRefinements ?? [];
+}
+
+export function exploreAllRefinementsFor(category: ExploreCategory): BuilderRefinement[] {
+  const config = exploreCategoryConfig(category);
+  return [...config.refinements, ...(config.styleRefinements ?? []), ...(config.vibeRefinements ?? [])];
+}
+
+export function exploreEffectiveSubcategoryId(
+  typeId: string | null | undefined,
+  subtypeId: string | null | undefined
+): string | null {
+  return subtypeId ?? typeId ?? null;
+}
+
 export function exploreVibesFor(category: ExploreCategory): BuilderRefinement[] {
   return exploreCategoryConfig(category).vibeRefinements ?? [];
 }
@@ -214,10 +255,10 @@ export function exploreHasVibes(category: ExploreCategory): boolean {
 
 export function resolveExploreRefinement(
   category: ExploreCategory,
-  subcategoryId: string | null
+  refinementId: string | null
 ): BuilderRefinement | null {
-  if (!subcategoryId) return null;
-  return exploreRefinementsFor(category).find((item) => item.id === subcategoryId) ?? null;
+  if (!refinementId) return null;
+  return exploreAllRefinementsFor(category).find((item) => item.id === refinementId) ?? null;
 }
 
 export function venueCategoryForExplore(category: ExploreCategory, subcategoryId: string | null): VenueCategory {
@@ -230,6 +271,11 @@ export function venueCategoryForExplore(category: ExploreCategory, subcategoryId
 export type ExploreIntentPayload = {
   mode?: ExploreMode;
   category?: ExploreCategory;
+  /** Parent type chip (e.g. restaurants). */
+  typeId?: string | null;
+  /** Nested style/cuisine chip under the parent type (e.g. sushi). */
+  subtypeId?: string | null;
+  /** Effective routing subcategory — subtype when set, otherwise type. */
   subcategoryId?: string | null;
   providers?: ProviderKey[];
 };

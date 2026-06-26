@@ -97,6 +97,11 @@ const CLASSIFICATION_RULES: ClassificationRule[] = [
   },
   {
     category: "food_drink",
+    subcategoryId: "mexican",
+    pattern: /\bmexican\b/i
+  },
+  {
+    category: "food_drink",
     subcategoryId: "brunch",
     pattern: /\bbrunch\b/i
   },

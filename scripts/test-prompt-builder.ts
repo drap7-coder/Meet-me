@@ -11,7 +11,8 @@ function includesPhrase(query: string, phrase: string) {
 const stacked = {
   selectedMode: "explore" as const,
   exploreCategory: "food_drink" as const,
-  typeId: "sushi",
+  typeId: "restaurants",
+  subtypeId: "sushi",
   sportsTeamId: null,
   musicArtistId: null,
   extras: new Set(["date_night", "outdoor"]),
@@ -24,7 +25,36 @@ const stacked = {
 
 const query = buildPlaceQuery(stacked);
 assert(includesPhrase(query, "date night"), `includes date night: ${query}`);
-assert(includesPhrase(query, "sushi"), `includes sushi: ${query}`);
+assert(buildPlaceQuery(stacked).includes("sushi"), `includes sushi: ${query}`);
+
+const restaurantOnly = {
+  selectedMode: "explore" as const,
+  exploreCategory: "food_drink" as const,
+  typeId: "restaurants",
+  subtypeId: null,
+  sportsTeamId: null,
+  musicArtistId: null,
+  extras: new Set<string>(),
+  where: "near" as const,
+  streamingType: null,
+  streamingVibe: null,
+  genre: null,
+  streamingServices: new Set<string>()
+};
+assert(buildPlaceQuery(restaurantOnly) === "Restaurants near me", "restaurants without subtype");
+
+const restaurantItalian = {
+  ...restaurantOnly,
+  subtypeId: "italian"
+};
+assert(includesPhrase(buildPlaceQuery(restaurantItalian), "italian"), "restaurant cuisine refines query");
+
+const restaurantSeafood = {
+  ...restaurantOnly,
+  subtypeId: "seafood"
+};
+assert(includesPhrase(buildPlaceQuery(restaurantSeafood), "seafood"), "restaurant cuisine with noun refines query");
+
 assert(includesPhrase(query, "outdoor seating"), `includes outdoor: ${query}`);
 assert(includesPhrase(query, "halfway between us"), `includes halfway: ${query}`);
 assert(!includesPhrase(query, "tonight"), "excludes timeframe wording");
@@ -34,6 +64,7 @@ const minimal = {
   selectedMode: "explore" as const,
   exploreCategory: "food_drink" as const,
   typeId: null,
+  subtypeId: null,
   sportsTeamId: null,
   musicArtistId: null,
   extras: new Set<string>(),

@@ -70,25 +70,25 @@ export function WeatherCard({ midpoint, searchMode = "midpoint" }: Props) {
   }, [weatherState]);
 
   return (
-    <article className="rounded-lg border border-line bg-paper px-4 py-3 shadow-soft sm:px-5">
+    <article className="rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-white shadow-[0_18px_50px_rgba(0,0,0,0.18)] backdrop-blur sm:px-5">
       <p className="text-xs font-bold uppercase tracking-wide text-koi">{title}</p>
 
       {weatherState.status === "loading" ? (
         <div className="mt-2 grid gap-2">
-          <div className="h-5 w-40 animate-pulse rounded-full bg-line" />
-          <div className="h-4 w-48 animate-pulse rounded-full bg-line/80" />
+          <div className="h-5 w-40 animate-pulse rounded-full bg-white/12" />
+          <div className="h-4 w-48 animate-pulse rounded-full bg-white/10" />
         </div>
       ) : null}
 
       {weatherState.status === "unavailable" ? (
-        <p className="mt-2 text-sm leading-6 text-slate">Weather is not available right now.</p>
+        <p className="mt-2 text-sm leading-6 text-white/62">Weather is not available right now.</p>
       ) : null}
 
       {weatherState.status === "ready" ? (
         <>
-          <p className="mt-1.5 text-base font-semibold text-ink">{formatWeatherSummary(weatherState.weather)}</p>
-          <p className="mt-1 text-sm leading-6 text-slate">
-            <span className="font-semibold text-ink">Koi Suggests:</span>{" "}
+          <p className="mt-1.5 text-base font-semibold text-white">{formatWeatherSummary(weatherState.weather)}</p>
+          <p className="mt-1 text-sm leading-6 text-white/62">
+            <span className="font-semibold text-white">Koi Suggests:</span>{" "}
             {getWeatherSuggestion(weatherState.weather)}
           </p>
         </>

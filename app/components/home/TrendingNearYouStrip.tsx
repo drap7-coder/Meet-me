@@ -73,11 +73,11 @@ export function TrendingNearYouStrip({
 
     return (
       <section
-        className="grid min-w-0 gap-3 rounded-[20px] border border-white/12 bg-white/[0.06] px-4 py-3.5 shadow-[0_10px_40px_rgba(0,0,0,0.14)] backdrop-blur-md"
+        className="grid min-w-0 gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3"
         aria-label="Trending near you"
       >
         <div className="min-w-0 grid gap-0.5">
-          <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-white/45">Trending near you</p>
+          <p className="text-sm font-semibold text-white/70">Trending near you</p>
           <h2 className="text-sm font-bold text-white">Picks for your area</h2>
         </div>
         <button
@@ -96,12 +96,12 @@ export function TrendingNearYouStrip({
 
   return (
     <section
-      className="grid min-w-0 gap-3 rounded-[20px] border border-white/12 bg-white/[0.06] px-4 py-3.5 shadow-[0_10px_40px_rgba(0,0,0,0.14)] backdrop-blur-md"
+      className="grid min-w-0 gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3"
       aria-label="Trending near you"
       aria-busy={showSkeleton}
     >
       <div className="min-w-0 grid gap-0.5">
-        <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-white/45">Trending near you</p>
+        <p className="text-sm font-semibold text-white/70">Trending near you</p>
         <h2 className="text-sm font-bold text-white">Picks for your area</h2>
       </div>
 

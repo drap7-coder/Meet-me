@@ -48,8 +48,8 @@ export function ClassicSearchControls({
   const effectiveMode = builderModeForWhere(state.where);
   const onPage = surface === "page";
   const toggleClass = onPage
-    ? "inline-flex items-center gap-1.5 px-0.5 text-sm font-bold text-slate/70 transition hover:text-ink"
-    : "inline-flex items-center gap-1.5 px-0.5 text-sm font-bold text-white/55 transition hover:text-white/85";
+    ? "inline-flex items-center gap-1 px-0.5 text-xs font-semibold text-slate/60 transition hover:text-ink"
+    : "inline-flex items-center gap-1 px-0.5 text-xs font-semibold text-white/45 transition hover:text-white/75";
   const panelClass = onPage
     ? "rounded-[18px] border border-line/80 bg-paper p-3 shadow-soft sm:p-4"
     : "rounded-[18px] border border-white/12 bg-white/[0.06] p-3 shadow-[0_14px_36px_rgba(0,0,0,0.12)] backdrop-blur sm:p-4";
@@ -126,7 +126,7 @@ export function ClassicSearchControls({
           aria-expanded={false}
           aria-controls="advanced-search-panel"
         >
-          Advanced Search
+          Filters
           <span aria-hidden="true">▾</span>
         </button>
       </section>
@@ -142,7 +142,7 @@ export function ClassicSearchControls({
         aria-expanded={true}
         aria-controls="advanced-search-panel"
       >
-        Advanced Search
+        Filters
         <span aria-hidden="true">▴</span>
       </button>
 

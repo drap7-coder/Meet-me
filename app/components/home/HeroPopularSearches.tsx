@@ -26,7 +26,7 @@ export function HeroPopularSearches({ busy = false, onSelect, compact = false }:
   const popularSearches = useMemo(() => getSeasonalPopularSearches(), []);
   const onPage = surface === "page";
   const labelClass = compact
-    ? "text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-white/45"
+    ? "px-0.5 text-sm font-semibold text-white/65"
     : onPage
       ? ""
       : "px-0.5 text-xs font-semibold uppercase tracking-[0.08em] text-white";
@@ -34,9 +34,9 @@ export function HeroPopularSearches({ busy = false, onSelect, compact = false }:
   return (
     <section className={`grid min-w-0 ${compact ? "gap-3" : "gap-2.5"}`} aria-label="Popular searches">
       {onPage && !compact ? (
-        <HeroSectionLabel onPage>Popular searches</HeroSectionLabel>
+        <HeroSectionLabel onPage>Popular</HeroSectionLabel>
       ) : (
-        <p className={labelClass}>Popular searches</p>
+        <p className={labelClass}>Popular</p>
       )}
       <div
         className={

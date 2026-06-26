@@ -52,7 +52,7 @@ type ProviderProps = {
 type WhereId = "near" | "choose" | "halfway";
 type SelectedMode = "streaming" | "explore" | null;
 
-const CONCIERGE_TAGLINE = "What are you in the mood for?";
+const CONCIERGE_TAGLINE = "Start here";
 
 export type BuilderState = {
   selectedMode: SelectedMode;
@@ -552,10 +552,10 @@ export function SearchPromptModePicker() {
   const onPage = surface === "page";
 
   return (
-    <section className="grid gap-2.5" aria-label="Choose a path">
+    <section className="grid gap-2" aria-label="Choose a path">
       <HeroSectionLabel onPage={onPage}>{CONCIERGE_TAGLINE}</HeroSectionLabel>
 
-      <div className="-mx-0.5 flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-0.5 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
+      <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
         <ModePickChip
           emoji="🍿"
           title="Streaming"
@@ -565,7 +565,6 @@ export function SearchPromptModePicker() {
           onPick={() => pickMode("streaming")}
           onPage={onPage}
           tone="streaming"
-          className="snap-start min-w-[9.5rem] flex-1 sm:min-w-0"
         />
         <ModePickChip
           emoji="🧭"
@@ -576,7 +575,6 @@ export function SearchPromptModePicker() {
           onPick={pickExplore}
           onPage={onPage}
           tone="explore"
-          className="snap-start min-w-[9.5rem] flex-1 sm:min-w-0"
         />
       </div>
     </section>
@@ -604,8 +602,8 @@ export function SearchPromptDetailChips() {
   } = useAssistContext();
 
   const onPage = surface === "page";
-  const moduleBoxClass = `grid gap-3 rounded-[18px] border p-3.5 sm:gap-3.5 sm:p-4 ${
-    onPage ? "border-line/80 bg-paper shadow-soft" : "border-white/12 bg-white/[0.04] backdrop-blur-sm"
+  const moduleBoxClass = `grid gap-3 rounded-2xl border p-3 sm:gap-3 sm:p-3.5 ${
+    onPage ? "border-line/80 bg-paper shadow-soft" : "border-white/10 bg-white/[0.03]"
   }`;
   const showStreamingType = state.selectedMode === "streaming";
   const streamType = state.streamingType === "movies" || state.streamingType === "tv_shows" ? state.streamingType : null;

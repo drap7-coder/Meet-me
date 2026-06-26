@@ -30,16 +30,16 @@ export function SearchContextStrip({
   const hasLocation = Boolean(trimmed);
 
   const shellClass = onPage
-    ? "flex flex-col gap-3 rounded-[20px] border border-line/80 bg-white px-4 py-3 shadow-soft sm:flex-row sm:items-center sm:justify-between sm:gap-5"
-    : "flex flex-col gap-3 rounded-[20px] border border-white/12 bg-white/[0.07] px-4 py-3 shadow-[0_10px_40px_rgba(0,0,0,0.16)] backdrop-blur-md sm:flex-row sm:items-center sm:justify-between sm:gap-5";
+    ? "flex flex-col gap-3 rounded-2xl border border-line/80 bg-white px-4 py-3 shadow-soft sm:flex-row sm:items-center sm:justify-between sm:gap-5"
+    : "flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-5";
 
   const dividerClass = onPage
     ? "border-t border-line/60 pt-3 sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0"
     : "border-t border-white/10 pt-3 sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0";
 
   const sectionLabelClass = onPage
-    ? "text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-slate/55"
-    : "text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-white/45";
+    ? "text-xs font-medium text-slate/55"
+    : "text-xs font-medium text-white/45";
 
   const locationValueClass = onPage ? "truncate font-semibold text-ink" : "truncate font-semibold text-white";
   const mutedClass = onPage ? "text-sm font-medium text-slate/70" : "text-sm font-medium text-white/55";

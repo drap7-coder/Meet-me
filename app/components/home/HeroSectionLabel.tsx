@@ -20,6 +20,6 @@ export function HeroSectionLabel({ children, onPage = false, subtle = false }: P
   }
 
   return (
-    <p className="px-0.5 text-xs font-semibold uppercase tracking-[0.08em] text-white/65">{children}</p>
+    <p className="px-0.5 text-sm font-semibold text-white/70">{children}</p>
   );
 }

@@ -15,7 +15,7 @@ import { OnboardingCapabilityPreview } from "@/app/components/home/OnboardingCap
 import { SelectedFiltersPanel } from "@/app/components/home/SelectedFiltersPanel";
 import { ShareDialog, type ShareDialogState } from "@/app/components/home/ShareDialog";
 import { Footer, SiteHeader } from "@/app/components/home/SiteChrome";
-import { HomeFaqSection } from "@/app/components/home/HomeFaqSection";
+import { HeroNeedIdeas } from "@/app/components/home/HeroNeedIdeas";
 import { ClassicSearchControls } from "@/app/components/ClassicSearchControls";
 import { SearchContextStrip } from "@/app/components/SearchContextStrip";
 import { LocationForm } from "@/app/components/LocationForm";
@@ -1315,7 +1315,7 @@ export default function HomePage() {
           <section id="search" className="relative isolate overflow-x-hidden bg-ink pb-8 pt-2 sm:pb-10">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_50%_-15%,rgba(255,90,0,0.14),transparent_58%),radial-gradient(circle_at_88%_8%,rgba(10,132,255,0.08),transparent_32%),linear-gradient(180deg,#0A1323_0%,#0c1729_50%,#0A1323_100%)]" />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#0A1323] via-[#0A1323]/70 to-transparent sm:h-24" />
-            <div className={`relative z-10 grid w-full gap-4 py-2 sm:gap-5 sm:py-4 ${PAGE_CONTAINER}`}>
+            <div className={`relative z-10 grid w-full gap-5 py-2 sm:gap-6 sm:py-4 ${PAGE_CONTAINER}`}>
               {showLocationOnboarding ? (
                 <>
                   <MarketingHero />
@@ -1337,14 +1337,6 @@ export default function HomePage() {
                 travelMode={travelMode}
                 onTravelModeChange={handleTravelModeChange}
                 busy={loading || locating || resolvingManual}
-              />
-              <TrendingNearYouStrip
-                latitude={locationContext.locationACoordinates?.lat}
-                longitude={locationContext.locationACoordinates?.lng}
-                locationPending={trendingGeocoding}
-                busy={loading || locating || resolvingManual}
-                onSearchQuery={applyPopularSearch}
-                onRequestLocation={openLocationChange}
               />
               <SearchPromptAssistProvider
                 busy={loading || locating || resolvingManual}
@@ -1375,6 +1367,15 @@ export default function HomePage() {
                   onShowZipFallback={showZipFallback}
                   onSubmitManualLocation={(input, placeId) => void resolveManualLocation(input, placeId)}
                 />
+                <SearchPromptModePicker />
+                <TrendingNearYouStrip
+                  latitude={locationContext.locationACoordinates?.lat}
+                  longitude={locationContext.locationACoordinates?.lng}
+                  locationPending={trendingGeocoding}
+                  busy={loading || locating || resolvingManual}
+                  onSearchQuery={applyPopularSearch}
+                  onRequestLocation={openLocationChange}
+                />
                 <ClassicSearchControls
                   form={form}
                   loading={loading}
@@ -1385,8 +1386,6 @@ export default function HomePage() {
                   onSearchPlaces={runPlacesSearchFromBuilder}
                   onSearchWatch={runWatchSearch}
                 />
-                <div className="h-px bg-white/10" aria-hidden="true" />
-                <SearchPromptModePicker />
                 <SearchPromptDetailChips />
                 <SelectedFiltersPanel
                   busy={loading || locating || resolvingManual}
@@ -1397,13 +1396,16 @@ export default function HomePage() {
                   busy={loading || locating || resolvingManual}
                   onSelect={applyPopularSearch}
                 />
+                <HeroNeedIdeas
+                  busy={loading || locating || resolvingManual}
+                  onSelect={applyPopularSearch}
+                />
               </SearchPromptAssistProvider>
               {loading ? (
                 <section className="mt-2" aria-live="polite">
                   <KoiThinkingLoader searchKind={searchKind} phase={loadingPhase} />
                 </section>
               ) : null}
-              <HomeFaqSection />
               <LocationFallbackPanel
                 form={form}
                 loading={loading}

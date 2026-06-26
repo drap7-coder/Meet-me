@@ -18,7 +18,11 @@ import type { TrendingNearYouCard } from "@/lib/trendingNearYouTypes";
 import type { VenueCandidate } from "@/lib/types";
 
 const FARMERS_MARKET_NAME_RE =
-  /\b(?:farmers? markets?|farm market|produce market|public market|fresh market|market day|bazaar)\b/i;
+  /\b(?:farmers? markets?|farm market|produce market|public market|market day|bazaar)\b/i;
+const GROCERY_STORE_RE =
+  /\b(?:grocery|grocer|supermarket|food store|convenience store|corner store|bodega|deli|marketplace)\b/i;
+const GROCERY_TYPE_RE =
+  /\b(?:grocery_or_supermarket|grocery_store|supermarket|convenience_store|store|food)\b/i;
 
 const OTM_FARMERS_CATEGORIES: OpenTripMapCategory[] = ["interesting_places", "cultural", "natural"];
 const OTM_RADIUS_METERS = 15_000;
@@ -28,11 +32,25 @@ export function isFarmersMarketPlaceName(name: string): boolean {
   return FARMERS_MARKET_NAME_RE.test(name);
 }
 
+export function isFarmersMarketVenue(venue: Pick<VenueCandidate, "name" | "category" | "types">): boolean {
+  if (isFarmersMarketPlaceName(venue.name)) return true;
+  const haystack = `${venue.category} ${(venue.types ?? []).join(" ")}`;
+  if (GROCERY_STORE_RE.test(venue.name) || GROCERY_TYPE_RE.test(haystack)) return false;
+  return FARMERS_MARKET_NAME_RE.test(haystack);
+}
+
+export function filterFarmersMarketVenues<T extends Pick<VenueCandidate, "name" | "category" | "types">>(venues: T[]): T[] {
+  return venues.filter(isFarmersMarketVenue);
+}
+
 export function filterOpenTripMapFarmersMarkets(places: OpenTripMapPlace[]): OpenTripMapPlace[] {
   const matches = places.filter(
     (place) =>
       isFarmersMarketPlaceName(place.name) ||
-      place.kinds.some((kind) => /\b(?:foods|shops|market)\b/i.test(kind))
+      (
+        place.kinds.some((kind) => /\bmarket\b/i.test(kind)) &&
+        !GROCERY_STORE_RE.test(place.name)
+      )
   );
   return matches.length ? matches : places.filter((place) => isFarmersMarketPlaceName(place.name));
 }
@@ -113,6 +131,7 @@ async function loadPlacesFarmersMarkets(latitude: number, longitude: number): Pr
       radiusMeters: PLACES_RADIUS_METERS
     });
     return venues
+      .filter(isFarmersMarketVenue)
       .slice()
       .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0) || b.reviewCount - a.reviewCount);
   } catch (error) {

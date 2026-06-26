@@ -32,6 +32,7 @@ import { hasStreamingWatchContext, isMovieTheaterEventsQuery } from "@/lib/watch
 import { resolveWatchPlaceSearchForm } from "@/lib/watchPlaceSearch";
 import type { KoiSearchApiResponse } from "@/lib/searchIntent";
 import { discoverOpenTripMapExploreVenues, supplementExploreWithOpenTripMap } from "@/lib/exploreSearch";
+import { filterFarmersMarketVenues } from "@/lib/farmersMarketDiscovery";
 import {
   exploreIntentFromPayload,
   filterAvailableProviders,
@@ -171,11 +172,14 @@ async function executeOpenTripMapExploreSearch(
     insightQuery: query,
     category: normalizeCategory(exploreIntent.venueCategory)
   });
+  const filteredPlacesResponse = exploreIntent.subcategoryId === "farmers_markets"
+    ? { ...placesResponse, venues: filterFarmersMarketVenues(placesResponse.venues) }
+    : placesResponse;
 
   return {
     kind: "places",
     data: await withExploreEnrichment(
-      await enrichPlacesResponseWithEvents(placesResponse, query, resolvedForm),
+      await enrichPlacesResponseWithEvents(filteredPlacesResponse, query, resolvedForm),
       exploreIntent
     )
   };
@@ -242,7 +246,9 @@ async function executeTimeAwareExploreSearch(
     }
   }
 
-  const fallbackVenues = fallbackResponse?.venues ?? [];
+  const fallbackVenues = exploreIntent.subcategoryId === "farmers_markets"
+    ? filterFarmersMarketVenues(fallbackResponse?.venues ?? [])
+    : fallbackResponse?.venues ?? [];
   const applyDiversity = shouldApplyDiversityRanking(query, exploreIntent);
   const rankedEvents = rankTemporalEvents(events);
   const rankedVenues = rankTemporalVenues([

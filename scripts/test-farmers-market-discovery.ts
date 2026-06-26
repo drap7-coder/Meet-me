@@ -1,7 +1,9 @@
 import type { EventResult } from "../lib/eventResult";
 import {
   discoverFarmersMarketPick,
+  filterFarmersMarketVenues,
   filterOpenTripMapFarmersMarkets,
+  isFarmersMarketVenue,
   isFarmersMarketPlaceName
 } from "../lib/farmersMarketDiscovery";
 import { farmersMarketCardFromEvent, pickFarmersMarketEvent } from "../lib/eventbriteFarmersMarket";
@@ -53,7 +55,25 @@ const sampleEvent: EventResult = {
 async function run() {
   // --- Name / filter helpers ------------------------------------------------
   assert(isFarmersMarketPlaceName("Rittenhouse Farmers Market"), "recognizes farmers market names");
+  assert(!isFarmersMarketPlaceName("The Fresh Market"), "does not treat fresh market grocery chain as farmers market");
   assert(!isFarmersMarketPlaceName("Liberty Bell"), "rejects unrelated POI names");
+  assert(
+    isFarmersMarketVenue({ name: "Headhouse Farmers Market", category: "farmers_markets", types: ["point_of_interest"] }),
+    "recognizes farmers market venues"
+  );
+  assert(
+    !isFarmersMarketVenue({ name: "ACME Markets", category: "farmers_markets", types: ["grocery_store", "supermarket"] }),
+    "rejects grocery stores returned by places fallback"
+  );
+  assert(
+    !isFarmersMarketVenue({ name: "The Fresh Market", category: "farmers_markets", types: ["grocery_store"] }),
+    "rejects fresh market grocery chain"
+  );
+  const filteredVenues = filterFarmersMarketVenues([
+    { name: "ACME Markets", category: "farmers_markets", types: ["grocery_store"] },
+    { name: "Rittenhouse Farmers Market", category: "farmers_markets", types: ["point_of_interest"] }
+  ]);
+  assert(filteredVenues.length === 1 && filteredVenues[0]?.name === "Rittenhouse Farmers Market", "filters grocery venues from farmers market results");
 
   const filtered = filterOpenTripMapFarmersMarkets([
     {

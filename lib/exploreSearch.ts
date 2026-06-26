@@ -1,5 +1,6 @@
 import { logExploreRoutingDecision } from "@/lib/exploreRouting";
 import { applyExploreTravelModeRanking, getExploreModeRadiusMultiplier } from "@/lib/exploreModeRanking";
+import { filterOpenTripMapFarmersMarkets } from "@/lib/farmersMarketDiscovery";
 import type { NormalizedExploreIntent } from "@/lib/exploreIntent";
 import { openTripMapProvider, type OpenTripMapCategory } from "@/lib/providers/openTripMapProvider";
 import type { LatLng, ScoredVenue, SearchHalfwayResponse, VenueCandidate } from "@/lib/types";
@@ -80,7 +81,11 @@ export async function discoverOpenTripMapExploreVenues(
     limit: options.limit ?? 12
   });
 
-  return places.map((place) => {
+  const filteredPlaces = intent.subcategoryId === "farmers_markets"
+    ? filterOpenTripMapFarmersMarkets(places)
+    : places;
+
+  return filteredPlaces.map((place) => {
     const candidate = openTripMapPlaceToCandidate(place, intent);
     const travelFromA = {
       distanceMeters: place.distanceMeters,

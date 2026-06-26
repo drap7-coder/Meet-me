@@ -14,7 +14,7 @@ import { LocationOnboardingCard } from "@/app/components/home/LocationOnboarding
 import { OnboardingCapabilityPreview } from "@/app/components/home/OnboardingCapabilityPreview";
 import { SelectedFiltersPanel } from "@/app/components/home/SelectedFiltersPanel";
 import { ShareDialog, type ShareDialogState } from "@/app/components/home/ShareDialog";
-import { Footer, LogoHomeHeader } from "@/app/components/home/SiteChrome";
+import { Footer } from "@/app/components/home/SiteChrome";
 import { HeroNeedIdeas } from "@/app/components/home/HeroNeedIdeas";
 import { ClassicSearchControls } from "@/app/components/ClassicSearchControls";
 import { SearchContextStrip } from "@/app/components/SearchContextStrip";
@@ -32,7 +32,7 @@ import { formForSessionAfterSearch, type SearchSubmitOptions } from "@/lib/searc
 import { VenueCard } from "@/app/components/VenueCard";
 import { WatchEventsResults } from "@/app/components/WatchEventsResults";
 import { WeatherCard } from "@/app/components/WeatherCard";
-import { normalizeCategory, parseMeetupMode, parseSearchMode } from "@/lib/categories";
+import { getCategoryLabel, normalizeCategory, parseMeetupMode, parseSearchMode } from "@/lib/categories";
 import { parsePreferences } from "@/lib/preferences";
 import { shareWithFallback, shouldUseNativeShare } from "@/lib/share";
 import { trackEvent } from "@/lib/analytics";
@@ -1306,11 +1306,23 @@ export default function HomePage() {
   const showLandingHero = !hasSuccessfulResults;
   const showResultsChrome = hasSuccessfulResults;
   const showLocationOnboarding = showLandingHero && !hasHomeLocation;
+  const resultSearchTitle = watchEventsResult?.intentLabel ?? (results ? getCategoryLabel(results.category) : "Your search");
+  const resultSearchQuery = watchEventsResult?.query ?? results?.query ?? "";
+  const resultSearchSummary =
+    watchEventsResult?.contextSummary ??
+    (results
+      ? [
+          results.searchMode === "midpoint" ? "Halfway search" : "Nearby search",
+          getCategoryLabel(results.category),
+          results.travelMode ? `Getting around: ${results.travelMode}` : null,
+          results.preferences.length ? results.preferences.join(", ") : null
+        ]
+          .filter(Boolean)
+          .join(" · ")
+      : "");
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-mint text-ink">
-      {showLandingHero ? null : <LogoHomeHeader variant="dark" />}
-
+    <main className={`min-h-screen overflow-x-hidden text-ink ${showResultsChrome ? "bg-[#0A1323]" : "bg-mint"}`}>
       {showLandingHero ? (
         <>
           <section id="search" className="relative isolate overflow-x-hidden bg-ink pb-8 pt-[calc(env(safe-area-inset-top)+0.75rem)] sm:pb-10 sm:pt-[calc(env(safe-area-inset-top)+1rem)]">
@@ -1433,7 +1445,7 @@ export default function HomePage() {
       <div className={showResultsChrome || (loading && !showLandingHero) ? "relative min-h-screen overflow-hidden bg-[#0A1323] text-ink" : "bg-mint"}>
         {showResultsChrome ? (
           <>
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_55%_at_50%_-10%,rgba(255,90,0,0.18),transparent_62%),radial-gradient(circle_at_90%_8%,rgba(10,132,255,0.12),transparent_28%),linear-gradient(180deg,#0A1323_0%,#0d1829_56%,#F5F7F2_56%,#F5F7F2_100%)]" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_55%_at_50%_-10%,rgba(255,90,0,0.18),transparent_62%),radial-gradient(circle_at_90%_8%,rgba(10,132,255,0.12),transparent_28%),linear-gradient(180deg,#0A1323_0%,#0d1829_48%,#0A1323_100%)]" />
             <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-white/[0.04] to-transparent" />
           </>
         ) : null}
@@ -1457,6 +1469,14 @@ export default function HomePage() {
               canShare={Boolean(results?.venues.length || currentShareUrl)}
               onShare={shareMeetup}
               onNewSearch={startNewSearch}
+            />
+          ) : null}
+
+          {showResultsChrome ? (
+            <ResultsSearchSummary
+              title={resultSearchTitle}
+              query={resultSearchQuery}
+              summary={resultSearchSummary}
             />
           ) : null}
 
@@ -1611,6 +1631,44 @@ export default function HomePage() {
         />
       ) : null}
     </main>
+  );
+}
+
+function ResultsSearchSummary({
+  title,
+  query,
+  summary
+}: {
+  title: string;
+  query: string;
+  summary: string;
+}) {
+  return (
+    <details className="group mt-4 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-white shadow-[0_18px_50px_rgba(0,0,0,0.18)] backdrop-blur">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 marker:hidden [&::-webkit-details-marker]:hidden">
+        <span className="min-w-0">
+          <span className="block text-xs font-black uppercase tracking-[0.16em] text-koi">{title}</span>
+          <span className="mt-1 block text-lg font-black tracking-tight text-white">Your search</span>
+        </span>
+        <span className="rounded-full border border-white/12 bg-white/[0.06] px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-white/60 transition group-open:hidden">
+          More
+        </span>
+        <span className="hidden rounded-full border border-white/12 bg-white/[0.06] px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-white/60 transition group-open:inline-flex">
+          Hide
+        </span>
+      </summary>
+
+      <div className="mt-4 grid gap-3 border-t border-white/10 pt-4">
+        {query ? (
+          <p className="rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm font-semibold leading-6 text-white">
+            “{query}”
+          </p>
+        ) : null}
+        {summary ? (
+          <p className="text-sm font-medium leading-6 text-white/62">{summary}</p>
+        ) : null}
+      </div>
+    </details>
   );
 }
 

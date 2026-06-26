@@ -1,11 +1,7 @@
 "use client";
 
-import { DevResultsPanel } from "@/app/components/DevResultsPanel";
-import { useDevPanel } from "@/app/components/useDevPanel";
 import { WatchEventsCard } from "@/app/components/WatchEventsCard";
-import { buildActionableFilters } from "@/lib/koiResultChips";
 import { KOI_PICK_DISPLAY_LIMIT } from "@/lib/koiCapabilityExamples";
-import { botModeToSearchKind, getSearchAccent } from "@/lib/searchAccent";
 import type { WatchEventsResult, WatchSubcategory } from "@/lib/types";
 
 type Props = {
@@ -14,25 +10,13 @@ type Props = {
   onRefineEvents?: (query: string) => void;
 };
 
-export function WatchEventsResults({ result, onRefineWatch, onRefineEvents }: Props) {
-  const accent = getSearchAccent(botModeToSearchKind(result.botMode));
+export function WatchEventsResults({ result }: Props) {
   const curated = result.recommendations.slice(0, KOI_PICK_DISPLAY_LIMIT);
   const [koiPick, ...otherOptions] = curated;
-  const filters = buildActionableFilters(result);
-  const { enabled: devPanelEnabled, toggle: toggleDevPanel } = useDevPanel();
-  const showDevPanel = devPanelEnabled;
-
-  function applyFilter(query: string, watchSubcategory?: WatchSubcategory) {
-    if (result.botMode === "watch") {
-      onRefineWatch?.(query, watchSubcategory);
-      return;
-    }
-    onRefineEvents?.(query);
-  }
 
   return (
-    <section className="search-results-enter mt-5 grid gap-5 pb-16 lg:grid-cols-[1fr_320px] lg:items-start">
-      <div className="results-list-enter order-2 grid gap-4 lg:order-1">
+    <section className="search-results-enter mt-5 grid gap-5 pb-16">
+      <div className="results-list-enter grid gap-4">
         {koiPick ? (
           <WatchEventsCard
             key={koiPick.id}
@@ -56,59 +40,6 @@ export function WatchEventsResults({ result, onRefineWatch, onRefineEvents }: Pr
           </div>
         ) : null}
       </div>
-
-      <aside className="results-panel-enter order-1 lg:order-2">
-        <details className={`group rounded-[26px] border bg-white/95 p-5 shadow-[0_18px_55px_rgba(10,19,35,0.08)] backdrop-blur ${accent.panelBorder}`}>
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 marker:hidden [&::-webkit-details-marker]:hidden">
-            <span>
-              <span className={`block text-xs font-black uppercase tracking-[0.14em] ${accent.text}`}>
-                {result.intentLabel}
-              </span>
-              <span className="mt-1 block text-2xl font-black tracking-tight text-ink">Your search</span>
-            </span>
-            <span className="rounded-full border border-line bg-mint px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-slate transition group-open:hidden">
-              More
-            </span>
-            <span className="hidden rounded-full border border-line bg-mint px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-slate transition group-open:inline-flex">
-              Hide
-            </span>
-          </summary>
-
-          <div className="mt-4 border-t border-line/70 pt-4">
-          <p className="text-sm leading-6 text-slate">{result.contextSummary}</p>
-
-          {filters.length ? (
-            <div className="mt-4">
-              <p className="text-xs font-black uppercase tracking-[0.14em] text-slate">Refine</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {filters.map((filter) => (
-                  <button
-                    key={filter.id}
-                    type="button"
-                    onClick={() => applyFilter(filter.query, filter.watchSubcategory)}
-                    className={`rounded-full border bg-white px-3 py-1.5 text-xs font-bold transition hover:bg-mint ${accent.borderOutline} ${accent.text}`}
-                  >
-                    {filter.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          {process.env.NEXT_PUBLIC_ENABLE_DEV_PANEL !== "true" ? (
-            <button
-              type="button"
-              onClick={toggleDevPanel}
-              className="mt-4 text-xs font-semibold text-slate/70 underline decoration-slate/30 underline-offset-2 transition hover:text-slate"
-            >
-              {showDevPanel ? "Hide developer view" : "Show developer view"}
-            </button>
-          ) : null}
-
-          {showDevPanel ? <DevResultsPanel result={result} onClose={toggleDevPanel} /> : null}
-          </div>
-        </details>
-      </aside>
     </section>
   );
 }

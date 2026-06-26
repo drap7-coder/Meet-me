@@ -6,7 +6,7 @@ import {
   isTeamSpecificSportsQuery,
   teamTicketmasterKeyword
 } from "@/lib/localEventIntent";
-import { extractMusicGenreFromQuery } from "@/lib/musicGenres";
+import { extractMusicGenreFromQuery, extractMusicGenresFromQuery } from "@/lib/musicGenres";
 import { resolveMusicArtistSearch } from "@/lib/musicArtists";
 import { filterNamedArtistEvents } from "@/lib/musicEventFilter";
 import { filterNamedTeamGameEvents } from "@/lib/sportsEventFilter";
@@ -157,7 +157,8 @@ function applyProfileFilters(
     return;
   }
 
-  const musicGenre = extractMusicGenreFromQuery(query);
+  const musicGenres = extractMusicGenresFromQuery(query);
+  const musicGenre = musicGenres[0] ?? extractMusicGenreFromQuery(query);
   const musicArtist = resolveMusicArtistSearch(query);
   const musicQuery =
     profile === "music" || isMusicEventQuery(query) || Boolean(musicGenre) || Boolean(musicArtist);
@@ -171,7 +172,10 @@ function applyProfileFilters(
     params.includeTBD = "yes";
   }
 
-  if (musicGenre) {
+  if (musicGenres.length) {
+    // Ticketmaster classificationName accepts comma-separated OR semantics.
+    params.classificationName = musicGenres.map((genre) => genre.ticketmasterClassification).join(",");
+  } else if (musicGenre) {
     params.classificationName = musicGenre.ticketmasterClassification;
   } else if (musicArtist) {
     params.keyword = musicArtist.ticketmasterKeyword;

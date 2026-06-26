@@ -1,9 +1,13 @@
 import { buildPlaceQuery } from "../app/components/SearchPromptAssist";
-import { extractMusicGenreFromQuery, musicGenreById } from "@/lib/musicGenres";
+import { extractMusicGenreFromQuery, extractMusicGenresFromQuery, musicGenreById } from "@/lib/musicGenres";
 import { isMusicEventQuery } from "@/lib/localEventIntent";
 
 function assert(condition: boolean, message: string) {
   if (!condition) throw new Error(message);
+}
+
+function includesPhrase(query: string, phrase: string) {
+  return query.toLowerCase().includes(phrase.toLowerCase());
 }
 
 const concertsBase = {
@@ -11,25 +15,33 @@ const concertsBase = {
   exploreCategory: "events" as const,
   typeId: "concerts",
   sportsTeamId: null,
-  musicArtistId: null,
   extras: new Set<string>(),
   where: "near" as const,
   streamingType: null,
   streamingVibe: null,
   genre: null,
+  musicGenres: new Set<string>(),
   streamingServices: new Set<string>()
 };
 
 assert(buildPlaceQuery(concertsBase) === "Concerts near me", "concerts without genre");
 
-const rockConcerts = { ...concertsBase, genre: "rock" };
+const rockConcerts = { ...concertsBase, musicGenres: new Set<string>(["rock"]) };
 assert(buildPlaceQuery(rockConcerts) === "Rock concerts near me", "rock genre in query");
 
-const jazzHalfway = { ...concertsBase, genre: "jazz", where: "halfway" as const };
+const jazzHalfway = { ...concertsBase, musicGenres: new Set<string>(["jazz"]), where: "halfway" as const };
 assert(
   buildPlaceQuery(jazzHalfway) === "Jazz concerts halfway between us",
   "jazz genre with halfway location"
 );
+
+const multiGenre = { ...concertsBase, musicGenres: new Set<string>(["rock", "jazz"]) };
+const multiGenreQuery = buildPlaceQuery(multiGenre);
+assert(includesPhrase(multiGenreQuery, "rock") && includesPhrase(multiGenreQuery, "jazz"), "multi-genre query includes both genres");
+
+const parsedMulti = extractMusicGenresFromQuery(multiGenreQuery);
+assert(parsedMulti.length === 2, "extract both genres from multi-genre query");
+assert(parsedMulti.some((g) => g.id === "rock") && parsedMulti.some((g) => g.id === "jazz"), "multi extraction ids");
 
 const rockGenre = extractMusicGenreFromQuery("Rock concerts near me");
 assert(rockGenre?.id === "rock", "extract rock from query");

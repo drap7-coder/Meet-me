@@ -16,12 +16,12 @@ const eventsBase: BuilderState = {
   exploreCategory: "events",
   typeId: "concerts",
   sportsTeamId: null,
-  musicArtistId: null,
   extras: new Set(),
   where: "near",
   streamingType: null,
   streamingVibe: null,
   genre: null,
+  musicGenres: new Set(),
   streamingServices: new Set(),
   eventWhen: null,
   eventDate: null
@@ -44,12 +44,12 @@ const weekendType = { ...eventsBase, typeId: "weekend", eventWhen: "tonight" as 
 assert(eventWhenPhrase(weekendType) === "", "weekend type suppresses when chips in query");
 assert(buildPlaceQuery(weekendType) === "Things to do this weekend near me", "weekend type ignores when chip");
 
-const taylorTonight = {
+const jazzTonight = {
   ...eventsBase,
-  musicArtistId: "taylor_swift",
+  musicGenres: new Set<string>(["jazz"]),
   eventWhen: "tonight" as const
 };
-assert(buildPlaceQuery(taylorTonight) === "Taylor Swift concerts tonight near me", "artist + tonight");
+assert(buildPlaceQuery(jazzTonight) === "Jazz concerts tonight near me", "genre + tonight");
 
 const minDate = minSelectableEventDate();
 assert(/^\d{4}-\d{2}-\d{2}$/.test(minDate), "min date is ISO");

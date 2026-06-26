@@ -127,3 +127,20 @@ export function extractMusicGenreFromQuery(query: string): MusicGenreDefinition 
 
   return null;
 }
+
+/**
+ * Match every music genre present in a query (e.g. "rock, jazz concerts near me").
+ * Honors the same concert/discovery context guard as the single-genre extractor.
+ */
+export function extractMusicGenresFromQuery(query: string): MusicGenreDefinition[] {
+  const value = query.trim();
+  if (!value) return [];
+
+  const matches = MUSIC_GENRES.filter((genre) =>
+    genreQueryPatterns(genre).some((pattern) => pattern.test(value))
+  );
+  if (!matches.length) return [];
+
+  const hasContext = MUSIC_GENRE_CONTEXT_PATTERN.test(value);
+  return matches.filter((genre) => hasContext || isGenreNearDiscoveryQuery(value, genre));
+}

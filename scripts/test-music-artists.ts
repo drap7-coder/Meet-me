@@ -1,4 +1,3 @@
-import { buildPlaceQuery } from "../app/components/SearchPromptAssist";
 import { resolveMusicArtistSearch, hasNamedMusicArtistInQuery } from "@/lib/musicArtists";
 import { isMusicEventQuery, isPureEventQuery } from "@/lib/localEventIntent";
 
@@ -6,23 +5,7 @@ function assert(condition: boolean, message: string) {
   if (!condition) throw new Error(message);
 }
 
-const concertsBase = {
-  selectedMode: "explore" as const,
-  exploreCategory: "events" as const,
-  typeId: "concerts",
-  sportsTeamId: null,
-  musicArtistId: null,
-  extras: new Set<string>(),
-  where: "near" as const,
-  streamingType: null,
-  streamingVibe: null,
-  genre: null,
-  streamingServices: new Set<string>()
-};
-
-const taylor = { ...concertsBase, musicArtistId: "taylor_swift" };
-assert(buildPlaceQuery(taylor) === "Taylor Swift concerts near me", "artist chip builds query");
-
+// Artist chips were removed from the builder, but freeform artist queries are still detected.
 const artist = resolveMusicArtistSearch("Taylor Swift tickets near me");
 assert(artist?.ticketmasterKeyword === "Taylor Swift", "extract Taylor Swift from tickets query");
 
@@ -34,4 +17,4 @@ assert(isMusicEventQuery("Taylor Swift tickets"), "artist tickets are music even
 assert(isPureEventQuery("Taylor Swift tickets"), "artist tickets are pure event queries");
 assert(!resolveMusicArtistSearch("country restaurants near me"), "food query does not extract artist");
 
-console.log("PASS music artist chips and query extraction");
+console.log("PASS music artist freeform query extraction");

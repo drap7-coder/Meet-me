@@ -159,17 +159,23 @@ const rockConcerts = {
   exploreCategory: "events" as const,
   typeId: "concerts",
   sportsTeamId: null,
-  musicArtistId: null,
   extras: new Set<string>(),
   where: "near" as const,
   streamingType: null,
   streamingVibe: null,
-  genre: "rock",
+  genre: null,
+  musicGenres: new Set<string>(["rock"]),
   streamingServices: new Set<string>()
 };
-assert(buildPlaceQuery(rockConcerts) === "Rock concerts near me", "concerts + rock genre");
+assert(buildPlaceQuery(rockConcerts) === "Rock concerts near me", "concerts + single genre");
 
-const taylorConcerts = { ...rockConcerts, genre: null, musicArtistId: "taylor_swift" };
-assert(buildPlaceQuery(taylorConcerts) === "Taylor Swift concerts near me", "concerts + artist chip");
+const multiGenreConcerts = { ...rockConcerts, musicGenres: new Set<string>(["rock", "jazz"]) };
+const multiGenreQuery = buildPlaceQuery(multiGenreConcerts);
+assert(includesPhrase(multiGenreQuery, "rock"), `multi-genre includes rock: ${multiGenreQuery}`);
+assert(includesPhrase(multiGenreQuery, "jazz"), `multi-genre includes jazz: ${multiGenreQuery}`);
+assert(includesPhrase(multiGenreQuery, "concerts"), `multi-genre keeps concerts noun: ${multiGenreQuery}`);
+
+const concertsNoGenre = { ...rockConcerts, musicGenres: new Set<string>() };
+assert(buildPlaceQuery(concertsNoGenre) === "Concerts near me", "concerts without genre");
 
 console.log("PASS prompt builder stacking");

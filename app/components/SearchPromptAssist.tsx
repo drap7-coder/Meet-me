@@ -20,7 +20,6 @@ import { builderModeForWhere, type SearchBuilderMode } from "@/lib/searchBuilder
 import { EVENT_WHEN_OPTIONS, eventWhenChipLabel, eventWhenPhrase, minSelectableEventDate, type EventWhen } from "@/lib/eventDates";
 import { resolveEventTypeRefinement, sportsTeamChipLabel } from "@/lib/eventBuilderOptions";
 import { MUSIC_GENRES, musicGenreById, musicGenreChipLabel } from "@/lib/musicGenres";
-import { MUSIC_ARTISTS, musicArtistById, musicArtistChipLabel } from "@/lib/musicArtists";
 import { majorSportById, localTeamsForSport, otherTeamsForSport, sportIdForTeam, sportsTeamById } from "@/lib/sportsTeams";
 import { STREAMING_SERVICES, streamingServiceQueryPhrase } from "@/lib/streamingServices";
 import type { HeroPopularSearch } from "@/app/components/home/HeroPopularSearches";
@@ -57,6 +56,8 @@ type SelectedMode = "streaming" | "explore" | null;
 
 const CONCIERGE_TAGLINE = "Start here";
 
+const EMPTY_STRING_SET: ReadonlySet<string> = new Set<string>();
+
 export type BuilderState = {
   selectedMode: SelectedMode;
   exploreCategory: ExploreCategory | null;
@@ -64,12 +65,16 @@ export type BuilderState = {
   /** Nested style/cuisine under the selected parent type (e.g. sushi under restaurants). */
   subtypeId?: string | null;
   sportsTeamId: string | null;
-  musicArtistId: string | null;
+  /** @deprecated Artist selection was removed from the concerts builder. */
+  musicArtistId?: string | null;
   extras: Set<string>;
   where: WhereId;
   streamingType: WatchSubcategory | null;
   streamingVibe: WatchStreamVibe | null;
+  /** Single genre for streaming refinements. */
   genre: string | null;
+  /** Multi-select music genres for concerts. */
+  musicGenres?: Set<string>;
   streamingServices: Set<string>;
   eventWhen?: EventWhen | null;
   eventDate?: string | null;
@@ -106,10 +111,10 @@ type AssistContextValue = {
   toggleType: (id: string) => void;
   toggleSubtype: (id: string) => void;
   toggleSportsTeam: (id: string) => void;
-  toggleMusicArtist: (id: string) => void;
   toggleExtra: (id: string) => void;
   setWhere: (id: WhereId) => void;
   toggleGenre: (genre: string) => void;
+  toggleMusicGenre: (genre: string) => void;
   toggleStreamingVibe: (vibe: WatchStreamVibe) => void;
   toggleStreamingService: (id: string) => void;
   toggleEventWhen: (when: EventWhen) => void;
@@ -355,6 +360,7 @@ export function SearchPromptAssistProvider({
         streamingType: null,
         streamingVibe: null,
         genre: null,
+        musicGenres: new Set<string>(),
         streamingServices: new Set<string>(),
         eventWhen: id === "events" ? prev.eventWhen : null,
         eventDate: id === "events" ? prev.eventDate : null
@@ -384,21 +390,20 @@ export function SearchPromptAssistProvider({
   function toggleType(id: string) {
     commit((prev) => {
       const nextTypeId = prev.typeId === id ? null : id;
-      const keepGenre =
-        nextTypeId === "concerts" && prev.genre && musicGenreById(prev.genre) ? prev.genre : null;
       let eventWhen = prev.eventWhen;
       let eventDate = prev.eventDate;
       if (nextTypeId === "weekend" && eventWhen === "weekend") {
         eventWhen = null;
         eventDate = null;
       }
+      const musicGenres = nextTypeId === "concerts" ? prev.musicGenres ?? new Set<string>() : new Set<string>();
       return {
         ...prev,
         typeId: nextTypeId,
         subtypeId: null,
         sportsTeamId: null,
-        musicArtistId: nextTypeId === "concerts" ? prev.musicArtistId : null,
-        genre: keepGenre,
+        genre: null,
+        musicGenres,
         eventWhen,
         eventDate
       };
@@ -420,17 +425,6 @@ export function SearchPromptAssistProvider({
         sportsTeamId: prev.sportsTeamId === id ? null : id
       };
     });
-  }
-
-  function toggleMusicArtist(id: string) {
-    commit((prev) => ({
-      ...prev,
-      selectedMode: "explore",
-      exploreCategory: "events",
-      typeId: "concerts",
-      musicArtistId: prev.musicArtistId === id ? null : id,
-      genre: null
-    }));
   }
 
   function toggleExtra(id: string) {
@@ -463,14 +457,17 @@ export function SearchPromptAssistProvider({
       if (prev.selectedMode === "streaming" && normalizeStreamType(prev.streamingType)) {
         return { ...prev, genre: prev.genre === genreId ? null : genreId };
       }
-      if (prev.exploreCategory === "events" && prev.typeId === "concerts") {
-        return {
-          ...prev,
-          genre: prev.genre === genreId ? null : genreId,
-          musicArtistId: null
-        };
-      }
       return prev;
+    });
+  }
+
+  function toggleMusicGenre(genreId: string) {
+    commit((prev) => {
+      if (prev.exploreCategory !== "events" || prev.typeId !== "concerts") return prev;
+      const musicGenres = new Set(prev.musicGenres ?? []);
+      if (musicGenres.has(genreId)) musicGenres.delete(genreId);
+      else musicGenres.add(genreId);
+      return { ...prev, musicGenres };
     });
   }
 
@@ -555,10 +552,10 @@ export function SearchPromptAssistProvider({
         toggleType,
         toggleSubtype,
         toggleSportsTeam,
-        toggleMusicArtist,
         toggleExtra,
         setWhere,
         toggleGenre,
+        toggleMusicGenre,
         toggleStreamingVibe,
         toggleStreamingService,
         toggleEventWhen,
@@ -620,9 +617,9 @@ export function SearchPromptDetailChips() {
     toggleType,
     toggleSubtype,
     toggleSportsTeam,
-    toggleMusicArtist,
     toggleExtra,
     toggleGenre,
+    toggleMusicGenre,
     toggleStreamingVibe,
     toggleStreamingService,
     surface,
@@ -643,7 +640,7 @@ export function SearchPromptDetailChips() {
   const showSportsTeams = state.exploreCategory === "sports" && Boolean(state.typeId);
   const showEventDates = state.exploreCategory === "events" && state.typeId !== "weekend";
   const showMusicGenres = state.exploreCategory === "events" && state.typeId === "concerts";
-  const showMusicArtists = showMusicGenres;
+  const selectedMusicGenres = state.musicGenres ?? EMPTY_STRING_SET;
   const localSportsTeams = showSportsTeams ? localTeamsForSport(state.typeId, userCoordinates) : [];
   const otherSportsTeams = showSportsTeams ? otherTeamsForSport(state.typeId, userCoordinates) : [];
   const hasLocalSportsTeams = localSportsTeams.length > 0;
@@ -810,37 +807,23 @@ export function SearchPromptDetailChips() {
                   <SearchPromptEventWhen onPage={onPage} variant="section" />
                 ) : null}
 
-                {showMusicArtists ? (
-                  <ChipGroup label="🎤 Artists" onPage={onPage} variant="section">
-                      {MUSIC_ARTISTS.map((artist) => (
-                        <AssistChip
-                          key={artist.id}
-                          label={artist.label}
-                          busy={busy}
-                          variant={state.musicArtistId === artist.id ? "primary" : "accent"}
-                          selected={state.musicArtistId === artist.id}
-                          emphasis={state.musicArtistId === artist.id}
-                          onPick={() => toggleMusicArtist(artist.id)}
-                          onPage={onPage}
-                        />
-                    ))}
-                  </ChipGroup>
-                ) : null}
-
                 {showMusicGenres ? (
-                  <ChipGroup label="🎵 Genre" onPage={onPage} variant="section">
-                      {MUSIC_GENRES.map((genre) => (
-                        <AssistChip
-                          key={genre.id}
-                          label={musicGenreChipLabel(genre.id)}
-                          busy={busy}
-                          variant={state.genre === genre.id ? "primary" : "accent"}
-                          selected={state.genre === genre.id}
-                          emphasis={state.genre === genre.id}
-                          onPick={() => toggleGenre(genre.id)}
-                          onPage={onPage}
-                        />
-                    ))}
+                  <ChipGroup label="🎵 Genres" onPage={onPage} variant="section">
+                      {MUSIC_GENRES.map((genre) => {
+                        const selected = selectedMusicGenres.has(genre.id);
+                        return (
+                          <AssistChip
+                            key={genre.id}
+                            label={musicGenreChipLabel(genre.id)}
+                            busy={busy}
+                            variant={selected ? "primary" : "accent"}
+                            selected={selected}
+                            emphasis={selected}
+                            onPick={() => toggleMusicGenre(genre.id)}
+                            onPage={onPage}
+                          />
+                        );
+                    })}
                   </ChipGroup>
                 ) : null}
 
@@ -1106,18 +1089,15 @@ export function buildPlaceQuery(state: BuilderState): string {
     const suffix = eventLocationSuffix(state.where);
     const when = eventWhenPhrase(state);
 
-    if (state.typeId === "concerts" && state.musicArtistId) {
-      const artist = musicArtistById(state.musicArtistId);
-      if (artist) {
-        const phrase = [artist.searchTerm, "concerts", when, suffix].filter(Boolean).join(" ");
-        return phrase.charAt(0).toUpperCase() + phrase.slice(1);
-      }
-    }
-
     const eventType = resolveEventTypeRefinement(state.typeId);
     if (eventType?.noun) {
-      const musicGenre = state.typeId === "concerts" ? musicGenreById(state.genre) : null;
-      const noun = musicGenre ? `${musicGenre.queryWord} concerts` : eventType.noun;
+      const genreWords =
+        state.typeId === "concerts"
+          ? [...(state.musicGenres ?? [])]
+              .map((id) => musicGenreById(id)?.queryWord)
+              .filter((word): word is string => Boolean(word))
+          : [];
+      const noun = genreWords.length ? `${genreWords.join(", ")} concerts` : eventType.noun;
       const phrase = [noun, when, suffix].filter(Boolean).join(" ");
       return phrase.charAt(0).toUpperCase() + phrase.slice(1);
     }
@@ -1304,12 +1284,10 @@ function buildFilterPills(state: BuilderState): FilterPill[] {
     pills.push({ id: `stream-genre-${state.genre}`, label: genreLabel });
   }
 
-  if (state.genre && state.exploreCategory === "events" && state.typeId === "concerts") {
-    pills.push({ id: `music-genre-${state.genre}`, label: musicGenreChipLabel(state.genre) });
-  }
-
-  if (state.musicArtistId && state.exploreCategory === "events" && state.typeId === "concerts") {
-    pills.push({ id: `music-artist-${state.musicArtistId}`, label: musicArtistChipLabel(state.musicArtistId) });
+  if (state.exploreCategory === "events" && state.typeId === "concerts" && state.musicGenres) {
+    for (const genreId of state.musicGenres) {
+      pills.push({ id: `music-genre-${genreId}`, label: musicGenreChipLabel(genreId) });
+    }
   }
 
   if (state.exploreCategory === "events" && state.eventWhen && state.typeId !== "weekend") {
@@ -1380,11 +1358,10 @@ function removeFilterFromState(state: BuilderState, pillId: string): BuilderStat
   }
 
   if (pillId.startsWith("music-genre-")) {
-    return { ...state, genre: null };
-  }
-
-  if (pillId.startsWith("music-artist-")) {
-    return { ...state, musicArtistId: null };
+    const genreId = pillId.slice("music-genre-".length);
+    const musicGenres = new Set(state.musicGenres ?? []);
+    musicGenres.delete(genreId);
+    return { ...state, musicGenres };
   }
 
   if (pillId.startsWith("event-when-")) {

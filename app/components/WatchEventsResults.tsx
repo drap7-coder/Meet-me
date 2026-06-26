@@ -58,10 +58,24 @@ export function WatchEventsResults({ result, onRefineWatch, onRefineEvents }: Pr
       </div>
 
       <aside className="results-panel-enter order-1 lg:order-2">
-        <div className={`rounded-[26px] border bg-white/95 p-5 shadow-[0_18px_55px_rgba(10,19,35,0.08)] backdrop-blur ${accent.panelBorder}`}>
-          <p className={`text-sm font-black uppercase tracking-[0.14em] ${accent.text}`}>{result.intentLabel}</p>
-          <h2 className="mt-2 text-2xl font-black tracking-tight text-ink">Your search</h2>
-          <p className="mt-3 text-sm leading-6 text-slate">{result.contextSummary}</p>
+        <details className={`group rounded-[26px] border bg-white/95 p-5 shadow-[0_18px_55px_rgba(10,19,35,0.08)] backdrop-blur ${accent.panelBorder}`}>
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 marker:hidden [&::-webkit-details-marker]:hidden">
+            <span>
+              <span className={`block text-xs font-black uppercase tracking-[0.14em] ${accent.text}`}>
+                {result.intentLabel}
+              </span>
+              <span className="mt-1 block text-2xl font-black tracking-tight text-ink">Your search</span>
+            </span>
+            <span className="rounded-full border border-line bg-mint px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-slate transition group-open:hidden">
+              More
+            </span>
+            <span className="hidden rounded-full border border-line bg-mint px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-slate transition group-open:inline-flex">
+              Hide
+            </span>
+          </summary>
+
+          <div className="mt-4 border-t border-line/70 pt-4">
+          <p className="text-sm leading-6 text-slate">{result.contextSummary}</p>
 
           {filters.length ? (
             <div className="mt-4">
@@ -92,7 +106,8 @@ export function WatchEventsResults({ result, onRefineWatch, onRefineEvents }: Pr
           ) : null}
 
           {showDevPanel ? <DevResultsPanel result={result} onClose={toggleDevPanel} /> : null}
-        </div>
+          </div>
+        </details>
       </aside>
     </section>
   );

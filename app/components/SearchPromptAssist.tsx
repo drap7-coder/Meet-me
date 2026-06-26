@@ -46,6 +46,7 @@ type ProviderProps = {
   builderMode?: SearchBuilderMode;
   onBuilderModeChange?: (mode: SearchBuilderMode) => void;
   surface?: "hero" | "page";
+  initialOptions?: Pick<PickQueryOptions, "category" | "watchSubcategory">;
   /** Saved/current origin — used to split local vs all team chips. */
   userCoordinates?: LatLng;
   children: ReactNode;
@@ -180,10 +181,11 @@ export function SearchPromptAssistProvider({
   builderMode,
   onBuilderModeChange,
   surface = "hero",
+  initialOptions,
   userCoordinates,
   children
 }: ProviderProps) {
-  const [state, setState] = useState<BuilderState>(() => initialBuilderState());
+  const [state, setState] = useState<BuilderState>(() => initialBuilderState(initialOptions));
   const [promptQuery, setPromptQuery] = useState("");
 
   function updatePreview(next: BuilderState) {
@@ -847,6 +849,196 @@ export function SearchPromptDetailChips() {
         ) : null}
       </div>
     </section>
+  );
+}
+
+export function ResultsSearchRefineBars() {
+  const {
+    busy,
+    state,
+    pickMode,
+    pickExplore,
+    pickStreamingType,
+    toggleStreamingService,
+    toggleStreamingVibe,
+    toggleGenre,
+    pickExploreCategory,
+    toggleType,
+    toggleSubtype,
+    toggleExtra,
+    typeRefinements,
+    styleRefinements,
+    vibeRefinements
+  } = useAssistContext();
+  const streamType = state.streamingType === "movies" || state.streamingType === "tv_shows" ? state.streamingType : null;
+  const streamGenres = streamType ? getWatchGenresForSubcategory(streamType) : [];
+  const showStreaming = state.selectedMode === "streaming";
+  const showExplore = state.selectedMode === "explore";
+
+  return (
+    <section className="grid gap-3" aria-label="Results search refinements">
+      <RefineBar label="Mode">
+        <RefineBarButton
+          label="🍿 Streaming"
+          busy={busy}
+          selected={showStreaming}
+          onPick={() => pickMode("streaming")}
+        />
+        <RefineBarButton
+          label="🧭 Explore"
+          busy={busy}
+          selected={showExplore}
+          onPick={pickExplore}
+        />
+      </RefineBar>
+
+      {showStreaming ? (
+        <>
+          <RefineBar label="Streaming">
+            {STREAMING_SERVICES.map((service) => (
+              <RefineBarButton
+                key={service.id}
+                label={service.label}
+                busy={busy}
+                selected={state.streamingServices.has(service.id)}
+                onPick={() => toggleStreamingService(service.id)}
+              />
+            ))}
+          </RefineBar>
+          <RefineBar label="Type">
+            {WATCH_TYPE_OPTIONS.map((option) => (
+              <RefineBarButton
+                key={option.id}
+                label={option.label}
+                busy={busy}
+                selected={streamType === option.id}
+                onPick={() => pickStreamingType(option.id)}
+              />
+            ))}
+          </RefineBar>
+          {streamType ? (
+            <>
+              <RefineBar label="Vibe">
+                {WATCH_VIBE_OPTIONS.map((option) => (
+                  <RefineBarButton
+                    key={option.id}
+                    label={option.label}
+                    busy={busy}
+                    selected={state.streamingVibe === option.id}
+                    onPick={() => toggleStreamingVibe(option.id)}
+                  />
+                ))}
+              </RefineBar>
+              <RefineBar label="Genre">
+                {streamGenres.map((genre) => (
+                  <RefineBarButton
+                    key={genre.id}
+                    label={genre.label}
+                    busy={busy}
+                    selected={state.genre === genre.id}
+                    onPick={() => toggleGenre(genre.id)}
+                  />
+                ))}
+              </RefineBar>
+            </>
+          ) : null}
+        </>
+      ) : null}
+
+      {showExplore ? (
+        <>
+          <RefineBar label="Category">
+            {EXPLORE_CATEGORIES.map((def) => (
+              <RefineBarButton
+                key={def.key}
+                label={def.label}
+                busy={busy}
+                selected={state.exploreCategory === def.key}
+                onPick={() => pickExploreCategory(def.key)}
+              />
+            ))}
+          </RefineBar>
+          {state.exploreCategory ? (
+            <>
+              <RefineBar label={exploreCategoryConfig(state.exploreCategory).subtypeLabel}>
+                {typeRefinements.map((refinement) => (
+                  <RefineBarButton
+                    key={refinement.id}
+                    label={refinement.label}
+                    busy={busy}
+                    selected={state.typeId === refinement.id}
+                    onPick={() => toggleType(refinement.id)}
+                  />
+                ))}
+              </RefineBar>
+              {styleRefinements.length ? (
+                <RefineBar label={exploreCategoryConfig(state.exploreCategory).styleLabel ?? "Style"}>
+                  {styleRefinements.map((refinement) => (
+                    <RefineBarButton
+                      key={refinement.id}
+                      label={refinement.label}
+                      busy={busy}
+                      selected={state.subtypeId === refinement.id}
+                      onPick={() => toggleSubtype(refinement.id)}
+                    />
+                  ))}
+                </RefineBar>
+              ) : null}
+              {vibeRefinements.length ? (
+                <RefineBar label="Vibe">
+                  {vibeRefinements.map((refinement) => (
+                    <RefineBarButton
+                      key={refinement.id}
+                      label={refinement.label}
+                      busy={busy}
+                      selected={state.extras.has(refinement.id)}
+                      onPick={() => toggleExtra(refinement.id)}
+                    />
+                  ))}
+                </RefineBar>
+              ) : null}
+            </>
+          ) : null}
+        </>
+      ) : null}
+    </section>
+  );
+}
+
+function RefineBar({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="grid gap-2 rounded-2xl border border-white/10 bg-white/[0.04] p-2.5 sm:grid-cols-[6rem_1fr] sm:items-center">
+      <p className="px-1 text-[0.65rem] font-black uppercase tracking-[0.18em] text-white/45">{label}</p>
+      <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">{children}</div>
+    </div>
+  );
+}
+
+function RefineBarButton({
+  label,
+  busy,
+  selected,
+  onPick
+}: {
+  label: string;
+  busy: boolean;
+  selected: boolean;
+  onPick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={onPick}
+      aria-pressed={selected}
+      className={`shrink-0 rounded-full border px-3.5 py-2 text-sm font-bold transition focus:outline-none focus:ring-4 focus:ring-koi/20 disabled:cursor-not-allowed disabled:opacity-40 ${
+        selected
+          ? "border-koi bg-koi text-white shadow-[0_8px_18px_rgba(255,90,0,0.26)]"
+          : "border-white/14 bg-white/[0.06] text-white/75 hover:border-white/30 hover:bg-white/10 hover:text-white"
+      }`}
+    >
+      {label}
+    </button>
   );
 }
 

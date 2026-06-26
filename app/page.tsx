@@ -21,6 +21,7 @@ import { SearchContextStrip } from "@/app/components/SearchContextStrip";
 import { LocationForm } from "@/app/components/LocationForm";
 import { RoadDivider } from "@/app/components/BrandRoad";
 import {
+  ResultsSearchRefineBars,
   SearchPromptAssistProvider,
   SearchPromptDetailChips,
   SearchPromptModePicker,
@@ -1476,6 +1477,7 @@ export default function HomePage() {
                   builderMode={builderMode}
                   onBuilderModeChange={handleBuilderModeChange}
                   surface="hero"
+                  initialOptions={searchKind === "watch" ? { category: "custom", watchSubcategory: activeWatchSubcategory } : undefined}
                   userCoordinates={locationContext.locationACoordinates}
                 >
                   <SearchContextStrip
@@ -1485,18 +1487,7 @@ export default function HomePage() {
                     onTravelModeChange={handleTravelModeChange}
                     busy={loading || locating || resolvingManual}
                   />
-                  <SearchPromptModePicker />
-                  <ClassicSearchControls
-                    form={form}
-                    loading={loading}
-                    savedLocationLabel={activeLocationLabel}
-                    expanded={builderExpanded}
-                    onExpandedChange={handleBuilderExpanded}
-                    mode={builderMode}
-                    onSearchPlaces={runPlacesSearchFromBuilder}
-                    onSearchWatch={runWatchSearch}
-                  />
-                  <SearchPromptDetailChips />
+                  <ResultsSearchRefineBars />
                   <SelectedFiltersPanel
                     busy={loading || locating || resolvingManual}
                     onSearch={runFilterSearch}

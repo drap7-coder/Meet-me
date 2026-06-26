@@ -39,7 +39,7 @@ export function CompactResultsHeader({
 
   if (loading) {
     return (
-      <section className="pt-[calc(env(safe-area-inset-top)+1rem)]">
+      <section className="pt-3">
         <div className="rounded-[28px] border border-white/10 bg-white/[0.06] px-4 py-4 shadow-[0_24px_80px_rgba(0,0,0,0.22)] backdrop-blur-xl sm:px-5">
           <p className="text-sm font-bold text-white">{loadingLabel}</p>
         </div>
@@ -132,7 +132,7 @@ function PlacesDecisionHero({
   }
 
   return (
-    <section className="pt-[calc(env(safe-area-inset-top)+1rem)]">
+    <section className="pt-3">
       <div className="relative overflow-hidden rounded-[30px] border border-white/10 bg-white/[0.07] px-4 py-5 text-white shadow-[0_28px_90px_rgba(0,0,0,0.28)] backdrop-blur-xl sm:px-6 sm:py-6">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_20%,rgba(255,90,0,0.18),transparent_32%),linear-gradient(135deg,rgba(255,255,255,0.08),transparent_42%)]" />
         <div className="relative z-10">
@@ -196,7 +196,7 @@ function WatchDecisionHero({
   const chips = item.tags.slice(0, 4);
 
   return (
-    <section className="pt-[calc(env(safe-area-inset-top)+1rem)]">
+    <section className="pt-3">
       <div className="relative overflow-hidden rounded-[30px] border border-white/10 bg-white/[0.07] px-4 py-5 text-white shadow-[0_28px_90px_rgba(0,0,0,0.28)] backdrop-blur-xl sm:px-6 sm:py-6">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_20%,rgba(10,132,255,0.18),transparent_32%),linear-gradient(135deg,rgba(255,255,255,0.08),transparent_42%)]" />
         <div className="relative z-10">

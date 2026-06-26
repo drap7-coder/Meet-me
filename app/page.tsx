@@ -4,6 +4,7 @@ import { EmptyState } from "@/app/components/EmptyState";
 import { KoiThinkingLoader } from "@/app/components/KoiThinkingLoader";
 import { EventResultCard } from "@/app/components/EventResultCard";
 import { AiSearchBox, type AiSearchBoxHandle } from "@/app/components/AiSearchBox";
+import { Logo } from "@/app/components/Logo";
 import { extractSportsSearchKeyword, hasNamedTeamInQuery, isTeamSpecificSportsQuery, queryRequiresEventLocation } from "@/lib/localEventIntent";
 import { resolveEventSearchForm } from "@/lib/koiSearchExecute";
 import { CompactResultsHeader } from "@/app/components/home/CompactResultsHeader";
@@ -1450,6 +1451,8 @@ export default function HomePage() {
           </>
         ) : null}
         <div className={`relative z-10 ${PAGE_CONTAINER}`}>
+          {showResultsChrome ? <ResultsHomeLink onStartNewSearch={startNewSearch} /> : null}
+
           {showResultsChrome ? (
             <CompactResultsHeader
               loading={loading}
@@ -1669,6 +1672,27 @@ function ResultsSearchSummary({
         ) : null}
       </div>
     </details>
+  );
+}
+
+function ResultsHomeLink({ onStartNewSearch }: { onStartNewSearch: () => void }) {
+  return (
+    <nav className="flex pt-[calc(env(safe-area-inset-top)+0.75rem)]" aria-label="Results navigation">
+      <button
+        type="button"
+        onClick={onStartNewSearch}
+        className="group inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/[0.07] py-1.5 pl-1.5 pr-3 text-sm font-black text-white shadow-[0_12px_34px_rgba(0,0,0,0.22)] backdrop-blur-xl transition hover:border-white/22 hover:bg-white/[0.11] focus:outline-none focus:ring-4 focus:ring-koi/25"
+        aria-label={`${BRAND.askLabel} home`}
+      >
+        <Logo
+          variant="mark"
+          size="sm"
+          onDark
+          className="[&_img]:!h-7 [&_img]:!w-7 sm:[&_img]:!h-8 sm:[&_img]:!w-8"
+        />
+        <span>{BRAND.askLabel}</span>
+      </button>
+    </nav>
   );
 }
 

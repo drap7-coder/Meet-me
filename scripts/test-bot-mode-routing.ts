@@ -4,6 +4,7 @@ const EXAMPLES = [
   { query: "coffee near Hoboken", expected: "places" },
   { query: "breweries between Brooklyn and Manhattan", expected: "places" },
   { query: "What should I watch tonight?", expected: "watch" },
+  { query: "What should I watch on Hulu?", expected: "watch" },
   { query: "Funny movies like Superbad", expected: "watch" },
   { query: "Any comedy shows near Philly this weekend?", expected: "events" },
   { query: "Where can I watch the Phillies game tonight?", expected: "events" },

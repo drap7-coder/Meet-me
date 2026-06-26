@@ -1101,8 +1101,18 @@ export default function HomePage() {
     });
   }
 
-  function applyPopularSearch(query: string) {
-    searchBoxRef.current?.fillQuery(query);
+  function applyPopularSearch(query: string, options?: PickQueryOptions) {
+    if (options) {
+      const isStreaming =
+        Boolean(options.watchSubcategory) ||
+        Boolean(options.streamingServiceIds?.length) ||
+        options.category === "custom" ||
+        hasStreamingWatchContext(query);
+      runFilterSearch(query, options, isStreaming);
+      return;
+    }
+
+    searchBoxRef.current?.runQuery(query);
   }
 
   function runFilterSearch(query: string, options: PickQueryOptions, isStreaming: boolean) {

@@ -19,6 +19,7 @@ export type TmdbPick = {
   year: string;
   rating: number;
   voteCount: number;
+  genreIds: number[];
   posterUrl: string;
   runtimeMinutes: number | null;
   seasonCount: number | null;
@@ -35,6 +36,7 @@ type TmdbMovieResponse = {
   release_date?: string;
   vote_average?: number;
   vote_count?: number;
+  genre_ids?: number[];
   poster_path?: string | null;
   runtime?: number;
 };
@@ -46,6 +48,7 @@ type TmdbTvResponse = {
   first_air_date?: string;
   vote_average?: number;
   vote_count?: number;
+  genre_ids?: number[];
   poster_path?: string | null;
   number_of_seasons?: number;
   episode_run_time?: number[];
@@ -184,6 +187,47 @@ export async function fetchTrendingMedia(
     if (excluded.has(pickKey(pick))) continue;
     picks.push(await enrichPick(pick));
     if (picks.length >= limit) return picks;
+  }
+
+  return picks;
+}
+
+export async function fetchTrendingMediaByGenre(
+  genre: string,
+  kind: TmdbMediaKind,
+  limit = 5,
+  excludeKeys: string[] = []
+) {
+  const genreId = resolveTmdbGenreId(genre, kind);
+  if (!genreId) return [];
+
+  const path = kind === "tv" ? "/trending/tv/week" : "/trending/movie/week";
+  const seen = new Set(excludeKeys);
+  const picks: TmdbPick[] = [];
+  const data = kind === "tv"
+    ? await tmdbFetch<TmdbTvListResponse>(path)
+    : await tmdbFetch<TmdbMovieListResponse>(path);
+  const trending = (data.results ?? []).map((item) =>
+    kind === "tv" ? normalizeTv(item as TmdbTvResponse) : normalizeMovie(item as TmdbMovieResponse)
+  );
+
+  for (const pick of trending) {
+    const key = pickKey(pick);
+    if (seen.has(key) || !pick.genreIds.includes(genreId)) continue;
+    seen.add(key);
+    picks.push(await enrichPick(pick));
+    if (picks.length >= limit) return picks;
+  }
+
+  if (picks.length < limit) {
+    const popular = await discoverMediaByGenre(genre, kind, limit, [...seen]);
+    for (const pick of popular) {
+      const key = pickKey(pick);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      picks.push(pick);
+      if (picks.length >= limit) return picks;
+    }
   }
 
   return picks;
@@ -413,6 +457,7 @@ function normalizeMovie(movie: TmdbMovieResponse): TmdbPick {
     year: movie.release_date?.slice(0, 4) ?? "",
     rating: typeof movie.vote_average === "number" ? movie.vote_average : 0,
     voteCount: typeof movie.vote_count === "number" ? movie.vote_count : 0,
+    genreIds: Array.isArray(movie.genre_ids) ? movie.genre_ids.filter((id) => typeof id === "number") : [],
     posterUrl: buildTmdbPosterUrl(movie.poster_path),
     runtimeMinutes: typeof movie.runtime === "number" ? movie.runtime : null,
     seasonCount: null,
@@ -433,6 +478,7 @@ function normalizeTv(show: TmdbTvResponse): TmdbPick {
     year: show.first_air_date?.slice(0, 4) ?? "",
     rating: typeof show.vote_average === "number" ? show.vote_average : 0,
     voteCount: typeof show.vote_count === "number" ? show.vote_count : 0,
+    genreIds: Array.isArray(show.genre_ids) ? show.genre_ids.filter((id) => typeof id === "number") : [],
     posterUrl: buildTmdbPosterUrl(show.poster_path),
     runtimeMinutes: runtime,
     seasonCount: typeof show.number_of_seasons === "number" ? show.number_of_seasons : null,

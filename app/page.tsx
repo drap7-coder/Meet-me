@@ -1373,42 +1373,29 @@ export default function HomePage() {
                   onSearchQuery={applyPopularSearch}
                   onRequestLocation={openLocationChange}
                 />
-                <details className="group rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 backdrop-blur">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-black text-white marker:hidden [&::-webkit-details-marker]:hidden">
-                    <span>Refine search</span>
-                    <span className="text-xs font-black uppercase tracking-[0.14em] text-white/45 group-open:hidden">
-                      Location, filters, getting around
-                    </span>
-                    <span className="hidden text-xs font-black uppercase tracking-[0.14em] text-white/45 group-open:inline">
-                      Hide
-                    </span>
-                  </summary>
-                  <div className="mt-4 grid gap-4">
-                    <SearchContextStrip
-                      locationLabel={activeLocationLabel}
-                      onChangeLocation={openLocationChange}
-                      travelMode={travelMode}
-                      onTravelModeChange={handleTravelModeChange}
-                      busy={loading || locating || resolvingManual}
-                    />
-                    <SearchPromptModePicker />
-                    <ClassicSearchControls
-                      form={form}
-                      loading={loading}
-                      savedLocationLabel={activeLocationLabel}
-                      expanded={builderExpanded}
-                      onExpandedChange={handleBuilderExpanded}
-                      mode={builderMode}
-                      onSearchPlaces={runPlacesSearchFromBuilder}
-                      onSearchWatch={runWatchSearch}
-                    />
-                    <SearchPromptDetailChips />
-                    <SelectedFiltersPanel
-                      busy={loading || locating || resolvingManual}
-                      onSearch={runFilterSearch}
-                    />
-                  </div>
-                </details>
+                <SearchContextStrip
+                  locationLabel={activeLocationLabel}
+                  onChangeLocation={openLocationChange}
+                  travelMode={travelMode}
+                  onTravelModeChange={handleTravelModeChange}
+                  busy={loading || locating || resolvingManual}
+                />
+                <SearchPromptModePicker />
+                <ClassicSearchControls
+                  form={form}
+                  loading={loading}
+                  savedLocationLabel={activeLocationLabel}
+                  expanded={builderExpanded}
+                  onExpandedChange={handleBuilderExpanded}
+                  mode={builderMode}
+                  onSearchPlaces={runPlacesSearchFromBuilder}
+                  onSearchWatch={runWatchSearch}
+                />
+                <SearchPromptDetailChips />
+                <SelectedFiltersPanel
+                  busy={loading || locating || resolvingManual}
+                  onSearch={runFilterSearch}
+                />
                 <HeroPopularSearches
                   compact
                   busy={loading || locating || resolvingManual}
@@ -1470,6 +1457,53 @@ export default function HomePage() {
               onShare={shareMeetup}
               onNewSearch={startNewSearch}
             />
+          ) : null}
+
+          {showResultsChrome ? (
+            <details className="group mt-4 rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-white shadow-[0_18px_50px_rgba(0,0,0,0.18)] backdrop-blur">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-black marker:hidden [&::-webkit-details-marker]:hidden">
+                <span>Refine search</span>
+                <span className="text-xs font-black uppercase tracking-[0.14em] text-white/45 group-open:hidden">
+                  Location, filters, getting around
+                </span>
+                <span className="hidden text-xs font-black uppercase tracking-[0.14em] text-white/45 group-open:inline">
+                  Hide
+                </span>
+              </summary>
+              <div className="mt-4 grid gap-4">
+                <SearchPromptAssistProvider
+                  busy={loading || locating || resolvingManual}
+                  builderMode={builderMode}
+                  onBuilderModeChange={handleBuilderModeChange}
+                  surface="hero"
+                  userCoordinates={locationContext.locationACoordinates}
+                >
+                  <SearchContextStrip
+                    locationLabel={activeLocationLabel}
+                    onChangeLocation={openLocationChange}
+                    travelMode={travelMode}
+                    onTravelModeChange={handleTravelModeChange}
+                    busy={loading || locating || resolvingManual}
+                  />
+                  <SearchPromptModePicker />
+                  <ClassicSearchControls
+                    form={form}
+                    loading={loading}
+                    savedLocationLabel={activeLocationLabel}
+                    expanded={builderExpanded}
+                    onExpandedChange={handleBuilderExpanded}
+                    mode={builderMode}
+                    onSearchPlaces={runPlacesSearchFromBuilder}
+                    onSearchWatch={runWatchSearch}
+                  />
+                  <SearchPromptDetailChips />
+                  <SelectedFiltersPanel
+                    busy={loading || locating || resolvingManual}
+                    onSearch={runFilterSearch}
+                  />
+                </SearchPromptAssistProvider>
+              </div>
+            </details>
           ) : null}
 
           {showRoadDividerPreview ? (

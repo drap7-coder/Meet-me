@@ -8,6 +8,7 @@ import {
   fetchNewReleaseMedia,
   fetchSimilarMedia,
   fetchTrendingMedia,
+  fetchTrendingMediaByGenre,
   isTmdbConfigured,
   searchMedia,
   type TmdbMediaKind,
@@ -71,6 +72,21 @@ export async function tryBuildLiveMovieRecommendations(
       return recommendations
         ? finalizeBatch({ recommendations, hasMore: false }, context.streamingServiceIds, limit)
         : null;
+    }
+
+    if (context.genre && /\btrending\b/i.test(context.query)) {
+      return finalizeBatch(
+        await buildTrendingGenreRecommendations(
+          context.genre,
+          context.timeframe,
+          mediaKind,
+          fetchLimit,
+          excludeKeys,
+          startRank
+        ),
+        context.streamingServiceIds,
+        limit
+      );
     }
 
     if (context.genre) {
@@ -217,6 +233,39 @@ async function buildGenreRecommendations(
               : `Another ${label.toLowerCase()} ${formatLabel.toLowerCase()} worth adding to your list.`,
       tags: [classic ? "Classic" : label, timeframe, formatRating(pick.rating)],
       meta: buildMediaMeta(pick, label)
+    })
+  );
+
+  return { recommendations, hasMore: picks.length >= limit };
+}
+
+async function buildTrendingGenreRecommendations(
+  genre: string,
+  timeframe: string,
+  mediaKind: TmdbMediaKind,
+  limit: number,
+  excludeKeys: string[],
+  startRank: number
+): Promise<LiveWatchRecommendationBatch | null> {
+  const picks = await fetchTrendingMediaByGenre(genre, mediaKind, limit, excludeKeys);
+  if (!picks.length) return null;
+
+  const label = genre === "sci-fi" ? "Sci-Fi" : capitalizeWords(genre);
+  const recommendations = picks.map((pick, index) =>
+    mediaRecommendation({
+      pick,
+      rank: startRank + index,
+      kind: "general",
+      badge: badgeForIndex(index),
+      subtitle: `${timeframe} · Trending ${label} ${mediaKind === "tv" ? "series" : "movies"}`,
+      explanation:
+        index === 0 && startRank === 1
+          ? `Koi started with TMDB's weekly trending list and filtered it for ${label.toLowerCase()} ${mediaKind === "tv" ? "series" : "movies"}.`
+          : index === 1 && startRank === 1
+            ? `Another ${label.toLowerCase()} pick with current momentum.`
+            : `A ${label.toLowerCase()} option that fits the trending lane.`,
+      tags: ["Trending", label, formatRating(pick.rating)],
+      meta: buildMediaMeta(pick, `Trending ${label}`)
     })
   );
 

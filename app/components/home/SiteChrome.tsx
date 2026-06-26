@@ -84,14 +84,14 @@ export function LogoHomeHeader({ variant = "light" }: SiteHeaderProps) {
   const onDark = variant === "dark";
 
   return (
-    <header className="sticky top-0 z-[70] bg-transparent pt-[env(safe-area-inset-top)]">
+    <header className="pointer-events-none fixed inset-x-0 top-0 z-[70] bg-transparent pt-[env(safe-area-inset-top)]">
       <div className={`flex h-12 w-full items-center sm:h-14 ${PAGE_CONTAINER}`}>
         <a
           href="/"
           className={
             onDark
-              ? "group inline-flex items-center rounded-full bg-white/10 p-1.5 text-white backdrop-blur-md transition hover:bg-white/15 focus:outline-none focus:ring-4 focus:ring-koi/25"
-              : "group inline-flex items-center rounded-full bg-white/80 p-1.5 text-ink shadow-[0_8px_24px_rgba(10,19,35,0.10)] backdrop-blur-md transition hover:bg-white focus:outline-none focus:ring-4 focus:ring-koi/20"
+              ? "pointer-events-auto group inline-flex items-center rounded-full bg-white/10 p-1.5 text-white backdrop-blur-md transition hover:bg-white/15 focus:outline-none focus:ring-4 focus:ring-koi/25"
+              : "pointer-events-auto group inline-flex items-center rounded-full bg-white/80 p-1.5 text-ink shadow-[0_8px_24px_rgba(10,19,35,0.10)] backdrop-blur-md transition hover:bg-white focus:outline-none focus:ring-4 focus:ring-koi/20"
           }
           aria-label={`${BRAND.displayName} home`}
         >

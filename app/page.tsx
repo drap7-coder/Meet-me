@@ -1367,7 +1367,6 @@ export default function HomePage() {
                   onShowZipFallback={showZipFallback}
                   onSubmitManualLocation={(input, placeId) => void resolveManualLocation(input, placeId)}
                 />
-                <SearchPromptModePicker />
                 <TrendingNearYouStrip
                   latitude={locationContext.locationACoordinates?.lat}
                   longitude={locationContext.locationACoordinates?.lng}
@@ -1376,6 +1375,7 @@ export default function HomePage() {
                   onSearchQuery={applyPopularSearch}
                   onRequestLocation={openLocationChange}
                 />
+                <SearchPromptModePicker />
                 <ClassicSearchControls
                   form={form}
                   loading={loading}

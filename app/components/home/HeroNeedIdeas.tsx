@@ -14,7 +14,7 @@ export function HeroNeedIdeas({ busy = false, onSelect }: Props) {
 
   return (
     <section className="grid min-w-0 gap-3" aria-labelledby="need-ideas-heading">
-      <h2 id="need-ideas-heading" className="px-0.5 text-sm font-semibold text-white/70">
+      <h2 id="need-ideas-heading" className="px-0.5 text-sm font-semibold text-white">
         Need ideas?
       </h2>
       <div className="grid min-w-0 gap-1.5">
@@ -24,7 +24,7 @@ export function HeroNeedIdeas({ busy = false, onSelect }: Props) {
             type="button"
             disabled={busy}
             onClick={() => onSelect(item.query)}
-            className={`rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-left text-[0.8125rem] font-medium leading-snug text-white/78 transition hover:border-white/18 hover:bg-white/[0.06] hover:text-white disabled:cursor-not-allowed disabled:opacity-40 ${
+            className={`rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-left text-[0.8125rem] font-medium leading-snug text-white transition hover:border-white/18 hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-40 ${
               !expanded && !item.featured ? "hidden" : ""
             }`}
           >

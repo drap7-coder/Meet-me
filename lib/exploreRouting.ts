@@ -10,6 +10,7 @@ import {
   type ProviderKey,
   venueCategoryForExplore
 } from "@/lib/exploreIntent";
+import { isLocalHappeningsQuery } from "@/lib/localHappenings";
 import { hasEventbriteApiKey } from "@/lib/providers/eventbriteEventProvider";
 import { logApiError } from "@/lib/serverLog";
 import { hasEventbriteFoodMarketSources, hasEventbriteSources } from "@/src/config/eventbriteSources";
@@ -144,7 +145,10 @@ export function normalizeExploreIntent(input: ExploreRoutingInput): NormalizedEx
     ? selectProvidersForTimeAwareExplore(category)
     : selectProvidersForExplore(category, subcategoryId);
   const routeViaTicketmaster =
-    !timeAwareExplore && providers.includes("ticketmaster") && isTicketmasterExploreSubcategory(category, subcategoryId);
+    !timeAwareExplore &&
+    !isLocalHappeningsQuery(query) &&
+    providers.includes("ticketmaster") &&
+    isTicketmasterExploreSubcategory(category, subcategoryId);
   const preferOpenTripMap = !timeAwareExplore && providers[0] === "opentripmap";
 
   const intent: NormalizedExploreIntent = {

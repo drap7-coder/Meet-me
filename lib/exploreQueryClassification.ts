@@ -39,8 +39,13 @@ const CLASSIFICATION_RULES: ClassificationRule[] = [
   },
   {
     category: "events",
+    subcategoryId: "festivals",
+    pattern: /\b(?:street fairs?|street festivals?|festivals?|festa|feast|carnival|flea markets?|swap meet|art walks?|pop[- ]?ups?|holiday markets?|seasonal markets?|food festivals?)\b/i
+  },
+  {
+    category: "events",
     subcategoryId: "comedy",
-    pattern: /\b(?:comedy|stand[- ]?up|theater|theatre|festival|show tonight|tickets)\b/i
+    pattern: /\b(?:comedy|stand[- ]?up|theater|theatre|show tonight|tickets)\b/i
   },
   {
     category: "events",

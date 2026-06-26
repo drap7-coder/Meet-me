@@ -32,7 +32,10 @@ import { hasStreamingWatchContext, isMovieTheaterEventsQuery } from "@/lib/watch
 import { resolveWatchPlaceSearchForm } from "@/lib/watchPlaceSearch";
 import type { KoiSearchApiResponse } from "@/lib/searchIntent";
 import { discoverOpenTripMapExploreVenues, supplementExploreWithOpenTripMap } from "@/lib/exploreSearch";
-import { filterFarmersMarketVenues } from "@/lib/farmersMarketDiscovery";
+import {
+  filterLocalHappeningVenues,
+  localHappeningsSubcategoryForVenueFilter
+} from "@/lib/localHappeningsVenueFilter";
 import {
   exploreIntentFromPayload,
   filterAvailableProviders,
@@ -124,7 +127,7 @@ async function executeOpenTripMapExploreSearch(
   parseContext: CurrentLocationContext | undefined,
   travelMode: SearchHalfwayRequest["travelMode"]
 ): Promise<KoiSearchApiResponse | null> {
-  const localSubcategory = exploreIntent.subcategoryId === "farmers_markets" ? "farmers_markets" : null;
+  const localSubcategory = localHappeningsSubcategoryForVenueFilter(query, exploreIntent.subcategoryId);
   const localPlacesSearch = localSubcategory
     ? resolveLocalHappeningsPlacesSearch(localSubcategory)
     : null;
@@ -172,8 +175,8 @@ async function executeOpenTripMapExploreSearch(
     insightQuery: query,
     category: normalizeCategory(exploreIntent.venueCategory)
   });
-  const filteredPlacesResponse = exploreIntent.subcategoryId === "farmers_markets"
-    ? { ...placesResponse, venues: filterFarmersMarketVenues(placesResponse.venues) }
+  const filteredPlacesResponse = localSubcategory
+    ? { ...placesResponse, venues: filterLocalHappeningVenues(localSubcategory, placesResponse.venues) }
     : placesResponse;
 
   return {
@@ -246,8 +249,9 @@ async function executeTimeAwareExploreSearch(
     }
   }
 
-  const fallbackVenues = exploreIntent.subcategoryId === "farmers_markets"
-    ? filterFarmersMarketVenues(fallbackResponse?.venues ?? [])
+  const localSubcategory = localHappeningsSubcategoryForVenueFilter(query, exploreIntent.subcategoryId);
+  const fallbackVenues = localSubcategory
+    ? filterLocalHappeningVenues(localSubcategory, fallbackResponse?.venues ?? [])
     : fallbackResponse?.venues ?? [];
   const applyDiversity = shouldApplyDiversityRanking(query, exploreIntent);
   const rankedEvents = rankTemporalEvents(events);
@@ -462,13 +466,17 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
     };
 
     try {
+      const placesResponse = await googlePlacesProvider.searchHalfway({
+        ...blendedForm,
+        category: normalizeCategory(blendedForm.category)
+      });
+      const filteredPlacesResponse = localSubcategory
+        ? { ...placesResponse, venues: filterLocalHappeningVenues(localSubcategory, placesResponse.venues) }
+        : placesResponse;
       return {
         kind: "places",
         data: await enrichPlacesResponseWithEvents(
-          await googlePlacesProvider.searchHalfway({
-            ...blendedForm,
-            category: normalizeCategory(blendedForm.category)
-          }),
+          filteredPlacesResponse,
           query,
           blendedForm
         )

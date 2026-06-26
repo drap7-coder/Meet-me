@@ -233,8 +233,18 @@ const CLASSIFICATION_RULES: ClassificationRule[] = [
   },
   {
     category: "activities",
+    subcategoryId: "mini_golf",
+    pattern: /\b(?:mini golf|miniature golf|putt[- ]?putt)\b/i
+  },
+  {
+    category: "activities",
+    subcategoryId: "bowling",
+    pattern: /\bbowling\b/i
+  },
+  {
+    category: "activities",
     subcategoryId: null,
-    pattern: /\b(?:bowling|arcade|mini golf|museum|spa|axe throwing|thrift|vintage|antique|record store|used book|architectural salvage|secondhand)\b/i
+    pattern: /\b(?:arcade|museum|spa|axe throwing|thrift|vintage|antique|record store|used book|architectural salvage|secondhand)\b/i
   }
 ];
 

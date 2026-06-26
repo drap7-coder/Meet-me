@@ -1,3 +1,4 @@
+import { filterActivitySearchVenues } from "@/lib/activityVenueFilter";
 import { logExploreRoutingDecision } from "@/lib/exploreRouting";
 import { applyExploreTravelModeRanking, getExploreModeRadiusMultiplier } from "@/lib/exploreModeRanking";
 import { filterOpenTripMapFarmersMarkets } from "@/lib/farmersMarketDiscovery";
@@ -140,6 +141,6 @@ export async function supplementExploreWithOpenTripMap(
 
   return {
     ...response,
-    venues: merged
+    venues: filterActivitySearchVenues(response.query, intent, merged)
   };
 }

@@ -28,7 +28,8 @@
     "test:search-status": "npx tsx scripts/test-search-status.ts",
     "test:farmers-market": "npx tsx scripts/test-farmers-market-discovery.ts",
     "test:local-happenings": "npx tsx scripts/test-local-happenings-venue-filter.ts",
-    "test:basic-search-routing": "npx tsx scripts/test-basic-search-routing.ts"
+    "test:basic-search-routing": "npx tsx scripts/test-basic-search-routing.ts",
+    "test:activity-venue-filter": "npx tsx scripts/test-activity-venue-filter.ts"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",

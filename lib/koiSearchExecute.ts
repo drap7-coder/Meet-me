@@ -32,6 +32,7 @@ import { hasStreamingWatchContext, isMovieTheaterEventsQuery } from "@/lib/watch
 import { resolveWatchPlaceSearchForm } from "@/lib/watchPlaceSearch";
 import type { KoiSearchApiResponse } from "@/lib/searchIntent";
 import { discoverOpenTripMapExploreVenues, supplementExploreWithOpenTripMap } from "@/lib/exploreSearch";
+import { filterActivitySearchVenues } from "@/lib/activityVenueFilter";
 import {
   filterLocalHappeningVenues,
   localHappeningsSubcategoryForVenueFilter
@@ -116,8 +117,19 @@ async function withExploreEnrichment(
   response: SearchHalfwayResponse,
   intent: NormalizedExploreIntent
 ): Promise<SearchHalfwayResponse> {
-  if (!shouldSupplementWithOpenTripMap(intent)) return response;
-  return supplementExploreWithOpenTripMap(response, intent, response.originA.location);
+  const enriched = shouldSupplementWithOpenTripMap(intent)
+    ? await supplementExploreWithOpenTripMap(response, intent, response.originA.location)
+    : response;
+  return withActivityVenueFilter(enriched, response.query, intent);
+}
+
+function withActivityVenueFilter(
+  response: SearchHalfwayResponse,
+  query: string,
+  intent: NormalizedExploreIntent
+): SearchHalfwayResponse {
+  const venues = filterActivitySearchVenues(query, intent, response.venues);
+  return venues.length === response.venues.length ? response : { ...response, venues };
 }
 
 async function executeOpenTripMapExploreSearch(
@@ -255,10 +267,14 @@ async function executeTimeAwareExploreSearch(
     : fallbackResponse?.venues ?? [];
   const applyDiversity = shouldApplyDiversityRanking(query, exploreIntent);
   const rankedEvents = rankTemporalEvents(events);
-  const rankedVenues = rankTemporalVenues([
-    ...otmVenues.map((venue) => ({ venue, source: "opentripmap" as const })),
-    ...fallbackVenues.map((venue) => ({ venue, source: "google_places" as const }))
-  ]);
+  const rankedVenues = filterActivitySearchVenues(
+    query,
+    exploreIntent,
+    rankTemporalVenues([
+      ...otmVenues.map((venue) => ({ venue, source: "opentripmap" as const })),
+      ...fallbackVenues.map((venue) => ({ venue, source: "google_places" as const }))
+    ])
+  );
 
   let diversifiedEvents = rankedEvents;
   let diversifiedVenues = rankedVenues;
@@ -476,7 +492,7 @@ export async function executeKoiSearch(input: ExecuteInput): Promise<KoiSearchAp
       return {
         kind: "places",
         data: await enrichPlacesResponseWithEvents(
-          filteredPlacesResponse,
+          withActivityVenueFilter(filteredPlacesResponse, query, exploreIntent),
           query,
           blendedForm
         )

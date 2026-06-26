@@ -1,11 +1,12 @@
+import { isGenericCivicRecreationVenue, venueHaystack } from "@/lib/activityVenueFilter";
 import type { EventResult } from "@/lib/eventResult";
 import type { ScoredVenue, SearchHalfwayResponse } from "@/lib/types";
 
 const TEMPORAL_EVENT_BOOST =
   /\b(?:concert|comedy|theat(?:er|re)|festival|farmers? market|street fair|live music|sports?|game|seasonal|pop[-\s]?up|holiday)\b/i;
 
-const GENERIC_PERMANENT_VENUE =
-  /\b(?:community center|recreation center|rec center|gym|fitness|indoor playground|play(?:\s|-)?place|kids play|municipal building|township building|borough hall|city hall)\b/i;
+const OTHER_GENERIC_PERMANENT_VENUE =
+  /\b(?:gym|fitness|indoor playground|play(?:\s|-)?place|kids play)\b/i;
 
 export const TIME_AWARE_MIN_PRIMARY_RESULTS = 6;
 
@@ -48,8 +49,8 @@ export function enoughTimeAwareCoverage(events: EventResult[], venues: ScoredVen
 }
 
 export function isGenericPermanentVenue(venue: Pick<ScoredVenue, "name" | "category" | "address" | "types">) {
-  const haystack = `${venue.name} ${venue.category} ${venue.address} ${(venue.types ?? []).join(" ")}`;
-  return GENERIC_PERMANENT_VENUE.test(haystack);
+  const haystack = venueHaystack(venue);
+  return isGenericCivicRecreationVenue(venue) || OTHER_GENERIC_PERMANENT_VENUE.test(haystack);
 }
 
 export function withTemporalExploreResults(

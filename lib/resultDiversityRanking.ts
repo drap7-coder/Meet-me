@@ -1,3 +1,4 @@
+import { isGenericCivicRecreationVenue, venueHaystack } from "@/lib/activityVenueFilter";
 import type { NormalizedExploreIntent } from "@/lib/exploreIntent";
 import type { EventResult, ScoredVenue } from "@/lib/types";
 
@@ -51,7 +52,7 @@ export function classifyResultExperienceType(result: DiversifiableResult): Resul
   if (/\b(?:scenic walk|waterfront|trail|greenway|park|garden|arboretum|nature|preserve|overlook|viewpoint|hiking)\b/i.test(haystack)) return "outdoors";
   if (/\b(?:family|kids|children|childrens|zoo|aquarium|playground)\b/i.test(haystack)) return "family";
   if (/\b(?:restaurant|coffee|cafe|bar|brewery|food|drink|dining)\b/i.test(haystack)) return "food_drink";
-  if (/\b(?:community center|recreation center|rec center|gym|fitness|municipal building|township building|borough hall|city hall|indoor playground|play(?:\s|-)?place)\b/i.test(haystack)) {
+  if (isGenericCivicRecreationVenue(result as ScoredVenue) || /\b(?:gym|fitness|indoor playground|play(?:\s|-)?place)\b/i.test(haystack)) {
     return "generic_place";
   }
 
@@ -147,5 +148,5 @@ function resultHaystack(result: DiversifiableResult): string {
     return `${result.title} ${result.category} ${result.venue} ${result.city} ${result.state} ${result.source}`;
   }
 
-  return `${result.name} ${result.category} ${result.address} ${(result.types ?? []).join(" ")}`;
+  return venueHaystack(result);
 }

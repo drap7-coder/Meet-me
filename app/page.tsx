@@ -14,7 +14,7 @@ import { LocationOnboardingCard } from "@/app/components/home/LocationOnboarding
 import { OnboardingCapabilityPreview } from "@/app/components/home/OnboardingCapabilityPreview";
 import { SelectedFiltersPanel } from "@/app/components/home/SelectedFiltersPanel";
 import { ShareDialog, type ShareDialogState } from "@/app/components/home/ShareDialog";
-import { Footer, SiteHeader } from "@/app/components/home/SiteChrome";
+import { CompactHeader, Footer } from "@/app/components/home/SiteChrome";
 import { HeroNeedIdeas } from "@/app/components/home/HeroNeedIdeas";
 import { ClassicSearchControls } from "@/app/components/ClassicSearchControls";
 import { SearchContextStrip } from "@/app/components/SearchContextStrip";
@@ -1308,7 +1308,7 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-mint text-ink">
-      <SiteHeader variant={showLandingHero ? "dark" : "light"} />
+      <CompactHeader variant={showLandingHero ? "dark" : "light"} />
 
       {showLandingHero ? (
         <>

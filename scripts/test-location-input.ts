@@ -1,4 +1,5 @@
 import {
+  normalizeZipInput,
   resolveManualEntryInput,
   seedManualLocationFields
 } from "../lib/locationInput";
@@ -23,5 +24,6 @@ assert(
   seedManualLocationFields("Philadelphia, PA", "place-id").address === "Philadelphia, PA",
   "city seed goes to address field"
 );
+assert(normalizeZipInput("19a10 3-9999") === "19103", "zip input keeps only first five digits");
 
 console.log("PASS location input");

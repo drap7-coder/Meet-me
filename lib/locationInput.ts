@@ -24,6 +24,10 @@ export function isValidManualLocationInput(input: string) {
   return CITY_PATTERN.test(trimmed);
 }
 
+export function normalizeZipInput(input: string) {
+  return input.replace(/\D/g, "").slice(0, 5);
+}
+
 /** Prefer address/city when both fields are filled. */
 export function resolveManualEntryInput(entry: LocationManualEntry): { input: string; placeId?: string } {
   const address = entry.address.trim();

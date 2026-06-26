@@ -1429,8 +1429,14 @@ export default function HomePage() {
         </>
       ) : null}
 
-      <div className="bg-mint">
-        <div className={PAGE_CONTAINER}>
+      <div className={showResultsChrome ? "relative overflow-hidden bg-[#0A1323] text-ink" : "bg-mint"}>
+        {showResultsChrome ? (
+          <>
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_55%_at_50%_-10%,rgba(255,90,0,0.18),transparent_62%),radial-gradient(circle_at_90%_8%,rgba(10,132,255,0.12),transparent_28%),linear-gradient(180deg,#0A1323_0%,#0d1829_42%,#F5F7F2_42%,#F5F7F2_100%)]" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-white/[0.04] to-transparent" />
+          </>
+        ) : null}
+        <div className={`relative z-10 ${PAGE_CONTAINER}`}>
           {showResultsChrome ? (
             <CompactResultsHeader
               loading={loading}
@@ -1453,7 +1459,7 @@ export default function HomePage() {
             />
           ) : null}
 
-          {showResultsChrome || showRoadDividerPreview ? (
+          {showRoadDividerPreview ? (
             <RoadDivider className="mt-5 w-full" />
           ) : null}
 

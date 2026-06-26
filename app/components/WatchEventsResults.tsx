@@ -58,7 +58,7 @@ export function WatchEventsResults({ result, onRefineWatch, onRefineEvents }: Pr
       </div>
 
       <aside className="results-panel-enter order-1 lg:order-2">
-        <div className={`rounded-lg border bg-paper p-5 shadow-soft ${accent.panelBorder}`}>
+        <div className={`rounded-[26px] border bg-white/95 p-5 shadow-[0_18px_55px_rgba(10,19,35,0.08)] backdrop-blur ${accent.panelBorder}`}>
           <p className={`text-sm font-black uppercase tracking-[0.14em] ${accent.text}`}>{result.intentLabel}</p>
           <h2 className="mt-2 text-2xl font-black tracking-tight text-ink">Your search</h2>
           <p className="mt-3 text-sm leading-6 text-slate">{result.contextSummary}</p>

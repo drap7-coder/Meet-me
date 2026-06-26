@@ -67,12 +67,12 @@ export function WatchEventsCard({ item, botMode = "watch", isKoiPick = false, pr
   return (
     <article
       ref={cardRef}
-      className={`rounded-lg border bg-paper p-5 shadow-soft sm:p-6 ${
+      className={`rounded-[26px] border bg-white/95 p-5 shadow-[0_18px_55px_rgba(10,19,35,0.08)] backdrop-blur sm:p-6 ${
         isKoiPick
-          ? "border-koi/30 ring-2 ring-koi/15"
+          ? "border-koi/35 ring-2 ring-koi/15"
           : searchSuggestion
             ? "border-events/25"
-            : accent.panelBorder
+            : "border-white/80"
       }`}
     >
       <div className="flex items-start gap-4">
@@ -80,7 +80,7 @@ export function WatchEventsCard({ item, botMode = "watch", isKoiPick = false, pr
           <img
             src={item.posterUrl}
             alt={`${item.title} poster`}
-            className="h-36 w-24 shrink-0 rounded-lg border border-line object-cover shadow-soft"
+            className="h-36 w-24 shrink-0 rounded-2xl border border-line/70 object-cover shadow-[0_14px_30px_rgba(10,19,35,0.10)]"
             loading="lazy"
           />
         ) : null}
@@ -129,7 +129,7 @@ export function WatchEventsCard({ item, botMode = "watch", isKoiPick = false, pr
           {item.meta.map((entry) => (
             <div
               key={entry.label}
-              className={`rounded-lg px-3 py-2.5 ${searchSuggestion ? `${accent.bgSoft} ring-1 ${accent.borderSoft}` : "bg-sky"}`}
+              className={`rounded-2xl px-3 py-2.5 ${searchSuggestion ? `${accent.bgSoft} ring-1 ${accent.borderSoft}` : "border border-line/60 bg-[#F7FAFF]"}`}
             >
               <div className="text-xs font-bold uppercase text-slate">{entry.label}</div>
               <div className="mt-1 font-bold text-ink">{entry.value}</div>

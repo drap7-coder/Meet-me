@@ -41,11 +41,11 @@ export function EventResultCard({ event, rank, isKoiPick = false }: Props) {
   return (
     <article
       ref={cardRef}
-      className="overflow-hidden rounded-[22px] border border-line/80 bg-white shadow-[0_10px_30px_rgba(10,19,35,0.06)]"
+      className="overflow-hidden rounded-[26px] border border-white/80 bg-white/95 shadow-[0_18px_55px_rgba(10,19,35,0.08)] backdrop-blur"
     >
       <div className="grid gap-4 p-4 sm:grid-cols-[112px_1fr] sm:p-5">
         {event.imageUrl ? (
-          <div className="overflow-hidden rounded-2xl bg-mint">
+          <div className="overflow-hidden rounded-2xl bg-mint shadow-[inset_0_0_0_1px_rgba(10,19,35,0.06)]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={event.imageUrl} alt="" className="h-28 w-full object-cover sm:h-full sm:min-h-[112px]" />
           </div>
@@ -62,7 +62,7 @@ export function EventResultCard({ event, rank, isKoiPick = false }: Props) {
               {event.category}
             </span>
             {distanceChip ? (
-              <span className="rounded-full bg-mint px-2.5 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-slate ring-1 ring-line">
+              <span className="rounded-full bg-mint/80 px-2.5 py-1 text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-slate ring-1 ring-line/70">
                 {distanceChip}
               </span>
             ) : null}

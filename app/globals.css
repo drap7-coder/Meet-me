@@ -613,9 +613,18 @@ select {
   animation: koi-thinking-ripple 2.8s ease-out infinite;
 }
 
-.koi-thinking-progress {
-  width: 35%;
-  animation: koi-thinking-progress 2.4s ease-in-out infinite;
+.koi-thinking-route {
+  position: absolute;
+  left: 1.5rem;
+  right: 1.5rem;
+  top: 50%;
+  height: 2px;
+  border-radius: 999px;
+  opacity: 0.82;
+  transform: translateY(-50%) scaleX(0);
+  transform-origin: center;
+  box-shadow: 0 0 22px rgba(255, 90, 0, 0.26);
+  animation: koi-thinking-route 1.08s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes koi-thinking-float {
@@ -640,12 +649,18 @@ select {
   }
 }
 
-@keyframes koi-thinking-progress {
+@keyframes koi-thinking-route {
   0% {
-    transform: translateX(-120%);
+    opacity: 0;
+    transform: translateY(-50%) scaleX(0);
+  }
+  68% {
+    opacity: 0.82;
+    transform: translateY(-50%) scaleX(0.72);
   }
   100% {
-    transform: translateX(320%);
+    opacity: 0.92;
+    transform: translateY(-50%) scaleX(0.9);
   }
 }
 
@@ -774,12 +789,13 @@ select {
 @media (prefers-reduced-motion: reduce) {
   .koi-thinking-swim,
   .koi-thinking-ripple,
-  .koi-thinking-progress {
+  .koi-thinking-route {
     animation: none;
   }
 
-  .koi-thinking-progress {
-    width: 66%;
+  .koi-thinking-route {
+    opacity: 0.5;
+    transform: translateY(-50%) scaleX(0.75);
   }
 
   .futurist-vein-pulse,

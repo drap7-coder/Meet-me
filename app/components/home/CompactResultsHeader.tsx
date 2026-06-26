@@ -40,8 +40,8 @@ export function CompactResultsHeader({
   if (loading) {
     return (
       <section className="pt-4">
-        <div className="rounded-lg border border-line bg-paper px-4 py-4 shadow-soft sm:px-5">
-          <p className={`text-sm font-bold ${accent.text}`}>{loadingLabel}</p>
+        <div className="rounded-[28px] border border-white/10 bg-white/[0.06] px-4 py-4 shadow-[0_24px_80px_rgba(0,0,0,0.22)] backdrop-blur-xl sm:px-5">
+          <p className="text-sm font-bold text-white">{loadingLabel}</p>
         </div>
       </section>
     );
@@ -133,16 +133,18 @@ function PlacesDecisionHero({
 
   return (
     <section className="pt-4">
-      <div className="rounded-lg border border-line bg-paper px-4 py-4 shadow-soft sm:px-5 sm:py-5">
+      <div className="relative overflow-hidden rounded-[30px] border border-white/10 bg-white/[0.07] px-4 py-5 text-white shadow-[0_28px_90px_rgba(0,0,0,0.28)] backdrop-blur-xl sm:px-6 sm:py-6">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_20%,rgba(255,90,0,0.18),transparent_32%),linear-gradient(135deg,rgba(255,255,255,0.08),transparent_42%)]" />
+        <div className="relative z-10">
         <p className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.16em] text-koi">
           <span aria-hidden="true">🏆</span>
           Koi Pick
         </p>
-        <h1 className="mt-2 text-2xl font-black leading-tight tracking-tight text-ink sm:text-3xl">{venue.name}</h1>
-        <p className="mt-1.5 text-sm font-medium leading-6 text-slate">{reason}</p>
+        <h1 className="mt-2 max-w-3xl text-3xl font-black leading-[0.98] tracking-tight text-white sm:text-5xl">{venue.name}</h1>
+        <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-white/68 sm:text-base sm:leading-7">{reason}</p>
 
         {chips.length ? (
-          <p className="mt-3 text-sm font-semibold leading-6 text-ink">{chips.join(" · ")}</p>
+          <p className="mt-4 max-w-2xl text-sm font-semibold leading-6 text-white/88">{chips.join(" · ")}</p>
         ) : null}
 
         <div className="mt-4 flex flex-wrap gap-2">
@@ -159,7 +161,7 @@ function PlacesDecisionHero({
             <button
               type="button"
               onClick={onShare}
-              className={`inline-flex h-10 items-center justify-center rounded-full border bg-paper px-4 text-sm font-bold transition focus:outline-none focus:ring-4 ${accent.borderOutline} ${accent.text} hover:bg-mint`}
+              className="inline-flex h-10 items-center justify-center rounded-full border border-white/15 bg-white/10 px-4 text-sm font-bold text-white transition hover:bg-white/15 focus:outline-none focus:ring-4 focus:ring-white/20"
             >
               Share meetup
             </button>
@@ -167,10 +169,11 @@ function PlacesDecisionHero({
           <button
             type="button"
             onClick={onNewSearch}
-            className="inline-flex h-10 items-center justify-center rounded-full px-3 text-sm font-semibold text-slate transition hover:text-ink"
+            className="inline-flex h-10 items-center justify-center rounded-full px-3 text-sm font-semibold text-white/70 transition hover:text-white"
           >
             New search
           </button>
+        </div>
         </div>
       </div>
     </section>
@@ -194,15 +197,17 @@ function WatchDecisionHero({
 
   return (
     <section className="pt-4">
-      <div className="rounded-lg border border-line bg-paper px-4 py-4 shadow-soft sm:px-5 sm:py-5">
+      <div className="relative overflow-hidden rounded-[30px] border border-white/10 bg-white/[0.07] px-4 py-5 text-white shadow-[0_28px_90px_rgba(0,0,0,0.28)] backdrop-blur-xl sm:px-6 sm:py-6">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_20%,rgba(10,132,255,0.18),transparent_32%),linear-gradient(135deg,rgba(255,255,255,0.08),transparent_42%)]" />
+        <div className="relative z-10">
         <p className={`inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.16em] ${accent.text}`}>
           <span aria-hidden="true">🏆</span>
           Koi Pick
         </p>
-        <h1 className="mt-2 text-2xl font-black leading-tight tracking-tight text-ink sm:text-3xl">{item.title}</h1>
-        <p className="mt-1.5 text-sm font-medium leading-6 text-slate">{item.explanation}</p>
+        <h1 className="mt-2 max-w-3xl text-3xl font-black leading-[0.98] tracking-tight text-white sm:text-5xl">{item.title}</h1>
+        <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-white/68 sm:text-base sm:leading-7">{item.explanation}</p>
         {chips.length ? (
-          <p className="mt-3 text-sm font-semibold leading-6 text-ink">{chips.join(" · ")}</p>
+          <p className="mt-4 max-w-2xl text-sm font-semibold leading-6 text-white/88">{chips.join(" · ")}</p>
         ) : null}
         <div className="mt-4 flex flex-wrap gap-2">
           {item.actionUrl ? (
@@ -219,7 +224,7 @@ function WatchDecisionHero({
             <button
               type="button"
               onClick={onShare}
-              className={`inline-flex h-10 items-center justify-center rounded-full border bg-paper px-4 text-sm font-bold transition focus:outline-none focus:ring-4 ${accent.borderOutline} ${accent.text} hover:bg-mint`}
+              className="inline-flex h-10 items-center justify-center rounded-full border border-white/15 bg-white/10 px-4 text-sm font-bold text-white transition hover:bg-white/15 focus:outline-none focus:ring-4 focus:ring-white/20"
             >
               Share meetup
             </button>
@@ -227,10 +232,11 @@ function WatchDecisionHero({
           <button
             type="button"
             onClick={onNewSearch}
-            className="inline-flex h-10 items-center justify-center rounded-full px-3 text-sm font-semibold text-slate transition hover:text-ink"
+            className="inline-flex h-10 items-center justify-center rounded-full px-3 text-sm font-semibold text-white/70 transition hover:text-white"
           >
             New search
           </button>
+        </div>
         </div>
       </div>
     </section>

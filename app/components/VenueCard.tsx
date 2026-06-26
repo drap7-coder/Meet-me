@@ -124,8 +124,8 @@ export function VenueCard({
   return (
     <article
       ref={cardRef}
-      className={`rounded-lg border bg-paper p-5 shadow-soft sm:p-6 ${
-        isKoiPick ? "border-koi/30 ring-2 ring-koi/15" : "border-line"
+      className={`rounded-[26px] border bg-white/95 p-5 shadow-[0_18px_55px_rgba(10,19,35,0.08)] backdrop-blur sm:p-6 ${
+        isKoiPick ? "border-koi/35 ring-2 ring-koi/15" : "border-white/80"
       }`}
     >
       <div className="flex items-start justify-between gap-3">
@@ -163,7 +163,7 @@ export function VenueCard({
               {signalChips.map((chip) => (
                 <span
                   key={chip}
-                  className="inline-flex items-center rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate ring-1 ring-line"
+                  className="inline-flex items-center rounded-full bg-mint/80 px-2.5 py-1 text-xs font-bold text-slate ring-1 ring-line/70"
                 >
                   {chip}
                 </span>
@@ -176,7 +176,7 @@ export function VenueCard({
       <p className="mt-4 text-sm leading-6 text-slate">{venue.address}</p>
 
       {venue.insight ? (
-        <figure className="mt-4 rounded-lg border border-line bg-white px-4 py-3">
+        <figure className="mt-4 rounded-2xl border border-line/70 bg-mint/45 px-4 py-3">
           <blockquote className="text-sm font-semibold leading-6 text-ink">{venue.insight.blurb}</blockquote>
           <figcaption className="mt-2">
             <a
@@ -192,14 +192,14 @@ export function VenueCard({
       ) : null}
 
       {venue.evCharging ? (
-        <div className="mt-4 rounded-lg border border-koi/25 bg-koi/5 px-4 py-3">
+        <div className="mt-4 rounded-2xl border border-koi/25 bg-koi/5 px-4 py-3">
           <p className="text-sm font-black text-ink">EV charging nearby</p>
           <p className="mt-1 text-sm leading-6 text-slate">{describeEvCharging(venue.evCharging)}</p>
         </div>
       ) : null}
 
       {reviewSnippet ? (
-        <figure className="mt-4 rounded-lg border border-line bg-white px-4 py-3">
+        <figure className="mt-4 rounded-2xl border border-line/70 bg-mint/45 px-4 py-3">
           <blockquote className="text-sm font-semibold leading-6 text-ink">“{reviewSnippet}”</blockquote>
           <figcaption className="mt-2 text-xs font-bold uppercase tracking-wide text-slate">
             {venue.reviewQuote ? "Google review" : venue.reviewSummaryDisclosure || "Place summary"}
@@ -280,14 +280,14 @@ export function VenueCard({
         <button
           type="button"
           onClick={handleShareClick}
-          className="rounded-full border border-line bg-paper px-3 py-2.5 text-sm font-bold text-ink transition hover:border-koi hover:text-koi focus:outline-none focus:ring-4 focus:ring-ink/10"
+          className="rounded-full border border-line bg-white px-3 py-2.5 text-sm font-bold text-ink transition hover:border-koi hover:text-koi focus:outline-none focus:ring-4 focus:ring-ink/10"
         >
           Share
         </button>
         <button
           type="button"
           onClick={() => setCalendarOpen(true)}
-          className="rounded-full border border-line bg-paper px-3 py-2.5 text-sm font-bold text-ink transition hover:border-koi hover:text-koi focus:outline-none focus:ring-4 focus:ring-ink/10"
+          className="rounded-full border border-line bg-white px-3 py-2.5 text-sm font-bold text-ink transition hover:border-koi hover:text-koi focus:outline-none focus:ring-4 focus:ring-ink/10"
         >
           Add to calendar
         </button>
@@ -453,7 +453,7 @@ function CalendarSheet({
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-sky px-3 py-2.5">
+    <div className="rounded-2xl border border-line/60 bg-[#F7FAFF] px-3 py-2.5">
       <div className="text-xs font-bold uppercase text-slate">{label}</div>
       <div className="mt-1 font-bold text-ink">{value}</div>
     </div>

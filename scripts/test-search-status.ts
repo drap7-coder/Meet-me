@@ -6,6 +6,7 @@ import {
   isRecoverableSearchError,
   searchError,
   SEARCH_ERROR_MESSAGES,
+  statusForSearchError,
   shouldShowInlineSearchError
 } from "../lib/searchStatus";
 
@@ -29,10 +30,12 @@ assert(vagueQuery.kind === "NEEDS_LOCATION", "vague query without saved location
 
 const gibberish = classifySearchError("I couldn't understand that search. Try: coffee near Hoboken.");
 assert(gibberish.kind === "NO_RESULTS", "gibberish query stays inline on the hero");
-assert(gibberish.message.includes("couldn't understand"), "gibberish keeps the parser message");
+assert(gibberish.message.includes("Try a place, activity, show, or event"), "gibberish uses inline guidance copy");
+assert(statusForSearchError(gibberish) === "invalid", "gibberish maps to invalid search status");
 
 const network = classifySearchError(new TypeError("Failed to fetch"));
 assert(network.kind === "NETWORK_ERROR", "fetch failure maps to NETWORK_ERROR");
+assert(statusForSearchError(network) === "error", "network failure maps to error status");
 
 const structured = searchError("PROVIDER_ERROR");
 assert(isSearchError(structured), "searchError helper produces SearchError");

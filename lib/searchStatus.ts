@@ -12,18 +12,13 @@ export type SearchError = {
   message: string;
 };
 
-export type SearchPhase = "idle" | "loading" | "results" | "error" | "empty";
-
-export type SearchStatus = {
-  phase: SearchPhase;
-  error?: SearchError;
-};
+export type SearchStatus = "idle" | "loading" | "success" | "empty" | "error" | "invalid";
 
 export const SEARCH_ERROR_MESSAGES: Record<SearchErrorKind, string> = {
   INVALID_LOCATION: "I couldn't find that place. Try a city, address, or nearby landmark.",
-  NO_RESULTS: "No matches yet. Try a broader ask or a nearby area.",
-  PROVIDER_ERROR: "Something went wrong on our end. Try again in a moment.",
-  NETWORK_ERROR: "Connection issue. Check your network and try again.",
+  NO_RESULTS: "I couldn't find anything useful for that. Try a place, activity, show, or event.",
+  PROVIDER_ERROR: "I couldn't find anything useful for that. Try a place, activity, show, or event.",
+  NETWORK_ERROR: "I couldn't find anything useful for that. Try a place, activity, show, or event.",
   NEEDS_LOCATION: "Add your location to search nearby."
 };
 
@@ -81,7 +76,7 @@ export function classifySearchError(input: unknown): SearchError {
   }
 
   if (lower.includes("could not understand") || lower.includes("couldn't understand")) {
-    return searchError("NO_RESULTS", typeof raw === "string" ? raw : SEARCH_ERROR_MESSAGES.NO_RESULTS);
+    return searchError("NO_RESULTS");
   }
 
   if (
@@ -111,6 +106,12 @@ export function isLocationSearchError(error: SearchError | null | undefined): bo
 export function shouldShowInlineSearchError(error: SearchError | null | undefined): boolean {
   if (!error) return false;
   return error.kind !== "NEEDS_LOCATION";
+}
+
+export function statusForSearchError(error: SearchError): SearchStatus {
+  if (error.kind === "NO_RESULTS") return "invalid";
+  if (error.kind === "NEEDS_LOCATION" || error.kind === "INVALID_LOCATION") return "invalid";
+  return "error";
 }
 
 /** Recoverable ask failures that should keep the search box in place with a retry message. */

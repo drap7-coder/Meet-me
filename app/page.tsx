@@ -59,7 +59,9 @@ import {
   searchError as createSearchError,
   SEARCH_ERROR_MESSAGES,
   shouldShowInlineSearchError,
-  type SearchError
+  statusForSearchError,
+  type SearchError,
+  type SearchStatus
 } from "@/lib/searchStatus";
 import { getSavedTravelMode, saveTravelMode } from "@/lib/travelMode";
 import { isEvChargingIntent } from "@/lib/evSearchIntent";
@@ -146,8 +148,7 @@ export default function HomePage() {
   const [currentShareUrl, setCurrentShareUrl] = useState("");
   const [openedFromSharedHalfway, setOpenedFromSharedHalfway] = useState(false);
   const [shareDialog, setShareDialog] = useState<ShareDialogState | null>(null);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [everHadResults, setEverHadResults] = useState(false);
+  const [searchStatus, setSearchStatus] = useState<SearchStatus>("idle");
   const [showRoadDividerPreview, setShowRoadDividerPreview] = useState(false);
   const [builderExpanded, setBuilderExpanded] = useState(false);
   const [builderMode, setBuilderMode] = useState<SearchBuilderMode>("near_me");
@@ -215,6 +216,9 @@ export default function HomePage() {
 
   function clearSearchError() {
     setSearchError(null);
+    if (searchStatus === "error" || searchStatus === "empty" || searchStatus === "invalid") {
+      setSearchStatus("idle");
+    }
   }
 
   function readApiSearchError(data: { error?: unknown }): SearchError {
@@ -225,6 +229,7 @@ export default function HomePage() {
     setShowLocationActions(true);
     setShowManualFallback(false);
     setSearchError(createSearchError("NEEDS_LOCATION", message));
+    setSearchStatus("invalid");
   }
 
   function failSearch(input: unknown) {
@@ -236,9 +241,14 @@ export default function HomePage() {
     setResults(null);
     setWatchEventsResult(null);
     setSearchError(classified);
-    if (!everHadResults) {
-      setHasSearched(false);
-    }
+    setSearchStatus(statusForSearchError(classified));
+  }
+
+  function emptySearch() {
+    setResults(null);
+    setWatchEventsResult(null);
+    setSearchError(createSearchError("NO_RESULTS"));
+    setSearchStatus("empty");
   }
 
   function handleTravelModeChange(mode: TravelMode) {
@@ -419,18 +429,25 @@ export default function HomePage() {
     setFallbackKind("location");
     setShowClassicFallback(true);
     setSearchError(createSearchError("NEEDS_LOCATION", message));
+    setSearchStatus("invalid");
     scrollToFallback();
   }
 
   function openFullFallback(message?: string) {
     if (searchKind === "watch") {
-      if (message) setSearchError(createSearchError("NEEDS_LOCATION", message));
+      if (message) {
+        setSearchError(createSearchError("NEEDS_LOCATION", message));
+        setSearchStatus("invalid");
+      }
       return;
     }
     setPendingRetry(null);
     setFallbackKind("full");
     setShowClassicFallback(true);
-    if (message) setSearchError(createSearchError("NEEDS_LOCATION", message));
+    if (message) {
+      setSearchError(createSearchError("NEEDS_LOCATION", message));
+      setSearchStatus("invalid");
+    }
     scrollToFallback();
   }
 
@@ -497,6 +514,7 @@ export default function HomePage() {
       setLocationStatus("");
       if (retry ?? pendingRetry) {
         setSearchError(createSearchError("NEEDS_LOCATION", "Location blocked? Enter a ZIP code instead."));
+        setSearchStatus("invalid");
       }
       return;
     }
@@ -528,6 +546,7 @@ export default function HomePage() {
       setShowLocationActions(false);
       if (retry ?? pendingRetry) {
         setSearchError(createSearchError("NEEDS_LOCATION", "Location blocked? Enter a ZIP code instead."));
+        setSearchStatus("invalid");
       }
     } finally {
       setLocating(false);
@@ -560,13 +579,12 @@ export default function HomePage() {
     submitOptions?: SearchSubmitOptions
   ) {
     if (isEmptyPlacesResults(data)) {
-      failSearch(createSearchError("NO_RESULTS"));
+      emptySearch();
       return;
     }
 
     clearSearchError();
-    setHasSearched(true);
-    setEverHadResults(true);
+    setSearchStatus("success");
     setResults(data);
     setWatchEventsResult(null);
     setSearchKind("places");
@@ -592,13 +610,12 @@ export default function HomePage() {
 
   function applyWatchEventsResults(data: WatchEventsResult) {
     if (isEmptyWatchResults(data)) {
-      failSearch(createSearchError("NO_RESULTS"));
+      emptySearch();
       return;
     }
 
     clearSearchError();
-    setHasSearched(true);
-    setEverHadResults(true);
+    setSearchStatus("success");
     setWatchEventsResult(data);
     setResults(null);
     if (data.streamingServiceIds?.length) {
@@ -655,6 +672,7 @@ export default function HomePage() {
     const startedAt = Date.now();
     const shouldPlayMotion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setLoading(true);
+    setSearchStatus("loading");
     setSearchError(null);
     setShareMessage("");
     setLocationSavedMessage("");
@@ -866,6 +884,7 @@ export default function HomePage() {
             setShowLocationActions(true);
             setShowManualFallback(false);
             setSearchError(createSearchError("NEEDS_LOCATION", data.data.message || SEARCH_ERROR_MESSAGES.NEEDS_LOCATION));
+            setSearchStatus("invalid");
             return;
           }
           setSearchKind("watch");
@@ -880,6 +899,7 @@ export default function HomePage() {
             setShowLocationActions(true);
             setShowManualFallback(false);
             setSearchError(createSearchError("NEEDS_LOCATION", data.data.message || SEARCH_ERROR_MESSAGES.NEEDS_LOCATION));
+            setSearchStatus("invalid");
             return;
           }
           setSearchKind("events");
@@ -931,8 +951,7 @@ export default function HomePage() {
     setShareMessage("");
     setCurrentShareUrl("");
     setOpenedFromSharedHalfway(false);
-    setHasSearched(false);
-    setEverHadResults(false);
+    setSearchStatus("idle");
     setLastAskQuery("");
     setLocationSavedMessage("");
     setShowClassicFallback(false);
@@ -979,7 +998,9 @@ export default function HomePage() {
       setShowLocationActions(true);
       setShowManualFallback(false);
     }
-    setSearchError(classifySearchError(data.error ?? SEARCH_ERROR_MESSAGES.NEEDS_LOCATION));
+    const classified = classifySearchError(data.error ?? SEARCH_ERROR_MESSAGES.NEEDS_LOCATION);
+    setSearchError(classified);
+    setSearchStatus(statusForSearchError(classified));
   }
 
   function handleNeedsLocation(pendingForm: SearchHalfwayRequest) {
@@ -1137,6 +1158,7 @@ export default function HomePage() {
       setSearchError(
         createSearchError("NEEDS_LOCATION", "Add where you are, or tap Use my location below the search box.")
       );
+      setSearchStatus("invalid");
       scrollToFallback();
       return;
     }
@@ -1144,12 +1166,14 @@ export default function HomePage() {
     const searchMode = form.searchMode ?? "midpoint";
     if (searchMode === "midpoint" && !form.locationB.trim() && pendingRetry?.kind === "places") {
       setSearchError(createSearchError("NEEDS_LOCATION", "Add a second location for a fair midpoint search."));
+      setSearchStatus("invalid");
       scrollToFallback();
       return;
     }
 
     if (!pendingRetry) {
       setSearchError(createSearchError("NEEDS_LOCATION", "Ask Koi what you want up above, then try again."));
+      setSearchStatus("invalid");
       return;
     }
 
@@ -1279,10 +1303,12 @@ export default function HomePage() {
     }
   }
 
-  const hasResultView = Boolean(results || watchEventsResult);
-  const recoverOnHero = Boolean(searchError && !hasResultView && !everHadResults);
-  const showLandingHero = !hasResultView && (!hasSearched || recoverOnHero);
-  const showResultsChrome = hasResultView || (loading && hasSearched && !recoverOnHero);
+  const hasSuccessfulResults =
+    searchStatus === "success" &&
+    Boolean((results && !isEmptyPlacesResults(results)) || (watchEventsResult && !isEmptyWatchResults(watchEventsResult)));
+  const hasResultView = hasSuccessfulResults;
+  const showLandingHero = !hasSuccessfulResults;
+  const showResultsChrome = hasSuccessfulResults;
   const showLocationOnboarding = showLandingHero && !hasHomeLocation;
 
   return (
@@ -1433,89 +1459,6 @@ export default function HomePage() {
 
           {showResultsChrome || showRoadDividerPreview ? (
             <RoadDivider className="mt-5 w-full" />
-          ) : null}
-
-          {hasSearched && !loading && !hasResultView && !showLandingHero ? (
-          <section id="search" className="mt-5 grid w-full gap-5">
-              <SearchContextStrip
-                locationLabel={activeLocationLabel}
-                onChangeLocation={openLocationChange}
-                travelMode={travelMode}
-                onTravelModeChange={handleTravelModeChange}
-                busy={loading || locating || resolvingManual}
-                surface="page"
-              />
-              <SearchPromptAssistProvider
-                busy={loading || locating || resolvingManual}
-                builderMode={builderMode}
-                onBuilderModeChange={handleBuilderModeChange}
-                surface="page"
-                userCoordinates={locationContext.locationACoordinates}
-              >
-                <AiSearchBox
-                  ref={searchBoxRef}
-                  surface="page"
-                  loading={loading}
-                  locationStatus={locationStatus}
-                  locationUiState={locationUiState}
-                  showManualFallback={showManualFallback}
-                  showLocationActions={showLocationActions}
-                  manualLocationError={manualLocationError}
-                  locationContext={locationContext}
-                  defaultUserAddress={savedUserAddress}
-                  locating={locating}
-                  resolvingManual={resolvingManual}
-                  locationSavedMessage={locationSavedMessage}
-                  searchError={searchError}
-                  onClearSearchError={clearSearchError}
-                  onSubmitQuery={handleAiSubmitQuery}
-                  onPrefetchQuery={prefetchAskQuery}
-                  onNeedsLocation={handleNeedsLocation}
-                  onPersistUserAddress={persistUserAddress}
-                  onUseLocation={() => void requestUserLocation()}
-                  onShowZipFallback={showZipFallback}
-                  onSubmitManualLocation={(input, placeId) => void resolveManualLocation(input, placeId)}
-                />
-                <ClassicSearchControls
-                  form={form}
-                  loading={loading}
-                  savedLocationLabel={activeLocationLabel}
-                  expanded={builderExpanded}
-                  onExpandedChange={handleBuilderExpanded}
-                  mode={builderMode}
-                  onSearchPlaces={runPlacesSearchFromBuilder}
-                  onSearchWatch={runWatchSearch}
-                  surface="page"
-                />
-                <SearchPromptModePicker />
-                <SearchPromptDetailChips />
-                <SelectedFiltersPanel
-                  busy={loading || locating || resolvingManual}
-                  onSearch={runFilterSearch}
-                />
-                <HeroPopularSearches
-                  compact
-                  busy={loading || locating || resolvingManual}
-                  onSelect={applyPopularSearch}
-                />
-              </SearchPromptAssistProvider>
-              <LocationFallbackPanel
-                form={form}
-                loading={loading}
-                pendingQuery={pendingRetry?.kind === "events" ? pendingRetry.query : undefined}
-                hidden={!showClassicFallback || fallbackKind !== "location"}
-                onChange={handleFormChange}
-                onSubmit={submitLocationFallback}
-              />
-              <ClassicSearchPanel
-                form={form}
-                loading={loading}
-                discoveryMode="places"
-                onChange={handleFormChange}
-                onSubmit={submitClassicSearch}
-                hidden={!showClassicFallback || fallbackKind !== "full" || searchKind === "watch"}
-              />
-            </section>
           ) : null}
 
         {loading && !showLandingHero ? (

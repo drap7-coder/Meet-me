@@ -14,7 +14,7 @@ import { LocationOnboardingCard } from "@/app/components/home/LocationOnboarding
 import { OnboardingCapabilityPreview } from "@/app/components/home/OnboardingCapabilityPreview";
 import { SelectedFiltersPanel } from "@/app/components/home/SelectedFiltersPanel";
 import { ShareDialog, type ShareDialogState } from "@/app/components/home/ShareDialog";
-import { CompactHeader, Footer } from "@/app/components/home/SiteChrome";
+import { Footer, LogoHomeHeader } from "@/app/components/home/SiteChrome";
 import { HeroNeedIdeas } from "@/app/components/home/HeroNeedIdeas";
 import { ClassicSearchControls } from "@/app/components/ClassicSearchControls";
 import { SearchContextStrip } from "@/app/components/SearchContextStrip";
@@ -1308,7 +1308,7 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-mint text-ink">
-      {showLandingHero ? null : <CompactHeader variant="light" />}
+      {showLandingHero ? null : <LogoHomeHeader variant="dark" />}
 
       {showLandingHero ? (
         <>
@@ -1331,13 +1331,6 @@ export default function HomePage() {
               ) : (
                 <>
               <MarketingHero />
-              <SearchContextStrip
-                locationLabel={activeLocationLabel}
-                onChangeLocation={openLocationChange}
-                travelMode={travelMode}
-                onTravelModeChange={handleTravelModeChange}
-                busy={loading || locating || resolvingManual}
-              />
               <SearchPromptAssistProvider
                 busy={loading || locating || resolvingManual}
                 builderMode={builderMode}
@@ -1367,6 +1360,11 @@ export default function HomePage() {
                   onShowZipFallback={showZipFallback}
                   onSubmitManualLocation={(input, placeId) => void resolveManualLocation(input, placeId)}
                 />
+                {loading ? (
+                  <section className="mt-2" aria-live="polite">
+                    <KoiThinkingLoader searchKind={searchKind} phase={loadingPhase} />
+                  </section>
+                ) : null}
                 <TrendingNearYouStrip
                   latitude={locationContext.locationACoordinates?.lat}
                   longitude={locationContext.locationACoordinates?.lng}
@@ -1375,22 +1373,42 @@ export default function HomePage() {
                   onSearchQuery={applyPopularSearch}
                   onRequestLocation={openLocationChange}
                 />
-                <SearchPromptModePicker />
-                <ClassicSearchControls
-                  form={form}
-                  loading={loading}
-                  savedLocationLabel={activeLocationLabel}
-                  expanded={builderExpanded}
-                  onExpandedChange={handleBuilderExpanded}
-                  mode={builderMode}
-                  onSearchPlaces={runPlacesSearchFromBuilder}
-                  onSearchWatch={runWatchSearch}
-                />
-                <SearchPromptDetailChips />
-                <SelectedFiltersPanel
-                  busy={loading || locating || resolvingManual}
-                  onSearch={runFilterSearch}
-                />
+                <details className="group rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 backdrop-blur">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-black text-white marker:hidden [&::-webkit-details-marker]:hidden">
+                    <span>Refine search</span>
+                    <span className="text-xs font-black uppercase tracking-[0.14em] text-white/45 group-open:hidden">
+                      Location, filters, getting around
+                    </span>
+                    <span className="hidden text-xs font-black uppercase tracking-[0.14em] text-white/45 group-open:inline">
+                      Hide
+                    </span>
+                  </summary>
+                  <div className="mt-4 grid gap-4">
+                    <SearchContextStrip
+                      locationLabel={activeLocationLabel}
+                      onChangeLocation={openLocationChange}
+                      travelMode={travelMode}
+                      onTravelModeChange={handleTravelModeChange}
+                      busy={loading || locating || resolvingManual}
+                    />
+                    <SearchPromptModePicker />
+                    <ClassicSearchControls
+                      form={form}
+                      loading={loading}
+                      savedLocationLabel={activeLocationLabel}
+                      expanded={builderExpanded}
+                      onExpandedChange={handleBuilderExpanded}
+                      mode={builderMode}
+                      onSearchPlaces={runPlacesSearchFromBuilder}
+                      onSearchWatch={runWatchSearch}
+                    />
+                    <SearchPromptDetailChips />
+                    <SelectedFiltersPanel
+                      busy={loading || locating || resolvingManual}
+                      onSearch={runFilterSearch}
+                    />
+                  </div>
+                </details>
                 <HeroPopularSearches
                   compact
                   busy={loading || locating || resolvingManual}
@@ -1401,11 +1419,6 @@ export default function HomePage() {
                   onSelect={applyPopularSearch}
                 />
               </SearchPromptAssistProvider>
-              {loading ? (
-                <section className="mt-2" aria-live="polite">
-                  <KoiThinkingLoader searchKind={searchKind} phase={loadingPhase} />
-                </section>
-              ) : null}
               <LocationFallbackPanel
                 form={form}
                 loading={loading}
@@ -1429,10 +1442,10 @@ export default function HomePage() {
         </>
       ) : null}
 
-      <div className={showResultsChrome ? "relative overflow-hidden bg-[#0A1323] text-ink" : "bg-mint"}>
+      <div className={showResultsChrome || (loading && !showLandingHero) ? "relative min-h-screen overflow-hidden bg-[#0A1323] text-ink" : "bg-mint"}>
         {showResultsChrome ? (
           <>
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_55%_at_50%_-10%,rgba(255,90,0,0.18),transparent_62%),radial-gradient(circle_at_90%_8%,rgba(10,132,255,0.12),transparent_28%),linear-gradient(180deg,#0A1323_0%,#0d1829_42%,#F5F7F2_42%,#F5F7F2_100%)]" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_55%_at_50%_-10%,rgba(255,90,0,0.18),transparent_62%),radial-gradient(circle_at_90%_8%,rgba(10,132,255,0.12),transparent_28%),linear-gradient(180deg,#0A1323_0%,#0d1829_56%,#F5F7F2_56%,#F5F7F2_100%)]" />
             <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-white/[0.04] to-transparent" />
           </>
         ) : null}

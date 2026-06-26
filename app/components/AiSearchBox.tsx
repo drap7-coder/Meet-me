@@ -32,7 +32,6 @@ type Props = {
   defaultUserAddress?: string;
   locationSavedMessage?: string;
   searchError?: SearchError | null;
-  onClearSearchError?: () => void;
   onSubmitQuery: (
     query: string,
     options?: {
@@ -138,7 +137,6 @@ export const AiSearchBox = forwardRef<AiSearchBoxHandle, Props>(function AiSearc
     manualLocationError,
     locationSavedMessage,
     searchError,
-    onClearSearchError,
     locationContext,
     defaultUserAddress,
     onSubmitQuery,

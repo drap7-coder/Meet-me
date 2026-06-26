@@ -59,7 +59,6 @@ import {
   searchError as createSearchError,
   SEARCH_ERROR_MESSAGES,
   shouldShowInlineSearchError,
-  statusForSearchError,
   type SearchError,
   type SearchStatus
 } from "@/lib/searchStatus";
@@ -216,9 +215,6 @@ export default function HomePage() {
 
   function clearSearchError() {
     setSearchError(null);
-    if (searchStatus === "error" || searchStatus === "empty" || searchStatus === "invalid") {
-      setSearchStatus("idle");
-    }
   }
 
   function readApiSearchError(data: { error?: unknown }): SearchError {
@@ -229,7 +225,7 @@ export default function HomePage() {
     setShowLocationActions(true);
     setShowManualFallback(false);
     setSearchError(createSearchError("NEEDS_LOCATION", message));
-    setSearchStatus("invalid");
+    setSearchStatus("idle");
   }
 
   function failSearch(input: unknown) {
@@ -241,14 +237,14 @@ export default function HomePage() {
     setResults(null);
     setWatchEventsResult(null);
     setSearchError(classified);
-    setSearchStatus(statusForSearchError(classified));
+    setSearchStatus("idle");
   }
 
   function emptySearch() {
     setResults(null);
     setWatchEventsResult(null);
     setSearchError(createSearchError("NO_RESULTS"));
-    setSearchStatus("empty");
+    setSearchStatus("idle");
   }
 
   function handleTravelModeChange(mode: TravelMode) {
@@ -429,7 +425,7 @@ export default function HomePage() {
     setFallbackKind("location");
     setShowClassicFallback(true);
     setSearchError(createSearchError("NEEDS_LOCATION", message));
-    setSearchStatus("invalid");
+    setSearchStatus("idle");
     scrollToFallback();
   }
 
@@ -437,7 +433,7 @@ export default function HomePage() {
     if (searchKind === "watch") {
       if (message) {
         setSearchError(createSearchError("NEEDS_LOCATION", message));
-        setSearchStatus("invalid");
+        setSearchStatus("idle");
       }
       return;
     }
@@ -446,7 +442,7 @@ export default function HomePage() {
     setShowClassicFallback(true);
     if (message) {
       setSearchError(createSearchError("NEEDS_LOCATION", message));
-      setSearchStatus("invalid");
+      setSearchStatus("idle");
     }
     scrollToFallback();
   }
@@ -514,7 +510,7 @@ export default function HomePage() {
       setLocationStatus("");
       if (retry ?? pendingRetry) {
         setSearchError(createSearchError("NEEDS_LOCATION", "Location blocked? Enter a ZIP code instead."));
-        setSearchStatus("invalid");
+        setSearchStatus("idle");
       }
       return;
     }
@@ -546,7 +542,7 @@ export default function HomePage() {
       setShowLocationActions(false);
       if (retry ?? pendingRetry) {
         setSearchError(createSearchError("NEEDS_LOCATION", "Location blocked? Enter a ZIP code instead."));
-        setSearchStatus("invalid");
+        setSearchStatus("idle");
       }
     } finally {
       setLocating(false);
@@ -672,7 +668,6 @@ export default function HomePage() {
     const startedAt = Date.now();
     const shouldPlayMotion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setLoading(true);
-    setSearchStatus("loading");
     setSearchError(null);
     setShareMessage("");
     setLocationSavedMessage("");
@@ -884,7 +879,7 @@ export default function HomePage() {
             setShowLocationActions(true);
             setShowManualFallback(false);
             setSearchError(createSearchError("NEEDS_LOCATION", data.data.message || SEARCH_ERROR_MESSAGES.NEEDS_LOCATION));
-            setSearchStatus("invalid");
+            setSearchStatus("idle");
             return;
           }
           setSearchKind("watch");
@@ -899,7 +894,7 @@ export default function HomePage() {
             setShowLocationActions(true);
             setShowManualFallback(false);
             setSearchError(createSearchError("NEEDS_LOCATION", data.data.message || SEARCH_ERROR_MESSAGES.NEEDS_LOCATION));
-            setSearchStatus("invalid");
+            setSearchStatus("idle");
             return;
           }
           setSearchKind("events");
@@ -1000,7 +995,7 @@ export default function HomePage() {
     }
     const classified = classifySearchError(data.error ?? SEARCH_ERROR_MESSAGES.NEEDS_LOCATION);
     setSearchError(classified);
-    setSearchStatus(statusForSearchError(classified));
+    setSearchStatus("idle");
   }
 
   function handleNeedsLocation(pendingForm: SearchHalfwayRequest) {
@@ -1158,7 +1153,7 @@ export default function HomePage() {
       setSearchError(
         createSearchError("NEEDS_LOCATION", "Add where you are, or tap Use my location below the search box.")
       );
-      setSearchStatus("invalid");
+      setSearchStatus("idle");
       scrollToFallback();
       return;
     }
@@ -1166,14 +1161,14 @@ export default function HomePage() {
     const searchMode = form.searchMode ?? "midpoint";
     if (searchMode === "midpoint" && !form.locationB.trim() && pendingRetry?.kind === "places") {
       setSearchError(createSearchError("NEEDS_LOCATION", "Add a second location for a fair midpoint search."));
-      setSearchStatus("invalid");
+      setSearchStatus("idle");
       scrollToFallback();
       return;
     }
 
     if (!pendingRetry) {
       setSearchError(createSearchError("NEEDS_LOCATION", "Ask Koi what you want up above, then try again."));
-      setSearchStatus("invalid");
+      setSearchStatus("idle");
       return;
     }
 
@@ -1306,7 +1301,6 @@ export default function HomePage() {
   const hasSuccessfulResults =
     searchStatus === "success" &&
     Boolean((results && !isEmptyPlacesResults(results)) || (watchEventsResult && !isEmptyWatchResults(watchEventsResult)));
-  const hasResultView = hasSuccessfulResults;
   const showLandingHero = !hasSuccessfulResults;
   const showResultsChrome = hasSuccessfulResults;
   const showLocationOnboarding = showLandingHero && !hasHomeLocation;
@@ -1372,7 +1366,6 @@ export default function HomePage() {
                   resolvingManual={resolvingManual}
                   locationSavedMessage={locationSavedMessage}
                   searchError={searchError}
-                  onClearSearchError={clearSearchError}
                   onSubmitQuery={handleAiSubmitQuery}
                   onPrefetchQuery={prefetchAskQuery}
                   onNeedsLocation={handleNeedsLocation}

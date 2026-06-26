@@ -12,7 +12,7 @@ export type SearchError = {
   message: string;
 };
 
-export type SearchStatus = "idle" | "loading" | "success" | "empty" | "error" | "invalid";
+export type SearchStatus = "idle" | "success";
 
 export const SEARCH_ERROR_MESSAGES: Record<SearchErrorKind, string> = {
   INVALID_LOCATION: "I couldn't find that place. Try a city, address, or nearby landmark.",
@@ -99,24 +99,9 @@ export function classifySearchError(input: unknown): SearchError {
   return searchError("PROVIDER_ERROR");
 }
 
-export function isLocationSearchError(error: SearchError | null | undefined): boolean {
-  return error?.kind === "INVALID_LOCATION" || error?.kind === "NEEDS_LOCATION";
-}
-
 export function shouldShowInlineSearchError(error: SearchError | null | undefined): boolean {
   if (!error) return false;
   return error.kind !== "NEEDS_LOCATION";
-}
-
-/** Recoverable ask failures that should keep the search box in place with a retry message. */
-export function isRecoverableSearchError(error: SearchError | null | undefined): boolean {
-  return shouldShowInlineSearchError(error);
-}
-
-export function statusForSearchError(error: SearchError): SearchStatus {
-  if (error.kind === "NO_RESULTS") return "invalid";
-  if (error.kind === "NEEDS_LOCATION" || error.kind === "INVALID_LOCATION") return "invalid";
-  return "error";
 }
 
 export function isEmptyPlacesResults(data: SearchHalfwayResponse): boolean {
